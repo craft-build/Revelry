@@ -131,6 +131,8 @@
 
 ## Traceability
 
+### Phase 1: Foundation
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INFRA-01 | Phase 1 | Pending |
@@ -139,6 +141,17 @@
 | INFRA-04 | Phase 1 | Pending |
 | INFRA-05 | Phase 1 | Pending |
 | INFRA-06 | Phase 1 | Pending |
+| PROV-02 | Phase 1 | Pending |
+| UI-01 | Phase 1 | Pending |
+| UI-02 | Phase 1 | Pending |
+| UI-03 | Phase 1 | Pending |
+| UI-05 | Phase 1 | Pending |
+| UI-07 | Phase 1 | Pending |
+
+### Phase 2: Core Features
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
 | CHAR-01 | Phase 2 | Pending |
 | CHAR-02 | Phase 2 | Pending |
 | CHAR-03 | Phase 2 | Pending |
@@ -146,10 +159,8 @@
 | CHAR-05 | Phase 2 | Pending |
 | CHAR-06 | Phase 2 | Pending |
 | CHAR-07 | Phase 2 | Pending |
-| CHAR-08 | Phase 3 | Pending |
 | CHAR-09 | Phase 2 | Pending |
 | PROV-01 | Phase 2 | Pending |
-| PROV-02 | Phase 1 | Pending |
 | PROV-03 | Phase 2 | Pending |
 | PROV-04 | Phase 2 | Pending |
 | PROV-05 | Phase 2 | Pending |
@@ -166,23 +177,59 @@
 | CHAT-08 | Phase 2 | Pending |
 | CHAT-09 | Phase 2 | Pending |
 | CHAT-10 | Phase 2 | Pending |
-| UI-01 | Phase 1 | Pending |
-| UI-02 | Phase 1 | Pending |
-| UI-03 | Phase 1 | Pending |
 | UI-04 | Phase 2 | Pending |
-| UI-05 | Phase 1 | Pending |
 | UI-06 | Phase 2 | Pending |
-| UI-07 | Phase 2 | Pending |
 | PROMPT-01 | Phase 2 | Pending |
 | PROMPT-02 | Phase 2 | Pending |
 | PROMPT-03 | Phase 2 | Pending |
 | PROMPT-04 | Phase 2 | Pending |
 | PROMPT-05 | Phase 2 | Pending |
 
-**Coverage:**
-- v1 requirements: 47 total
-- Mapped to phases: 47
-- Unmapped: 0 ✓
+### Phase 3: Advanced Features
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CHAR-08 | Phase 3 | Pending |
+| BRANCH-01 | Phase 3 | Pending |
+| BRANCH-02 | Phase 3 | Pending |
+| BRANCH-03 | Phase 3 | Pending |
+| BRANCH-04 | Phase 3 | Pending |
+| ADV-01 | Phase 3 | Pending |
+| ADV-02 | Phase 3 | Pending |
+| ADV-03 | Phase 3 | Pending |
+| ADV-04 | Phase 3 | Pending |
+| ADV-07 | Phase 3 | Pending |
+
+### Phase 4: Polish & Distribution
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| POLISH-01 | Phase 4 | Pending |
+| POLISH-02 | Phase 4 | Pending |
+| POLISH-03 | Phase 4 | Pending |
+| POLISH-04 | Phase 4 | Pending |
+
+**Coverage Summary:**
+
+| Category | Count | Requirements |
+|----------|-------|--------------|
+| INFRA | 6 | INFRA-01 to INFRA-06 |
+| CHAR | 9 | CHAR-01 to CHAR-09 |
+| PROV | 8 | PROV-01 to PROV-08 |
+| CHAT | 10 | CHAT-01 to CHAT-10 |
+| UI | 7 | UI-01 to UI-07 |
+| PROMPT | 5 | PROMPT-01 to PROMPT-05 |
+| **v1 Total** | **45** | — |
+
+**Phase Distribution:**
+- Phase 1 (Foundation): 12 requirements (INFRA ×6, PROV-02, UI ×5)
+- Phase 2 (Core Features): 29 requirements (CHAR ×8, PROV ×7, CHAT ×10, UI-04, UI-06, PROMPT ×5)
+- Phase 3 (Advanced Features): 4 requirements (CHAR-08, BRANCH-01 to BRANCH-04, ADV-01, ADV-02, ADV-03, ADV-04, ADV-07)
+  - *Note: BRANCH and ADV requirements are v2 features included in Phase 3*
+- Phase 4 (Polish & Distribution): 4 v2 requirements (POLISH-01 to POLISH-04)
+
+**Coverage:** 45/45 v1 requirements mapped ✓
+**Unmapped: 0**
 
 ---
 *Requirements defined: 2025-04-27*
