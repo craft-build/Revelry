@@ -45,7 +45,12 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 11. `{{user}}` variable resolves to active persona name in prompts
 12. Chat header displays active persona indicator with avatar and name
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Infrastructure scaffold, DB, types, keychain, capabilities
+- [ ] 01-02-PLAN.md — GNOME UI shell with header bar, sidebar, views, Adwaita theme
+- [ ] 01-03-PLAN.md — Persona CRUD system, editor, avatar, prompt block, indicator
 
 **UI hint:** yes
 
@@ -148,7 +153,7 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/0 | Not started | - |
+| 1. Foundation | 0/3 | Planned | - |
 | 2. Core Features | 0/0 | Not started | - |
 | 3. Advanced Features | 0/0 | Not started | - |
 | 4. Polish & Distribution | 0/0 | Not started | - |
