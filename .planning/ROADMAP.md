@@ -29,7 +29,7 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 
 **Depends on:** Nothing (first phase)
 
-**Requirements:** INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06, PROV-02, UI-01, UI-02, UI-03, UI-05, UI-07
+**Requirements:** INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06, PROV-02, UI-01, UI-02, UI-03, UI-05, UI-07, USER-01, USER-02, USER-03, USER-04, USER-05, USER-06, USER-07, USER-08
 
 **Success Criteria** (what must be TRUE):
 1. Application launches with GNOME-style header bar, sidebar, and three view areas (Chat, Characters, Settings)
@@ -38,7 +38,12 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 4. TypeScript types sync with Rust types without manual duplication
 5. Tauri 2.0 security capabilities are configured and enforced (no blanket permissions)
 6. Error handling framework returns structured, typed errors to frontend
-7. Window is responsive and adapts layout to different sizes
+7. Window is responsive and adapts layout to different window sizes
+8. User can create, edit, and delete personas with name, appearance, personality, and background
+9. User can set a global default persona for new conversations
+10. Persona block is correctly injected into prompt assembly
+11. `{{user}}` variable resolves to active persona name in prompts
+12. Chat header displays active persona indicator with avatar and name
 
 **Plans:** TBD
 
@@ -51,7 +56,7 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 
 **Depends on:** Phase 1
 
-**Requirements:** CHAR-01, CHAR-02, CHAR-03, CHAR-04, CHAR-05, CHAR-06, CHAR-07, CHAR-09, PROV-01, PROV-03, PROV-04, PROV-05, PROV-06, PROV-07, PROV-08, CHAT-01, CHAT-02, CHAT-03, CHAT-04, CHAT-05, CHAT-06, CHAT-07, CHAT-08, CHAT-09, CHAT-10, UI-04, UI-06, PROMPT-01, PROMPT-02, PROMPT-03, PROMPT-04, PROMPT-05
+**Requirements:** CHAR-01, CHAR-02, CHAR-03, CHAR-04, CHAR-05, CHAR-06, CHAR-07, CHAR-09, PROV-01, PROV-03, PROV-04, PROV-05, PROV-06, PROV-07, PROV-08, CHAT-01, CHAT-02, CHAT-03, CHAT-04, CHAT-05, CHAT-06, CHAT-07, CHAT-08, CHAT-09, CHAT-10, UI-04, UI-06, PROMPT-01, PROMPT-02, PROMPT-03, PROMPT-04, PROMPT-05, USER-09, USER-10, USER-11, USER-12, USER-13
 
 **Success Criteria** (what must be TRUE):
 1. User can create a character with name, description, personality, and see it in a grid view
@@ -68,6 +73,11 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 12. Theme toggle works (light/dark/system) across all views
 13. Keyboard shortcuts function (Ctrl+N new chat, Ctrl+B toggle sidebar)
 14. Prompt correctly assembles system prompt, character context, and conversation history
+15. User can switch personas mid-conversation via persona switcher popover
+16. Per-conversation persona assignment persists and restores on resumption
+17. Persona library view accessible in Characters tab with "My Personas" tab
+18. Persona editor shows token estimates for all fields
+19. Token budget accounts for persona block with compression when needed
 
 **Plans:** TBD
 
@@ -80,9 +90,9 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 
 **Depends on:** Phase 2
 
-**Requirements:** CHAR-08, BRANCH-01, BRANCH-02, BRANCH-03, BRANCH-04, ADV-01, ADV-02, ADV-03, ADV-04, ADV-07
+**Requirements:** CHAR-08, BRANCH-01, BRANCH-02, BRANCH-03, BRANCH-04, ADV-01, ADV-02, ADV-03, ADV-04, ADV-07, USER-14, USER-15, USER-16, USER-17, USER-18, USER-19, USER-20
 
-**Note:** BRANCH and ADV are v2 requirements; Phase 3 delivers Tier 2 features
+**Note:** BRANCH, ADV, and USER-v2 are v2 requirements; Phase 3 delivers Tier 2 features
 
 **Success Criteria** (what must be TRUE):
 1. User can search characters using FTS5 with instant results
@@ -95,6 +105,12 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 8. User can create lorebook entries with keywords and content
 9. Lorebook entries automatically inject when keywords match in conversation
 10. Lorebook supports recursion (entries referencing other entries) and configurable insertion order
+11. User can assign default persona to characters (auto-applied on new chat)
+12. Lorebook entries can activate based on persona fields (appearance, personality, etc.)
+13. User can import personas from SpicyChat and SillyTavern formats
+14. User can export personas to JSON format (batch or selective)
+15. User can search personas using FTS5
+16. Conversation sidebar shows persona avatar for each conversation
 
 **Plans:** TBD
 
@@ -141,25 +157,26 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 
 ## Coverage Summary
 
-**v1 Requirements:** 45 total
+**v1 Requirements:** 58 total
 
 | Category | Count |
 |----------|-------|
 | INFRA | 6 |
+| USER | 13 |
 | CHAR | 9 |
 | PROV | 8 |
 | CHAT | 10 |
 | UI | 7 |
 | PROMPT | 5 |
-| **Total** | **45** |
+| **Total** | **58** |
 
 **Phase Distribution:**
 
 | Phase | v1 Requirements | v2 Requirements | Total |
 |-------|-----------------|-----------------|-------|
-| Phase 1: Foundation | 12 (INFRA ×6, PROV-02, UI ×5) | 0 | 12 |
-| Phase 2: Core Features | 29 (CHAR ×8, PROV ×7, CHAT ×10, UI ×2, PROMPT ×5) | 0 | 29 |
-| Phase 3: Advanced Features | 1 (CHAR-08) | 9 (BRANCH ×4, ADV ×5) | 10 |
+| Phase 1: Foundation | 19 (INFRA ×6, USER ×8, PROV-02, UI ×4) | 0 | 19 |
+| Phase 2: Core Features | 34 (CHAR ×8, PROV ×7, CHAT ×10, UI ×2, PROMPT ×5, USER ×5) | 0 | 34 |
+| Phase 3: Advanced Features | 1 (CHAR-08) | 16 (BRANCH ×4, ADV ×5, USER-v2 ×7) | 17 |
 | Phase 4: Polish & Distribution | 0 | 4 (POLISH ×4) | 4 |
 
 **v2 Requirements Included:**
@@ -177,6 +194,7 @@ Deliver a production-ready native desktop AI roleplay application with GNOME-ins
 ```
 Phase 1: Foundation
 ├── INFRA (scaffold, database, types, keychain, security, errors)
+├── USER Foundation (persona CRUD, default, prompt injection, indicator)
 ├── PROV-02 (API key storage foundation)
 └── UI Shell (header, sidebar, views, responsive)
     ↓
@@ -184,11 +202,13 @@ Phase 2: Core Features
 ├── CHAR (creation, editing, import/export, grid, deletion)
 ├── PROV (configuration, streaming, parameters, errors)
 ├── CHAT (display, streaming input, editing, regeneration, persistence)
+├── USER Extended (switcher, per-conversation, library, token budget)
 ├── UI Polish (themes, shortcuts, responsive refinements)
-└── PROMPT (assembly, context management)
+└── PROMPT (assembly, context management, {{user}} resolution)
     ↓
 Phase 3: Advanced Features
-├── Search (character FTS5, conversation FTS5)
+├── Search (character FTS5, conversation FTS5, persona FTS5)
+├── USER Advanced (per-character default, persona-aware lorebook, import/export)
 ├── BRANCH (tree storage, navigation, UI)
 ├── ADV (multi-provider, presets, lorebooks)
 └── Complex State Management
@@ -210,17 +230,26 @@ Phase 4: Polish & Distribution
 - **Tauri 2.0 Permissions:** Configure `capabilities/default.json` with explicit permissions; avoid blanket grants
 - **API Key Security:** Use `keyring` crate exclusively; never store in database, localStorage, or config files
 - **Type Sharing:** Use `ts-rs` or `specta` for automated Rust→TypeScript type generation
+- **User Persona Schema:** Design persona table with proper FTS5 index from the start; avatar storage path management
+- **Prompt Injection Order:** Persona block must be positioned after character card but before conversation history
+- **Single Default Constraint:** Enforce at application level that only one persona can be `is_default=1`
 
 ### Phase 2: Core Features
 - **IPC Payload Limits:** Paginate conversation loading; use Channels for streaming, not large payloads
 - **Streaming Channels:** Use `tauri::ipc::Channel<StreamEvent>` with Token/Complete/Error events
 - **Message Swiping:** Implement efficient state updates; avoid re-rendering entire conversation tree
 - **Memory Leaks:** Always unlisten to Tauri events in useEffect cleanup
+- **Persona Switching State:** Ensure Zustand/TanStack Query state updates correctly when persona changes mid-conversation
+- **Token Budget Calculation:** Persona block must be accounted for before conversation history truncation
+- **Template Variable Resolution:** `{{user}}` and `{{char}}` must resolve consistently across all prompt components
 
 ### Phase 3: Advanced Features
 - **Complex State Management:** Separate ephemeral UI state (Zustand) from persistent state (SQLite)
 - **Lorebook Performance:** Benchmark keyword scanning; consider indexing for large lorebooks (1000+ entries)
 - **Branching Queries:** Design efficient parent-child tree queries; avoid N+1 problems
+- **Persona-Aware Lorebook:** Extend keyword matching to scan persona fields; avoid double-processing
+- **Import/Export Compatibility:** Handle format variations between SpicyChat, SillyTavern, and Persona schemas
+- **FTS5 Persona Search:** Create virtual table for persona search from the start, not as migration
 
 ### Phase 4: Polish & Distribution
 - **Code Signing:** Configure early in CI; test signing in development, not just at release
@@ -231,7 +260,7 @@ Phase 4: Polish & Distribution
 
 ## Phase Mapping Details
 
-### Phase 1: Foundation (12 requirements)
+### Phase 1: Foundation (19 requirements)
 | Requirement | Description |
 |-------------|-------------|
 | INFRA-01 | Tauri 2.0 project scaffold with React 18 + TypeScript 5 |
@@ -246,8 +275,16 @@ Phase 4: Polish & Distribution
 | UI-03 | Three primary views: Chat, Characters, Settings |
 | UI-05 | Adwaita-inspired color palette and spacing |
 | UI-07 | Responsive layout adaptation for different window sizes |
+| USER-01 | Persona creation with name, appearance, personality, background |
+| USER-02 | Persona editing with all fields |
+| USER-03 | Persona avatar upload and management |
+| USER-04 | Global default persona selection |
+| USER-05 | Persona deletion with confirmation |
+| USER-06 | Persona block injection into prompt assembly |
+| USER-07 | `{{user}}` variable resolution to active persona name |
+| USER-08 | Persona indicator in chat header (avatar + name) |
 
-### Phase 2: Core Features (27 requirements)
+### Phase 2: Core Features (34 requirements)
 | Requirement | Description |
 |-------------|-------------|
 | CHAR-01 | Character card creation with basic fields |
@@ -282,8 +319,13 @@ Phase 4: Polish & Distribution
 | PROMPT-03 | Conversation history injection into prompt |
 | PROMPT-04 | Character description and scenario inclusion |
 | PROMPT-05 | Message example (mes_example) formatting |
+| USER-09 | Persona switcher popover for mid-conversation switching |
+| USER-10 | Per-conversation persona assignment storage |
+| USER-11 | Persona library view in Characters tab ("My Personas") |
+| USER-12 | Persona editor sliding panel with token estimates |
+| USER-13 | Token budget awareness for persona block |
 
-### Phase 3: Advanced Features (10 requirements)
+### Phase 3: Advanced Features (17 requirements)
 | Requirement | Description |
 |-------------|-------------|
 | CHAR-08 | Character search via SQLite FTS5 |
@@ -296,6 +338,13 @@ Phase 4: Polish & Distribution
 | ADV-03 | Lorebook editor with keyword matching |
 | ADV-04 | Lorebook recursion and insertion ordering |
 | ADV-07 | Full-text search across all conversations |
+| USER-14 | Per-character default persona assignment |
+| USER-15 | Persona-aware lorebook activation |
+| USER-16 | Import personas from SpicyChat format |
+| USER-17 | Import from SillyTavern user profiles |
+| USER-18 | Persona JSON export (batch and selective) |
+| USER-19 | Persona search via SQLite FTS5 |
+| USER-20 | Persona avatar in conversation sidebar entries |
 
 ### Phase 4: Polish & Distribution (4 requirements)
 | Requirement | Description |
@@ -305,7 +354,7 @@ Phase 4: Polish & Distribution
 | POLISH-03 | Data export/backup functionality |
 | POLISH-04 | Data import/restore functionality |
 
-**Coverage:** 47/47 v1 requirements mapped ✓
+**Coverage:** 58/58 v1 requirements mapped ✓
 
 ---
 
@@ -322,4 +371,4 @@ The following features are documented in REQUIREMENTS.md but intentionally defer
 
 ---
 
-*Last updated: 2025-04-27*
+*Last updated: 2025-04-28 — User Persona System integrated*

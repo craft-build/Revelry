@@ -5,6 +5,22 @@
 
 ## v1 Requirements
 
+### User Persona System (USER)
+
+- [ ] **USER-01**: User persona creation with name, appearance, personality, background
+- [ ] **USER-02**: Persona editing with all fields (role_description, relationships, speech_style, notes, tags)
+- [ ] **USER-03**: Persona avatar upload and management
+- [ ] **USER-04**: Global default persona selection (single default per user)
+- [ ] **USER-05**: Persona deletion with confirmation
+- [ ] **USER-06**: Persona block injection into prompt assembly
+- [ ] **USER-07**: `{{user}}` variable resolution to active persona name
+- [ ] **USER-08**: Persona indicator in chat header (avatar + name)
+- [ ] **USER-09**: Persona switcher popover for mid-conversation switching
+- [ ] **USER-10**: Per-conversation persona assignment storage
+- [ ] **USER-11**: Persona library view in Characters tab ("My Personas" tab)
+- [ ] **USER-12**: Persona editor sliding panel with token estimates
+- [ ] **USER-13**: Token budget awareness for persona block (compression levels)
+
 ### Core Infrastructure (INFRA)
 
 - [ ] **INFRA-01**: Tauri 2.0 project scaffold with React 18 + TypeScript 5
@@ -70,6 +86,18 @@
 
 ## v2 Requirements
 
+### User Persona System Extended (USER-v2)
+
+- **USER-14**: Per-character default persona assignment (stored in character extensions)
+- **USER-15**: Persona-aware lorebook activation (scan persona fields for keywords)
+- **USER-16**: Import personas from SpicyChat JSON format
+- **USER-17**: Import from SillyTavern user profiles
+- **USER-18**: Persona JSON export (batch and selective)
+- **USER-19**: Persona search via SQLite FTS5
+- **USER-20**: Persona avatar in conversation sidebar entries
+- **USER-21**: Persona evolution tracking (snapshots linked to conversations)
+- **USER-22**: Persona inheritance (child personas override parent fields)
+
 ### Conversation Branching (BRANCH)
 
 - **BRANCH-01**: Parent-child message tree storage
@@ -96,6 +124,12 @@
 - **POLISH-04**: Data import/restore functionality
 
 ## v3 Requirements
+
+### User Persona Advanced (USER-v3)
+
+- **USER-23**: Dual-persona mode with keyboard shortcut switching
+- **USER-24**: Relationship template builder UI
+- **USER-25**: Persona versioning and history
 
 ### Security & Enterprise (SEC)
 
@@ -147,6 +181,14 @@
 | UI-03 | Phase 1 | Pending |
 | UI-05 | Phase 1 | Pending |
 | UI-07 | Phase 1 | Pending |
+| USER-01 | Phase 1 | Pending |
+| USER-02 | Phase 1 | Pending |
+| USER-03 | Phase 1 | Pending |
+| USER-04 | Phase 1 | Pending |
+| USER-05 | Phase 1 | Pending |
+| USER-06 | Phase 1 | Pending |
+| USER-07 | Phase 1 | Pending |
+| USER-08 | Phase 1 | Pending |
 
 ### Phase 2: Core Features
 
@@ -184,6 +226,11 @@
 | PROMPT-03 | Phase 2 | Pending |
 | PROMPT-04 | Phase 2 | Pending |
 | PROMPT-05 | Phase 2 | Pending |
+| USER-09 | Phase 2 | Pending |
+| USER-10 | Phase 2 | Pending |
+| USER-11 | Phase 2 | Pending |
+| USER-12 | Phase 2 | Pending |
+| USER-13 | Phase 2 | Pending |
 
 ### Phase 3: Advanced Features
 
@@ -199,6 +246,13 @@
 | ADV-03 | Phase 3 | Pending |
 | ADV-04 | Phase 3 | Pending |
 | ADV-07 | Phase 3 | Pending |
+| USER-14 | Phase 3 | Pending |
+| USER-15 | Phase 3 | Pending |
+| USER-16 | Phase 3 | Pending |
+| USER-17 | Phase 3 | Pending |
+| USER-18 | Phase 3 | Pending |
+| USER-19 | Phase 3 | Pending |
+| USER-20 | Phase 3 | Pending |
 
 ### Phase 4: Polish & Distribution
 
@@ -214,23 +268,24 @@
 | Category | Count | Requirements |
 |----------|-------|--------------|
 | INFRA | 6 | INFRA-01 to INFRA-06 |
+| USER | 13 | USER-01 to USER-13 |
 | CHAR | 9 | CHAR-01 to CHAR-09 |
 | PROV | 8 | PROV-01 to PROV-08 |
 | CHAT | 10 | CHAT-01 to CHAT-10 |
 | UI | 7 | UI-01 to UI-07 |
 | PROMPT | 5 | PROMPT-01 to PROMPT-05 |
-| **v1 Total** | **45** | — |
+| **v1 Total** | **58** | — |
 
 **Phase Distribution:**
-- Phase 1 (Foundation): 12 requirements (INFRA ×6, PROV-02, UI ×5)
-- Phase 2 (Core Features): 29 requirements (CHAR ×8, PROV ×7, CHAT ×10, UI-04, UI-06, PROMPT ×5)
-- Phase 3 (Advanced Features): 4 requirements (CHAR-08, BRANCH-01 to BRANCH-04, ADV-01, ADV-02, ADV-03, ADV-04, ADV-07)
-  - *Note: BRANCH and ADV requirements are v2 features included in Phase 3*
+- Phase 1 (Foundation): 19 requirements (INFRA ×6, USER ×8, PROV-02, UI ×4)
+- Phase 2 (Core Features): 34 requirements (CHAR ×8, PROV ×7, CHAT ×10, UI ×2, PROMPT ×5, USER ×5)
+- Phase 3 (Advanced Features): 17 requirements (CHAR-08, USER ×7, BRANCH ×4, ADV ×5)
+  - *Note: BRANCH, ADV, and USER-v2 requirements are v2 features included in Phase 3*
 - Phase 4 (Polish & Distribution): 4 v2 requirements (POLISH-01 to POLISH-04)
 
-**Coverage:** 45/45 v1 requirements mapped ✓
+**Coverage:** 58/58 v1 requirements mapped ✓
 **Unmapped: 0**
 
 ---
 *Requirements defined: 2025-04-27*
-*Last updated: 2025-04-27 after initial definition*
+*Last updated: 2025-04-28 after User Persona System integration*

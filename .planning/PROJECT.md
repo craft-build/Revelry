@@ -19,6 +19,7 @@ Users can engage in uncensored, private AI character roleplay with full data sov
 - [ ] **Tier 1**: Core chat functionality with streaming responses
 - [ ] **Tier 1**: Single OpenAI-compatible provider support
 - [ ] **Tier 1**: Basic character card creation and editing
+- [ ] **Tier 1**: **User Persona System** — Rich user identity with prompt injection
 - [ ] **Tier 1**: SQLite database with migrations
 - [ ] **Tier 1**: GNOME-inspired UI shell (header bar, sidebar, views)
 - [ ] **Tier 2**: Conversation branching (parent-child message model)
@@ -56,10 +57,14 @@ Users can engage in uncensored, private AI character roleplay with full data sov
 - Users valuing privacy and data sovereignty
 
 **Competitive Landscape:**
-- Character.ai: Strict SFW filter, proprietary, cloud-only
-- SpicyChat.ai: Tiered content policy, proprietary, cloud-only
-- SillyTavern: Open source, functional/dense UI, multi-provider
-- Persona differentiator: GNOME minimalist design, Tauri performance, native desktop feel
+- Character.ai: Strict SFW filter, proprietary, cloud-only, no user personas
+- SpicyChat.ai: Tiered content policy, proprietary, cloud-only, basic persona system
+- SillyTavern: Open source, functional/dense UI, multi-provider, minimal user identity
+- Persona differentiators: 
+  - GNOME minimalist design
+  - Tauri performance with native desktop feel
+  - **Rich User Persona System** — Deep user identity shaping AI perception (like SpicyChat but more powerful)
+  - Local-first data sovereignty
 
 ## Constraints
 
@@ -79,6 +84,7 @@ Users can engage in uncensored, private AI character roleplay with full data sov
 | Tauri over Electron | 5-10MB vs 150+MB binary, native webview, better performance | — Pending |
 | GNOME design philosophy | Content-first, progressive disclosure, reduced cognitive load | — Pending |
 | CharacterCardV2 format | Maximum interoperability with SillyTavern ecosystem | — Pending |
+| User Persona System | Enables rich user identity in roleplay; differentiator vs Character.ai | — Pending |
 | OpenAI-compatible API | Industry standard, supports 20+ providers with one interface | — Pending |
 | SQLite over client-server DB | Zero-config, single-file portability, perfect for desktop | — Pending |
 | Rust backend for sensitive ops | Secure key storage, type safety, native performance | — Pending |
@@ -102,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2025-04-27 after initialization*
+*Last updated: 2025-04-28 — User Persona System integrated from docs/Persona_System.md*
