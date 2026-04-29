@@ -78,14 +78,22 @@ impl SimpleComponent for AppModel {
                         },
 
                         #[wrap(Some)]
-                        set_content = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
+                        set_content = &gtk::Stack {
+                            set_hhomogeneous: true,
+                            set_vhomogeneous: true,
 
                             #[name(conversation_list)]
                             gtk::ListBox {
                                 add_css_class: "navigation-sidebar",
                                 set_valign: gtk::Align::Fill,
                                 set_vexpand: true,
+                            },
+
+                            #[name(sidebar_empty)]
+                            adw::StatusPage {
+                                set_icon_name: Some("chat-message-new-symbolic"),
+                                set_title: "No Conversations Yet",
+                                set_description: Some("Start by configuring a provider in Settings."),
                             },
                         },
                     },
