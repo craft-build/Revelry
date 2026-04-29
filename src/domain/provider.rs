@@ -26,16 +26,33 @@ pub enum ProviderType {
 impl ProviderType {
     /// Returns true for providers that require an API key (cloud providers and custom).
     /// Returns false for Ollama (local provider).
-    /// STUB: Currently returns false for all — tests should fail.
     pub fn requires_api_key(&self) -> bool {
-        false
+        match self {
+            ProviderType::Ollama => false,
+            _ => true, // All cloud providers and Custom require an API key
+        }
     }
 
     /// Returns the default base URL for this provider type.
-    /// Returns None for types that always require explicit URL configuration.
-    /// STUB: Currently returns None for all — tests should fail.
+    /// Returns None for types that have no sensible default (Custom).
     pub fn default_base_url(&self) -> Option<&'static str> {
-        None
+        match self {
+            ProviderType::OpenAI => Some("https://api.openai.com/v1"),
+            ProviderType::Anthropic => Some("https://api.anthropic.com/v1"),
+            ProviderType::Ollama => Some("http://localhost:11434"),
+            ProviderType::Gemini => Some("https://generativelanguage.googleapis.com/v1beta"),
+            ProviderType::Cohere => Some("https://api.cohere.ai/v1"),
+            ProviderType::Mistral => Some("https://api.mistral.ai/v1"),
+            ProviderType::Groq => Some("https://api.groq.com/openai/v1"),
+            ProviderType::DeepSeek => Some("https://api.deepseek.com/v1"),
+            ProviderType::OpenRouter => Some("https://openrouter.ai/api/v1"),
+            ProviderType::Xai => Some("https://api.x.ai/v1"),
+            ProviderType::Perplexity => Some("https://api.perplexity.ai"),
+            ProviderType::Together => Some("https://api.together.xyz/v1"),
+            ProviderType::AzureOpenAI => None, // Requires deployment-specific URL
+            ProviderType::HuggingFace => Some("https://api-inference.huggingface.co"),
+            ProviderType::Custom => None, // No default for custom endpoints
+        }
     }
 }
 
@@ -56,13 +73,12 @@ impl ProviderConfig {
     /// Creates a new provider configuration with a generated UUID v4 id.
     /// Sets the base_url from the provider type's default.
     /// Sets enabled to true and timestamps to the current time.
-    /// STUB: Currently returns empty id and no base_url — tests should fail.
     pub fn new(name: String, provider_type: ProviderType) -> Self {
         Self {
-            id: String::new(),
+            id: Uuid::new_v4().to_string(),
             name,
+            base_url: provider_type.default_base_url().map(|s| s.to_string()),
             provider_type,
-            base_url: None,
             enabled: true,
             created_at: chrono::Local::now().naive_local(),
             updated_at: chrono::Local::now().naive_local(),
