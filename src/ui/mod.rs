@@ -1,7 +1,7 @@
 mod chat;
 mod characters;
-mod settings;
+pub mod settings;
 
 pub use chat::{ChatPanel, ChatPanelMsg};
 pub use characters::CharactersPanel;
-pub use settings::SettingsPanel;
+pub use settings::{SettingsPanel, SettingsPanelOutput};

@@ -5,7 +5,9 @@ use relm4::{
 };
 
 use crate::db::{DbInput, DbOutput, DbService};
-use crate::ui::{CharactersPanel, ChatPanel, ChatPanelMsg, SettingsPanel};
+use crate::secrets::KeyringStore;
+use crate::ui::settings::SettingsPanelMsg;
+use crate::ui::{CharactersPanel, ChatPanel, ChatPanelMsg, SettingsPanel, SettingsPanelOutput};
 
 /// Active view in the main content area.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,6 +23,7 @@ pub enum AppMsg {
     SwitchView(ActiveView),
     ToggleSidebar,
     DbResult(DbOutput),
+    SettingsOutput(SettingsPanelOutput),
     Quit,
 }
 
@@ -33,7 +36,6 @@ pub struct AppModel {
     chat_panel: relm4::Controller<ChatPanel>,
     #[allow(dead_code)] // Keep alive to run component event loop
     characters_panel: relm4::Controller<CharactersPanel>,
-    #[allow(dead_code)] // Keep alive to run component event loop
     settings_panel: relm4::Controller<SettingsPanel>,
 }
 
@@ -157,7 +159,10 @@ impl SimpleComponent for AppModel {
 
         let characters_panel = CharactersPanel::builder().launch(()).detach();
 
-        let settings_panel = SettingsPanel::builder().launch(()).detach();
+        // SettingsPanel init takes () — all DB operations go through output messages
+        let settings_panel = SettingsPanel::builder()
+            .launch(())
+            .forward(sender.input_sender(), AppMsg::SettingsOutput);
 
         // Get widget references before moving controllers into model.
         // Clone the GObject reference so it's independent of the Controller borrow.
@@ -248,7 +253,7 @@ impl SimpleComponent for AppModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         match msg {
             AppMsg::SwitchView(view) => {
                 self.active_view = view;
@@ -268,17 +273,59 @@ impl SimpleComponent for AppModel {
 
                     // Forward provider state to ChatPanel
                     let _ = self.chat_panel.sender().send(ChatPanelMsg::SetHasProviders(has_providers));
+
+                    // Forward provider list to SettingsPanel
+                    let _ = self.settings_panel.sender().send(SettingsPanelMsg::ProvidersLoaded(providers));
                 }
                 DbOutput::ProviderSaved(_) => {
+                    // Reload providers after save
                     self.db_worker.sender().send(DbInput::LoadProviders).unwrap();
+                    // Update has_providers flag
+                    self.has_providers = true;
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::SetHasProviders(true));
                 }
                 DbOutput::ProviderDeleted(_) => {
+                    // Reload providers after delete
                     self.db_worker.sender().send(DbInput::LoadProviders).unwrap();
                 }
                 DbOutput::Error(e) => {
                     tracing::error!("Database error: {}", e);
                 }
                 _ => {}
+            },
+            AppMsg::SettingsOutput(output) => match output {
+                SettingsPanelOutput::SaveProvider(config) => {
+                    // Save provider to DB via worker
+                    self.db_worker.sender().send(DbInput::SaveProvider(config)).unwrap();
+                }
+                SettingsPanelOutput::DeleteProvider(id) => {
+                    // Delete provider from DB via worker
+                    self.db_worker.sender().send(DbInput::DeleteProvider(id)).unwrap();
+                }
+                SettingsPanelOutput::DeleteKey(id) => {
+                    // Delete API key from keyring on background thread
+                    let id_clone = id.clone();
+                    sender.spawn_oneshot_command(move || {
+                        match KeyringStore::delete_key(&id_clone) {
+                            Ok(()) => tracing::info!("API key deleted from keychain for provider {}", id),
+                            Err(e) => tracing::error!("Failed to delete key from keyring: {}", e),
+                        }
+                    });
+                }
+                SettingsPanelOutput::TestProvider(id) => {
+                    // Load API key from keyring and provider config, then run test
+                    // We need to find the provider config first, but we don't have it here.
+                    // Instead, forward to settings panel which has the provider list.
+                    // The settings panel will handle the test via KeyLoaded message.
+                    // Load the key from keyring on a background thread, then send it back
+                    let id_clone = id.clone();
+                    let settings_sender = self.settings_panel.sender().clone();
+                    sender.spawn_oneshot_command(move || {
+                        let api_key = KeyringStore::load_key(&id_clone)
+                            .unwrap_or_default();
+                        let _ = settings_sender.send(SettingsPanelMsg::KeyLoaded(id_clone, api_key));
+                    });
+                }
             },
             AppMsg::Quit => {
                 // The window will close via the main loop when the Quit message
