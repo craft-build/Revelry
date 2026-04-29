@@ -9,6 +9,7 @@ gtk4 = { version = "0.11.3", features = ["v4_14"] }
 libadwaita = { version = "0.9.1", features = ["v1_5"] }
 relm4 = { version = "0.11.0", features = ["libadwaita", "macros"] }
 relm4-icons = "0.11.0"
+tracker = "0.2.2"
 pango = "0.22.6"
 
 # AI

@@ -1,2 +1,7 @@
-// UI module — Relm4 components
-// Implementation in Plan 02
+mod chat;
+mod characters;
+mod settings;
+
+pub use chat::{ChatPanel, ChatPanelMsg};
+pub use characters::CharactersPanel;
+pub use settings::SettingsPanel;
