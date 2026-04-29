@@ -37,6 +37,7 @@ pub struct AppModel {
     #[allow(dead_code)] // Keep alive to run component event loop
     characters_panel: relm4::Controller<CharactersPanel>,
     settings_panel: relm4::Controller<SettingsPanel>,
+    view_stack: adw::ViewStack,
 }
 
 #[relm4::component(pub)]
@@ -121,13 +122,6 @@ impl SimpleComponent for AppModel {
                         adw::ViewStack {
                             set_vexpand: true,
                             set_hexpand: true,
-
-                            #[watch]
-                            set_visible_child_name: match model.active_view {
-                                ActiveView::Chat => "chat",
-                                ActiveView::Characters => "characters",
-                                ActiveView::Settings => "settings",
-                            },
                         },
                     },
                 },
@@ -170,7 +164,7 @@ impl SimpleComponent for AppModel {
         let characters_widget = characters_panel.widget().clone();
         let settings_widget = settings_panel.widget().clone();
 
-        let model = AppModel {
+        let mut model = AppModel {
             active_view: ActiveView::Chat,
             sidebar_visible: true,
             has_providers: false,
@@ -178,9 +172,13 @@ impl SimpleComponent for AppModel {
             chat_panel,
             characters_panel,
             settings_panel,
+            view_stack: adw::ViewStack::new(),
         };
 
         let widgets = view_output!();
+
+        // Replace placeholder with the actual ViewStack from the view
+        model.view_stack = widgets.view_stack.clone();
 
         // Wire up the ViewSwitcher to the ViewStack
         widgets.view_switcher.set_stack(Some(&widgets.view_stack));
@@ -199,6 +197,8 @@ impl SimpleComponent for AppModel {
         settings_page.set_icon_name(Some("preferences-system-symbolic"));
 
         // Set up keyboard shortcuts via EventControllerKey
+        // Also set the initial visible page — must happen AFTER pages are added
+        model.sync_view_stack();
         let sender_clone = sender.input_sender().clone();
         root.add_controller({
             let controller = gtk::EventControllerKey::new();
@@ -257,6 +257,7 @@ impl SimpleComponent for AppModel {
         match msg {
             AppMsg::SwitchView(view) => {
                 self.active_view = view;
+                self.sync_view_stack();
             }
             AppMsg::ToggleSidebar => {
                 self.sidebar_visible = !self.sidebar_visible;
@@ -270,6 +271,7 @@ impl SimpleComponent for AppModel {
                     if !has_providers {
                         self.active_view = ActiveView::Settings;
                     }
+                    self.sync_view_stack();
 
                     // Forward provider state to ChatPanel
                     let _ = self.chat_panel.sender().send(ChatPanelMsg::SetHasProviders(has_providers));
@@ -333,5 +335,16 @@ impl SimpleComponent for AppModel {
                 // is handled by the application's shutdown.
             }
         }
+    }
+}
+
+impl AppModel {
+    fn sync_view_stack(&self) {
+        let name = match self.active_view {
+            ActiveView::Chat => "chat",
+            ActiveView::Characters => "characters",
+            ActiveView::Settings => "settings",
+        };
+        self.view_stack.set_visible_child_name(name);
     }
 }

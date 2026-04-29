@@ -22,6 +22,9 @@ pub struct SettingsPanel {
     // Widget references needed for imperative updates in update()
     providers_group: adw::PreferencesGroup,
     toast_overlay: adw::ToastOverlay,
+    // Track rows added to providers_group so we can remove them by reference
+    // (iterating GTK widget tree is wrong — see GNOME discourse #13538)
+    provider_rows: Vec<adw::PreferencesRow>,
 }
 
 /// Messages handled by SettingsPanel.
@@ -99,6 +102,7 @@ impl Component for SettingsPanel {
             providers: Vec::new(),
             test_states: std::collections::HashMap::new(),
             providers_group: widgets.providers_group.clone(),
+            provider_rows: Vec::new(),
             toast_overlay: root.clone(),
         };
 
@@ -215,13 +219,18 @@ impl Component for SettingsPanel {
 
 impl SettingsPanel {
     /// Rebuild the provider list UI in the PreferencesGroup.
-    fn rebuild_provider_list(&self, sender: &ComponentSender<Self>) {
+    fn rebuild_provider_list(&mut self, sender: &ComponentSender<Self>) {
         let group = &self.providers_group;
 
-        // Remove all existing children
-        while let Some(child) = group.last_child() {
-            group.remove(&child);
+        // Remove previously-added rows by reference.
+        // We must NOT iterate the GTK widget tree (first_child/last_child/next_sibling)
+        // because AdwPreferencesGroup has internal containers (GtkBox) that are not
+        // logical children — calling remove() on them triggers the
+        // "tried to remove non-child" critical warning. See GNOME discourse #13538.
+        for row in &self.provider_rows {
+            group.remove(row);
         }
+        self.provider_rows.clear();
 
         if self.providers.is_empty() {
             // Show Add Provider button per UI-SPEC.md
@@ -235,7 +244,10 @@ impl SettingsPanel {
                 let _ = sender_clone.input_sender().send(SettingsPanelMsg::AddProvider);
             });
 
-            group.add(&add_btn);
+            let row = adw::PreferencesRow::builder().build();
+            row.set_child(Some(&add_btn));
+            group.add(&row);
+            self.provider_rows.push(row.upcast());
         } else {
             // Show provider rows per UI-SPEC.md
             for provider in &self.providers {
@@ -303,6 +315,7 @@ impl SettingsPanel {
                 row.add_suffix(&delete_btn);
 
                 group.add(&row);
+                self.provider_rows.push(row.upcast());
             }
         }
     }
