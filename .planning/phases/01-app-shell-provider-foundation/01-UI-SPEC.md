@@ -1,10 +1,11 @@
 ---
 phase: 1
 slug: app-shell-provider-foundation
-status: draft
-shadcn_initialized: false
-preset: none
+status: approved
+adwaita: true
+icon_library: relm4-icons
 created: 2026-04-28
+reviewed_at: 2026-04-29
 ---
 
 # Phase 1 — UI Design Contract
