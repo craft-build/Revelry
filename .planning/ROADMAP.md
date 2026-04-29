@@ -31,12 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can configure at least one AI provider (e.g., OpenAI, Anthropic, or Ollama) and verify the connection works
   4. User's API keys are stored in the OS credential store, never visible in the application's database or config files
   5. User can access settings in a categorized AdwPreferencesWindow and navigate all actions via keyboard
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md — Project scaffold, domain types, and DB Worker foundation
+- [ ] 01-02-PLAN.md — GTK4/Adwaita app shell with adaptive layout and empty states
+- [ ] 01-03-PLAN.md — Provider config, keyring storage, and settings UI
 
 **UI hint**: yes
 
