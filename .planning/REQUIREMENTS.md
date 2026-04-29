@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### AI Providers
 
-- [ ] **PROV-01**: User can configure multiple AI providers simultaneously (OpenAI, Anthropic, Ollama, Gemini, Cohere, Mistral, Groq, DeepSeek, OpenRouter, Azure OpenAI, Together AI, HuggingFace, Perplexity, xAI, and custom OpenAI-compatible endpoints)
-- [ ] **PROV-02**: User can connect to any configured provider through rig's unified abstraction and receive completion responses
+- [x] **PROV-01**: User can configure multiple AI providers simultaneously (OpenAI, Anthropic, Ollama, Gemini, Cohere, Mistral, Groq, DeepSeek, OpenRouter, Azure OpenAI, Together AI, HuggingFace, Perplexity, xAI, and custom OpenAI-compatible endpoints)
+- [x] **PROV-02**: User can connect to any configured provider through rig's unified abstraction and receive completion responses
 - [ ] **PROV-03**: User sees AI responses stream token-by-token with smooth typewriter rendering
 - [ ] **PROV-04**: User can cancel an in-progress AI generation at any point (stop button or Escape key)
-- [ ] **PROV-05**: User's API keys are stored in the OS-native credential store (GNOME Keyring, macOS Keychain, Windows Credential Manager) and never written to database, config files, or logs
+- [x] **PROV-05**: User's API keys are stored in the OS-native credential store (GNOME Keyring, macOS Keychain, Windows Credential Manager) and never written to database, config files, or logs
 
 ### Characters
 
@@ -85,7 +85,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **UISL-03**: Sidebar contains conversation list and can be toggled with F9 keyboard shortcut
 - [ ] **UISL-04**: Application follows GNOME design principles: content-first, progressive disclosure, consistent visual language via libadwaita
 - [ ] **UISL-05**: All actions can be performed via keyboard navigation per GNOME accessibility standards (Ctrl+N, Ctrl+B, Ctrl+F, Escape, Ctrl+Enter, etc.)
-- [ ] **UISL-06**: Settings are presented in an AdwPreferencesWindow with categorized panels
+- [x] **UISL-06**: Settings are presented in an AdwPreferencesWindow with categorized panels
 
 ## v2 Requirements
 
@@ -162,10 +162,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UISL-03 | Phase 1 | Pending |
 | UISL-04 | Phase 1 | Pending |
 | UISL-05 | Phase 1 | Pending |
-| UISL-06 | Phase 1 | Pending |
-| PROV-01 | Phase 1 | Pending |
-| PROV-02 | Phase 1 | Pending |
-| PROV-05 | Phase 1 | Pending |
+| UISL-06 | Phase 1 | Complete |
+| PROV-01 | Phase 1 | Complete |
+| PROV-02 | Phase 1 | Complete |
+| PROV-05 | Phase 1 | Complete |
 | CHAR-01 | Phase 2 | Pending |
 | CHAR-02 | Phase 2 | Pending |
 | CHAR-03 | Phase 2 | Pending |

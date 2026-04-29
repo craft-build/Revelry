@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold, domain types, and DB Worker foundation
-- [ ] 01-02-PLAN.md — GTK4/Adwaita app shell with adaptive layout and empty states
-- [ ] 01-03-PLAN.md — Provider config, keyring storage, and settings UI
+- [x] 01-01-PLAN.md — Project scaffold, domain types, and DB Worker foundation
+- [x] 01-02-PLAN.md — GTK4/Adwaita app shell with adaptive layout and empty states
+- [x] 01-03-PLAN.md — Provider config, keyring storage, and settings UI
 
 **UI hint**: yes
 
