@@ -1,0 +1,57 @@
+[package]
+name = "revelry"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# UI
+gtk4 = { version = "0.11.3", features = ["v4_14"] }
+libadwaita = { version = "0.9.1", features = ["v1_5"] }
+relm4 = { version = "0.11.0", features = ["libadwaita", "macros"] }
+relm4-icons = "0.11.0"
+pango = "0.22.6"
+
+# AI
+rig-core = { version = "0.36.0", features = ["derive"] }
+tokio = { version = "1.52", features = ["macros", "rt-multi-thread"] }
+futures = "0.3.32"
+
+# Database
+rusqlite = { version = "0.39.0", features = ["bundled", "window", "functions"] }
+rusqlite_migration = "2.5.0"
+
+# Security
+aes-gcm = "0.10.3"
+argon2 = "0.5.3"
+
+# Data
+pulldown-cmark = "0.13.3"
+tiktoken-rs = "0.11.0"
+png = "0.18.1"
+image = "0.25.10"
+base64 = "0.22.1"
+regex = "1.12.3"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+# Infrastructure
+anyhow = "1.0.102"
+thiserror = "2.0.18"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+clap = { version = "4.6.1", features = ["derive"] }
+dirs = "6.0.0"
+uuid = { version = "1.23.1", features = ["v4"] }
+chrono = { version = "0.4.44", features = ["serde"] }
+zip = "8.6.0"
+
+[build-dependencies]
+glib-build-tools = "0.22.0"
+
+# Platform-specific keyring features
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6.3", features = ["apple-native"] }
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6.3", features = ["linux-native"] }
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3.6.3", features = ["windows-native"] }
