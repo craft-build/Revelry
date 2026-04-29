@@ -106,11 +106,10 @@ impl SimpleComponent for AppModel {
                         set_orientation: gtk::Orientation::Vertical,
 
                         adw::HeaderBar {
-                            pack_start = &gtk::ToggleButton {
+                            #[name(sidebar_toggle)]
+                        pack_start = &gtk::ToggleButton {
                                 set_icon_name: "sidebar-show-symbolic",
                                 set_tooltip_text: Some("Toggle Sidebar"),
-                                #[watch]
-                                set_active: model.sidebar_visible,
                                 connect_clicked => AppMsg::ToggleSidebar,
                             },
 
@@ -182,6 +181,15 @@ impl SimpleComponent for AppModel {
 
         // Wire up the ViewSwitcher to the ViewStack
         widgets.view_switcher.set_stack(Some(&widgets.view_stack));
+
+        // Bind sidebar toggle button to split_view's show-sidebar property.
+        // Using a GObject property binding avoids the "Broken accounting of active state"
+        // GTK warnings that occur when #[watch] set_active fights with GTK's own state tracking
+        // during window activation/deactivation (e.g. moving the window).
+        widgets.sidebar_toggle.bind_property("active", &widgets.split_view, "show-sidebar")
+            .bidirectional()
+            .sync_create()
+            .build();
 
         // Add child panels to ViewStack with names and page metadata
         let chat_page = widgets.view_stack.add_named(&chat_widget, Some("chat"));
@@ -296,8 +304,19 @@ impl SimpleComponent for AppModel {
                 _ => {}
             },
             AppMsg::SettingsOutput(output) => match output {
-                SettingsPanelOutput::SaveProvider(config) => {
-                    // Save provider to DB via worker
+                SettingsPanelOutput::SaveProvider { config, api_key } => {
+                    // Save API key to keyring on background thread
+                    if config.provider_type.requires_api_key() && !api_key.is_empty() {
+                        let id = config.id.clone();
+                        let key = api_key.clone();
+                        sender.spawn_oneshot_command(move || {
+                            match KeyringStore::save_key(&id, &key) {
+                                Ok(()) => tracing::info!("API key saved to keychain for provider {}", id),
+                                Err(e) => tracing::error!("Failed to save key to keyring: {}", e),
+                            }
+                        });
+                    }
+                    // Save provider config to DB via worker
                     self.db_worker.sender().send(DbInput::SaveProvider(config)).unwrap();
                 }
                 SettingsPanelOutput::DeleteProvider(id) => {

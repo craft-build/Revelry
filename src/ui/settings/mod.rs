@@ -25,6 +25,10 @@ pub struct SettingsPanel {
     // Track rows added to providers_group so we can remove them by reference
     // (iterating GTK widget tree is wrong — see GNOME discourse #13538)
     provider_rows: Vec<adw::PreferencesRow>,
+    // Keep the config page controller alive while the PreferencesWindow is open.
+    // Without this, the controller is dropped when open_provider_config() returns,
+    // shutting down the component runtime and causing a panic on any user interaction.
+    config_page: Option<relm4::Controller<ProviderConfigPage>>,
 }
 
 /// Messages handled by SettingsPanel.
@@ -35,7 +39,7 @@ pub enum SettingsPanelMsg {
     EditProvider(String),
     DeleteProvider(String),
     ConfirmDelete(String),
-    ProviderSaved(ProviderConfig),
+    ProviderSaved { config: ProviderConfig, api_key: String },
     ProviderDeleted(String),
     TestProvider(String),
     KeyLoaded(String, String), // (provider_id, api_key) — sent by parent after keyring load
@@ -47,13 +51,14 @@ pub enum SettingsPanelMsg {
 #[derive(Debug)]
 pub enum SettingsPanelCmd {
     TestResult(String, ProviderTestResult),
+    ApiKeyLoaded { page_sender: relm4::Sender<ProviderConfigPageMsg>, key: String },
 }
 
 /// Output messages from SettingsPanel to parent (AppModel).
 /// The parent handles all DB/keyring operations since it owns the DbService Worker.
 #[derive(Debug)]
 pub enum SettingsPanelOutput {
-    SaveProvider(ProviderConfig),
+    SaveProvider { config: ProviderConfig, api_key: String },
     DeleteProvider(String),
     DeleteKey(String),
     TestProvider(String),
@@ -104,6 +109,7 @@ impl Component for SettingsPanel {
             providers_group: widgets.providers_group.clone(),
             provider_rows: Vec::new(),
             toast_overlay: root.clone(),
+            config_page: None,
         };
 
         ComponentParts { model, widgets }
@@ -154,9 +160,10 @@ impl Component for SettingsPanel {
                 let _ = sender.output(SettingsPanelOutput::DeleteProvider(id.clone()));
                 let _ = sender.output(SettingsPanelOutput::DeleteKey(id));
             }
-            SettingsPanelMsg::ProviderSaved(_config) => {
-                self.show_toast("Provider saved");
-                // Parent will reload providers after SaveProvider output
+            SettingsPanelMsg::ProviderSaved { config, api_key } => {
+                // Forward to parent so it saves config to DB and API key to keyring.
+                // Parent will reload providers and send ProvidersLoaded back.
+                let _ = sender.output(SettingsPanelOutput::SaveProvider { config, api_key });
             }
             SettingsPanelMsg::ProviderDeleted(_id) => {
                 self.show_toast("Provider removed");
@@ -212,6 +219,9 @@ impl Component for SettingsPanel {
         match msg {
             SettingsPanelCmd::TestResult(id, result) => {
                 let _ = sender.input_sender().send(SettingsPanelMsg::TestResult(id, result));
+            }
+            SettingsPanelCmd::ApiKeyLoaded { page_sender, key } => {
+                let _ = page_sender.send(ProviderConfigPageMsg::ApiKeyLoaded(key));
             }
         }
     }
@@ -322,7 +332,7 @@ impl SettingsPanel {
 
     /// Open the provider configuration page.
     fn open_provider_config(
-        &self,
+        &mut self,
         existing: Option<ProviderConfig>,
         sender: &ComponentSender<Self>,
     ) {
@@ -332,12 +342,25 @@ impl SettingsPanel {
         });
 
         let page = ProviderConfigPage::builder()
-            .launch((config, is_editing))
+            .launch((config.clone(), is_editing))
             .forward(sender.input_sender(), |output| match output {
-                ProviderConfigOutput::SaveConfig(config) => {
-                    SettingsPanelMsg::ProviderSaved(config)
+                ProviderConfigOutput::SaveConfig { config, api_key } => {
+                    SettingsPanelMsg::ProviderSaved { config, api_key }
                 }
             });
+
+        // When editing, load the existing API key from keyring and send it to the page
+        if is_editing {
+            let page_sender = page.sender().clone();
+            let id = config.id.clone();
+            sender.spawn_oneshot_command(move || {
+                let key = KeyringStore::load_key(&id).unwrap_or_else(|e| {
+                    tracing::warn!("Could not load API key from keyring for {}: {}", id, e);
+                    String::new()
+                });
+                SettingsPanelCmd::ApiKeyLoaded { page_sender, key }
+            });
+        }
 
         let widget = page.widget().clone();
 
@@ -354,6 +377,11 @@ impl SettingsPanel {
         }
 
         window.present();
+
+        // Store the controller to keep the component runtime alive.
+        // When this window is closed (by save or the close button), we clear it
+        // so a new config page can be opened later.
+        self.config_page = Some(page);
     }
 
     /// Show a toast message.
@@ -389,22 +417,23 @@ pub enum ProviderConfigPageMsg {
     SetBaseUrl(String),
     SetApiKey(String),
     SetEnabled(bool),
+    ApiKeyLoaded(String),
     TestConnection,
     TestResult(ProviderTestResult),
     Save,
+    Cancel,
 }
 
 /// Command output from background threads.
 #[derive(Debug)]
 pub enum ProviderConfigPageCmd {
     TestResult(ProviderTestResult),
-    KeySaved,
 }
 
 /// Output messages from ProviderConfigPage to parent.
 #[derive(Debug)]
 pub enum ProviderConfigOutput {
-    SaveConfig(ProviderConfig),
+    SaveConfig { config: ProviderConfig, api_key: String },
 }
 
 /// All provider types for the combo row.
@@ -524,12 +553,24 @@ impl Component for ProviderConfigPage {
                 },
             },
 
-            // Save group
+            // Save/Cancel group
             adw::PreferencesGroup {
-                gtk::Button {
-                    set_label: "Save Provider",
-                    add_css_class: "suggested-action",
-                    connect_clicked => ProviderConfigPageMsg::Save,
+                gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 12,
+
+                    gtk::Button {
+                        set_label: "Cancel",
+                        set_hexpand: true,
+                        connect_clicked => ProviderConfigPageMsg::Cancel,
+                    },
+
+                    gtk::Button {
+                        set_label: "Save Provider",
+                        set_hexpand: true,
+                        add_css_class: "suggested-action",
+                        connect_clicked => ProviderConfigPageMsg::Save,
+                    },
                 },
             },
         }
@@ -627,6 +668,10 @@ impl Component for ProviderConfigPage {
             ProviderConfigPageMsg::SetEnabled(enabled) => {
                 self.config.enabled = enabled;
             }
+            ProviderConfigPageMsg::ApiKeyLoaded(key) => {
+                self.api_key = key.clone();
+                self.api_key_row.set_text(&key);
+            }
             ProviderConfigPageMsg::TestConnection => {
                 self.test_state = TestState::Testing;
                 update_test_indicator(&self.test_btn, &self.test_indicator, &self.test_state);
@@ -660,22 +705,20 @@ impl Component for ProviderConfigPage {
             ProviderConfigPageMsg::Save => {
                 self.config.updated_at = chrono::Local::now().naive_local();
 
-                // Save API key to keyring on background thread
-                if self.config.provider_type.requires_api_key() && !self.api_key.is_empty() {
-                    let id = self.config.id.clone();
-                    let key = self.api_key.clone();
-                    sender.spawn_oneshot_command(move || {
-                        match KeyringStore::save_key(&id, &key) {
-                            Ok(()) => tracing::info!("API key saved to keychain for provider {}", id),
-                            Err(e) => tracing::error!("Failed to save key to keyring: {}", e),
-                        }
-                        ProviderConfigPageCmd::KeySaved
-                    });
-                }
-
-                let _ = sender.output(ProviderConfigOutput::SaveConfig(self.config.clone()));
+                let _ = sender.output(ProviderConfigOutput::SaveConfig {
+                    config: self.config.clone(),
+                    api_key: self.api_key.clone(),
+                });
 
                 // Close the preferences window
+                if let Some(widget) = self.root_page.ancestor(gtk::Window::static_type()) {
+                    if let Some(window) = widget.downcast_ref::<adw::PreferencesWindow>() {
+                        window.close();
+                    }
+                }
+            }
+            ProviderConfigPageMsg::Cancel => {
+                // Close the preferences window without saving
                 if let Some(widget) = self.root_page.ancestor(gtk::Window::static_type()) {
                     if let Some(window) = widget.downcast_ref::<adw::PreferencesWindow>() {
                         window.close();
@@ -688,17 +731,12 @@ impl Component for ProviderConfigPage {
     fn update_cmd(&mut self, msg: Self::CommandOutput, _sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
             ProviderConfigPageCmd::TestResult(result) => {
-                // Command output is handled via the sender in the closure
-                // We'll set the test state and update indicator directly
                 if result.success {
                     self.test_state = TestState::Success;
                 } else {
                     self.test_state = TestState::Failure(result.message.clone());
                 }
                 update_test_indicator(&self.test_btn, &self.test_indicator, &self.test_state);
-            }
-            ProviderConfigPageCmd::KeySaved => {
-                // Key saved successfully, nothing else to do
             }
         }
     }
