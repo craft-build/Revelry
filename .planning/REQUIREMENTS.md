@@ -17,13 +17,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Characters
 
-- [ ] **CHAR-01**: User can create, edit, and delete AI character cards following the CharacterCardV2 specification
+- [x] **CHAR-01**: User can create, edit, and delete AI character cards following the CharacterCardV2 specification
 - [ ] **CHAR-02**: User can import character cards from PNG files with embedded V2 metadata
 - [ ] **CHAR-03**: User can import character cards from JSON files (V1 and V2 formats with auto-migration)
 - [ ] **CHAR-04**: User can export character cards as PNG files with embedded metadata
 - [ ] **CHAR-05**: User can export character cards as JSON files
 - [ ] **CHAR-06**: User can browse characters in a searchable, tag-filterable grid (GtkFlowBox)
-- [ ] **CHAR-07**: User can search characters by name, description, and tags using instant full-text matching
+- [x] **CHAR-07**: User can search characters by name, description, and tags using instant full-text matching
 - [ ] **CHAR-08**: Template variables {{user}}, {{char}}, and {{persona.*}} are resolved at prompt assembly time in character card fields
 
 ### Conversations
@@ -166,13 +166,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROV-01 | Phase 1 | Complete |
 | PROV-02 | Phase 1 | Complete |
 | PROV-05 | Phase 1 | Complete |
-| CHAR-01 | Phase 2 | Pending |
+| CHAR-01 | Phase 2 | Complete |
 | CHAR-02 | Phase 2 | Pending |
 | CHAR-03 | Phase 2 | Pending |
 | CHAR-04 | Phase 2 | Pending |
 | CHAR-05 | Phase 2 | Pending |
 | CHAR-06 | Phase 2 | Pending |
-| CHAR-07 | Phase 2 | Pending |
+| CHAR-07 | Phase 2 | Complete |
 | PROV-03 | Phase 3 | Pending |
 | PROV-04 | Phase 3 | Pending |
 | CONV-01 | Phase 3 | Pending |
