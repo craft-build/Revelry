@@ -13,7 +13,7 @@ Revelry's v1 journey delivers a complete AI roleplay desktop application built i
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: App Shell & Provider Foundation** - Runnable GTK4/Adwaita app with adaptive layout, provider configuration, and secure API key storage
-- [ ] **Phase 2: Character System & Library** - CharacterCardV2 CRUD, import/export, and searchable character library
+- [x] **Phase 2: Character System & Library** - CharacterCardV2 CRUD, import/export, and searchable character library
 - [ ] **Phase 3: AI Chat & Streaming** - Streaming AI conversations with branching, message CRUD, and markdown rendering
 - [ ] **Phase 4: Personas & Template Resolution** - User personas with structured fields, assignment hierarchy, and full template variable resolution
 - [ ] **Phase 5: Context Engineering & Lorebook** - Token budgeting, layered prompt assembly, and keyword-activated lorebook system
