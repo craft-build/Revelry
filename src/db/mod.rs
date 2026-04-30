@@ -1,7 +1,9 @@
+pub mod characters;
 pub mod migrations;
 pub mod models;
 pub mod providers;
 
+use crate::domain::character::CharacterCardV2;
 use crate::domain::provider::ProviderConfig;
 use relm4::{ComponentSender, Worker};
 use rusqlite::Connection;
@@ -15,6 +17,10 @@ pub enum DbInput {
     DeleteProvider(String),
     LoadAppSetting(String),
     SaveAppSetting { key: String, value: String },
+    LoadCharacters,
+    SaveCharacter(CharacterCardV2),
+    DeleteCharacter(String),
+    SearchCharacters(String),
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -25,6 +31,10 @@ pub enum DbOutput {
     ProviderDeleted(String),
     AppSettingLoaded(Option<String>),
     AppSettingSaved,
+    CharactersLoaded(Vec<CharacterCardV2>),
+    CharacterSaved(CharacterCardV2),
+    CharacterDeleted(String),
+    CharactersSearched(Vec<CharacterCardV2>),
     Error(String),
 }
 
@@ -81,6 +91,33 @@ impl Worker for DbService {
             DbInput::SaveAppSetting { key, value } => {
                 providers::save_app_setting(&self.conn, &key, &value)
                     .map(|_| DbOutput::AppSettingSaved)
+            }
+            DbInput::LoadCharacters => {
+                characters::load_characters(&self.conn)
+                    .map(DbOutput::CharactersLoaded)
+            }
+            DbInput::SaveCharacter(c) => {
+                // Check if character exists → insert or update (upsert)
+                let existing = characters::load_character(&self.conn, &c.id);
+                match existing {
+                    Ok(Some(_)) => {
+                        characters::update_character(&self.conn, &c)
+                            .map(|_| DbOutput::CharacterSaved(c))
+                    }
+                    Ok(None) => {
+                        characters::insert_character(&self.conn, &c)
+                            .map(|_| DbOutput::CharacterSaved(c))
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+            DbInput::DeleteCharacter(id) => {
+                characters::delete_character(&self.conn, &id)
+                    .map(|_| DbOutput::CharacterDeleted(id))
+            }
+            DbInput::SearchCharacters(query) => {
+                characters::search_characters(&self.conn, &query)
+                    .map(DbOutput::CharactersSearched)
             }
         };
 

@@ -28,6 +28,52 @@ pub fn get_migrations() -> Migrations<'static> {
             );",
         )
         .down("DROP TABLE app_settings"),
+        // Migration 3: Create characters table and FTS5
+        M::up(
+            "CREATE TABLE characters (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                personality TEXT NOT NULL DEFAULT '',
+                scenario TEXT NOT NULL DEFAULT '',
+                first_mes TEXT NOT NULL DEFAULT '',
+                mes_example TEXT NOT NULL DEFAULT '',
+                system_prompt TEXT NOT NULL DEFAULT '',
+                post_history_instructions TEXT NOT NULL DEFAULT '',
+                alternate_greetings TEXT NOT NULL DEFAULT '[]',
+                tags TEXT NOT NULL DEFAULT '[]',
+                creator TEXT NOT NULL DEFAULT 'Unknown',
+                character_version TEXT NOT NULL DEFAULT '2.0',
+                avatar_path TEXT,
+                extensions TEXT NOT NULL DEFAULT 'null',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE VIRTUAL TABLE characters_fts USING fts5(
+                name, description, tags,
+                content=characters,
+                content_rowid=rowid
+            );
+
+            CREATE TRIGGER characters_ai AFTER INSERT ON characters BEGIN
+                INSERT INTO characters_fts(rowid, name, description, tags)
+                VALUES (new.rowid, new.name, new.description, new.tags);
+            END;
+
+            CREATE TRIGGER characters_ad AFTER DELETE ON characters BEGIN
+                INSERT INTO characters_fts(characters_fts, rowid, name, description, tags)
+                VALUES ('delete', old.rowid, old.name, old.description, old.tags);
+            END;
+
+            CREATE TRIGGER characters_au AFTER UPDATE ON characters BEGIN
+                INSERT INTO characters_fts(characters_fts, rowid, name, description, tags)
+                VALUES ('delete', old.rowid, old.name, old.description, old.tags);
+                INSERT INTO characters_fts(rowid, name, description, tags)
+                VALUES (new.rowid, new.name, new.description, new.tags);
+            END;",
+        )
+        .down("DROP TRIGGER IF EXISTS characters_au; DROP TRIGGER IF EXISTS characters_ad; DROP TRIGGER IF EXISTS characters_ai; DROP TABLE IF EXISTS characters_fts; DROP TABLE IF EXISTS characters;"),
     ])
 }
 
