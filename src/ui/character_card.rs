@@ -10,7 +10,6 @@ use crate::domain::character::CharacterCardV2;
 /// - Name label (bold, ellipsized)
 /// - Creator label (secondary style)
 /// - Tags row (up to 3 tags, horizontal)
-/// - Description label (secondary, 2 lines max)
 pub fn create_card_widget(
     character: &CharacterCardV2,
     thumbnail_path: Option<&str>,
@@ -85,17 +84,6 @@ pub fn create_card_widget(
         }
 
         card.append(&tags_box);
-    }
-
-    // Description label: secondary style, ellipsize end, max 2 lines
-    if !character.description.is_empty() {
-        let desc_label = gtk::Label::new(Some(&character.description));
-        desc_label.set_ellipsize(pango::EllipsizeMode::End);
-        desc_label.set_lines(2);
-        desc_label.add_css_class("caption");
-        desc_label.add_css_class("dim-label");
-        desc_label.set_halign(gtk::Align::Center);
-        card.append(&desc_label);
     }
 
     card

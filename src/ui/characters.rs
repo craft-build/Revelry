@@ -1,9 +1,10 @@
 use adw::prelude::*;
 use relm4::prelude::*;
 use relm4::{adw, gtk, ComponentParts, ComponentSender};
+
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
-use std::time::Duration;
 
 use crate::domain::character::CharacterCardV2;
 use crate::ui::character_card::create_card_widget;
@@ -11,10 +12,10 @@ use crate::ui::character_card::create_card_widget;
 /// Characters panel showing character library with search, tabs, and import/export.
 pub struct CharactersPanelModel {
     characters: Vec<CharacterCardV2>,
-    displayed_characters: Vec<CharacterCardV2>,
-    search_query: String,
+    search_query: Rc<RefCell<String>>,
+    searchable_map: Rc<RefCell<HashMap<String, String>>>,
     active_tab: CharacterTab,
-    search_timer: Rc<RefCell<Option<gtk::glib::SourceId>>>,
+
     flowbox: gtk::FlowBox,
     empty_state: adw::StatusPage,
 }
@@ -135,6 +136,26 @@ impl Component for CharactersPanelModel {
         flowbox.set_margin_top(4);
         flowbox.set_margin_bottom(8);
 
+        let search_query = Rc::new(RefCell::new(String::new()));
+        let searchable_map: Rc<RefCell<HashMap<String, String>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+
+        // Set up FlowBox filter function that reads from shared state
+        let search_query_clone = search_query.clone();
+        let searchable_map_clone = searchable_map.clone();
+        flowbox.set_filter_func(move |child| {
+            let query = search_query_clone.borrow();
+            if query.is_empty() {
+                return true;
+            }
+            let q = query.to_lowercase();
+            let id = child.widget_name().to_string();
+            let map = searchable_map_clone.borrow();
+            map.get(&id)
+                .map(|s| s.to_lowercase().contains(&q))
+                .unwrap_or(false)
+        });
+
         // Connect child_activated for editing
         let sender_clone = sender.clone();
         flowbox.connect_child_activated(move |_, child| {
@@ -177,8 +198,6 @@ impl Component for CharactersPanelModel {
         pers_page.set_title(Some("My Personas"));
         pers_page.set_icon_name(Some("mood"));
 
-        // ViewSwitcher is already connected via view macro property
-
         // Listen for tab changes
         let sender_clone = sender.clone();
         widgets
@@ -198,10 +217,10 @@ impl Component for CharactersPanelModel {
 
         let model = CharactersPanelModel {
             characters: Vec::new(),
-            displayed_characters: Vec::new(),
-            search_query: String::new(),
+            search_query,
+            searchable_map,
             active_tab: CharacterTab::Characters,
-            search_timer: Rc::new(RefCell::new(None)),
+
             flowbox,
             empty_state,
         };
@@ -218,35 +237,12 @@ impl Component for CharactersPanelModel {
         match msg {
             CharactersPanelMsg::CharactersLoaded(chars) => {
                 self.characters = chars;
-                self.apply_filter();
                 self.rebuild_flowbox(&sender);
             }
             CharactersPanelMsg::SearchChanged(query) => {
-                self.search_query = query;
-
-                // Cancel previous debounce timer
-                if let Some(source_id) = self.search_timer.borrow_mut().take() {
-                    source_id.remove();
-                }
-
-                // Set new debounce timer (150ms)
-                let sender_clone = sender.clone();
-                let source_id = gtk::glib::timeout_add_local_once(
-                    Duration::from_millis(150),
-                    move || {
-                        // Client-side filter is applied in apply_filter
-                        // This timer just provides debounce UX
-                        let _ = sender_clone.input_sender().send(
-                            CharactersPanelMsg::SearchChanged(String::new()),
-                        );
-                    },
-                );
-                *self.search_timer.borrow_mut() = Some(source_id);
-
-                // Actually apply the filter immediately for responsiveness
-                // (the debounce would matter for DB-backed search)
-                self.apply_filter();
-                self.rebuild_flowbox(&sender);
+                *self.search_query.borrow_mut() = query;
+                self.flowbox.invalidate_filter();
+                self.update_empty_state();
             }
             CharactersPanelMsg::NewCharacter => {
                 let _ = sender.output(CharactersPanelOutput::EditCharacter(String::new()));
@@ -257,7 +253,6 @@ impl Component for CharactersPanelModel {
             CharactersPanelMsg::ImportResult(result) => match result {
                 Ok(character) => {
                     self.characters.push(character);
-                    self.apply_filter();
                     self.rebuild_flowbox(&sender);
                 }
                 Err(_msg) => {
@@ -322,41 +317,59 @@ impl Component for CharactersPanelModel {
 }
 
 impl CharactersPanelModel {
-    /// Apply client-side search filter to the loaded characters list.
-    fn apply_filter(&mut self) {
-        if self.search_query.is_empty() {
-            self.displayed_characters = self.characters.clone();
-        } else {
-            let query = self.search_query.to_lowercase();
-            self.displayed_characters = self
-                .characters
-                .iter()
-                .filter(|c| {
-                    c.name.to_lowercase().contains(&query)
-                        || c.description.to_lowercase().contains(&query)
-                        || c.creator.to_lowercase().contains(&query)
-                        || c.tags.iter().any(|t| t.to_lowercase().contains(&query))
-                        || c.personality.to_lowercase().contains(&query)
-                        || c.scenario.to_lowercase().contains(&query)
-                })
-                .cloned()
-                .collect();
-        }
+    /// Build searchable text from all character text fields.
+    fn searchable_text(c: &CharacterCardV2) -> String {
+        let mut parts = vec![
+            c.name.clone(),
+            c.description.clone(),
+            c.creator.clone(),
+            c.personality.clone(),
+            c.scenario.clone(),
+            c.first_mes.clone(),
+            c.mes_example.clone(),
+            c.creator_notes.clone(),
+        ];
+        parts.extend(c.tags.iter().cloned());
+        parts.extend(c.alternate_greetings.iter().cloned());
+        parts.join(" ")
     }
 
-    /// Rebuild the GtkFlowBox from the current displayed_characters list.
+    /// Update empty state visibility based on whether any children are visible.
+    fn update_empty_state(&self) {
+        let mut has_visible = false;
+        let mut child = self.flowbox.first_child();
+        while let Some(c) = child {
+            if c.is_visible() {
+                has_visible = true;
+                break;
+            }
+            child = c.next_sibling();
+        }
+        self.flowbox.set_visible(has_visible);
+        self.empty_state.set_visible(!has_visible);
+    }
+
+    /// Rebuild the GtkFlowBox from the current characters list.
     fn rebuild_flowbox(&self, sender: &ComponentSender<Self>) {
         // Remove existing children
         while let Some(child) = self.flowbox.first_child() {
             self.flowbox.remove(&child);
         }
 
-        let is_empty = self.displayed_characters.is_empty();
+        // Rebuild searchable map
+        let mut map = self.searchable_map.borrow_mut();
+        map.clear();
+        for character in &self.characters {
+            map.insert(character.id.clone(), Self::searchable_text(character));
+        }
+        drop(map);
+
+        let is_empty = self.characters.is_empty();
         self.flowbox.set_visible(!is_empty);
         self.empty_state.set_visible(is_empty);
 
         // Add cards for each character
-        for character in &self.displayed_characters {
+        for character in &self.characters {
             let card_widget =
                 create_card_widget(character, character.avatar_path.as_deref());
 
@@ -392,5 +405,8 @@ impl CharactersPanelModel {
 
             self.flowbox.append(&child);
         }
+
+        // Apply current search filter to new children
+        self.flowbox.invalidate_filter();
     }
 }
