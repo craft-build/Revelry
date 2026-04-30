@@ -53,8 +53,8 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Character data layer: domain model, DB schema, CRUD, and FTS5 search
-- [ ] 02-02-PLAN.md — Import/export service and CharactersPanel with grid, search, filter, tabs
-- [ ] 02-03-PLAN.md — Character editor and AppModel wiring for end-to-end operations
+- [x] 02-02-PLAN.md — Import/export service and CharactersPanel with grid, search, filter, tabs
+- [x] 02-03-PLAN.md — Character editor and AppModel wiring for end-to-end operations
 
 **UI hint**: yes
 
@@ -140,7 +140,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. App Shell & Provider Foundation | 3/3 | Complete | 2026-04-29 |
-| 2. Character System & Library | 1/3 | In Progress | - |
+| 2. Character System & Library | 3/3 | Complete | 2026-04-30 |
 | 3. AI Chat & Streaming | 0/3 | Not started | - |
 | 4. Personas & Template Resolution | 0/3 | Not started | - |
 | 5. Context Engineering & Lorebook | 0/3 | Not started | - |
