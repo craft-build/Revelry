@@ -5,9 +5,15 @@ use relm4::{
 };
 
 use crate::db::{DbInput, DbOutput, DbService};
+use crate::domain::character::CharacterCardV2;
 use crate::secrets::KeyringStore;
+use crate::service::card_io;
 use crate::ui::settings::SettingsPanelMsg;
-use crate::ui::{CharactersPanel, ChatPanel, ChatPanelMsg, SettingsPanel, SettingsPanelOutput};
+use crate::ui::{
+    CharacterEditor, CharacterEditorInit, CharacterEditorOutput, CharactersPanel,
+    CharactersPanelMsg, CharactersPanelOutput, ChatPanel, ChatPanelMsg, SettingsPanel,
+    SettingsPanelOutput,
+};
 
 /// Active view in the main content area.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,20 +30,28 @@ pub enum AppMsg {
     ToggleSidebar,
     DbResult(DbOutput),
     SettingsOutput(SettingsPanelOutput),
+    CharactersOutput(CharactersPanelOutput),
+    EditorOutput(CharacterEditorOutput),
+    ShowToast(String),
     Quit,
 }
 
 /// Root application model holding global state and child panel controllers.
+#[allow(deprecated)] // FileChooserNative deprecated in GTK 4.10 but correct for 0.11.x
 pub struct AppModel {
     active_view: ActiveView,
     sidebar_visible: bool,
     has_providers: bool,
+    characters: Vec<CharacterCardV2>,
     db_worker: WorkerController<DbService>,
     chat_panel: relm4::Controller<ChatPanel>,
     #[allow(dead_code)] // Keep alive to run component event loop
     characters_panel: relm4::Controller<CharactersPanel>,
     settings_panel: relm4::Controller<SettingsPanel>,
+    character_editor: Option<relm4::Controller<CharacterEditor>>,
+    file_chooser: Option<gtk::FileChooserNative>,
     view_stack: adw::ViewStack,
+    toast_overlay: adw::ToastOverlay,
 }
 
 #[relm4::component(pub)]
@@ -63,6 +77,7 @@ impl SimpleComponent for AppModel {
                 add_setter: (&split_view, "collapsed", Some(&gtk::glib::Value::from(true))),
             },
 
+            #[name(toast_overlay)]
             adw::ToastOverlay {
                 #[name(split_view)]
                 adw::OverlaySplitView {
@@ -150,7 +165,9 @@ impl SimpleComponent for AppModel {
             .launch(false)
             .detach();
 
-        let characters_panel = CharactersPanel::builder().launch(()).detach();
+        let characters_panel = CharactersPanel::builder()
+            .launch(())
+            .forward(sender.input_sender(), AppMsg::CharactersOutput);
 
         // SettingsPanel init takes () — all DB operations go through output messages
         let settings_panel = SettingsPanel::builder()
@@ -167,17 +184,22 @@ impl SimpleComponent for AppModel {
             active_view: ActiveView::Chat,
             sidebar_visible: true,
             has_providers: false,
+            characters: Vec::new(),
             db_worker,
             chat_panel,
             characters_panel,
             settings_panel,
+            character_editor: None,
+            file_chooser: None,
             view_stack: adw::ViewStack::new(),
+            toast_overlay: adw::ToastOverlay::new(),
         };
 
         let widgets = view_output!();
 
         // Replace placeholder with the actual ViewStack from the view
         model.view_stack = widgets.view_stack.clone();
+        model.toast_overlay = widgets.toast_overlay.clone();
 
         // Wire up the ViewSwitcher to the ViewStack
         widgets.view_switcher.set_stack(Some(&widgets.view_stack));
@@ -250,17 +272,30 @@ impl SimpleComponent for AppModel {
                     }
                 }
 
+                // Ctrl+Shift+N → New character
+                if modifier_ctrl
+                    && modifier.contains(gtk::gdk::ModifierType::SHIFT_MASK)
+                    && key == gtk::gdk::Key::n
+                {
+                    let _ = sender_clone.send(AppMsg::CharactersOutput(
+                        CharactersPanelOutput::EditCharacter(String::new()),
+                    ));
+                    return gtk::glib::Propagation::Stop;
+                }
+
                 gtk::glib::Propagation::Proceed
             });
             controller
         });
 
-        // Query providers on startup to determine first-launch state
+        // Query providers and characters on startup
         model.db_worker.sender().send(DbInput::LoadProviders).unwrap();
+        model.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
 
         ComponentParts { model, widgets }
     }
 
+    #[allow(deprecated)] // FileChooserNative deprecated in GTK 4.10 but correct for 0.11.x
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         match msg {
             AppMsg::SwitchView(view) => {
@@ -298,8 +333,26 @@ impl SimpleComponent for AppModel {
                     // Reload providers after delete
                     self.db_worker.sender().send(DbInput::LoadProviders).unwrap();
                 }
+                DbOutput::CharactersLoaded(chars) => {
+                    self.characters = chars.clone();
+                    let _ = self.characters_panel.sender().send(CharactersPanelMsg::CharactersLoaded(chars));
+                }
+                DbOutput::CharacterSaved(_) => {
+                    // Reload characters after save
+                    self.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
+                    self.show_toast("Character saved");
+                }
+                DbOutput::CharacterDeleted(_) => {
+                    // Reload characters after delete
+                    self.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
+                    self.show_toast("Character deleted");
+                }
+                DbOutput::CharactersSearched(chars) => {
+                    let _ = self.characters_panel.sender().send(CharactersPanelMsg::CharactersLoaded(chars));
+                }
                 DbOutput::Error(e) => {
                     tracing::error!("Database error: {}", e);
+                    self.show_toast(&format!("Error: {}", e));
                 }
                 _ => {}
             },
@@ -335,10 +388,6 @@ impl SimpleComponent for AppModel {
                 }
                 SettingsPanelOutput::TestProvider(id) => {
                     // Load API key from keyring and provider config, then run test
-                    // We need to find the provider config first, but we don't have it here.
-                    // Instead, forward to settings panel which has the provider list.
-                    // The settings panel will handle the test via KeyLoaded message.
-                    // Load the key from keyring on a background thread, then send it back
                     let id_clone = id.clone();
                     let settings_sender = self.settings_panel.sender().clone();
                     sender.spawn_oneshot_command(move || {
@@ -348,6 +397,239 @@ impl SimpleComponent for AppModel {
                     });
                 }
             },
+            AppMsg::CharactersOutput(output) => match output {
+                CharactersPanelOutput::SaveCharacter(character) => {
+                    self.db_worker.sender().send(DbInput::SaveCharacter(character)).unwrap();
+                }
+                CharactersPanelOutput::DeleteCharacter(id) => {
+                    self.db_worker.sender().send(DbInput::DeleteCharacter(id.clone())).unwrap();
+                    // Delete avatar file on background thread
+                    let character = self.characters.iter().find(|c| c.id == id);
+                    if let Some(Some(path)) = character.map(|c| c.avatar_path.as_ref()) {
+                        let path = path.clone();
+                        sender.spawn_oneshot_command(move || {
+                            if let Err(e) = std::fs::remove_file(&path) {
+                                tracing::warn!("Failed to delete avatar file {}: {}", path, e);
+                            }
+                        });
+                    }
+                }
+                CharactersPanelOutput::EditCharacter(id) => {
+                    let editor_init = if id.is_empty() {
+                        CharacterEditorInit::New
+                    } else {
+                        let character = self.characters.iter().find(|c| c.id == id).cloned();
+                        match character {
+                            Some(c) => CharacterEditorInit::Edit(c),
+                            None => {
+                                self.show_toast("Character not found");
+                                return;
+                            }
+                        }
+                    };
+
+                    let editor = CharacterEditor::builder()
+                        .launch(editor_init)
+                        .forward(sender.input_sender(), AppMsg::EditorOutput);
+
+                    editor.widget().present();
+                    self.character_editor = Some(editor);
+                }
+                CharactersPanelOutput::RequestImport => {
+                    let chooser = gtk::FileChooserNative::builder()
+                        .title("Import Character")
+                        .action(gtk::FileChooserAction::Open)
+                        .modal(true)
+                        .accept_label("Import")
+                        .cancel_label("Cancel")
+                        .build();
+
+                    let filter = gtk::FileFilter::new();
+                    filter.set_name(Some("Character Cards"));
+                    filter.add_mime_type("image/png");
+                    filter.add_pattern("*.json");
+                    chooser.set_filter(&filter);
+
+                    let sender_clone = sender.input_sender().clone();
+                    let db_sender = self.db_worker.sender().clone();
+                    chooser.connect_response(move |chooser, response| {
+                        if response == gtk::ResponseType::Accept {
+                            if let Some(file) = chooser.file() {
+                                if let Some(path) = file.path() {
+                                    let path_str = path.to_string_lossy().to_string();
+                                    let db_sender = db_sender.clone();
+                                    let sender_clone = sender_clone.clone();
+
+                                    // Run import on a background thread
+                                    std::thread::spawn(move || {
+                                        let result = (|| -> Result<CharacterCardV2, String> {
+                                            let ext = std::path::Path::new(&path_str)
+                                                .extension()
+                                                .and_then(|e| e.to_str())
+                                                .unwrap_or("")
+                                                .to_lowercase();
+
+                                            let bytes = std::fs::read(&path_str)
+                                                .map_err(|e| format!("Failed to read file: {}", e))?;
+
+                                            let character = if ext == "json" {
+                                                let json_str = String::from_utf8(bytes)
+                                                    .map_err(|e| format!("Invalid UTF-8: {}", e))?;
+                                                card_io::import_from_json(&json_str)
+                                                    .map_err(|e| format!("JSON import failed: {}", e))?
+                                            } else {
+                                                // Try PNG import
+                                                let (ch, _avatar) = card_io::import_from_png(&bytes)
+                                                    .map_err(|e| format!("PNG import failed: {}", e))?;
+                                                ch
+                                            };
+
+                                            Ok(character)
+                                        })();
+
+                                        match result {
+                                            Ok(character) => {
+                                                let _ = db_sender.send(DbInput::SaveCharacter(character));
+                                                let _ = db_sender.send(DbInput::LoadCharacters);
+                                            }
+                                            Err(msg) => {
+                                                let _ = sender_clone.send(AppMsg::ShowToast(msg));
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+
+                    // Present file chooser
+                    if let Some(toplevel) = self.toast_overlay.ancestor(gtk::Window::static_type()) {
+                        if let Some(parent) = toplevel.downcast_ref::<gtk::Window>() {
+                            chooser.set_transient_for(Some(parent));
+                        }
+                    }
+                    chooser.show();
+
+                    // Store to keep alive
+                    self.file_chooser = Some(chooser);
+                }
+                CharactersPanelOutput::RequestExport(id) => {
+                    let character = self.characters.iter().find(|c| c.id == id).cloned();
+                    let Some(character) = character else {
+                        self.show_toast("Character not found for export");
+                        return;
+                    };
+
+                    let chooser = gtk::FileChooserNative::builder()
+                        .title("Export Character")
+                        .action(gtk::FileChooserAction::Save)
+                        .modal(true)
+                        .accept_label("Export")
+                        .cancel_label("Cancel")
+                        .build();
+
+                    // Suggest a filename
+                    let slug: String = character
+                        .name
+                        .to_lowercase()
+                        .chars()
+                        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+                        .collect();
+                    chooser.set_current_name(&format!("{}.png", slug));
+
+                    let png_filter = gtk::FileFilter::new();
+                    png_filter.set_name(Some("PNG (with embedded data)"));
+                    png_filter.add_mime_type("image/png");
+
+                    let json_filter = gtk::FileFilter::new();
+                    json_filter.set_name(Some("JSON"));
+                    json_filter.add_pattern("*.json");
+
+                    chooser.add_filter(&png_filter);
+                    chooser.add_filter(&json_filter);
+
+                    let sender_clone = sender.input_sender().clone();
+                    chooser.connect_response(move |chooser, response| {
+                        if response == gtk::ResponseType::Accept {
+                            if let Some(file) = chooser.file() {
+                                if let Some(path) = file.path() {
+                                    let path_str = path.to_string_lossy().to_string();
+                                    let sender_clone = sender_clone.clone();
+
+                                    // Clone character for the thread
+                                    let ch = character.clone();
+                                    let avatar_path = character.avatar_path.clone();
+
+                                    std::thread::spawn(move || {
+                                        let result = (|| -> Result<(), String> {
+                                            let ext = std::path::Path::new(&path_str)
+                                                .extension()
+                                                .and_then(|e| e.to_str())
+                                                .unwrap_or("")
+                                                .to_lowercase();
+
+                                            if ext == "json" {
+                                                let json = card_io::export_to_json(&ch)
+                                                    .map_err(|e| format!("JSON export failed: {}", e))?;
+                                                std::fs::write(&path_str, json)
+                                                    .map_err(|e| format!("Write failed: {}", e))?;
+                                            } else {
+                                                // PNG export
+                                                let avatar_bytes = avatar_path
+                                                    .as_ref()
+                                                    .and_then(|p| std::fs::read(p).ok());
+                                                let png = card_io::export_to_png(
+                                                    &ch,
+                                                    avatar_bytes.as_deref(),
+                                                )
+                                                .map_err(|e| format!("PNG export failed: {}", e))?;
+                                                std::fs::write(&path_str, png)
+                                                    .map_err(|e| format!("Write failed: {}", e))?;
+                                            }
+                                            Ok(())
+                                        })();
+
+                                        match result {
+                                            Ok(()) => {
+                                                let _ = sender_clone.send(AppMsg::ShowToast(
+                                                    "Character exported".to_string(),
+                                                ));
+                                            }
+                                            Err(msg) => {
+                                                let _ =
+                                                    sender_clone.send(AppMsg::ShowToast(msg));
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+
+                    // Present file chooser
+                    if let Some(toplevel) = self.toast_overlay.ancestor(gtk::Window::static_type()) {
+                        if let Some(parent) = toplevel.downcast_ref::<gtk::Window>() {
+                            chooser.set_transient_for(Some(parent));
+                        }
+                    }
+                    chooser.show();
+
+                    // Store to keep alive
+                    self.file_chooser = Some(chooser);
+                }
+            },
+            AppMsg::EditorOutput(output) => match output {
+                CharacterEditorOutput::Saved(character) => {
+                    self.db_worker.sender().send(DbInput::SaveCharacter(character)).unwrap();
+                    self.character_editor = None;
+                }
+                CharacterEditorOutput::Cancelled => {
+                    self.character_editor = None;
+                }
+            },
+            AppMsg::ShowToast(message) => {
+                self.show_toast(&message);
+            }
             AppMsg::Quit => {
                 // The window will close via the main loop when the Quit message
                 // is processed. No explicit close needed — the quit action
@@ -365,5 +647,11 @@ impl AppModel {
             ActiveView::Settings => "settings",
         };
         self.view_stack.set_visible_child_name(name);
+    }
+
+    fn show_toast(&self, message: &str) {
+        let toast = adw::Toast::new(message);
+        toast.set_timeout(3);
+        self.toast_overlay.add_toast(toast);
     }
 }
