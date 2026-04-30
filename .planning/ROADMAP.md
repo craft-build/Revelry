@@ -49,12 +49,12 @@ Plans:
   2. User can import a character card from PNG (embedded metadata) and JSON files and see it appear in the library
   3. User can export any character as both PNG (with embedded metadata) and JSON formats
   4. User can browse characters in a visual grid, filter by tags, and search by name or description with instant matching
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md — Character data layer: domain model, DB schema, CRUD, and FTS5 search
+- [ ] 02-02-PLAN.md — Import/export service and CharactersPanel with grid, search, filter, tabs
+- [ ] 02-03-PLAN.md — Character editor and AppModel wiring for end-to-end operations
 
 **UI hint**: yes
 
