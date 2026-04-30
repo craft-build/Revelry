@@ -37,7 +37,6 @@ pub enum AppMsg {
 }
 
 /// Root application model holding global state and child panel controllers.
-#[allow(deprecated)] // FileChooserNative deprecated in GTK 4.10 but correct for 0.11.x
 pub struct AppModel {
     active_view: ActiveView,
     sidebar_visible: bool,
@@ -49,7 +48,6 @@ pub struct AppModel {
     characters_panel: relm4::Controller<CharactersPanel>,
     settings_panel: relm4::Controller<SettingsPanel>,
     character_editor: Option<relm4::Controller<CharacterEditor>>,
-    file_chooser: Option<gtk::FileChooserNative>,
     view_stack: adw::ViewStack,
     toast_overlay: adw::ToastOverlay,
 }
@@ -190,7 +188,6 @@ impl SimpleComponent for AppModel {
             characters_panel,
             settings_panel,
             character_editor: None,
-            file_chooser: None,
             view_stack: adw::ViewStack::new(),
             toast_overlay: adw::ToastOverlay::new(),
         };
@@ -275,7 +272,7 @@ impl SimpleComponent for AppModel {
                 // Ctrl+Shift+N → New character
                 if modifier_ctrl
                     && modifier.contains(gtk::gdk::ModifierType::SHIFT_MASK)
-                    && key == gtk::gdk::Key::n
+                    && (key == gtk::gdk::Key::n || key == gtk::gdk::Key::N)
                 {
                     let _ = sender_clone.send(AppMsg::CharactersOutput(
                         CharactersPanelOutput::EditCharacter(String::new()),
@@ -295,7 +292,6 @@ impl SimpleComponent for AppModel {
         ComponentParts { model, widgets }
     }
 
-    #[allow(deprecated)] // FileChooserNative deprecated in GTK 4.10 but correct for 0.11.x
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>) {
         match msg {
             AppMsg::SwitchView(view) => {
@@ -436,25 +432,30 @@ impl SimpleComponent for AppModel {
                     self.character_editor = Some(editor);
                 }
                 CharactersPanelOutput::RequestImport => {
-                    let chooser = gtk::FileChooserNative::builder()
-                        .title("Import Character")
-                        .action(gtk::FileChooserAction::Open)
-                        .modal(true)
-                        .accept_label("Import")
-                        .cancel_label("Cancel")
-                        .build();
-
                     let filter = gtk::FileFilter::new();
                     filter.set_name(Some("Character Cards"));
                     filter.add_mime_type("image/png");
                     filter.add_pattern("*.json");
-                    chooser.set_filter(&filter);
+
+                    let filters = gtk::gio::ListStore::new::<gtk::FileFilter>();
+                    filters.append(&filter);
+
+                    let dialog = gtk::FileDialog::builder()
+                        .title("Import Character")
+                        .modal(true)
+                        .accept_label("Import")
+                        .filters(&filters)
+                        .default_filter(&filter)
+                        .build();
 
                     let sender_clone = sender.input_sender().clone();
                     let db_sender = self.db_worker.sender().clone();
-                    chooser.connect_response(move |chooser, response| {
-                        if response == gtk::ResponseType::Accept {
-                            if let Some(file) = chooser.file() {
+                    let parent = self.toast_overlay.root().and_downcast::<gtk::Window>();
+                    dialog.open(
+                        parent.as_ref(),
+                        gtk::gio::Cancellable::NONE,
+                        move |result| {
+                            if let Ok(file) = result {
                                 if let Some(path) = file.path() {
                                     let path_str = path.to_string_lossy().to_string();
                                     let db_sender = db_sender.clone();
@@ -515,19 +516,8 @@ impl SimpleComponent for AppModel {
                                     });
                                 }
                             }
-                        }
-                    });
-
-                    // Present file chooser
-                    if let Some(toplevel) = self.toast_overlay.ancestor(gtk::Window::static_type()) {
-                        if let Some(parent) = toplevel.downcast_ref::<gtk::Window>() {
-                            chooser.set_transient_for(Some(parent));
-                        }
-                    }
-                    chooser.show();
-
-                    // Store to keep alive
-                    self.file_chooser = Some(chooser);
+                        },
+                    );
                 }
                 CharactersPanelOutput::RequestExport(id) => {
                     let character = self.characters.iter().find(|c| c.id == id).cloned();
@@ -536,14 +526,6 @@ impl SimpleComponent for AppModel {
                         return;
                     };
 
-                    let chooser = gtk::FileChooserNative::builder()
-                        .title("Export Character")
-                        .action(gtk::FileChooserAction::Save)
-                        .modal(true)
-                        .accept_label("Export")
-                        .cancel_label("Cancel")
-                        .build();
-
                     // Suggest a filename
                     let slug: String = character
                         .name
@@ -551,7 +533,6 @@ impl SimpleComponent for AppModel {
                         .chars()
                         .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
                         .collect();
-                    chooser.set_current_name(&format!("{}.png", slug));
 
                     let png_filter = gtk::FileFilter::new();
                     png_filter.set_name(Some("PNG (with embedded data)"));
@@ -561,13 +542,26 @@ impl SimpleComponent for AppModel {
                     json_filter.set_name(Some("JSON"));
                     json_filter.add_pattern("*.json");
 
-                    chooser.add_filter(&png_filter);
-                    chooser.add_filter(&json_filter);
+                    let filters = gtk::gio::ListStore::new::<gtk::FileFilter>();
+                    filters.append(&png_filter);
+                    filters.append(&json_filter);
+
+                    let dialog = gtk::FileDialog::builder()
+                        .title("Export Character")
+                        .modal(true)
+                        .accept_label("Export")
+                        .initial_name(format!("{}.png", slug))
+                        .filters(&filters)
+                        .default_filter(&png_filter)
+                        .build();
 
                     let sender_clone = sender.input_sender().clone();
-                    chooser.connect_response(move |chooser, response| {
-                        if response == gtk::ResponseType::Accept {
-                            if let Some(file) = chooser.file() {
+                    let parent = self.toast_overlay.root().and_downcast::<gtk::Window>();
+                    dialog.save(
+                        parent.as_ref(),
+                        gtk::gio::Cancellable::NONE,
+                        move |result| {
+                            if let Ok(file) = result {
                                 if let Some(path) = file.path() {
                                     let path_str = path.to_string_lossy().to_string();
                                     let sender_clone = sender_clone.clone();
@@ -619,19 +613,8 @@ impl SimpleComponent for AppModel {
                                     });
                                 }
                             }
-                        }
-                    });
-
-                    // Present file chooser
-                    if let Some(toplevel) = self.toast_overlay.ancestor(gtk::Window::static_type()) {
-                        if let Some(parent) = toplevel.downcast_ref::<gtk::Window>() {
-                            chooser.set_transient_for(Some(parent));
-                        }
-                    }
-                    chooser.show();
-
-                    // Store to keep alive
-                    self.file_chooser = Some(chooser);
+                        },
+                    );
                 }
             },
             AppMsg::EditorOutput(output) => match output {

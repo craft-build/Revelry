@@ -374,6 +374,25 @@ impl CharactersPanelModel {
                 create_card_widget(character, character.avatar_path.as_deref());
 
             // Delete button in the top-right of the card header
+            let export_btn = gtk::Button::new();
+            export_btn.add_css_class("flat");
+            export_btn.add_css_class("circular");
+            export_btn.set_tooltip_text(Some("Export Character"));
+            export_btn.set_icon_name("document-save-symbolic");
+            export_btn.set_halign(gtk::Align::End);
+            export_btn.set_valign(gtk::Align::Start);
+            export_btn.set_margin_top(4);
+            export_btn.set_margin_end(4);
+
+            let id_clone = character.id.clone();
+            let sender_clone = sender.clone();
+            let gesture = gtk::GestureClick::new();
+            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+            gesture.connect_released(move |_, _, _, _| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::ExportCharacter(id_clone.clone()));
+            });
+            export_btn.add_controller(gesture);
+
             let delete_btn = gtk::Button::new();
             delete_btn.add_css_class("flat");
             delete_btn.add_css_class("circular");
@@ -382,7 +401,7 @@ impl CharactersPanelModel {
             delete_btn.set_icon_name("user-trash-symbolic");
             delete_btn.set_halign(gtk::Align::End);
             delete_btn.set_valign(gtk::Align::Start);
-            delete_btn.set_margin_top(4);
+            delete_btn.set_margin_top(36);
             delete_btn.set_margin_end(4);
 
             let id_clone = character.id.clone();
@@ -392,11 +411,12 @@ impl CharactersPanelModel {
             gesture.connect_released(move |_, _, _, _| {
                 let _ = sender_clone.input_sender().send(CharactersPanelMsg::DeleteCharacter(id_clone.clone()));
             });
-            delete_btn.add_controller(gesture.clone());
+            delete_btn.add_controller(gesture);
 
-            // Wrap card + delete button in an overlay so the button sits inside the card
+            // Wrap card + buttons in an overlay so they sit inside the card
             let overlay = gtk::Overlay::new();
             overlay.set_child(Some(&card_widget));
+            overlay.add_overlay(&export_btn);
             overlay.add_overlay(&delete_btn);
 
             let child = gtk::FlowBoxChild::new();
