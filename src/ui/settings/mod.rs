@@ -289,12 +289,12 @@ impl SettingsPanel {
                         row.add_suffix(&spinner);
                     }
                     Some(TestState::Success) => {
-                        let icon = gtk::Image::from_icon_name("emblem-ok-symbolic");
+                        let icon = gtk::Image::from_icon_name("done");
                         icon.add_css_class("success");
                         row.add_suffix(&icon);
                     }
                     Some(TestState::Failure(_)) => {
-                        let icon = gtk::Image::from_icon_name("dialog-error-symbolic");
+                        let icon = gtk::Image::from_icon_name("error");
                         icon.add_css_class("error");
                         row.add_suffix(&icon);
                     }
@@ -775,14 +775,14 @@ fn update_test_indicator(test_btn: &gtk::Button, test_indicator: &gtk::Box, stat
         TestState::Success => {
             test_btn.set_sensitive(true);
             test_btn.set_label("Test Connection");
-            let icon = gtk::Image::from_icon_name("emblem-ok-symbolic");
+            let icon = gtk::Image::from_icon_name("done");
             icon.add_css_class("success");
             test_indicator.append(&icon);
         }
         TestState::Failure(msg) => {
             test_btn.set_sensitive(true);
             test_btn.set_label("Test Connection");
-            let icon = gtk::Image::from_icon_name("dialog-error-symbolic");
+            let icon = gtk::Image::from_icon_name("error");
             icon.add_css_class("error");
             test_indicator.append(&icon);
             let label = gtk::Label::new(Some(msg));

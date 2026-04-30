@@ -1,9 +1,28 @@
 fn main() {
-    // Compile GResource bundles when resource files are added
-    // For now, this is a placeholder for future resource compilation
-    // glib_build_tools::compile_resources(
-    //     "resources",
-    //     "resources/resources.gresource.xml",
-    //     "revelry.gresource",
-    // );
+    // Bundle relm4-icons for use in the application
+    // Icons are from: icon-development-kit, fluentui-system-icons, material-symbols
+    let icons: &[&str] = &[
+        // Main view icons
+        "chat",
+        "list",
+        "settings",
+        // Action icons
+        "add",
+        "folder-open",
+        "contact-page",
+        "mood",
+        "edit",
+        "tune",
+        "people",
+        "menu",
+        "done",
+        "error",
+    ];
+    relm4_icons_build::bundle_icons(
+        "icon_names.rs",
+        Some("com.revelry.app"),
+        None::<&str>,
+        None::<&str>,
+        icons,
+    );
 }

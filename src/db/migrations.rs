@@ -74,6 +74,12 @@ pub fn get_migrations() -> Migrations<'static> {
             END;",
         )
         .down("DROP TRIGGER IF EXISTS characters_au; DROP TRIGGER IF EXISTS characters_ad; DROP TRIGGER IF EXISTS characters_ai; DROP TABLE IF EXISTS characters_fts; DROP TABLE IF EXISTS characters;"),
+        // Migration 4: Add creator_notes and character_book columns
+        M::up(
+            "ALTER TABLE characters ADD COLUMN creator_notes TEXT NOT NULL DEFAULT '';
+             ALTER TABLE characters ADD COLUMN character_book TEXT NOT NULL DEFAULT 'null';",
+        )
+        .down("ALTER TABLE characters DROP COLUMN character_book; ALTER TABLE characters DROP COLUMN creator_notes;"),
     ])
 }
 

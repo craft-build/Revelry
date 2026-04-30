@@ -85,6 +85,14 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
             Box::new(e),
         ))?;
 
+    let character_book_str: String = row.get("character_book")?;
+    let character_book: serde_json::Value = serde_json::from_str(&character_book_str)
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
     Ok(CharacterCardV2 {
         id: row.get("id")?,
         name: row.get("name")?,
@@ -101,6 +109,8 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
         character_version: row.get("character_version")?,
         avatar_path: row.get("avatar_path")?,
         extensions,
+        creator_notes: row.get("creator_notes")?,
+        character_book,
         created_at,
         updated_at,
     })

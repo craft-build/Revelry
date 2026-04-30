@@ -13,8 +13,9 @@ pub fn insert_character(conn: &Connection, character: &CharacterCardV2) -> Resul
     conn.prepare_cached(
         "INSERT INTO characters (id, name, description, personality, scenario, first_mes,
          mes_example, system_prompt, post_history_instructions, alternate_greetings, tags,
-         creator, character_version, avatar_path, extensions, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
+         creator, character_version, avatar_path, extensions, creator_notes, character_book,
+         created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)"
     )?
     .execute(params![
         character.id,
@@ -32,6 +33,8 @@ pub fn insert_character(conn: &Connection, character: &CharacterCardV2) -> Resul
         character.character_version,
         character.avatar_path,
         extensions_str,
+        character.creator_notes,
+        serde_json::to_string(&character.character_book)?,
         character.created_at.to_string(),
         character.updated_at.to_string(),
     ])?;
@@ -43,7 +46,8 @@ pub fn load_characters(conn: &Connection) -> Result<Vec<CharacterCardV2>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, name, description, personality, scenario, first_mes, mes_example,
          system_prompt, post_history_instructions, alternate_greetings, tags, creator,
-         character_version, avatar_path, extensions, created_at, updated_at
+         character_version, avatar_path, extensions, creator_notes, character_book,
+         created_at, updated_at
          FROM characters ORDER BY updated_at DESC"
     )?;
     let characters = stmt.query_map([], |row| row_to_character(row))?;
@@ -59,7 +63,8 @@ pub fn load_character(conn: &Connection, id: &str) -> Result<Option<CharacterCar
     let mut stmt = conn.prepare_cached(
         "SELECT id, name, description, personality, scenario, first_mes, mes_example,
          system_prompt, post_history_instructions, alternate_greetings, tags, creator,
-         character_version, avatar_path, extensions, created_at, updated_at
+         character_version, avatar_path, extensions, creator_notes, character_book,
+         created_at, updated_at
          FROM characters WHERE id = ?1"
     )?;
     let mut characters = stmt.query_map(params![id], |row| row_to_character(row))?;
@@ -79,7 +84,8 @@ pub fn update_character(conn: &Connection, character: &CharacterCardV2) -> Resul
         "UPDATE characters SET name = ?1, description = ?2, personality = ?3, scenario = ?4,
          first_mes = ?5, mes_example = ?6, system_prompt = ?7, post_history_instructions = ?8,
          alternate_greetings = ?9, tags = ?10, creator = ?11, character_version = ?12,
-         avatar_path = ?13, extensions = ?14, updated_at = ?15 WHERE id = ?16"
+         avatar_path = ?13, extensions = ?14, creator_notes = ?15, character_book = ?16,
+         updated_at = ?17 WHERE id = ?18"
     )?
     .execute(params![
         character.name,
@@ -96,6 +102,8 @@ pub fn update_character(conn: &Connection, character: &CharacterCardV2) -> Resul
         character.character_version,
         character.avatar_path,
         extensions_str,
+        character.creator_notes,
+        serde_json::to_string(&character.character_book)?,
         character.updated_at.to_string(),
         character.id,
     ])?;
@@ -124,8 +132,8 @@ pub fn search_characters(conn: &Connection, query: &str) -> Result<Vec<Character
     let mut stmt = conn.prepare_cached(
         "SELECT c.id, c.name, c.description, c.personality, c.scenario, c.first_mes,
          c.mes_example, c.system_prompt, c.post_history_instructions, c.alternate_greetings,
-         c.tags, c.creator, c.character_version, c.avatar_path, c.extensions, c.created_at,
-         c.updated_at
+         c.tags, c.creator, c.character_version, c.avatar_path, c.extensions,
+         c.creator_notes, c.character_book, c.created_at, c.updated_at
          FROM characters c
          JOIN characters_fts f ON c.rowid = f.rowid
          WHERE characters_fts MATCH ?1

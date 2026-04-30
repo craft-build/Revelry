@@ -37,6 +37,7 @@ pub enum CharactersPanelMsg {
     ExportCharacter(String),
     ExportComplete(Result<(), String>),
     DeleteCharacter(String),
+    ConfirmDelete(String),
     EditCharacter(String),
     SwitchTab(CharacterTab),
 }
@@ -88,13 +89,13 @@ impl Component for CharactersPanelModel {
                 },
 
                 gtk::Button {
-                    set_icon_name: "list-add-symbolic",
+                    set_icon_name: "add",
                     set_tooltip_text: Some("New Character"),
                     connect_clicked => CharactersPanelMsg::NewCharacter,
                 },
 
                 gtk::Button {
-                    set_icon_name: "document-open-symbolic",
+                    set_icon_name: "folder-open",
                     set_tooltip_text: Some("Import Character"),
                     connect_clicked => CharactersPanelMsg::ImportCharacter,
                 },
@@ -106,9 +107,11 @@ impl Component for CharactersPanelModel {
                 set_vexpand: true,
             },
 
-            // Bottom tab bar for Characters / Personas
+            // Tab bar for Characters / Personas
             #[name(tab_bar)]
-            adw::ViewSwitcherBar {},
+            adw::ViewSwitcher {
+                set_stack: Some(&content_stack),
+            },
         }
     }
 
@@ -142,7 +145,7 @@ impl Component for CharactersPanelModel {
         });
 
         let empty_state = adw::StatusPage::new();
-        empty_state.set_icon_name(Some("avatar-default-symbolic"));
+        empty_state.set_icon_name(Some("contact-page"));
         empty_state.set_title("No Characters Yet");
         empty_state.set_description(Some(
             "Import a character card or create a new one to get started.",
@@ -154,7 +157,7 @@ impl Component for CharactersPanelModel {
 
         // Build the personas page (placeholder)
         let personas_page = adw::StatusPage::new();
-        personas_page.set_icon_name(Some("contact-new-symbolic"));
+        personas_page.set_icon_name(Some("mood"));
         personas_page.set_title("My Personas");
         personas_page.set_description(Some(
             "Personas are coming in a future update. They'll let you define your own identity for roleplay.",
@@ -166,16 +169,15 @@ impl Component for CharactersPanelModel {
             .content_stack
             .add_named(&characters_page_box, Some("characters"));
         char_page.set_title(Some("Characters"));
-        char_page.set_icon_name(Some("avatar-default-symbolic"));
+        char_page.set_icon_name(Some("list"));
 
         let pers_page = widgets
             .content_stack
             .add_named(&personas_page, Some("personas"));
         pers_page.set_title(Some("My Personas"));
-        pers_page.set_icon_name(Some("contact-new-symbolic"));
+        pers_page.set_icon_name(Some("mood"));
 
-        // Connect ViewSwitcherBar to the ViewStack
-        widgets.tab_bar.set_stack(Some(&widgets.content_stack));
+        // ViewSwitcher is already connected via view macro property
 
         // Listen for tab changes
         let sender_clone = sender.clone();
@@ -217,7 +219,7 @@ impl Component for CharactersPanelModel {
             CharactersPanelMsg::CharactersLoaded(chars) => {
                 self.characters = chars;
                 self.apply_filter();
-                self.rebuild_flowbox();
+                self.rebuild_flowbox(&sender);
             }
             CharactersPanelMsg::SearchChanged(query) => {
                 self.search_query = query;
@@ -244,7 +246,7 @@ impl Component for CharactersPanelModel {
                 // Actually apply the filter immediately for responsiveness
                 // (the debounce would matter for DB-backed search)
                 self.apply_filter();
-                self.rebuild_flowbox();
+                self.rebuild_flowbox(&sender);
             }
             CharactersPanelMsg::NewCharacter => {
                 let _ = sender.output(CharactersPanelOutput::EditCharacter(String::new()));
@@ -256,7 +258,7 @@ impl Component for CharactersPanelModel {
                 Ok(character) => {
                     self.characters.push(character);
                     self.apply_filter();
-                    self.rebuild_flowbox();
+                    self.rebuild_flowbox(&sender);
                 }
                 Err(_msg) => {
                     // Error toast will be handled by parent
@@ -269,6 +271,35 @@ impl Component for CharactersPanelModel {
                 // Toast handled by parent
             }
             CharactersPanelMsg::DeleteCharacter(id) => {
+                let name = self.characters.iter()
+                    .find(|c| c.id == id)
+                    .map(|c| c.name.as_str())
+                    .unwrap_or("this character");
+
+                let dialog = adw::MessageDialog::new(
+                    None::<&gtk::Window>,
+                    Some("Delete Character?"),
+                    Some(&format!(
+                        "This will permanently delete {} and its avatar. This cannot be undone.",
+                        name
+                    )),
+                );
+                dialog.add_response("cancel", "Cancel");
+                dialog.add_response("delete", "Delete");
+                dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
+                dialog.set_close_response("cancel");
+
+                let sender_clone = sender.clone();
+                let id_clone = id.clone();
+                dialog.connect_response(None, move |_, response| {
+                    if response == "delete" {
+                        let _ = sender_clone.input_sender().send(CharactersPanelMsg::ConfirmDelete(id_clone.clone()));
+                    }
+                });
+
+                dialog.present();
+            }
+            CharactersPanelMsg::ConfirmDelete(id) => {
                 let _ = sender.output(CharactersPanelOutput::DeleteCharacter(id));
             }
             CharactersPanelMsg::EditCharacter(id) => {
@@ -314,7 +345,7 @@ impl CharactersPanelModel {
     }
 
     /// Rebuild the GtkFlowBox from the current displayed_characters list.
-    fn rebuild_flowbox(&self) {
+    fn rebuild_flowbox(&self, sender: &ComponentSender<Self>) {
         // Remove existing children
         while let Some(child) = self.flowbox.first_child() {
             self.flowbox.remove(&child);
@@ -329,9 +360,35 @@ impl CharactersPanelModel {
             let card_widget =
                 create_card_widget(character, character.avatar_path.as_deref());
 
+            // Delete button in the top-right of the card header
+            let delete_btn = gtk::Button::new();
+            delete_btn.add_css_class("flat");
+            delete_btn.add_css_class("circular");
+            delete_btn.add_css_class("destructive-action");
+            delete_btn.set_tooltip_text(Some("Delete Character"));
+            delete_btn.set_icon_name("user-trash-symbolic");
+            delete_btn.set_halign(gtk::Align::End);
+            delete_btn.set_valign(gtk::Align::Start);
+            delete_btn.set_margin_top(4);
+            delete_btn.set_margin_end(4);
+
+            let id_clone = character.id.clone();
+            let sender_clone = sender.clone();
+            let gesture = gtk::GestureClick::new();
+            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+            gesture.connect_released(move |_, _, _, _| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::DeleteCharacter(id_clone.clone()));
+            });
+            delete_btn.add_controller(gesture.clone());
+
+            // Wrap card + delete button in an overlay so the button sits inside the card
+            let overlay = gtk::Overlay::new();
+            overlay.set_child(Some(&card_widget));
+            overlay.add_overlay(&delete_btn);
+
             let child = gtk::FlowBoxChild::new();
             child.set_widget_name(&character.id);
-            child.set_child(Some(&card_widget));
+            child.set_child(Some(&overlay));
 
             self.flowbox.append(&child);
         }

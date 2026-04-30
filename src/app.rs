@@ -109,7 +109,7 @@ impl SimpleComponent for AppModel {
 
                             #[name(sidebar_empty)]
                             adw::StatusPage {
-                                set_icon_name: Some("chat-message-new-symbolic"),
+                                set_icon_name: Some("chat"),
                                 set_title: "No Conversations Yet",
                                 set_description: Some("Start by configuring a provider in Settings."),
                             },
@@ -123,7 +123,7 @@ impl SimpleComponent for AppModel {
                         adw::HeaderBar {
                             #[name(sidebar_toggle)]
                         pack_start = &gtk::ToggleButton {
-                                set_icon_name: "sidebar-show-symbolic",
+                                set_icon_name: "menu",
                                 set_tooltip_text: Some("Toggle Sidebar"),
                                 connect_clicked => AppMsg::ToggleSidebar,
                             },
@@ -216,15 +216,15 @@ impl SimpleComponent for AppModel {
         // Add child panels to ViewStack with names and page metadata
         let chat_page = widgets.view_stack.add_named(&chat_widget, Some("chat"));
         chat_page.set_title(Some("Chat"));
-        chat_page.set_icon_name(Some("chat-message-new-symbolic"));
+        chat_page.set_icon_name(Some("chat"));
 
         let characters_page = widgets.view_stack.add_named(&characters_widget, Some("characters"));
         characters_page.set_title(Some("Characters"));
-        characters_page.set_icon_name(Some("avatar-default-symbolic"));
+        characters_page.set_icon_name(Some("list"));
 
         let settings_page = widgets.view_stack.add_named(&settings_widget, Some("settings"));
         settings_page.set_title(Some("Settings"));
-        settings_page.set_icon_name(Some("preferences-system-symbolic"));
+        settings_page.set_icon_name(Some("settings"));
 
         // Set up keyboard shortcuts via EventControllerKey
         // Also set the initial visible page — must happen AFTER pages are added
@@ -472,16 +472,32 @@ impl SimpleComponent for AppModel {
                                             let bytes = std::fs::read(&path_str)
                                                 .map_err(|e| format!("Failed to read file: {}", e))?;
 
-                                            let character = if ext == "json" {
+                                            let mut character = if ext == "json" {
                                                 let json_str = String::from_utf8(bytes)
                                                     .map_err(|e| format!("Invalid UTF-8: {}", e))?;
                                                 card_io::import_from_json(&json_str)
                                                     .map_err(|e| format!("JSON import failed: {}", e))?
                                             } else {
-                                                // Try PNG import
-                                                let (ch, _avatar) = card_io::import_from_png(&bytes)
+                                                // Try PNG import — the PNG itself is the avatar
+                                                let (ch, avatar_bytes) = card_io::import_from_png(&bytes)
                                                     .map_err(|e| format!("PNG import failed: {}", e))?;
-                                                ch
+                                                if let Some(png_data) = avatar_bytes {
+                                                    // Save avatar to data dir
+                                                    let avatar_dir = dirs::data_dir()
+                                                        .expect("data dir")
+                                                        .join("revelry")
+                                                        .join("avatars");
+                                                    std::fs::create_dir_all(&avatar_dir)
+                                                        .map_err(|e| format!("Failed to create avatars dir: {}", e))?;
+                                                    let avatar_path = avatar_dir.join(format!("{}.png", ch.id));
+                                                    std::fs::write(&avatar_path, &png_data)
+                                                        .map_err(|e| format!("Failed to save avatar: {}", e))?;
+                                                    let mut ch = ch;
+                                                    ch.avatar_path = Some(avatar_path.to_string_lossy().to_string());
+                                                    ch
+                                                } else {
+                                                    ch
+                                                }
                                             };
 
                                             Ok(character)

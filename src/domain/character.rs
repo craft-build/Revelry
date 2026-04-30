@@ -35,8 +35,103 @@ pub struct CharacterCardV2 {
     pub avatar_path: Option<String>,
     #[serde(default = "default_extensions")]
     pub extensions: serde_json::Value,
+    /// Notes from the creator about the card (not used in prompt generation).
+    /// Maps to V2 spec's `creator_notes` field.
+    #[serde(default)]
+    pub creator_notes: String,
+    /// Character lorebook / world info (JSON, not used in prompt by default).
+    /// Maps to V2 spec's `character_book` field.
+    #[serde(default = "default_character_book")]
+    pub character_book: serde_json::Value,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+}
+
+/// Wrapper for the Character Card V2 spec format used in PNG tEXt chunks.
+/// The spec format nests character data under a "data" key:
+/// ```json
+/// { "spec": "chara_card_v2", "spec_version": "2.0", "data": { ... } }
+/// ```
+#[derive(Clone, Debug, Deserialize)]
+pub struct CharaCardV2Spec {
+    #[serde(default)]
+    pub spec: String,
+    #[serde(default)]
+    pub spec_version: String,
+    pub data: CharaCardV2SpecData,
+}
+
+/// The character data payload inside a CharaCardV2Spec.
+/// Field names match the official V2 spec.
+#[derive(Clone, Debug, Deserialize)]
+pub struct CharaCardV2SpecData {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub personality: String,
+    #[serde(default)]
+    pub scenario: String,
+    #[serde(default)]
+    pub first_mes: String,
+    #[serde(default)]
+    pub mes_example: String,
+    #[serde(default)]
+    pub system_prompt: String,
+    #[serde(default)]
+    pub post_history_instructions: String,
+    #[serde(default)]
+    pub alternate_greetings: Vec<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub creator: String,
+    #[serde(default, rename = "character_version")]
+    pub character_version: String,
+    #[serde(default)]
+    pub creator_notes: String,
+    #[serde(default)]
+    pub character_book: serde_json::Value,
+    #[serde(default)]
+    pub extensions: serde_json::Value,
+}
+
+impl CharaCardV2Spec {
+    /// Converts a V2 spec wrapper into our domain CharacterCardV2 model.
+    /// Generates a fresh UUID v4 and sets timestamps to now.
+    pub fn to_domain(&self) -> CharacterCardV2 {
+        let now = chrono::Local::now().naive_local();
+        CharacterCardV2 {
+            id: Uuid::new_v4().to_string(),
+            name: self.data.name.clone(),
+            description: self.data.description.clone(),
+            personality: self.data.personality.clone(),
+            scenario: self.data.scenario.clone(),
+            first_mes: self.data.first_mes.clone(),
+            mes_example: self.data.mes_example.clone(),
+            system_prompt: self.data.system_prompt.clone(),
+            post_history_instructions: self.data.post_history_instructions.clone(),
+            alternate_greetings: self.data.alternate_greetings.clone(),
+            tags: self.data.tags.clone(),
+            creator: if self.data.creator.is_empty() {
+                "Unknown".to_string()
+            } else {
+                self.data.creator.clone()
+            },
+            character_version: if self.data.character_version.is_empty() {
+                "2.0".to_string()
+            } else {
+                self.data.character_version.clone()
+            },
+            avatar_path: None,
+            extensions: self.data.extensions.clone(),
+            creator_notes: self.data.creator_notes.clone(),
+            character_book: self.data.character_book.clone(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
 }
 
 fn default_creator() -> String {
@@ -48,6 +143,10 @@ fn default_character_version() -> String {
 }
 
 fn default_extensions() -> serde_json::Value {
+    serde_json::Value::Null
+}
+
+fn default_character_book() -> serde_json::Value {
     serde_json::Value::Null
 }
 
@@ -72,6 +171,8 @@ impl CharacterCardV2 {
             character_version: "2.0".to_string(),
             avatar_path: None,
             extensions: serde_json::Value::Null,
+            creator_notes: String::new(),
+            character_book: serde_json::Value::Null,
             created_at: now,
             updated_at: now,
         }
@@ -104,12 +205,14 @@ pub struct CharacterV1 {
 impl CharacterV1 {
     /// Converts a V1 character card to the V2 format.
     /// Maps old field names to new ones and generates a fresh UUID v4.
+    /// Note: V1's `creator_notes` maps to V2's `creator_notes` (metadata about the card),
+    /// not to `description` (character description always included in prompt).
     pub fn to_v2(&self) -> CharacterCardV2 {
         let now = chrono::Local::now().naive_local();
         CharacterCardV2 {
             id: Uuid::new_v4().to_string(),
             name: self.char_name.clone(),
-            description: self.creator_notes.clone(),
+            description: String::new(),
             personality: self.char_persona.clone(),
             scenario: self.world_scenario.clone(),
             first_mes: self.char_greeting.clone(),
@@ -134,6 +237,8 @@ impl CharacterV1 {
             character_version: "2.0".to_string(),
             avatar_path: None,
             extensions: serde_json::Value::Null,
+            creator_notes: self.creator_notes.clone(),
+            character_book: serde_json::Value::Null,
             created_at: now,
             updated_at: now,
         }
@@ -168,6 +273,8 @@ mod tests {
         assert_eq!(character.creator, "Unknown");
         assert!(character.avatar_path.is_none());
         assert_eq!(character.extensions, serde_json::Value::Null);
+        assert!(character.creator_notes.is_empty());
+        assert_eq!(character.character_book, serde_json::Value::Null);
     }
 
     #[test]
@@ -180,6 +287,8 @@ mod tests {
         character.creator = "TestCreator".to_string();
         character.avatar_path = Some("/path/to/avatar.png".to_string());
         character.extensions = serde_json::json!({"custom_field": "value"});
+        character.creator_notes = "A test note".to_string();
+        character.character_book = serde_json::json!({"entries": [], "name": "test"});
 
         let json = serde_json::to_string(&character).expect("serialize failed");
         let deserialized: CharacterCardV2 =
@@ -236,7 +345,10 @@ mod tests {
         assert_eq!(v2.first_mes, "Hey there!");
         assert_eq!(v2.scenario, "Suburban neighborhood");
         assert_eq!(v2.mes_example, "<START>\n{{user}}: Hi\n{{char}}: Hey!");
-        assert_eq!(v2.description, "Just a regular guy");
+
+        // creator_notes maps to creator_notes, NOT description
+        assert_eq!(v2.creator_notes, "Just a regular guy");
+        assert!(v2.description.is_empty(), "V1 description should be empty (not mapped from creator_notes)");
 
         // Tags should be split from comma-separated string
         assert_eq!(v2.tags, vec!["modern", "slice-of-life"]);
@@ -251,6 +363,7 @@ mod tests {
         assert!(v2.alternate_greetings.is_empty());
         assert!(v2.avatar_path.is_none());
         assert_eq!(v2.extensions, serde_json::Value::Null);
+        assert_eq!(v2.character_book, serde_json::Value::Null);
 
         // New UUID generated
         assert!(Uuid::parse_str(&v2.id).is_ok());
@@ -290,5 +403,7 @@ mod tests {
         assert_eq!(character.character_version, "2.0");
         assert!(character.avatar_path.is_none());
         assert_eq!(character.extensions, serde_json::Value::Null);
+        assert!(character.creator_notes.is_empty());
+        assert_eq!(character.character_book, serde_json::Value::Null);
     }
 }

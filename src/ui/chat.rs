@@ -22,7 +22,7 @@ impl SimpleComponent for ChatPanel {
     view! {
         #[root]
         adw::StatusPage {
-            set_icon_name: Some("system-users-symbolic"),
+            set_icon_name: Some("people"),
 
             #[watch]
             set_title: &if model.has_providers {

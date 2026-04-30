@@ -116,7 +116,7 @@ impl Component for CharacterEditorModel {
             // ---- Identity Page ----
             add = &adw::PreferencesPage {
                 set_title: "Identity",
-                set_icon_name: Some("contact-new-symbolic"),
+                set_icon_name: Some("contact-page"),
 
                 adw::PreferencesGroup {
                     set_title: "Basic Info",
@@ -162,7 +162,7 @@ impl Component for CharacterEditorModel {
             // ---- Personality Page ----
             add = &adw::PreferencesPage {
                 set_title: "Personality",
-                set_icon_name: Some("face-smile-symbolic"),
+                set_icon_name: Some("mood"),
 
                 adw::PreferencesGroup {
                     set_title: "Personality",
@@ -199,7 +199,7 @@ impl Component for CharacterEditorModel {
             // ---- Scenario Page ----
             add = &adw::PreferencesPage {
                 set_title: "Scenario",
-                set_icon_name: Some("document-edit-symbolic"),
+                set_icon_name: Some("edit"),
 
                 adw::PreferencesGroup {
                     set_title: "Scenario",
@@ -249,7 +249,7 @@ impl Component for CharacterEditorModel {
             // ---- Advanced Page ----
             add = &adw::PreferencesPage {
                 set_title: "Advanced",
-                set_icon_name: Some("preferences-other-symbolic"),
+                set_icon_name: Some("tune"),
 
                 adw::PreferencesGroup {
                     set_title: "System Prompt",

@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use std::io::Cursor;
 
-use crate::domain::character::{CharacterCardV2, CharacterV1};
+use crate::domain::character::{CharacterCardV2, CharaCardV2Spec, CharacterV1};
 
 /// Maximum allowed JSON payload size (10 MB).
 const MAX_JSON_SIZE: usize = 10 * 1024 * 1024;
@@ -20,20 +20,30 @@ pub fn import_from_json(json_str: &str) -> Result<CharacterCardV2> {
         ));
     }
 
-    // Try V2 format first
+    // Try V2 spec format first (spec + nested data, used in PNG tEXt chunks)
+    if let Ok(spec) = serde_json::from_str::<CharaCardV2Spec>(json_str) {
+        let mut card = spec.to_domain();
+        normalize_card_fields(&mut card);
+        return Ok(card);
+    }
+
+    // Try flat V2 format (our internal storage format)
     if let Ok(mut card) = serde_json::from_str::<CharacterCardV2>(json_str) {
         // Assign a new UUID for imported characters
         card.id = uuid::Uuid::new_v4().to_string();
+        normalize_card_fields(&mut card);
         return Ok(card);
     }
 
     // Try V1 format
     if let Ok(v1) = serde_json::from_str::<CharacterV1>(json_str) {
-        return Ok(v1.to_v2());
+        let mut card = v1.to_v2();
+        normalize_card_fields(&mut card);
+        return Ok(card);
     }
 
     Err(anyhow!(
-        "Invalid character card JSON. Expected CharacterCardV2 or CharacterV1 format."
+        "Invalid character card JSON. Expected CharacterCardV2 spec, flat V2, or V1 format."
     ))
 }
 
@@ -49,7 +59,14 @@ pub fn export_to_json(character: &CharacterCardV2) -> Result<String> {
 /// Returns the character and the raw PNG bytes (which IS the avatar image).
 pub fn import_from_png(png_bytes: &[u8]) -> Result<(CharacterCardV2, Option<Vec<u8>>)> {
     let decoder = png::Decoder::new(Cursor::new(png_bytes));
-    let reader = decoder.read_info()?;
+    let mut reader = decoder.read_info()?;
+
+    // The PNG spec allows tEXt chunks after IDAT. Many character card PNGs
+    // place the "chara" tEXt chunk after the image data. We must consume the
+    // image data and then read remaining chunks before checking text metadata.
+    let mut img_data = vec![0u8; reader.output_buffer_size().ok_or_else(|| anyhow!("Cannot determine PNG output buffer size"))?];
+    reader.next_frame(&mut img_data)?;
+    reader.finish()?;
 
     // Look for the "chara" tEXt chunk
     let chara_value = reader
@@ -125,10 +142,184 @@ pub fn export_to_png(
     Ok(output)
 }
 
+/// Normalize card fields by parsing W++/structured content from `description`
+/// into their proper V2 fields (personality, mes_example, scenario).
+///
+/// Many card authors stuff everything into `description` while leaving
+/// `personality`, `mes_example`, and `scenario` empty. This function
+/// detects and extracts:
+///
+/// - W++ attribute blocks like `[Name's Personality= "..."]` → `personality`
+/// - W++ body blocks like `[Name's body= "..."]` → appended to `personality`
+/// - Dialogue examples starting with `<START>` → `mes_example`
+/// - Genre/Tags/Scenario metadata like `[Genre: ...; Scenario: ...]` → `scenario`
+fn normalize_card_fields(card: &mut CharacterCardV2) {
+    // Only redistribute if the target fields are empty
+    if !card.personality.is_empty()
+        && !card.mes_example.is_empty()
+        && !card.scenario.is_empty()
+    {
+        return;
+    }
+
+    let desc = &card.description;
+    let mut personality_parts: Vec<String> = Vec::new();
+    let mut mes_example_parts: Vec<String> = Vec::new();
+    let mut scenario_parts: Vec<String> = Vec::new();
+    let mut remaining_desc = desc.clone();
+
+    // Extract W++ attribute blocks: [Name's Key= "val1", "val2"]
+    // Pattern: starts with '[', contains '=', ends with ']'
+    let wpp_re = regex::Regex::new(r"(?s)\[[\w]+'s\s+(\w+)=\s*([^\]]*)\]").unwrap();
+    for cap in wpp_re.captures_iter(desc) {
+        let key = cap.get(1).unwrap().as_str().to_lowercase();
+        let values_raw = cap.get(2).unwrap().as_str();
+        let full_match = cap.get(0).unwrap().as_str();
+
+        // Extract quoted values
+        let quoted_re = regex::Regex::new(r#""([^"]*)""#).unwrap();
+        let values: Vec<&str> = quoted_re
+            .captures_iter(values_raw)
+            .map(|c| c.get(1).unwrap().as_str())
+            .collect();
+
+        if !values.is_empty() {
+            let label = if key == "personality" {
+                "Personality".to_string()
+            } else {
+                // Capitalize first letter
+                let mut chars = key.chars();
+                match chars.next() {
+                    None => key.clone(),
+                    Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            };
+            personality_parts.push(format!("{}: {}", label, values.join(", ")));
+        } else {
+            // No quoted values — keep the raw block as personality
+            personality_parts.push(full_match.to_string());
+        }
+
+        // Remove from description
+        remaining_desc = remaining_desc.replace(full_match, "");
+    }
+
+    // Extract dialogue examples: anything starting with <START>
+    if card.mes_example.is_empty() {
+        if let Some(start_idx) = remaining_desc.find("<START>") {
+            let dialogue = remaining_desc[start_idx..].trim().to_string();
+            // Check if there's a genre/scenario block after the dialogue
+            // Genre block pattern: [Genre: ...]
+            if let Some(genre_idx) = dialogue.rfind('[') {
+                let bracket_content = &dialogue[genre_idx..];
+                if bracket_content.contains("Genre:")
+                    || bracket_content.contains("Scenario:")
+                    || bracket_content.contains("Tags:")
+                {
+                    // Extract scenario from the genre block if not already done
+                    let meta_re =
+                        regex::Regex::new(r"\[Genre:\s*([^;\]]+)(?:;\s*Tags:\s*([^;\]]+))?(?:;\s*Scenario:\s*([^\]]+))?\]")
+                            .unwrap();
+                    if card.scenario.is_empty() {
+                        if let Some(cap) = meta_re.captures(bracket_content) {
+                            if let Some(scenario) = cap.get(3) {
+                                scenario_parts.push(scenario.as_str().trim().to_string());
+                            } else if let Some(genre) = cap.get(1) {
+                                scenario_parts.push(format!("Genre: {}", genre.as_str().trim()));
+                            }
+                        }
+                    }
+                    // The dialogue ends before the genre block
+                    mes_example_parts.push(dialogue[..genre_idx].trim().to_string());
+                } else {
+                    mes_example_parts.push(dialogue.clone());
+                }
+            } else {
+                mes_example_parts.push(dialogue.clone());
+            }
+            remaining_desc = remaining_desc[..start_idx].trim().to_string();
+        }
+    }
+
+    // Extract genre/tags/scenario metadata that wasn't inside dialogue
+    if card.scenario.is_empty() && scenario_parts.is_empty() {
+        let meta_re =
+            regex::Regex::new(r"\[Genre:\s*([^;\]]+)(?:;\s*Tags:\s*([^;\]]+))?(?:;\s*Scenario:\s*([^\]]+))?\]")
+                .unwrap();
+        if let Some(cap) = meta_re.captures(&remaining_desc) {
+            let full_match = cap.get(0).unwrap().as_str();
+            if let Some(scenario) = cap.get(3) {
+                scenario_parts.push(scenario.as_str().trim().to_string());
+            } else if let Some(genre) = cap.get(1) {
+                scenario_parts.push(format!("Genre: {}", genre.as_str().trim()));
+            }
+            remaining_desc = remaining_desc.replace(full_match, "");
+        }
+    }
+
+    // Clean up remaining description
+    remaining_desc = remaining_desc
+        .split('\n')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_string();
+
+    // Apply extracted fields
+    if !personality_parts.is_empty() && card.personality.is_empty() {
+        card.personality = personality_parts.join("\n");
+    }
+    if !mes_example_parts.is_empty() && card.mes_example.is_empty() {
+        card.mes_example = mes_example_parts.join("\n\n");
+    }
+    if !scenario_parts.is_empty() && card.scenario.is_empty() {
+        card.scenario = scenario_parts.join("\n");
+    }
+    card.description = remaining_desc;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::domain::character::CharacterCardV2;
+
+    #[test]
+    fn test_import_from_json_v2_spec_format() {
+        // Test the V2 spec format with nested "data" key (as used in PNG tEXt chunks)
+        let v2_spec_json = r#"{
+            "spec": "chara_card_v2",
+            "spec_version": "2.0",
+            "data": {
+                "name": "Seraphina",
+                "description": "A magical healer",
+                "personality": "Caring and protective",
+                "scenario": "An enchanted forest",
+                "first_mes": "Hello, traveler.",
+                "mes_example": "<START>\n{{user}}: Hi\n{{char}}: Greetings!",
+                "system_prompt": "You are Seraphina.",
+                "post_history_instructions": "",
+                "alternate_greetings": ["Welcome, friend."],
+                "tags": ["fantasy", "magic"],
+                "creator": "TestAuthor",
+                "character_version": "1.0.0",
+                "creator_notes": "A test character",
+                "character_book": {},
+                "extensions": {"talkativeness": 0.5}
+            }
+        }"#;
+
+        let imported = import_from_json(v2_spec_json).expect("V2 spec import failed");
+        assert_eq!(imported.name, "Seraphina");
+        assert_eq!(imported.description, "A magical healer");
+        assert_eq!(imported.personality, "Caring and protective");
+        assert_eq!(imported.first_mes, "Hello, traveler.");
+        assert_eq!(imported.tags, vec!["fantasy", "magic"]);
+        assert_eq!(imported.creator, "TestAuthor");
+        // ID should be a new UUID (not from the JSON)
+        assert!(uuid::Uuid::parse_str(&imported.id).is_ok());
+    }
 
     /// Helper to create a test CharacterCardV2 with predictable data.
     fn test_character() -> CharacterCardV2 {
@@ -223,7 +414,10 @@ mod tests {
 
         // Verify it's valid PNG by parsing it back
         let decoder = png::Decoder::new(Cursor::new(&png_bytes));
-        let reader = decoder.read_info().expect("decode failed");
+        let mut reader = decoder.read_info().expect("decode failed");
+        let mut buf = vec![0u8; reader.output_buffer_size().unwrap()];
+        reader.next_frame(&mut buf).expect("next_frame failed");
+        reader.finish().expect("finish failed");
 
         let chara_chunks: Vec<_> = reader
             .info()
@@ -317,5 +511,116 @@ mod tests {
             "Expected size limit error, got: {}",
             err_msg
         );
+    }
+
+    #[test]
+    fn test_normalize_wpp_description() {
+        // Simulate a card where the author stuffed W++ personality, body,
+        // dialogue examples, and scenario metadata all into `description`
+        let v2_spec_json = r#"{
+            "spec": "chara_card_v2",
+            "spec_version": "2.0",
+            "data": {
+                "name": "Seraphina",
+                "description": "[Seraphina's Personality= \"caring\", \"protective\", \"compassionate\"]\n[Seraphina's body= \"pink hair\", \"amber eyes\"]\n<START>\n{{user}}: Hi\n{{char}}: Greetings!\n[Genre: fantasy; Tags: adventure, Magic; Scenario: Attacked by beasts in the forest]",
+                "personality": "",
+                "scenario": "",
+                "first_mes": "Hello traveler",
+                "mes_example": "",
+                "creator_notes": "",
+                "system_prompt": "",
+                "post_history_instructions": "",
+                "tags": ["fantasy"],
+                "creator": "TestAuthor",
+                "character_version": "1.0.0",
+                "alternate_greetings": [],
+                "extensions": {},
+                "character_book": {}
+            }
+        }"#;
+
+        let card = import_from_json(v2_spec_json).expect("import failed");
+
+        // Personality should contain extracted W++ traits
+        assert!(
+            card.personality.contains("Personality: caring, protective, compassionate"),
+            "personality should have extracted personality traits, got: {}",
+            card.personality
+        );
+        assert!(
+            card.personality.contains("Body: pink hair, amber eyes"),
+            "personality should have extracted body traits, got: {}",
+            card.personality
+        );
+
+        // mes_example should contain the dialogue block
+        assert!(
+            card.mes_example.contains("<START>"),
+            "mes_example should contain dialogue, got: {}",
+            card.mes_example
+        );
+        assert!(
+            card.mes_example.contains("{{user}}: Hi"),
+            "mes_example should contain user dialogue, got: {}",
+            card.mes_example
+        );
+
+        // scenario should contain the extracted scenario
+        assert!(
+            card.scenario.contains("Attacked by beasts in the forest"),
+            "scenario should contain extracted scenario, got: {}",
+            card.scenario
+        );
+
+        // description should now be clean (no W++ blocks, no dialogue, no genre metadata)
+        assert!(
+            !card.description.contains("[Seraphina's Personality"),
+            "description should not contain W++ personality block, got: {}",
+            card.description
+        );
+        assert!(
+            !card.description.contains("<START>"),
+            "description should not contain dialogue, got: {}",
+            card.description
+        );
+        assert!(
+            !card.description.contains("Genre:"),
+            "description should not contain genre metadata, got: {}",
+            card.description
+        );
+    }
+
+    #[test]
+    fn test_normalize_skips_when_fields_populated() {
+        // If personality, mes_example, and scenario are already filled,
+        // normalization should not modify description
+        let v2_spec_json = r#"{
+            "spec": "chara_card_v2",
+            "spec_version": "2.0",
+            "data": {
+                "name": "Test",
+                "description": "[Test's Personality= \"bold\"]\n<START>\n{{user}}: Hi\n[Genre: scifi; Scenario: Space travel]",
+                "personality": "Already set",
+                "scenario": "Already set",
+                "first_mes": "Hi",
+                "mes_example": "Already set",
+                "creator_notes": "",
+                "system_prompt": "",
+                "post_history_instructions": "",
+                "tags": [],
+                "creator": "Test",
+                "character_version": "1.0.0",
+                "alternate_greetings": [],
+                "extensions": {},
+                "character_book": {}
+            }
+        }"#;
+
+        let card = import_from_json(v2_spec_json).expect("import failed");
+
+        // Nothing should have been extracted because all target fields are populated
+        assert_eq!(card.personality, "Already set");
+        assert_eq!(card.mes_example, "Already set");
+        assert_eq!(card.scenario, "Already set");
     }
 }
