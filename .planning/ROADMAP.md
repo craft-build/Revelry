@@ -68,12 +68,12 @@ Plans:
   3. User can cancel an in-progress AI generation and see the partial response preserved in conversation history
   4. User can edit a previous message or regenerate an AI response to create a branch, and navigate between branches with visual indicators
   5. User can delete any message from conversation history and see AI responses rendered with markdown formatting (bold, italic, headers, lists)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — Conversation data layer, AI service, prompt assembly, and Pango markdown
+- [ ] 03-02-PLAN.md — ChatPanel upgrade with streaming, message list, input bar, and sidebar
+- [ ] 03-03-PLAN.md — Branching (edit, regenerate, navigate), message delete, and error handling
 
 **UI hint**: yes
 
