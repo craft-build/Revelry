@@ -1,7 +1,9 @@
 use crate::domain::character::CharacterCardV2;
+use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
 use crate::domain::provider::{ProviderConfig, ProviderType};
 use chrono::NaiveDateTime;
 use rusqlite::Row;
+use std::str::FromStr;
 
 /// Converts a database row into a ProviderConfig.
 /// Timestamps are stored as TEXT and parsed from the database.
@@ -113,5 +115,88 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
         character_book,
         created_at,
         updated_at,
+    })
+}
+
+/// Converts a database row into a Conversation.
+/// Timestamps are stored as TEXT and parsed from the database.
+pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+
+    let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+    let updated_at = NaiveDateTime::parse_from_str(&updated_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    Ok(Conversation {
+        id: row.get("id")?,
+        character_id: row.get("character_id")?,
+        provider_id: row.get("provider_id")?,
+        creator_persona_id: row.get("creator_persona_id")?,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Converts a database row into a Message.
+/// Timestamps are stored as TEXT and parsed from the database.
+pub fn row_to_message(row: &Row) -> rusqlite::Result<Message> {
+    let timestamp_str: String = row.get("timestamp")?;
+    let timestamp = NaiveDateTime::parse_from_str(&timestamp_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    let role_str: String = row.get("role")?;
+    let role = match MessageRole::from_str(&role_str) {
+        Ok(r) => r,
+        Err(e) => {
+            return Err(rusqlite::Error::FromSqlConversionFailure(
+                0,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+            ));
+        }
+    };
+
+    Ok(Message {
+        id: row.get("id")?,
+        conversation_id: row.get("conversation_id")?,
+        branch_id: row.get("branch_id")?,
+        role,
+        content: row.get("content")?,
+        timestamp,
+        sort_order: row.get("sort_order")?,
+    })
+}
+
+/// Converts a database row into a MessageBranch.
+/// Timestamps are stored as TEXT and parsed from the database.
+pub fn row_to_message_branch(row: &Row) -> rusqlite::Result<MessageBranch> {
+    let created_at_str: String = row.get("created_at")?;
+    let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    Ok(MessageBranch {
+        id: row.get("id")?,
+        conversation_id: row.get("conversation_id")?,
+        parent_message_id: row.get("parent_message_id")?,
+        label: row.get("label")?,
+        created_at,
     })
 }

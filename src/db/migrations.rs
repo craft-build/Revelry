@@ -80,6 +80,39 @@ pub fn get_migrations() -> Migrations<'static> {
              ALTER TABLE characters ADD COLUMN character_book TEXT NOT NULL DEFAULT 'null';",
         )
         .down("ALTER TABLE characters DROP COLUMN character_book; ALTER TABLE characters DROP COLUMN creator_notes;"),
+        // Migration 5: Create conversations, messages, and message_branches tables
+        M::up(
+            "CREATE TABLE conversations (
+                id TEXT PRIMARY KEY,
+                character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+                provider_id TEXT NOT NULL REFERENCES providers(id) ON DELETE SET NULL,
+                creator_persona_id TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE message_branches (
+                id TEXT PRIMARY KEY,
+                conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+                parent_message_id TEXT,
+                label TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE messages (
+                id TEXT PRIMARY KEY,
+                conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+                branch_id TEXT REFERENCES message_branches(id) ON DELETE SET NULL,
+                role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
+                content TEXT NOT NULL DEFAULT '',
+                timestamp TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE INDEX idx_messages_conv_branch ON messages(conversation_id, branch_id, sort_order);
+            CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);",
+        )
+        .down("DROP INDEX IF EXISTS idx_conversations_updated; DROP INDEX IF EXISTS idx_messages_conv_branch; DROP TABLE IF EXISTS messages; DROP TABLE IF EXISTS message_branches; DROP TABLE IF EXISTS conversations;"),
     ])
 }
 

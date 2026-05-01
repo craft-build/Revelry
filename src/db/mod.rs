@@ -1,9 +1,11 @@
 pub mod characters;
+pub mod conversations;
 pub mod migrations;
 pub mod models;
 pub mod providers;
 
 use crate::domain::character::CharacterCardV2;
+use crate::domain::conversation::{Conversation, Message};
 use crate::domain::provider::ProviderConfig;
 use relm4::{ComponentSender, Worker};
 use rusqlite::Connection;
@@ -21,6 +23,15 @@ pub enum DbInput {
     SaveCharacter(CharacterCardV2),
     DeleteCharacter(String),
     SearchCharacters(String),
+    // Conversation operations
+    StartConversation { character_id: String, provider_id: String },
+    LoadConversations,
+    LoadMessages { conversation_id: String, branch_id: Option<String> },
+    SaveMessage(Message),
+    UpdateMessageContent { id: String, content: String },
+    DeleteMessage(String),
+    DeleteConversation(String),
+    CountMessages(String),
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -35,6 +46,15 @@ pub enum DbOutput {
     CharacterSaved(CharacterCardV2),
     CharacterDeleted(String),
     CharactersSearched(Vec<CharacterCardV2>),
+    // Conversation outputs
+    ConversationStarted(Conversation),
+    ConversationsLoaded(Vec<Conversation>),
+    MessagesLoaded(Vec<Message>),
+    MessageSaved(Message),
+    MessageContentUpdated,
+    MessageDeleted(String),
+    ConversationDeleted(String),
+    MessageCount(i32),
     Error(String),
 }
 
@@ -118,6 +138,46 @@ impl Worker for DbService {
             DbInput::SearchCharacters(query) => {
                 characters::search_characters(&self.conn, &query)
                     .map(DbOutput::CharactersSearched)
+            }
+            // Conversation operations
+            DbInput::StartConversation { character_id, provider_id } => {
+                // Load the character first
+                match characters::load_character(&self.conn, &character_id) {
+                    Ok(Some(character)) => {
+                        conversations::start_conversation(&self.conn, &character, &provider_id)
+                            .map(DbOutput::ConversationStarted)
+                    }
+                    Ok(None) => Err(anyhow::anyhow!("Character not found: {}", character_id)),
+                    Err(e) => Err(e),
+                }
+            }
+            DbInput::LoadConversations => {
+                conversations::load_conversations(&self.conn)
+                    .map(DbOutput::ConversationsLoaded)
+            }
+            DbInput::LoadMessages { conversation_id, branch_id } => {
+                conversations::load_messages(&self.conn, &conversation_id, branch_id.as_deref())
+                    .map(DbOutput::MessagesLoaded)
+            }
+            DbInput::SaveMessage(msg) => {
+                conversations::save_message(&self.conn, &msg)
+                    .map(|_| DbOutput::MessageSaved(msg))
+            }
+            DbInput::UpdateMessageContent { id, content } => {
+                conversations::update_message_content(&self.conn, &id, &content)
+                    .map(|_| DbOutput::MessageContentUpdated)
+            }
+            DbInput::DeleteMessage(id) => {
+                conversations::delete_message(&self.conn, &id)
+                    .map(|_| DbOutput::MessageDeleted(id))
+            }
+            DbInput::DeleteConversation(id) => {
+                conversations::delete_conversation(&self.conn, &id)
+                    .map(|_| DbOutput::ConversationDeleted(id))
+            }
+            DbInput::CountMessages(conversation_id) => {
+                conversations::count_messages_in_conversation(&self.conn, &conversation_id)
+                    .map(DbOutput::MessageCount)
             }
         };
 
