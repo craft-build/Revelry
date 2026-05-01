@@ -6,13 +6,15 @@ use relm4::{
 
 use crate::db::{DbInput, DbOutput, DbService};
 use crate::domain::character::CharacterCardV2;
+use crate::domain::conversation::{Conversation, Message};
+use crate::domain::provider::ProviderConfig;
 use crate::secrets::KeyringStore;
 use crate::service::card_io;
 use crate::ui::settings::SettingsPanelMsg;
 use crate::ui::{
     CharacterEditor, CharacterEditorInit, CharacterEditorOutput, CharactersPanel,
-    CharactersPanelMsg, CharactersPanelOutput, ChatPanel, ChatPanelMsg, SettingsPanel,
-    SettingsPanelOutput,
+    CharactersPanelMsg, CharactersPanelOutput, ChatPanel, ChatPanelMsg, ChatPanelOutput,
+    SettingsPanel, SettingsPanelOutput,
 };
 
 /// Active view in the main content area.
@@ -31,6 +33,7 @@ pub enum AppMsg {
     DbResult(DbOutput),
     SettingsOutput(SettingsPanelOutput),
     CharactersOutput(CharactersPanelOutput),
+    ChatOutput(ChatPanelOutput),
     EditorOutput(CharacterEditorOutput),
     ShowToast(String),
     Quit,
@@ -42,6 +45,9 @@ pub struct AppModel {
     sidebar_visible: bool,
     has_providers: bool,
     characters: Vec<CharacterCardV2>,
+    providers: Vec<ProviderConfig>,
+    conversations: Vec<Conversation>,
+    conversation_messages: Vec<Message>,
     db_worker: WorkerController<DbService>,
     chat_panel: relm4::Controller<ChatPanel>,
     #[allow(dead_code)] // Keep alive to run component event loop
@@ -161,7 +167,7 @@ impl SimpleComponent for AppModel {
         // Launch child panel components
         let chat_panel = ChatPanel::builder()
             .launch(false)
-            .detach();
+            .forward(sender.input_sender(), AppMsg::ChatOutput);
 
         let characters_panel = CharactersPanel::builder()
             .launch(())
@@ -183,6 +189,9 @@ impl SimpleComponent for AppModel {
             sidebar_visible: true,
             has_providers: false,
             characters: Vec::new(),
+            providers: Vec::new(),
+            conversations: Vec::new(),
+            conversation_messages: Vec::new(),
             db_worker,
             chat_panel,
             characters_panel,
@@ -285,9 +294,10 @@ impl SimpleComponent for AppModel {
             controller
         });
 
-        // Query providers and characters on startup
+        // Query providers, characters, and conversations on startup
         model.db_worker.sender().send(DbInput::LoadProviders).unwrap();
         model.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
+        model.db_worker.sender().send(DbInput::LoadConversations).unwrap();
 
         ComponentParts { model, widgets }
     }
@@ -305,6 +315,7 @@ impl SimpleComponent for AppModel {
                 DbOutput::ProvidersLoaded(providers) => {
                     let has_providers = !providers.is_empty();
                     self.has_providers = has_providers;
+                    self.providers = providers.clone();
 
                     // Per D-04 and D-12: show Settings if no providers, Chat otherwise
                     if !has_providers {
@@ -345,6 +356,31 @@ impl SimpleComponent for AppModel {
                 }
                 DbOutput::CharactersSearched(chars) => {
                     let _ = self.characters_panel.sender().send(CharactersPanelMsg::CharactersLoaded(chars));
+                }
+                DbOutput::ConversationsLoaded(convs) => {
+                    self.conversations = convs;
+                    // Forward providers to ChatPanel for conversation creation
+                    let providers = self.providers.clone();
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::ProvidersLoaded(providers));
+                }
+                DbOutput::ConversationStarted(conv) => {
+                    self.conversations.push(conv.clone());
+                    // Reload conversations to get the updated list
+                    self.db_worker.sender().send(DbInput::LoadConversations).unwrap();
+                    // Forward to chat panel
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::ConversationStarted(conv));
+                }
+                DbOutput::MessagesLoaded(msgs) => {
+                    self.conversation_messages = msgs.clone();
+                    // Forward to chat panel
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::MessagesLoaded(msgs));
+                }
+                DbOutput::MessageSaved(msg) => {
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::MessageSaved(msg));
+                }
+                DbOutput::ConversationDeleted(id) => {
+                    self.conversations.retain(|c| c.id != id);
+                    self.db_worker.sender().send(DbInput::LoadConversations).unwrap();
                 }
                 DbOutput::Error(e) => {
                     tracing::error!("Database error: {}", e);
@@ -615,6 +651,34 @@ impl SimpleComponent for AppModel {
                             }
                         },
                     );
+                }
+            },
+            AppMsg::ChatOutput(output) => match output {
+                ChatPanelOutput::StartConversation { character_id, provider_id } => {
+                    self.db_worker.sender().send(DbInput::StartConversation { character_id, provider_id }).unwrap();
+                }
+                ChatPanelOutput::SaveMessage(msg) => {
+                    self.db_worker.sender().send(DbInput::SaveMessage(msg)).unwrap();
+                }
+                ChatPanelOutput::LoadMessages { conversation_id, branch_id } => {
+                    self.db_worker.sender().send(DbInput::LoadMessages { conversation_id, branch_id }).unwrap();
+                }
+                ChatPanelOutput::LoadConversations => {
+                    self.db_worker.sender().send(DbInput::LoadConversations).unwrap();
+                }
+                ChatPanelOutput::DeleteConversation(id) => {
+                    self.db_worker.sender().send(DbInput::DeleteConversation(id)).unwrap();
+                }
+                ChatPanelOutput::RequestApiKey(provider_id) => {
+                    // Load API key from keyring and send back to chat panel
+                    let chat_sender = self.chat_panel.sender().clone();
+                    sender.spawn_oneshot_command(move || {
+                        let api_key = KeyringStore::load_key(&provider_id).unwrap_or_default();
+                        let _ = chat_sender.send(ChatPanelMsg::LoadApiKey(api_key));
+                    });
+                }
+                ChatPanelOutput::ShowToast(msg) => {
+                    self.show_toast(&msg);
                 }
             },
             AppMsg::EditorOutput(output) => match output {
