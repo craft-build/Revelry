@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Current Position
 
 Phase: 03 (ai-chat-streaming) — EXECUTING
-Plan: 1 of 3 complete
-Status: Wave 1 complete, Wave 2 ready
+Plan: 2 of 3 complete
+Status: Wave 2 complete, Wave 3 ready
 Last activity: 2026-04-30
 
 Progress: [█████-----] 50%
