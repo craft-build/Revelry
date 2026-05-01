@@ -16,7 +16,7 @@ Output: Conversational output only (no file creation) - ends with "What do you t
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/list-phase-assumptions.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/list-phase-assumptions.md
 </execution_context>
 
 <context>

@@ -367,11 +367,11 @@ This annotation is consumed by downstream workflows (`new-project`, `progress`) 
 | 2. Name | 0/2 | Not started | - |
 ```
 
-Reference full template: `/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/roadmap.md`
+Reference full template: `/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/roadmap.md`
 
 ## STATE.md Structure
 
-Use template from `/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/state.md`.
+Use template from `/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/state.md`.
 
 Key sections:
 - Project Reference (core value, current focus)

@@ -24,12 +24,12 @@ not pipeline shape.
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/settings-integrations.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/settings-integrations.md
 </execution_context>
 
 <process>
 **Follow the settings-integrations workflow** from
-`@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/settings-integrations.md`.
+`@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/settings-integrations.md`.
 
 The workflow handles:
 1. Resolving `$GSD_CONFIG_PATH` (flat vs workstream)

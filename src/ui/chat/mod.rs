@@ -6,9 +6,8 @@ use relm4::prelude::*;
 use relm4::{adw, gtk};
 
 use crate::domain::character::CharacterCardV2;
-use crate::domain::conversation::{Conversation, Message, MessageRole};
+use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
 use crate::domain::provider::ProviderConfig;
-use crate::service::markdown::markdown_to_pango;
 
 use self::input_bar::{InputBar, InputBarMsg, InputBarOutput};
 use self::message_row::{MessageRow, MessageRowInit};
@@ -19,12 +18,15 @@ pub struct ChatPanel {
     active_conversation: Option<Conversation>,
     active_character: Option<CharacterCardV2>,
     active_provider: Option<ProviderConfig>,
+    active_branch_id: Option<String>,
     messages: Vec<Message>,
+    branches: Vec<MessageBranch>,
     partial_response: String,
     streaming: bool,
     has_providers: bool,
     characters: Vec<CharacterCardV2>,
     providers: Vec<ProviderConfig>,
+    editing_message_id: Option<String>,
     
     // Widget references
     messages_container: gtk::ListBox,
@@ -53,6 +55,15 @@ pub enum ChatPanelMsg {
     UpdatePartialResponse(String),
     StreamComplete(String),
     StreamError(String),
+    // Branch operations
+    EditMessage { message_id: String, new_content: String },
+    RegenerateMessage(String),
+    DeleteMessage(String),
+    SwitchBranch(Option<String>),
+    BranchesLoaded(Vec<MessageBranch>),
+    BranchCreated(MessageBranch),
+    MessageContentUpdated,
+    MessageDeleted(String),
 }
 
 /// Command output from background operations (streaming, API calls).
@@ -73,6 +84,13 @@ pub enum ChatPanelOutput {
     DeleteConversation(String),
     RequestApiKey(String),
     ShowToast(String),
+    // Branch operations
+    EditMessage { message_id: String, new_content: String },
+    RegenerateMessage(String),
+    DeleteMessage(String),
+    LoadBranches(String),
+    CreateBranch(MessageBranch),
+    SwitchBranch(Option<String>),
 }
 
 #[relm4::component(pub)]
@@ -149,16 +167,19 @@ impl Component for ChatPanel {
         messages_container.set_margin_bottom(8);
         messages_container.add_css_class("message-list");
 
-        let mut model = ChatPanel {
+        let model = ChatPanel {
             active_conversation: None,
             active_character: None,
             active_provider: None,
+            active_branch_id: None,
             messages: Vec::new(),
+            branches: Vec::new(),
             partial_response: String::new(),
             streaming: false,
             has_providers: init,
             characters: Vec::new(),
             providers: Vec::new(),
+            editing_message_id: None,
             messages_container,
             input_bar,
         };
@@ -338,6 +359,57 @@ impl Component for ChatPanel {
                 }
                 self.partial_response.clear();
             }
+            // Branch operations
+            ChatPanelMsg::EditMessage { message_id, new_content } => {
+                // Send edit to parent (AppModel) to update in DB
+                let _ = sender.output(ChatPanelOutput::EditMessage { message_id, new_content });
+            }
+            ChatPanelMsg::RegenerateMessage(message_id) => {
+                // Trigger regeneration for the message
+                let _ = sender.output(ChatPanelOutput::RegenerateMessage(message_id));
+            }
+            ChatPanelMsg::DeleteMessage(message_id) => {
+                // Clone message_id for output before using it in retain
+                let id_clone = message_id.clone();
+                // Delete the message
+                let _ = sender.output(ChatPanelOutput::DeleteMessage(message_id));
+                // Remove from local messages
+                self.messages.retain(|m| m.id != id_clone);
+                self.rebuild_message_list();
+            }
+            ChatPanelMsg::SwitchBranch(branch_id) => {
+                // Switch to a different branch
+                self.active_branch_id = branch_id.clone();
+                // Request messages for the new branch
+                if let Some(ref conversation) = self.active_conversation {
+                    let _ = sender.output(ChatPanelOutput::LoadMessages {
+                        conversation_id: conversation.id.clone(),
+                        branch_id,
+                    });
+                }
+            }
+            ChatPanelMsg::BranchesLoaded(branches) => {
+                self.branches = branches;
+                self.rebuild_message_list();
+            }
+            ChatPanelMsg::BranchCreated(branch) => {
+                self.branches.push(branch);
+            }
+            ChatPanelMsg::MessageContentUpdated => {
+                // Message content was updated in DB
+                // Reload messages to reflect changes
+                if let Some(ref conversation) = self.active_conversation {
+                    let _ = sender.output(ChatPanelOutput::LoadMessages {
+                        conversation_id: conversation.id.clone(),
+                        branch_id: self.active_branch_id.clone(),
+                    });
+                }
+            }
+            ChatPanelMsg::MessageDeleted(id) => {
+                // Remove from local messages
+                self.messages.retain(|m| m.id != id);
+                self.rebuild_message_list();
+            }
         }
     }
 
@@ -371,9 +443,15 @@ impl ChatPanel {
 
         // Add each message as a MessageRow
         for message in &self.messages {
+            // Check if this message has sibling branches
+            let has_siblings = self.branches.iter().any(|b| {
+                b.parent_message_id.as_ref() == Some(&message.id)
+            });
+            
             let init = MessageRowInit {
                 message: message.clone(),
                 character_name: self.active_character.as_ref().map(|c| c.name.clone()),
+                has_siblings,
             };
             let row = MessageRow::new(&init);
             let widget = row.widget();

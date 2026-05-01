@@ -19,9 +19,9 @@ Three modes:
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/undo.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/gate-prompts.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/undo.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/gate-prompts.md
 </execution_context>
 
 <context>
@@ -29,5 +29,5 @@ $ARGUMENTS
 </context>
 
 <process>
-Execute the undo workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/undo.md end-to-end.
+Execute the undo workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/undo.md end-to-end.
 </process>

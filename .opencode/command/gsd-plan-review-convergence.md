@@ -23,10 +23,10 @@ Replaces gsd-plan-phase's internal gsd-plan-checker with external AI reviewers (
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/plan-review-convergence.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/revision-loop.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/gates.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/agent-contracts.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/plan-review-convergence.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/revision-loop.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/gates.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/agent-contracts.md
 </execution_context>
 
 <runtime_note>
@@ -52,6 +52,6 @@ Phase number: extracted from $ARGUMENTS (required)
 </context>
 
 <process>
-Execute the plan-review-convergence workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/plan-review-convergence.md end-to-end.
+Execute the plan-review-convergence workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/plan-review-convergence.md end-to-end.
 Preserve all workflow gates (pre-flight, revision loop, stall detection, escalation).
 </process>

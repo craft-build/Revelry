@@ -17,8 +17,8 @@ Produces EVAL-REVIEW.md with score, verdict, gaps, and remediation plan.
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/eval-review.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ai-evals.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/eval-review.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ai-evals.md
 </execution_context>
 
 <context>
@@ -26,6 +26,6 @@ Phase: $ARGUMENTS — optional, defaults to last completed phase.
 </context>
 
 <process>
-Execute @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/eval-review.md end-to-end.
+Execute @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/eval-review.md end-to-end.
 Preserve all workflow gates.
 </process>

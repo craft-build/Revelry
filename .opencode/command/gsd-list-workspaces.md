@@ -9,10 +9,10 @@ Scan `~/gsd-workspaces/` for workspace directories containing `WORKSPACE.md` man
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/list-workspaces.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/list-workspaces.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <process>
-Execute the list-workspaces workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/list-workspaces.md end-to-end.
+Execute the list-workspaces workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/list-workspaces.md end-to-end.
 </process>

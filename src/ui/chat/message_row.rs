@@ -1,19 +1,32 @@
 use adw::prelude::*;
 use relm4::prelude::*;
 use relm4::{adw, gtk};
+use relm4::gtk::gio;
 
 use crate::domain::conversation::{Message, MessageRole};
 use crate::service::markdown::markdown_to_pango;
+
+/// Output messages from MessageRow to parent (ChatPanel).
+#[derive(Debug, Clone)]
+pub enum MessageRowOutput {
+    EditMessage { message_id: String, new_content: String },
+    RegenerateMessage(String),
+    DeleteMessage(String),
+}
 
 /// A widget for displaying a single message in the chat.
 /// Character messages are left-aligned, user messages are right-aligned.
 #[derive(Clone)]
 pub struct MessageRow {
+    pub message_id: String,
     pub role: MessageRole,
     pub content: String,
     pub formatted: String,
     pub timestamp: chrono::NaiveDateTime,
     pub character_name: Option<String>,
+    pub has_siblings: bool,
+    pub is_editing: bool,
+    pub edit_buffer: Option<gtk::TextBuffer>,
 }
 
 /// Initialization parameters for a MessageRow.
@@ -21,6 +34,7 @@ pub struct MessageRow {
 pub struct MessageRowInit {
     pub message: Message,
     pub character_name: Option<String>,
+    pub has_siblings: bool,
 }
 
 impl MessageRow {
@@ -29,16 +43,19 @@ impl MessageRow {
         let formatted = if init.message.role == MessageRole::Assistant {
             markdown_to_pango(&init.message.content)
         } else {
-            // User messages are plain text - just escape for display
             gtk::glib::markup_escape_text(&init.message.content).to_string()
         };
 
         Self {
+            message_id: init.message.id.clone(),
             role: init.message.role.clone(),
             content: init.message.content.clone(),
             formatted,
             timestamp: init.message.timestamp,
             character_name: init.character_name.clone(),
+            has_siblings: init.has_siblings,
+            is_editing: false,
+            edit_buffer: None,
         }
     }
 
@@ -71,10 +88,17 @@ impl MessageRow {
         root.add_css_class("message-row");
         root.add_css_class(css_class);
 
+        // Branch indicator (colored left border)
+        if self.has_siblings {
+            let indicator = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            indicator.set_width_request(4);
+            indicator.add_css_class("branch-indicator");
+            root.append(&indicator);
+        }
+
         // For assistant messages, add avatar on the left
         if self.role == MessageRole::Assistant {
             let avatar = adw::Avatar::new(32, Some(name), false);
-            // TODO: Load character avatar from avatar_path when available
             root.append(&avatar);
         }
 
@@ -110,6 +134,38 @@ impl MessageRow {
 
         root.append(&content_box);
 
+        // Context menu button (three dots)
+        let menu_button = gtk::MenuButton::new();
+        menu_button.set_icon_name("view-more-symbolic");
+        menu_button.add_css_class("flat");
+        menu_button.add_css_class("circular");
+        menu_button.set_valign(gtk::Align::Center);
+        menu_button.set_halign(gtk::Align::End);
+        menu_button.set_vexpand(false);
+        menu_button.set_hexpand(false);
+        
+        // Build menu model
+        let menu = gio::Menu::new();
+        
+        match self.role {
+            MessageRole::User => {
+                let edit_item = gio::MenuItem::new(Some("Edit"), Some("message.edit"));
+                menu.append_item(&edit_item);
+            }
+            MessageRole::Assistant => {
+                let regen_item = gio::MenuItem::new(Some("Regenerate"), Some("message.regenerate"));
+                menu.append_item(&regen_item);
+            }
+            _ => {}
+        }
+        
+        let delete_item = gio::MenuItem::new(Some("Delete"), Some("message.delete"));
+        menu.append_item(&delete_item);
+        
+        menu_button.set_menu_model(Some(&menu));
+        
+        root.append(&menu_button);
+
         root
     }
 
@@ -120,5 +176,25 @@ impl MessageRow {
             MessageRole::Assistant => markdown_to_pango(&self.content),
             _ => gtk::glib::markup_escape_text(&self.content).to_string(),
         };
+    }
+
+    /// Set sibling status for branch indicator.
+    pub fn set_has_siblings(&mut self, has_siblings: bool) {
+        self.has_siblings = has_siblings;
+    }
+
+    /// Get the message ID.
+    pub fn id(&self) -> &str {
+        &self.message_id
+    }
+
+    /// Get the role.
+    pub fn role(&self) -> &MessageRole {
+        &self.role
+    }
+
+    /// Get the content.
+    pub fn content(&self) -> &str {
+        &self.content
     }
 }

@@ -16,9 +16,9 @@ changes that are irrelevant to code review.
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/pr-branch.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/pr-branch.md
 </execution_context>
 
 <process>
-Execute the pr-branch workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/pr-branch.md end-to-end.
+Execute the pr-branch workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/pr-branch.md end-to-end.
 </process>

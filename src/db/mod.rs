@@ -32,6 +32,9 @@ pub enum DbInput {
     DeleteMessage(String),
     DeleteConversation(String),
     CountMessages(String),
+    // Branch operations
+    LoadBranches(String),
+    CreateBranch(crate::domain::conversation::MessageBranch),
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -55,6 +58,9 @@ pub enum DbOutput {
     MessageDeleted(String),
     ConversationDeleted(String),
     MessageCount(i32),
+    // Branch outputs
+    BranchesLoaded(Vec<crate::domain::conversation::MessageBranch>),
+    BranchCreated(crate::domain::conversation::MessageBranch),
     Error(String),
 }
 
@@ -178,6 +184,14 @@ impl Worker for DbService {
             DbInput::CountMessages(conversation_id) => {
                 conversations::count_messages_in_conversation(&self.conn, &conversation_id)
                     .map(DbOutput::MessageCount)
+            }
+            DbInput::LoadBranches(parent_message_id) => {
+                conversations::load_branches_for_message(&self.conn, &parent_message_id)
+                    .map(DbOutput::BranchesLoaded)
+            }
+            DbInput::CreateBranch(branch) => {
+                conversations::create_branch(&self.conn, &branch)
+                    .map(|_| DbOutput::BranchCreated(branch))
             }
         };
 

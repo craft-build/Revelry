@@ -32,14 +32,14 @@ Initialize a new project through unified flow: questioning → research (optiona
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/new-project.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/questioning.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/project.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/requirements.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/new-project.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/questioning.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/project.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/requirements.md
 </execution_context>
 
 <process>
-Execute the new-project workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/new-project.md end-to-end.
+Execute the new-project workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/new-project.md end-to-end.
 Preserve all workflow gates (validation, approvals, commits, routing).
 </process>

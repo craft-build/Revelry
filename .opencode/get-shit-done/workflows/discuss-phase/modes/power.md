@@ -8,7 +8,7 @@
 ## Dispatch
 
 ```
-Read @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/discuss-phase-power.md
+Read @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/discuss-phase-power.md
 ```
 
 Execute it end-to-end. Do not continue with the standard interactive steps.

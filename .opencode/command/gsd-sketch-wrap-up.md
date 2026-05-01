@@ -16,8 +16,8 @@ project history. Output skill goes to `./.opencode/skills/sketch-findings-[proje
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/sketch-wrap-up.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/sketch-wrap-up.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <runtime_note>
@@ -25,6 +25,6 @@ project history. Output skill goes to `./.opencode/skills/sketch-findings-[proje
 </runtime_note>
 
 <process>
-Execute the sketch-wrap-up workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/sketch-wrap-up.md end-to-end.
+Execute the sketch-wrap-up workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/sketch-wrap-up.md end-to-end.
 Preserve all curation gates (per-sketch review, grouping approval, AGENTS.md routing line).
 </process>

@@ -18,11 +18,11 @@ Routes to the update workflow which handles:
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/update.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/update.md
 </execution_context>
 
 <process>
-**Follow the update workflow** from `@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/update.md`.
+**Follow the update workflow** from `@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/update.md`.
 
 The workflow handles all logic including:
 1. Installed version detection (local/global)

@@ -219,7 +219,7 @@ Scan the output for suspicious patterns:
 
 ## Output: UI-SPEC.md
 
-Use template from `/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/UI-SPEC.md`.
+Use template from `/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/UI-SPEC.md`.
 
 Write to: `$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md`
 
@@ -278,7 +278,7 @@ Batch questions into a single interaction where possible.
 
 ## Step 5: Compile UI-SPEC.md
 
-Read template: `/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/UI-SPEC.md`
+Read template: `/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/UI-SPEC.md`
 
 Fill all sections. Write to `$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md`.
 

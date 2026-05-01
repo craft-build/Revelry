@@ -19,9 +19,9 @@ Before routing to the next step, scans all prior phases for incomplete work: pla
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/next.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/next.md
 </execution_context>
 
 <process>
-Execute the next workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/next.md end-to-end.
+Execute the next workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/next.md end-to-end.
 </process>

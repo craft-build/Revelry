@@ -15,7 +15,7 @@ Extract structured learnings from completed phase artifacts (PLAN.md, SUMMARY.md
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/extract_learnings.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/extract_learnings.md
 </execution_context>
 
-Execute the extract-learnings workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/extract_learnings.md end-to-end.
+Execute the extract-learnings workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/extract_learnings.md end-to-end.

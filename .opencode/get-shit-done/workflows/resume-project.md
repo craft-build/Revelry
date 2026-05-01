@@ -11,7 +11,7 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 </purpose>
 
 <required_reading>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/continuation-format.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/continuation-format.md
 </required_reading>
 
 <process>

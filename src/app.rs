@@ -48,6 +48,8 @@ pub struct AppModel {
     providers: Vec<ProviderConfig>,
     conversations: Vec<Conversation>,
     conversation_messages: Vec<Message>,
+    active_conversation: Option<Conversation>,
+    active_branch_id: Option<String>,
     db_worker: WorkerController<DbService>,
     chat_panel: relm4::Controller<ChatPanel>,
     #[allow(dead_code)] // Keep alive to run component event loop
@@ -192,6 +194,8 @@ impl SimpleComponent for AppModel {
             providers: Vec::new(),
             conversations: Vec::new(),
             conversation_messages: Vec::new(),
+            active_conversation: None,
+            active_branch_id: None,
             db_worker,
             chat_panel,
             characters_panel,
@@ -386,7 +390,22 @@ impl SimpleComponent for AppModel {
                     tracing::error!("Database error: {}", e);
                     self.show_toast(&format!("Error: {}", e));
                 }
-                _ => {}
+                DbOutput::BranchesLoaded(branches) => {
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::BranchesLoaded(branches));
+                }
+                DbOutput::BranchCreated(branch) => {
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::BranchCreated(branch));
+                }
+                DbOutput::MessageContentUpdated => {
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::MessageContentUpdated);
+                }
+                DbOutput::MessageDeleted(id) => {
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::MessageDeleted(id));
+                }
+                _ => {
+                    // Handle other DbOutput variants (AppSettingLoaded, AppSettingSaved, MessageCount)
+                    // These are handled by other components
+                }
             },
             AppMsg::SettingsOutput(output) => match output {
                 SettingsPanelOutput::SaveProvider { config, api_key } => {
@@ -679,6 +698,35 @@ impl SimpleComponent for AppModel {
                 }
                 ChatPanelOutput::ShowToast(msg) => {
                     self.show_toast(&msg);
+                }
+                ChatPanelOutput::EditMessage { message_id, new_content } => {
+                    self.db_worker.sender().send(DbInput::UpdateMessageContent { id: message_id, content: new_content }).unwrap();
+                }
+                ChatPanelOutput::RegenerateMessage(message_id) => {
+                    // Trigger regeneration by loading the message and its parent
+                    // For now, just reload messages after a short delay
+                    self.db_worker.sender().send(DbInput::LoadMessages { 
+                        conversation_id: self.active_conversation.as_ref().map(|c| c.id.clone()).unwrap_or_default(),
+                        branch_id: self.active_branch_id.clone()
+                    }).unwrap();
+                }
+                ChatPanelOutput::DeleteMessage(message_id) => {
+                    self.db_worker.sender().send(DbInput::DeleteMessage(message_id)).unwrap();
+                }
+                ChatPanelOutput::LoadBranches(parent_message_id) => {
+                    self.db_worker.sender().send(DbInput::LoadBranches(parent_message_id)).unwrap();
+                }
+                ChatPanelOutput::SwitchBranch(branch_id) => {
+                    self.active_branch_id = branch_id.clone();
+                    if let Some(ref conversation) = self.active_conversation {
+                        self.db_worker.sender().send(DbInput::LoadMessages { 
+                            conversation_id: conversation.id.clone(),
+                            branch_id
+                        }).unwrap();
+                    }
+                }
+                ChatPanelOutput::CreateBranch(branch) => {
+                    self.db_worker.sender().send(DbInput::CreateBranch(branch)).unwrap();
                 }
             },
             AppMsg::EditorOutput(output) => match output {

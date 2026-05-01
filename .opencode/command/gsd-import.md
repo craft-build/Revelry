@@ -21,10 +21,10 @@ Future: `--prd` mode for PRD extraction is planned for a follow-up PR.
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/import.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/gate-prompts.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/doc-conflict-engine.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/import.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/gate-prompts.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/doc-conflict-engine.md
 </execution_context>
 
 <context>

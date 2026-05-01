@@ -30,8 +30,8 @@ Context budget: ~15% orchestrator, 100% fresh per subagent.
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/execute-phase.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/execute-phase.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <runtime_note>
@@ -57,6 +57,6 @@ Context files are resolved inside the workflow via `gsd-sdk query init.execute-p
 </context>
 
 <process>
-Execute the execute-phase workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/execute-phase.md end-to-end.
+Execute the execute-phase workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/execute-phase.md end-to-end.
 Preserve all workflow gates (wave execution, checkpoint handling, verification, state updates, routing).
 </process>

@@ -24,9 +24,9 @@ Flags:
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/audit-fix.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/audit-fix.md
 </execution_context>
 
 <process>
-Execute the audit-fix workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/audit-fix.md end-to-end.
+Execute the audit-fix workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/audit-fix.md end-to-end.
 </process>

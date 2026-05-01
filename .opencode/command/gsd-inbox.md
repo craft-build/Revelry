@@ -19,7 +19,7 @@ and optionally applies labels or closes non-compliant submissions.
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/inbox.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/inbox.md
 </execution_context>
 
 <context>
@@ -32,6 +32,6 @@ and optionally applies labels or closes non-compliant submissions.
 </context>
 
 <process>
-Execute the inbox workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/inbox.md end-to-end.
+Execute the inbox workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/inbox.md end-to-end.
 Parse flags from arguments and pass to workflow.
 </process>

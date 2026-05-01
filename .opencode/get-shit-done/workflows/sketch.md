@@ -11,10 +11,10 @@ Supports two modes:
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/sketch-theme-system.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/sketch-variant-patterns.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/sketch-interactivity.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/sketch-tooling.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/sketch-theme-system.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/sketch-variant-patterns.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/sketch-interactivity.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/sketch-tooling.md
 </required_reading>
 
 <process>

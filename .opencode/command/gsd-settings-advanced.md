@@ -21,11 +21,11 @@ Use `/gsd-settings` for the common-case toggles (model profile, research/plan_ch
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/settings-advanced.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/settings-advanced.md
 </execution_context>
 
 <process>
-**Follow the settings-advanced workflow** from `@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/settings-advanced.md`.
+**Follow the settings-advanced workflow** from `@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/settings-advanced.md`.
 
 The workflow handles all logic including:
 1. Config file creation with defaults if missing (via `gsd-sdk query config-ensure-section`)

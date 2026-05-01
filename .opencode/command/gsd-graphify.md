@@ -9,7 +9,7 @@ tools:
 
 **STOP -- DO NOT READ THIS FILE. You are already reading it. This prompt was injected into your context by Claude Code's command system. Using the Read tool on this file wastes tokens. Begin executing Step 0 immediately.**
 
-**CJS-only (graphify):** `graphify` subcommands are not registered on `gsd-sdk query`. Use `node /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify …` as documented in this command and in `docs/CLI-TOOLS.md`. Other tooling may still use `gsd-sdk query` where a handler exists.
+**CJS-only (graphify):** `graphify` subcommands are not registered on `gsd-sdk query`. Use `node /Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify …` as documented in this command and in `docs/CLI-TOOLS.md`. Other tooling may still use `gsd-sdk query` where a handler exists.
 
 ## Step 0 -- Banner
 
@@ -40,7 +40,7 @@ GSD > GRAPHIFY
 
 Knowledge graph is disabled. To activate:
 
-  node /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs config-set graphify.enabled true
+  node /Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs config-set graphify.enabled true
 
 Then run /gsd-graphify build to create the initial graph.
 ```
@@ -78,7 +78,7 @@ Modes:
 Run:
 
 ```bash
-node /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify query <term>
+node /Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify query <term>
 ```
 
 Parse the JSON output and display results:
@@ -94,7 +94,7 @@ Parse the JSON output and display results:
 Run:
 
 ```bash
-node /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify status
+node /Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify status
 ```
 
 Parse the JSON output and display:
@@ -108,7 +108,7 @@ Parse the JSON output and display:
 Run:
 
 ```bash
-node /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify diff
+node /Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs graphify diff
 ```
 
 Parse the JSON output and display:
@@ -126,7 +126,7 @@ If no snapshot exists, suggest running `build` twice (first to create, second to
 Run pre-flight check first:
 
 ```
-PREFLIGHT=$(node "/Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs" graphify build)
+PREFLIGHT=$(node "/Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs" graphify build)
 ```
 
 If pre-flight returns `disabled: true` or `error`, display the message and **STOP**.
@@ -145,7 +145,7 @@ Task(
   prompt="You are the graphify-builder agent. Your job is to build or rebuild the project knowledge graph using the graphify CLI.
 
 Project root: ${CWD}
-gsd-tools path: /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs
+gsd-tools path: /Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs
 
 ## Instructions
 
@@ -173,13 +173,13 @@ gsd-tools path: /Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd
 
 4. **Write diff snapshot:**
    ```
-   node \"/Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs\" graphify build snapshot
+   node \"/Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs\" graphify build snapshot
    ```
    This creates .planning/graphs/.last-build-snapshot.json for future diff comparisons.
 
 5. **Report build summary:**
    ```
-   node \"/Users/akarifur/Projects/Persona/.opencode/get-shit-done/bin/gsd-tools.cjs\" graphify status
+   node \"/Users/akarifur/Projects/persona/.opencode/get-shit-done/bin/gsd-tools.cjs\" graphify status
    ```
    Display the node count, edge count, and hyperedge count from the status output.
 

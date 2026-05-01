@@ -16,8 +16,8 @@ project history. Output skill goes to `./.opencode/skills/spike-findings-[projec
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/spike-wrap-up.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/references/ui-brand.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/spike-wrap-up.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <runtime_note>
@@ -25,6 +25,6 @@ project history. Output skill goes to `./.opencode/skills/spike-findings-[projec
 </runtime_note>
 
 <process>
-Execute the spike-wrap-up workflow from @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/spike-wrap-up.md end-to-end.
+Execute the spike-wrap-up workflow from @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/spike-wrap-up.md end-to-end.
 Preserve all workflow gates (auto-include, feature-area grouping, skill synthesis, AGENTS.md routing line, intelligent next-step routing).
 </process>

@@ -28,10 +28,10 @@ Extract implementation decisions that downstream agents need — researcher and 
 </objective>
 
 <execution_context>
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/discuss-phase.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/discuss-phase-assumptions.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/discuss-phase-power.md
-@/Users/akarifur/Projects/Persona/.opencode/get-shit-done/templates/context.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/discuss-phase.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/discuss-phase-assumptions.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/discuss-phase-power.md
+@/Users/akarifur/Projects/persona/.opencode/get-shit-done/templates/context.md
 </execution_context>
 
 <runtime_note>
@@ -50,9 +50,9 @@ Context files are resolved in-workflow using `init phase-op` and roadmap/state t
 DISCUSS_MODE=$(gsd-sdk query config-get workflow.discuss_mode 2>/dev/null || echo "discuss")
 ```
 
-If `DISCUSS_MODE` is `"assumptions"`: Read and execute @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/discuss-phase-assumptions.md end-to-end.
+If `DISCUSS_MODE` is `"assumptions"`: Read and execute @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/discuss-phase-assumptions.md end-to-end.
 
-If `DISCUSS_MODE` is `"discuss"` (or unset, or any other value): Read and execute @/Users/akarifur/Projects/Persona/.opencode/get-shit-done/workflows/discuss-phase.md end-to-end.
+If `DISCUSS_MODE` is `"discuss"` (or unset, or any other value): Read and execute @/Users/akarifur/Projects/persona/.opencode/get-shit-done/workflows/discuss-phase.md end-to-end.
 
 **MANDATORY:** The execution_context files listed above ARE the instructions. Read the workflow file BEFORE taking any action. The objective and success_criteria sections in this command file are summaries — the workflow file contains the complete step-by-step process with all required behaviors, config checks, and interaction patterns. Do not improvise from the summary.
 </process>
