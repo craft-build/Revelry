@@ -129,7 +129,7 @@ impl Component for ChatPanel {
 
                 #[name(stop_button)]
                 pack_end = &gtk::Button {
-                    set_icon_name: "process-stop",
+                    set_icon_name: "stop",
                     set_tooltip_text: Some("Stop Generation"),
                     #[watch]
                     set_visible: model.streaming,

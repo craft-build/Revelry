@@ -382,7 +382,7 @@ impl CharactersPanelModel {
             export_btn.add_css_class("flat");
             export_btn.add_css_class("circular");
             export_btn.set_tooltip_text(Some("Export Character"));
-            export_btn.set_icon_name("document-save-symbolic");
+            export_btn.set_icon_name("document-save");
             export_btn.set_halign(gtk::Align::End);
             export_btn.set_valign(gtk::Align::Start);
             export_btn.set_margin_top(4);
@@ -402,7 +402,7 @@ impl CharactersPanelModel {
             edit_btn.add_css_class("flat");
             edit_btn.add_css_class("circular");
             edit_btn.set_tooltip_text(Some("Edit Character"));
-            edit_btn.set_icon_name("document-edit-symbolic");
+            edit_btn.set_icon_name("edit");
             edit_btn.set_halign(gtk::Align::End);
             edit_btn.set_valign(gtk::Align::Start);
             edit_btn.set_margin_top(68);

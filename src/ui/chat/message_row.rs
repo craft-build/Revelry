@@ -142,7 +142,7 @@ impl MessageRow {
 
         // ---- Context menu via GtkPopoverMenu + Gio simple actions on widget root ----
         let menu_button = gtk::MenuButton::new();
-        menu_button.set_icon_name("view-more-symbolic");
+        menu_button.set_icon_name("view-more");
         menu_button.add_css_class("flat");
         menu_button.add_css_class("circular");
         menu_button.set_valign(gtk::Align::Center);

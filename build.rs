@@ -17,6 +17,13 @@ fn main() {
         "menu",
         "done",
         "error",
+        // Chat / message icons
+        "send",
+        "stop",
+        "view-more",
+        // Character card overlay icons
+        "document-save",
+        "user-trash",
     ];
     relm4_icons_build::bundle_icons(
         "icon_names.rs",
