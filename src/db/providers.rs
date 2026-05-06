@@ -7,14 +7,15 @@ use rusqlite::{params, Connection};
 pub fn insert_provider(conn: &Connection, provider: &ProviderConfig) -> Result<()> {
     let provider_type_str = serde_json::to_string(&provider.provider_type)?;
     conn.prepare_cached(
-        "INSERT INTO providers (id, name, provider_type, base_url, enabled, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
+        "INSERT INTO providers (id, name, provider_type, base_url, model_name, enabled, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"
     )?
     .execute(params![
         provider.id,
         provider.name,
         provider_type_str,
         provider.base_url,
+        provider.model_name,
         provider.enabled as i32,
         provider.created_at.to_string(),
         provider.updated_at.to_string(),
@@ -25,7 +26,7 @@ pub fn insert_provider(conn: &Connection, provider: &ProviderConfig) -> Result<(
 /// Loads all providers from the database.
 pub fn load_providers(conn: &Connection) -> Result<Vec<ProviderConfig>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, name, provider_type, base_url, enabled, created_at, updated_at FROM providers"
+        "SELECT id, name, provider_type, base_url, model_name, enabled, created_at, updated_at FROM providers"
     )?;
     let providers = stmt.query_map([], |row| row_to_provider(row))?;
     let mut result = Vec::new();
@@ -38,7 +39,7 @@ pub fn load_providers(conn: &Connection) -> Result<Vec<ProviderConfig>> {
 /// Loads a single provider by ID.
 pub fn load_provider(conn: &Connection, id: &str) -> Result<Option<ProviderConfig>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, name, provider_type, base_url, enabled, created_at, updated_at FROM providers WHERE id = ?1"
+        "SELECT id, name, provider_type, base_url, model_name, enabled, created_at, updated_at FROM providers WHERE id = ?1"
     )?;
     let mut providers = stmt.query_map(params![id], |row| row_to_provider(row))?;
     match providers.next() {
@@ -51,13 +52,14 @@ pub fn load_provider(conn: &Connection, id: &str) -> Result<Option<ProviderConfi
 pub fn update_provider(conn: &Connection, provider: &ProviderConfig) -> Result<()> {
     let provider_type_str = serde_json::to_string(&provider.provider_type)?;
     conn.prepare_cached(
-        "UPDATE providers SET name = ?1, provider_type = ?2, base_url = ?3, enabled = ?4,
-         updated_at = ?5 WHERE id = ?6"
+        "UPDATE providers SET name = ?1, provider_type = ?2, base_url = ?3, model_name = ?4, enabled = ?5,
+         updated_at = ?6 WHERE id = ?7"
     )?
     .execute(params![
         provider.name,
         provider_type_str,
         provider.base_url,
+        provider.model_name,
         provider.enabled as i32,
         provider.updated_at.to_string(),
         provider.id,

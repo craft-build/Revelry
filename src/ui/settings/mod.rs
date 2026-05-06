@@ -403,6 +403,7 @@ pub struct ProviderConfigPage {
     test_state: TestState,
     // Widget references needed for imperative updates
     base_url_row: adw::EntryRow,
+    model_name_row: adw::EntryRow,
     api_key_row: adw::PasswordEntryRow,
     test_btn: gtk::Button,
     test_indicator: gtk::Box,
@@ -415,6 +416,7 @@ pub enum ProviderConfigPageMsg {
     SetProviderType(u32),
     SetName(String),
     SetBaseUrl(String),
+    SetModelName(String),
     SetApiKey(String),
     SetEnabled(bool),
     ApiKeyLoaded(String),
@@ -521,6 +523,11 @@ impl Component for ProviderConfigPage {
                     set_title: "Base URL",
                 },
 
+                #[name(model_name_row)]
+                adw::EntryRow {
+                    set_title: "Model Name",
+                },
+
                 #[name(api_key_row)]
                 adw::PasswordEntryRow {
                     set_title: "API Key",
@@ -590,6 +597,7 @@ impl Component for ProviderConfigPage {
         if let Some(ref url) = config.base_url {
             widgets.base_url_row.set_text(url);
         }
+        widgets.model_name_row.set_text(&config.model_name);
         widgets.enabled_row.set_active(config.enabled);
         widgets.combo_row.set_selected(provider_type_to_index(&config.provider_type));
 
@@ -599,6 +607,7 @@ impl Component for ProviderConfigPage {
             api_key: String::new(),
             test_state: TestState::Idle,
             base_url_row: widgets.base_url_row.clone(),
+            model_name_row: widgets.model_name_row.clone(),
             api_key_row: widgets.api_key_row.clone(),
             test_btn: widgets.test_btn.clone(),
             test_indicator: widgets.test_indicator.clone(),
@@ -622,6 +631,11 @@ impl Component for ProviderConfigPage {
         let sender_clone = sender.clone();
         model.base_url_row.connect_changed(move |row| {
             let _ = sender_clone.input_sender().send(ProviderConfigPageMsg::SetBaseUrl(row.text().to_string()));
+        });
+
+        let sender_clone = sender.clone();
+        widgets.model_name_row.connect_changed(move |row| {
+            let _ = sender_clone.input_sender().send(ProviderConfigPageMsg::SetModelName(row.text().to_string()));
         });
 
         let sender_clone = sender.clone();
@@ -661,6 +675,9 @@ impl Component for ProviderConfigPage {
             }
             ProviderConfigPageMsg::SetBaseUrl(url) => {
                 self.config.base_url = if url.is_empty() { None } else { Some(url) };
+            }
+            ProviderConfigPageMsg::SetModelName(name) => {
+                self.config.model_name = name;
             }
             ProviderConfigPageMsg::SetApiKey(key) => {
                 self.api_key = key;

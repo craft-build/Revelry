@@ -37,6 +37,7 @@ pub fn row_to_provider(row: &Row) -> rusqlite::Result<ProviderConfig> {
         name: row.get("name")?,
         provider_type,
         base_url: row.get("base_url")?,
+        model_name: row.get("model_name")?,
         enabled: row.get::<_, i32>("enabled")? != 0,
         created_at,
         updated_at,

@@ -29,12 +29,11 @@ impl ProviderType {
     pub fn requires_api_key(&self) -> bool {
         match self {
             ProviderType::Ollama => false,
-            _ => true, // All cloud providers and Custom require an API key
+            _ => true,
         }
     }
 
     /// Returns the default base URL for this provider type.
-    /// Returns None for types that have no sensible default (Custom).
     pub fn default_base_url(&self) -> Option<&'static str> {
         match self {
             ProviderType::OpenAI => Some("https://api.openai.com/v1"),
@@ -49,9 +48,30 @@ impl ProviderType {
             ProviderType::Xai => Some("https://api.x.ai/v1"),
             ProviderType::Perplexity => Some("https://api.perplexity.ai"),
             ProviderType::Together => Some("https://api.together.xyz/v1"),
-            ProviderType::AzureOpenAI => None, // Requires deployment-specific URL
+            ProviderType::AzureOpenAI => None,
             ProviderType::HuggingFace => Some("https://api-inference.huggingface.co"),
-            ProviderType::Custom => None, // No default for custom endpoints
+            ProviderType::Custom => None,
+        }
+    }
+
+    /// Returns a sensible default model name for this provider type.
+    pub fn default_model_name(&self) -> &'static str {
+        match self {
+            ProviderType::OpenAI => "gpt-4o-mini",
+            ProviderType::Anthropic => "claude-sonnet-4-20250514",
+            ProviderType::Ollama => "llama3.2",
+            ProviderType::Gemini => "gemini-2.0-flash",
+            ProviderType::Cohere => "command-r-plus",
+            ProviderType::Mistral => "mistral-large-latest",
+            ProviderType::Groq => "llama-3.3-70b-versatile",
+            ProviderType::DeepSeek => "deepseek-chat",
+            ProviderType::OpenRouter => "openai/gpt-4o-mini",
+            ProviderType::Xai => "grok-3-mini",
+            ProviderType::Perplexity => "sonar-pro",
+            ProviderType::Together => "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            ProviderType::AzureOpenAI => "gpt-4o-mini",
+            ProviderType::HuggingFace => "meta-llama/Llama-3.1-8B-Instruct",
+            ProviderType::Custom => "default",
         }
     }
 }
@@ -64,6 +84,9 @@ pub struct ProviderConfig {
     pub name: String,
     pub provider_type: ProviderType,
     pub base_url: Option<String>,
+    /// Model name to use with this provider (e.g. "gpt-4o-mini", "llama3.2").
+    /// Required by rig-core to build an agent.
+    pub model_name: String,
     pub enabled: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
@@ -78,6 +101,7 @@ impl ProviderConfig {
             id: Uuid::new_v4().to_string(),
             name,
             base_url: provider_type.default_base_url().map(|s| s.to_string()),
+            model_name: provider_type.default_model_name().to_string(),
             provider_type,
             enabled: true,
             created_at: chrono::Local::now().naive_local(),

@@ -2,12 +2,15 @@ pub mod input_bar;
 pub mod message_row;
 
 use adw::prelude::*;
+use futures::StreamExt as _;
 use relm4::prelude::*;
 use relm4::{adw, gtk};
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
 use crate::domain::provider::ProviderConfig;
+use crate::service::ai::{AiService, StreamChunk};
+use crate::service::prompt::build_system_prompt;
 
 use self::input_bar::{InputBar, InputBarMsg, InputBarOutput};
 use self::message_row::{MessageRow, MessageRowInit};
@@ -27,6 +30,7 @@ pub struct ChatPanel {
     characters: Vec<CharacterCardV2>,
     providers: Vec<ProviderConfig>,
     editing_message_id: Option<String>,
+    pending_user_text: Option<String>,
     
     // Widget references
     messages_container: gtk::ListBox,
@@ -180,6 +184,7 @@ impl Component for ChatPanel {
             characters: Vec::new(),
             providers: Vec::new(),
             editing_message_id: None,
+            pending_user_text: None,
             messages_container,
             input_bar,
         };
@@ -216,9 +221,14 @@ impl Component for ChatPanel {
                 self.active_provider = provider;
             }
             ChatPanelMsg::LoadConversation { conversation, messages, character } => {
-                self.active_conversation = Some(conversation);
+                self.active_conversation = Some(conversation.clone());
                 self.active_character = Some(character.clone());
                 self.messages = messages;
+
+                // Look up the provider for this conversation
+                self.active_provider = self.providers.iter()
+                    .find(|p| p.id == conversation.provider_id)
+                    .cloned();
 
                 // Update header
                 if let Some(header) = root.first_child()
@@ -275,6 +285,7 @@ impl Component for ChatPanel {
                     // Start streaming
                     self.streaming = true;
                     self.partial_response.clear();
+                    self.pending_user_text = Some(text);
                     let _ = self.input_bar.sender().send(InputBarMsg::SetSending(true));
 
                     // Request API key for streaming
@@ -296,10 +307,10 @@ impl Component for ChatPanel {
                         );
                         self.messages.push(assistant_message.clone());
                         let _ = sender.output(ChatPanelOutput::SaveMessage(assistant_message));
+                        self.partial_response.clear();
                         self.rebuild_message_list();
                     }
                 }
-                self.partial_response.clear();
             }
             ChatPanelMsg::ConversationStarted(conversation) => {
                 self.active_conversation = Some(conversation);
@@ -311,10 +322,48 @@ impl Component for ChatPanel {
             ChatPanelMsg::MessageSaved(_msg) => {
                 // Message was saved - could trigger a refresh if needed
             }
-            ChatPanelMsg::LoadApiKey(_api_key) => {
-                // API key loaded - streaming would start here
-                sender.spawn_oneshot_command(|| {
-                    ChatCmdOut::StreamComplete("This is a placeholder response. Streaming will be fully implemented in Plan 03.".to_string())
+            ChatPanelMsg::LoadApiKey(api_key) => {
+                let Some(ref provider) = self.active_provider else {
+                    let _ = sender.spawn_oneshot_command(|| {
+                        ChatCmdOut::StreamError("No active provider configured.".to_string())
+                    });
+                    return;
+                };
+                let Some(ref character) = self.active_character else {
+                    let _ = sender.spawn_oneshot_command(|| {
+                        ChatCmdOut::StreamError("No character loaded.".to_string())
+                    });
+                    return;
+                };
+                let system_prompt = build_system_prompt(character);
+                let messages = self.messages.clone();
+                let provider_cfg = provider.clone();
+                let key = api_key;
+
+                sender.command(move |out, _shutdown| async move {
+                    let mut stream = AiService::stream_chat(
+                        &provider_cfg,
+                        &system_prompt,
+                        &messages,
+                        &key,
+                    );
+                    while let Some(chunk) = stream.next().await {
+                        match chunk {
+                            StreamChunk::Token(token) => {
+                                if out.send(ChatCmdOut::TokenReceived(token)).is_err() {
+                                    break;
+                                }
+                            }
+                            StreamChunk::Complete(full_text) => {
+                                let _ = out.send(ChatCmdOut::StreamComplete(full_text));
+                                return;
+                            }
+                            StreamChunk::Error(err) => {
+                                let _ = out.send(ChatCmdOut::StreamError(err));
+                                return;
+                            }
+                        }
+                    }
                 });
             }
             ChatPanelMsg::UpdatePartialResponse(text) => {
@@ -324,7 +373,6 @@ impl Component for ChatPanel {
             ChatPanelMsg::StreamComplete(full_text) => {
                 self.streaming = false;
                 let _ = self.input_bar.sender().send(InputBarMsg::SetSending(false));
-
                 if let Some(ref conversation) = self.active_conversation {
                     let assistant_message = Message::new(
                         conversation.id.clone(),
@@ -334,16 +382,14 @@ impl Component for ChatPanel {
                     );
                     self.messages.push(assistant_message.clone());
                     let _ = sender.output(ChatPanelOutput::SaveMessage(assistant_message));
-                    self.rebuild_message_list();
                 }
                 self.partial_response.clear();
+                self.rebuild_message_list();
             }
             ChatPanelMsg::StreamError(error) => {
                 self.streaming = false;
                 let _ = self.input_bar.sender().send(InputBarMsg::SetSending(false));
                 let _ = sender.output(ChatPanelOutput::ShowToast(format!("Streaming error: {}", error)));
-
-                // Save partial response if any
                 if let Some(ref conversation) = self.active_conversation {
                     if !self.partial_response.is_empty() {
                         let assistant_message = Message::new(
@@ -354,10 +400,10 @@ impl Component for ChatPanel {
                         );
                         self.messages.push(assistant_message.clone());
                         let _ = sender.output(ChatPanelOutput::SaveMessage(assistant_message));
-                        self.rebuild_message_list();
                     }
                 }
                 self.partial_response.clear();
+                self.rebuild_message_list();
             }
             // Branch operations
             ChatPanelMsg::EditMessage { message_id, new_content } => {
@@ -441,17 +487,37 @@ impl ChatPanel {
             self.messages_container.remove(&child);
         }
 
-        // Add each message as a MessageRow
+        // Add each persisted message as a MessageRow
         for message in &self.messages {
-            // Check if this message has sibling branches
             let has_siblings = self.branches.iter().any(|b| {
                 b.parent_message_id.as_ref() == Some(&message.id)
             });
-            
+
             let init = MessageRowInit {
                 message: message.clone(),
                 character_name: self.active_character.as_ref().map(|c| c.name.clone()),
                 has_siblings,
+            };
+            let row = MessageRow::new(&init);
+            let widget = row.widget();
+            self.messages_container.append(&widget);
+        }
+
+        // Append a transient streaming message row when actively streaming
+        if self.streaming && !self.partial_response.is_empty() {
+            let streaming_msg = Message {
+                id: "streaming".to_string(),
+                conversation_id: self.active_conversation.as_ref().map(|c| c.id.clone()).unwrap_or_default(),
+                branch_id: self.active_branch_id.clone(),
+                role: MessageRole::Assistant,
+                content: self.partial_response.clone(),
+                timestamp: chrono::Local::now().naive_local(),
+                sort_order: self.messages.len() as i32,
+            };
+            let init = MessageRowInit {
+                message: streaming_msg,
+                character_name: self.active_character.as_ref().map(|c| c.name.clone()),
+                has_siblings: false,
             };
             let row = MessageRow::new(&init);
             let widget = row.widget();

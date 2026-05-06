@@ -40,7 +40,7 @@ impl PromptEngine {
 
 /// Builds the system prompt from character data.
 /// Combines system_prompt, personality, and scenario into a single prompt.
-fn build_system_prompt(character: &CharacterCardV2) -> String {
+pub fn build_system_prompt(character: &CharacterCardV2) -> String {
     let mut parts = Vec::new();
 
     // Use the character's system_prompt if available

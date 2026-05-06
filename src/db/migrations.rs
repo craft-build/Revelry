@@ -80,7 +80,9 @@ pub fn get_migrations() -> Migrations<'static> {
              ALTER TABLE characters ADD COLUMN character_book TEXT NOT NULL DEFAULT 'null';",
         )
         .down("ALTER TABLE characters DROP COLUMN character_book; ALTER TABLE characters DROP COLUMN creator_notes;"),
-        // Migration 5: Create conversations, messages, and message_branches tables
+        // Migration 6: Add model_name to providers table
+        M::up("ALTER TABLE providers ADD COLUMN model_name TEXT NOT NULL DEFAULT '';")
+        .down("ALTER TABLE providers DROP COLUMN model_name;"),
         M::up(
             "CREATE TABLE conversations (
                 id TEXT PRIMARY KEY,
@@ -181,7 +183,7 @@ mod tests {
         assert!(columns.contains(&"base_url".to_string()), "providers should have 'base_url' column");
         assert!(columns.contains(&"enabled".to_string()), "providers should have 'enabled' column");
         assert!(columns.contains(&"created_at".to_string()), "providers should have 'created_at' column");
-        assert!(columns.contains(&"updated_at".to_string()), "providers should have 'updated_at' column");
+        assert!(columns.contains(&"model_name".to_string()), "providers should have 'model_name' column");
     }
 
     #[test]
