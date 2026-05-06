@@ -24,6 +24,9 @@ fn main() {
         // Character card overlay icons
         "document-save",
         "user-trash",
+        // Sidebar conversation icons
+        "list-add",
+        "chat-bubble-text",
     ];
     relm4_icons_build::bundle_icons(
         "icon_names.rs",

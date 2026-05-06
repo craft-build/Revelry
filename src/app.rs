@@ -918,7 +918,7 @@ impl AppModel {
         let new_row = adw::ActionRow::new();
         new_row.set_title("New Conversation");
         new_row.set_subtitle("Select a character to chat");
-        new_row.add_prefix(&gtk::Image::from_icon_name("list-add-symbolic"));
+        new_row.add_prefix(&gtk::Image::from_icon_name("list-add"));
         new_row.add_css_class("sidebar-row");
         new_row.set_activatable(true);
         let sender_clone = sender.clone();
@@ -934,7 +934,7 @@ impl AppModel {
 
             let row = adw::ActionRow::new();
             row.set_title(name);
-            row.add_prefix(&gtk::Image::from_icon_name("chat-bubble-text-symbolic"));
+            row.add_prefix(&gtk::Image::from_icon_name("chat-bubble-text"));
             row.add_css_class("sidebar-row");
             row.set_activatable(true);
 
