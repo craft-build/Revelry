@@ -80,11 +80,9 @@ pub fn get_migrations() -> Migrations<'static> {
              ALTER TABLE characters ADD COLUMN character_book TEXT NOT NULL DEFAULT 'null';",
         )
         .down("ALTER TABLE characters DROP COLUMN character_book; ALTER TABLE characters DROP COLUMN creator_notes;"),
-        // Migration 6: Add model_name to providers table
-        M::up("ALTER TABLE providers ADD COLUMN model_name TEXT NOT NULL DEFAULT '';")
-        .down("ALTER TABLE providers DROP COLUMN model_name;"),
+        // Migration 5: Create conversations, message_branches, and messages tables
         M::up(
-            "CREATE TABLE conversations (
+            "CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
                 character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
                 provider_id TEXT NOT NULL REFERENCES providers(id) ON DELETE SET NULL,
@@ -93,7 +91,7 @@ pub fn get_migrations() -> Migrations<'static> {
                 updated_at TEXT NOT NULL
             );
 
-            CREATE TABLE message_branches (
+            CREATE TABLE IF NOT EXISTS message_branches (
                 id TEXT PRIMARY KEY,
                 conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
                 parent_message_id TEXT,
@@ -101,7 +99,7 @@ pub fn get_migrations() -> Migrations<'static> {
                 created_at TEXT NOT NULL
             );
 
-            CREATE TABLE messages (
+            CREATE TABLE IF NOT EXISTS messages (
                 id TEXT PRIMARY KEY,
                 conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
                 branch_id TEXT REFERENCES message_branches(id) ON DELETE SET NULL,
@@ -111,15 +109,48 @@ pub fn get_migrations() -> Migrations<'static> {
                 sort_order INTEGER NOT NULL DEFAULT 0
             );
 
-            CREATE INDEX idx_messages_conv_branch ON messages(conversation_id, branch_id, sort_order);
-            CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);",
+            CREATE INDEX IF NOT EXISTS idx_messages_conv_branch ON messages(conversation_id, branch_id, sort_order);
+            CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);",
         )
         .down("DROP INDEX IF EXISTS idx_conversations_updated; DROP INDEX IF EXISTS idx_messages_conv_branch; DROP TABLE IF EXISTS messages; DROP TABLE IF EXISTS message_branches; DROP TABLE IF EXISTS conversations;"),
+        // Migration 6: Add model_name to providers table
+        M::up("ALTER TABLE providers ADD COLUMN model_name TEXT NOT NULL DEFAULT '';")
+        .down("ALTER TABLE providers DROP COLUMN model_name;"),
     ])
 }
 
 /// Runs all pending migrations on the given connection.
 pub fn run_migrations(conn: &mut rusqlite::Connection) -> Result<(), rusqlite_migration::Error> {
+    // Fixup for databases where migration 5 was originally "conversations" but later
+    // became "model_name", while migration 6 became "conversations". Databases that
+    // ran the old M5 have user_version=5 and already have both conversations tables
+    // AND model_name (from the newer M6 that was applied separately). Bump user_version
+    // to 6 to skip both idempotent M5 (conversations) and M6 (model_name).
+    let user_version: i64 = conn
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .unwrap_or(0);
+    let has_model_name: bool = conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('providers') WHERE name = 'model_name')",
+            [],
+            |r| r.get::<_, i64>(0),
+        )
+        .unwrap_or(0)
+        == 1;
+    let has_conversations: bool = conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='conversations')",
+            [],
+            |r| r.get::<_, i64>(0),
+        )
+        .unwrap_or(0)
+        == 1;
+
+    if user_version == 5 && has_model_name && has_conversations {
+        tracing::info!("Migration fixup: bumping user_version from 5 to 6 for already-migrated schema");
+        conn.execute("PRAGMA user_version = 6", []).ok();
+    }
+
     get_migrations().to_latest(conn)
 }
 
