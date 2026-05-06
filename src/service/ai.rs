@@ -68,9 +68,9 @@ impl AiService {
             }
         });
 
-        futures::stream::unfold(rx, |mut rx| async move {
+        Box::pin(futures::stream::unfold(rx, |mut rx| async move {
             rx.recv().await.map(|chunk| (chunk, rx))
-        })
+        }))
     }
 
     /// Splits the last message off as the prompt, returns the remainder as history.
@@ -228,17 +228,9 @@ impl AiService {
         M: rig::completion::CompletionModel + 'static,
         M::StreamingResponse: rig::completion::GetTokenUsage,
     {
-        let mut stream = match agent
+        let mut stream = agent
             .stream_chat(prompt, history)
-            .send()
-            .await
-        {
-            Ok(s) => s,
-            Err(e) => {
-                let _ = tx.send(StreamChunk::Error(e.to_string())).await;
-                return;
-            }
-        };
+            .await;
 
         while let Some(item) = stream.next().await {
             match item {
@@ -327,7 +319,7 @@ mod tests {
     #[test]
     fn test_split_last_prompt_empty() {
         let (prompt, history) = AiService::split_last_prompt(vec![]);
-        assert!(matches!(prompt, rig::message::Message::User(_)));
+        assert!(matches!(prompt, rig::message::Message::User { .. }));
         assert!(history.is_empty());
     }
 
@@ -335,7 +327,7 @@ mod tests {
     fn test_split_last_prompt_single() {
         let msgs = vec![rig::message::Message::user("hello")];
         let (prompt, history) = AiService::split_last_prompt(msgs);
-        assert!(matches!(prompt, rig::message::Message::User(_)));
+        assert!(matches!(prompt, rig::message::Message::User { .. }));
         assert!(history.is_empty());
     }
 
@@ -347,7 +339,7 @@ mod tests {
             rig::message::Message::user("third"),
         ];
         let (prompt, history) = AiService::split_last_prompt(msgs);
-        assert!(matches!(prompt, rig::message::Message::User(_)));
+        assert!(matches!(prompt, rig::message::Message::User { .. }));
         assert_eq!(history.len(), 2);
     }
 }

@@ -1,21 +1,20 @@
 use adw::prelude::*;
-use relm4::prelude::*;
 use relm4::{adw, gtk};
-use relm4::gtk::gio;
+use std::rc::Rc;
 
 use crate::domain::conversation::{Message, MessageRole};
 use crate::service::markdown::markdown_to_pango;
 
-/// Output messages from MessageRow to parent (ChatPanel).
+/// Actions a user can trigger from a message row.
 #[derive(Debug, Clone)]
-pub enum MessageRowOutput {
-    EditMessage { message_id: String, new_content: String },
-    RegenerateMessage(String),
-    DeleteMessage(String),
+pub enum MessageRowAction {
+    Edit(String),
+    Regenerate(String),
+    Delete(String),
+    NavigateBranches(String), // message_id that has sibling branches
 }
 
 /// A widget for displaying a single message in the chat.
-/// Character messages are left-aligned, user messages are right-aligned.
 #[derive(Clone)]
 pub struct MessageRow {
     pub message_id: String,
@@ -60,7 +59,8 @@ impl MessageRow {
     }
 
     /// Get the root widget for this message row.
-    pub fn widget(&self) -> gtk::Box {
+    /// The `on_action` callback is invoked when a context menu item is activated.
+    pub fn widget(&self, on_action: Rc<dyn Fn(MessageRowAction)>) -> gtk::Box {
         let (alignment, css_class, name) = match self.role {
             MessageRole::Assistant => (
                 gtk::Align::Start,
@@ -88,12 +88,18 @@ impl MessageRow {
         root.add_css_class("message-row");
         root.add_css_class(css_class);
 
-        // Branch indicator (colored left border)
+        // Branch indicator (colored left border) — clickable to navigate branches
         if self.has_siblings {
-            let indicator = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let indicator = gtk::Button::new();
             indicator.set_width_request(4);
             indicator.add_css_class("branch-indicator");
-            root.append(&indicator);
+            indicator.set_has_frame(false);
+            let msg_id_nav = self.message_id.clone();
+            let on_action_nav = Rc::clone(&on_action);
+            indicator.connect_clicked(move |_| {
+                on_action_nav(MessageRowAction::NavigateBranches(msg_id_nav.clone()));
+            });
+            root.prepend(&indicator);
         }
 
         // For assistant messages, add avatar on the left
@@ -134,36 +140,56 @@ impl MessageRow {
 
         root.append(&content_box);
 
-        // Context menu button (three dots)
+        // ---- Context menu via GtkPopoverMenu + Gio simple actions on widget root ----
         let menu_button = gtk::MenuButton::new();
         menu_button.set_icon_name("view-more-symbolic");
         menu_button.add_css_class("flat");
         menu_button.add_css_class("circular");
         menu_button.set_valign(gtk::Align::Center);
-        menu_button.set_halign(gtk::Align::End);
-        menu_button.set_vexpand(false);
-        menu_button.set_hexpand(false);
-        
-        // Build menu model
-        let menu = gio::Menu::new();
-        
+
+        // Wire actions via action_group on the root widget
+        let group = gtk::gio::SimpleActionGroup::new();
+        let msg_id_edit = self.message_id.clone();
+        let msg_id_delete = self.message_id.clone();
+        let msg_id_regen = self.message_id.clone();
+
+        let edit_action = gtk::gio::SimpleAction::new("edit", None);
+        let on_action_edit = Rc::clone(&on_action);
+        edit_action.connect_activate(move |_, _| {
+            on_action_edit(MessageRowAction::Edit(msg_id_edit.clone()));
+        });
+        group.add_action(&edit_action);
+
+        let delete_action = gtk::gio::SimpleAction::new("delete", None);
+        let on_action_delete = Rc::clone(&on_action);
+        delete_action.connect_activate(move |_, _| {
+            on_action_delete(MessageRowAction::Delete(msg_id_delete.clone()));
+        });
+        group.add_action(&delete_action);
+
+        let regen_action = gtk::gio::SimpleAction::new("regenerate", None);
+        let on_action_regen = Rc::clone(&on_action);
+        regen_action.connect_activate(move |_, _| {
+            on_action_regen(MessageRowAction::Regenerate(msg_id_regen.clone()));
+        });
+        group.add_action(&regen_action);
+
+        root.insert_action_group("msg", Some(&group));
+
+        // Build menu model pointing at our action group
+        let menu = gtk::gio::Menu::new();
         match self.role {
             MessageRole::User => {
-                let edit_item = gio::MenuItem::new(Some("Edit"), Some("message.edit"));
-                menu.append_item(&edit_item);
+                menu.append(Some("Edit"), Some("msg.edit"));
             }
             MessageRole::Assistant => {
-                let regen_item = gio::MenuItem::new(Some("Regenerate"), Some("message.regenerate"));
-                menu.append_item(&regen_item);
+                menu.append(Some("Regenerate"), Some("msg.regenerate"));
             }
             _ => {}
         }
-        
-        let delete_item = gio::MenuItem::new(Some("Delete"), Some("message.delete"));
-        menu.append_item(&delete_item);
-        
+        menu.append(Some("Delete"), Some("msg.delete"));
         menu_button.set_menu_model(Some(&menu));
-        
+
         root.append(&menu_button);
 
         root

@@ -25,7 +25,7 @@ pub struct SettingsPanel {
     // Track rows added to providers_group so we can remove them by reference
     // (iterating GTK widget tree is wrong — see GNOME discourse #13538)
     provider_rows: Vec<adw::PreferencesRow>,
-    // Keep the config page controller alive while the PreferencesWindow is open.
+    // Keep the config page controller alive while the PreferencesDialog is open.
     // Without this, the controller is dropped when open_provider_config() returns,
     // shutting down the component runtime and causing a panic on any user interaction.
     config_page: Option<relm4::Controller<ProviderConfigPage>>,
@@ -132,8 +132,7 @@ impl Component for SettingsPanel {
                 let provider = self.providers.iter().find(|p| p.id == id);
                 let name = provider.map(|p| p.name.as_str()).unwrap_or("this provider");
 
-                let dialog = adw::MessageDialog::new(
-                    None::<&gtk::Window>,
+                let dialog = adw::AlertDialog::new(
                     Some("Remove Provider?"),
                     Some(&format!(
                         "This will remove {} and delete its API key from the system keychain. This cannot be undone.",
@@ -153,7 +152,7 @@ impl Component for SettingsPanel {
                     }
                 });
 
-                dialog.present();
+                dialog.present(None::<&gtk::Widget>);
             }
             SettingsPanelMsg::ConfirmDelete(id) => {
                 // Tell parent to delete from DB and keyring
@@ -364,19 +363,21 @@ impl SettingsPanel {
 
         let widget = page.widget().clone();
 
-        // Present in a PreferencesWindow
-        let window = adw::PreferencesWindow::new();
-        window.set_title(Some(if is_editing { "Edit Provider" } else { "Add Provider" }));
-        window.set_content(Some(&widget));
+        // Present in a PreferencesDialog
+        let window = adw::PreferencesDialog::new();
+        window.set_title(if is_editing { "Edit Provider" } else { "Add Provider" });
+        window.add(&widget);
 
         // Find the parent window via the ToastOverlay's ancestor
         if let Some(toplevel) = self.toast_overlay.ancestor(gtk::Window::static_type()) {
             if let Some(parent_window) = toplevel.downcast_ref::<gtk::Window>() {
-                window.set_transient_for(Some(parent_window));
+                window.present(Some(parent_window));
+            } else {
+                window.present(None::<&gtk::Widget>);
             }
+        } else {
+            window.present(None::<&gtk::Widget>);
         }
-
-        window.present();
 
         // Store the controller to keep the component runtime alive.
         // When this window is closed (by save or the close button), we clear it
@@ -394,7 +395,7 @@ impl SettingsPanel {
 
 // ---- ProviderConfigPage (sub-component) ----
 
-/// Provider configuration page opened as AdwPreferencesWindow sub-page.
+/// Provider configuration page opened as AdwPreferencesDialog sub-page.
 pub struct ProviderConfigPage {
     config: ProviderConfig,
     #[allow(dead_code)] // Used for UI conditional logic (future: disable type changes on edit)
@@ -727,17 +728,17 @@ impl Component for ProviderConfigPage {
                     api_key: self.api_key.clone(),
                 });
 
-                // Close the preferences window
+                // Close the preferences dialog
                 if let Some(widget) = self.root_page.ancestor(gtk::Window::static_type()) {
-                    if let Some(window) = widget.downcast_ref::<adw::PreferencesWindow>() {
+                    if let Some(window) = widget.downcast_ref::<adw::PreferencesDialog>() {
                         window.close();
                     }
                 }
             }
             ProviderConfigPageMsg::Cancel => {
-                // Close the preferences window without saving
+                // Close the preferences dialog without saving
                 if let Some(widget) = self.root_page.ancestor(gtk::Window::static_type()) {
-                    if let Some(window) = widget.downcast_ref::<adw::PreferencesWindow>() {
+                    if let Some(window) = widget.downcast_ref::<adw::PreferencesDialog>() {
                         window.close();
                     }
                 }

@@ -40,6 +40,7 @@ pub enum CharactersPanelMsg {
     DeleteCharacter(String),
     ConfirmDelete(String),
     EditCharacter(String),
+    StartConversation(String),
     SwitchTab(CharacterTab),
 }
 
@@ -54,6 +55,7 @@ pub enum CharactersPanelOutput {
     SaveCharacter(CharacterCardV2),
     DeleteCharacter(String),
     EditCharacter(String),
+    StartConversation(String),
     RequestImport,
     RequestExport(String),
 }
@@ -156,13 +158,13 @@ impl Component for CharactersPanelModel {
                 .unwrap_or(false)
         });
 
-        // Connect child_activated for editing
+        // Connect child_activated for starting conversation
         let sender_clone = sender.clone();
         flowbox.connect_child_activated(move |_, child| {
             let id = child.widget_name().to_string();
             let _ = sender_clone
                 .input_sender()
-                .send(CharactersPanelMsg::EditCharacter(id));
+                .send(CharactersPanelMsg::StartConversation(id));
         });
 
         let empty_state = adw::StatusPage::new();
@@ -271,8 +273,7 @@ impl Component for CharactersPanelModel {
                     .map(|c| c.name.as_str())
                     .unwrap_or("this character");
 
-                let dialog = adw::MessageDialog::new(
-                    None::<&gtk::Window>,
+                let dialog = adw::AlertDialog::new(
                     Some("Delete Character?"),
                     Some(&format!(
                         "This will permanently delete {} and its avatar. This cannot be undone.",
@@ -292,13 +293,16 @@ impl Component for CharactersPanelModel {
                     }
                 });
 
-                dialog.present();
+                dialog.present(None::<&gtk::Window>);
             }
             CharactersPanelMsg::ConfirmDelete(id) => {
                 let _ = sender.output(CharactersPanelOutput::DeleteCharacter(id));
             }
             CharactersPanelMsg::EditCharacter(id) => {
                 let _ = sender.output(CharactersPanelOutput::EditCharacter(id));
+            }
+            CharactersPanelMsg::StartConversation(id) => {
+                let _ = sender.output(CharactersPanelOutput::StartConversation(id));
             }
             CharactersPanelMsg::SwitchTab(tab) => {
                 self.active_tab = tab;
@@ -393,6 +397,26 @@ impl CharactersPanelModel {
             });
             export_btn.add_controller(gesture);
 
+            // Edit button
+            let edit_btn = gtk::Button::new();
+            edit_btn.add_css_class("flat");
+            edit_btn.add_css_class("circular");
+            edit_btn.set_tooltip_text(Some("Edit Character"));
+            edit_btn.set_icon_name("document-edit-symbolic");
+            edit_btn.set_halign(gtk::Align::End);
+            edit_btn.set_valign(gtk::Align::Start);
+            edit_btn.set_margin_top(68);
+            edit_btn.set_margin_end(4);
+
+            let id_clone = character.id.clone();
+            let sender_clone = sender.clone();
+            let gesture = gtk::GestureClick::new();
+            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+            gesture.connect_released(move |_, _, _, _| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::EditCharacter(id_clone.clone()));
+            });
+            edit_btn.add_controller(gesture);
+
             let delete_btn = gtk::Button::new();
             delete_btn.add_css_class("flat");
             delete_btn.add_css_class("circular");
@@ -401,7 +425,7 @@ impl CharactersPanelModel {
             delete_btn.set_icon_name("user-trash-symbolic");
             delete_btn.set_halign(gtk::Align::End);
             delete_btn.set_valign(gtk::Align::Start);
-            delete_btn.set_margin_top(36);
+            delete_btn.set_margin_top(100);
             delete_btn.set_margin_end(4);
 
             let id_clone = character.id.clone();
@@ -417,6 +441,7 @@ impl CharactersPanelModel {
             let overlay = gtk::Overlay::new();
             overlay.set_child(Some(&card_widget));
             overlay.add_overlay(&export_btn);
+            overlay.add_overlay(&edit_btn);
             overlay.add_overlay(&delete_btn);
 
             let child = gtk::FlowBoxChild::new();

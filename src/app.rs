@@ -30,13 +30,22 @@ pub enum ActiveView {
 pub enum AppMsg {
     SwitchView(ActiveView),
     ToggleSidebar,
+    LoadConversationById(String),
     DbResult(DbOutput),
     SettingsOutput(SettingsPanelOutput),
+    StartConversationWithProvider { character_id: String, provider_id: String },
     CharactersOutput(CharactersPanelOutput),
     ChatOutput(ChatPanelOutput),
     EditorOutput(CharacterEditorOutput),
     ShowToast(String),
     Quit,
+}
+
+/// Minimum data needed to render a sidebar conversation row.
+struct SidebarRowData {
+    conversation: Conversation,
+    character: Option<CharacterCardV2>,
+    last_message_preview: String,
 }
 
 /// Root application model holding global state and child panel controllers.
@@ -52,12 +61,15 @@ pub struct AppModel {
     active_branch_id: Option<String>,
     db_worker: WorkerController<DbService>,
     chat_panel: relm4::Controller<ChatPanel>,
-    #[allow(dead_code)] // Keep alive to run component event loop
+    #[allow(dead_code)]
     characters_panel: relm4::Controller<CharactersPanel>,
     settings_panel: relm4::Controller<SettingsPanel>,
     character_editor: Option<relm4::Controller<CharacterEditor>>,
     view_stack: adw::ViewStack,
     toast_overlay: adw::ToastOverlay,
+    // Sidebar state (dynamically managed, not in view!)
+    sidebar_stack: gtk::Stack,
+    sidebar_listbox: gtk::ListBox,
 }
 
 #[relm4::component(pub)]
@@ -103,21 +115,24 @@ impl SimpleComponent for AppModel {
 
                         #[wrap(Some)]
                         set_content = &gtk::Stack {
-                            set_hhomogeneous: true,
-                            set_vhomogeneous: true,
+                            #[name(sidebar_stack)]
+                            gtk::Stack {
+                                set_hhomogeneous: true,
+                                set_vhomogeneous: true,
 
-                            #[name(conversation_list)]
-                            gtk::ListBox {
-                                add_css_class: "navigation-sidebar",
-                                set_valign: gtk::Align::Fill,
-                                set_vexpand: true,
-                            },
+                                #[name(conversation_list)]
+                                gtk::ListBox {
+                                    add_css_class: "navigation-sidebar",
+                                    set_valign: gtk::Align::Fill,
+                                    set_vexpand: true,
+                                },
 
-                            #[name(sidebar_empty)]
-                            adw::StatusPage {
-                                set_icon_name: Some("chat"),
-                                set_title: "No Conversations Yet",
-                                set_description: Some("Start by configuring a provider in Settings."),
+                                #[name(sidebar_empty)]
+                                adw::StatusPage {
+                                    set_icon_name: Some("chat"),
+                                    set_title: "No Conversations Yet",
+                                    set_description: Some("Click a character to start chatting."),
+                                },
                             },
                         },
                     },
@@ -186,6 +201,11 @@ impl SimpleComponent for AppModel {
         let characters_widget = characters_panel.widget().clone();
         let settings_widget = settings_panel.widget().clone();
 
+        // We need widgets built to get the listbox, but view_output creates widgets.
+        // Instead: create the sidebar listbox ourselves and use it in the view via track.
+        // Hmm, actually we can just create the listbox here and reference it.
+        let sidebar_listbox = gtk::ListBox::new();
+
         let mut model = AppModel {
             active_view: ActiveView::Chat,
             sidebar_visible: true,
@@ -203,11 +223,17 @@ impl SimpleComponent for AppModel {
             character_editor: None,
             view_stack: adw::ViewStack::new(),
             toast_overlay: adw::ToastOverlay::new(),
+            sidebar_stack: gtk::Stack::new(),
+            sidebar_listbox,
         };
 
         let widgets = view_output!();
 
-        // Replace placeholder with the actual ViewStack from the view
+        // Set the sidebar stack reference from the widgets
+        model.sidebar_stack = widgets.sidebar_stack.clone();
+        // Configure sidebar listbox
+        model.sidebar_stack.add_named(&model.sidebar_listbox, Some("list"));
+        model.sidebar_stack.add_named(&widgets.sidebar_empty, Some("empty"));
         model.view_stack = widgets.view_stack.clone();
         model.toast_overlay = widgets.toast_overlay.clone();
 
@@ -303,6 +329,9 @@ impl SimpleComponent for AppModel {
         model.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
         model.db_worker.sender().send(DbInput::LoadConversations).unwrap();
 
+        // Build sidebar now that widget refs are set
+        model.refresh_sidebar(&sender);
+
         ComponentParts { model, widgets }
     }
 
@@ -314,6 +343,30 @@ impl SimpleComponent for AppModel {
             }
             AppMsg::ToggleSidebar => {
                 self.sidebar_visible = !self.sidebar_visible;
+            }
+            AppMsg::LoadConversationById(conversation_id) => {
+                if let Some(conv) = self.conversations.iter().find(|c| c.id == conversation_id).cloned() {
+                    let character = self.characters.iter().find(|c| c.id == conv.character_id).cloned();
+                    let provider = self.providers.iter().find(|p| p.id == conv.provider_id).cloned();
+                    self.active_conversation = Some(conv.clone());
+                    self.active_branch_id = None;
+                    if let Some(ref character) = character {
+                        let _ = self.chat_panel.sender().send(ChatPanelMsg::LoadConversation {
+                            conversation: conv,
+                            messages: Vec::new(),
+                            character: character.clone(),
+                        });
+                    }
+                    if let Some(p) = provider {
+                        let _ = self.chat_panel.sender().send(ChatPanelMsg::SetActiveProvider(Some(p)));
+                    }
+                    self.db_worker.sender().send(DbInput::LoadMessages {
+                        conversation_id: conversation_id,
+                        branch_id: None,
+                    }).unwrap();
+                    self.active_view = ActiveView::Chat;
+                    self.sync_view_stack();
+                }
             }
             AppMsg::DbResult(output) => match output {
                 DbOutput::ProvidersLoaded(providers) => {
@@ -363,16 +416,39 @@ impl SimpleComponent for AppModel {
                 }
                 DbOutput::ConversationsLoaded(convs) => {
                     self.conversations = convs;
+                    // Refresh sidebar conversation list
+                    self.refresh_sidebar(&sender);
                     // Forward providers to ChatPanel for conversation creation
                     let providers = self.providers.clone();
                     let _ = self.chat_panel.sender().send(ChatPanelMsg::ProvidersLoaded(providers));
                 }
                 DbOutput::ConversationStarted(conv) => {
                     self.conversations.push(conv.clone());
-                    // Reload conversations to get the updated list
+                    // Refresh sidebar
+                    self.refresh_sidebar(&sender);
+                    // Get the character for this conversation
+                    let character = self.characters.iter()
+                        .find(|c| c.id == conv.character_id)
+                        .cloned();
+                    // Load messages for the conversation
+                    self.db_worker.sender().send(DbInput::LoadMessages {
+                        conversation_id: conv.id.clone(),
+                        branch_id: None,
+                    }).unwrap();
+                    // Switch to chat view
+                    self.active_view = ActiveView::Chat;
+                    self.active_conversation = Some(conv.clone());
+                    self.sync_view_stack();
+                    // Forward to chat panel once we have the character
+                    if let Some(character) = character {
+                        let _ = self.chat_panel.sender().send(ChatPanelMsg::LoadConversation {
+                            conversation: conv,
+                            messages: Vec::new(),
+                            character,
+                        });
+                    }
+                    // Refresh sidebar
                     self.db_worker.sender().send(DbInput::LoadConversations).unwrap();
-                    // Forward to chat panel
-                    let _ = self.chat_panel.sender().send(ChatPanelMsg::ConversationStarted(conv));
                 }
                 DbOutput::MessagesLoaded(msgs) => {
                     self.conversation_messages = msgs.clone();
@@ -448,6 +524,12 @@ impl SimpleComponent for AppModel {
                     });
                 }
             },
+            AppMsg::StartConversationWithProvider { character_id, provider_id } => {
+                self.db_worker.sender().send(DbInput::StartConversation {
+                    character_id,
+                    provider_id,
+                }).unwrap();
+            }
             AppMsg::CharactersOutput(output) => match output {
                 CharactersPanelOutput::SaveCharacter(character) => {
                     self.db_worker.sender().send(DbInput::SaveCharacter(character)).unwrap();
@@ -463,6 +545,59 @@ impl SimpleComponent for AppModel {
                                 tracing::warn!("Failed to delete avatar file {}: {}", path, e);
                             }
                         });
+                    }
+                }
+                CharactersPanelOutput::StartConversation(character_id) => {
+                    if self.providers.is_empty() {
+                        self.show_toast("Please configure a provider in Settings first.");
+                        self.active_view = ActiveView::Settings;
+                        self.sync_view_stack();
+                        return;
+                    }
+                    if self.providers.len() >= 2 {
+                        // Show provider picker dialog
+                        let providers = self.providers.clone();
+                        let dialog = adw::AlertDialog::new(
+                            Some("Select Provider"),
+                            Some("Choose which AI provider to use for this conversation."),
+                        );
+                        for provider in &providers {
+                            let label = if provider.enabled {
+                                format!("{}", provider.name)
+                            } else {
+                                format!("{} (disabled)", provider.name)
+                            };
+                            dialog.add_response(&provider.id, &label);
+                        }
+                        dialog.set_close_response("cancel");
+                        dialog.add_response("cancel", "Cancel");
+                        // Default to first enabled provider
+                        if let Some(first_enabled) = providers.iter().find(|p| p.enabled) {
+                            dialog.set_default_response(Some(&first_enabled.id));
+                        }
+
+                        let sender_clone = sender.clone();
+                        let char_id = character_id.clone();
+                        dialog.connect_response(None, move |dialog, response| {
+                            if response == "cancel" { return; }
+                            if let Some(provider) = providers.iter().find(|p| p.id == response) {
+                                let _ = sender_clone.input_sender().send(AppMsg::StartConversationWithProvider {
+                                    character_id: char_id.clone(),
+                                    provider_id: provider.id.clone(),
+                                });
+                            }
+                        });
+                        // Need to present the dialog - find parent window
+                        let window = self.toast_overlay.ancestor(gtk::Window::static_type())
+                            .and_then(|w| w.downcast::<gtk::Window>().ok());
+                        dialog.present(window.as_ref());
+                    } else {
+                        // Only one provider — use it directly
+                        let provider = self.providers.first().cloned().unwrap();
+                        self.db_worker.sender().send(DbInput::StartConversation {
+                            character_id,
+                            provider_id: provider.id,
+                        }).unwrap();
                     }
                 }
                 CharactersPanelOutput::EditCharacter(id) => {
@@ -764,5 +899,52 @@ impl AppModel {
         let toast = adw::Toast::new(message);
         toast.set_timeout(3);
         self.toast_overlay.add_toast(toast);
+    }
+
+    /// Rebuild the sidebar conversation list.
+    fn refresh_sidebar(&mut self, sender: &ComponentSender<Self>) {
+        // Clear existing rows
+        while let Some(child) = self.sidebar_listbox.first_child() {
+            self.sidebar_listbox.remove(&child);
+        }
+
+        if self.conversations.is_empty() {
+            self.sidebar_stack.set_visible_child_name("empty");
+            return;
+        }
+        self.sidebar_stack.set_visible_child_name("list");
+
+        // "New Conversation" row
+        let new_row = adw::ActionRow::new();
+        new_row.set_title("New Conversation");
+        new_row.set_subtitle("Select a character to chat");
+        new_row.add_prefix(&gtk::Image::from_icon_name("list-add-symbolic"));
+        new_row.add_css_class("sidebar-row");
+        new_row.set_activatable(true);
+        let sender_clone = sender.clone();
+        new_row.connect_activated(move |_| {
+            let _ = sender_clone.input_sender().send(AppMsg::SwitchView(ActiveView::Characters));
+        });
+        self.sidebar_listbox.append(&new_row);
+
+        // Conversation rows
+        for conv in &self.conversations {
+            let character = self.characters.iter().find(|c| c.id == conv.character_id);
+            let name = character.map(|c| c.name.as_str()).unwrap_or("Unknown");
+
+            let row = adw::ActionRow::new();
+            row.set_title(name);
+            row.add_prefix(&gtk::Image::from_icon_name("chat-bubble-text-symbolic"));
+            row.add_css_class("sidebar-row");
+            row.set_activatable(true);
+
+            let conv_id = conv.id.clone();
+            let sender_clone = sender.clone();
+            row.connect_activated(move |_| {
+                let _ = sender_clone.input_sender().send(AppMsg::LoadConversationById(conv_id.clone()));
+            });
+
+            self.sidebar_listbox.append(&row);
+        }
     }
 }

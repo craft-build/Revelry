@@ -5,6 +5,7 @@ use adw::prelude::*;
 use futures::StreamExt as _;
 use relm4::prelude::*;
 use relm4::{adw, gtk};
+use std::rc::Rc;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
@@ -13,7 +14,7 @@ use crate::service::ai::{AiService, StreamChunk};
 use crate::service::prompt::build_system_prompt;
 
 use self::input_bar::{InputBar, InputBarMsg, InputBarOutput};
-use self::message_row::{MessageRow, MessageRowInit};
+use self::message_row::{MessageRow, MessageRowInit, MessageRowAction};
 
 /// Chat panel component with streaming support.
 /// Displays conversation messages and handles user input.
@@ -31,6 +32,8 @@ pub struct ChatPanel {
     providers: Vec<ProviderConfig>,
     editing_message_id: Option<String>,
     pending_user_text: Option<String>,
+    
+    stream_cancel: Option<tokio::sync::watch::Sender<bool>>,
     
     // Widget references
     messages_container: gtk::ListBox,
@@ -68,6 +71,10 @@ pub enum ChatPanelMsg {
     BranchCreated(MessageBranch),
     MessageContentUpdated,
     MessageDeleted(String),
+    // Context menu
+    ShowEditDialog(String),
+    // Branch navigation from message row click
+    SwitchBranchForMessage(String),
 }
 
 /// Command output from background operations (streaming, API calls).
@@ -185,6 +192,7 @@ impl Component for ChatPanel {
             providers: Vec::new(),
             editing_message_id: None,
             pending_user_text: None,
+            stream_cancel: None,
             messages_container,
             input_bar,
         };
@@ -245,13 +253,13 @@ impl Component for ChatPanel {
                 }
 
                 // Rebuild message list
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::ClearConversation => {
                 self.active_conversation = None;
                 self.active_character = None;
                 self.messages.clear();
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::CharactersLoaded(characters) => {
                 self.characters = characters;
@@ -280,7 +288,7 @@ impl Component for ChatPanel {
                     // Save user message
                     self.messages.push(user_message.clone());
                     let _ = sender.output(ChatPanelOutput::SaveMessage(user_message));
-                    self.rebuild_message_list();
+                    self.rebuild_message_list(&sender);
 
                     // Start streaming
                     self.streaming = true;
@@ -293,6 +301,10 @@ impl Component for ChatPanel {
                 }
             }
             ChatPanelMsg::CancelStream => {
+                // Signal the background stream task to stop
+                if let Some(tx) = self.stream_cancel.take() {
+                    let _ = tx.send(true);
+                }
                 self.streaming = false;
                 let _ = self.input_bar.sender().send(InputBarMsg::SetSending(false));
 
@@ -308,7 +320,7 @@ impl Component for ChatPanel {
                         self.messages.push(assistant_message.clone());
                         let _ = sender.output(ChatPanelOutput::SaveMessage(assistant_message));
                         self.partial_response.clear();
-                        self.rebuild_message_list();
+                        self.rebuild_message_list(&sender);
                     }
                 }
             }
@@ -317,7 +329,7 @@ impl Component for ChatPanel {
             }
             ChatPanelMsg::MessagesLoaded(msgs) => {
                 self.messages = msgs;
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::MessageSaved(_msg) => {
                 // Message was saved - could trigger a refresh if needed
@@ -340,6 +352,10 @@ impl Component for ChatPanel {
                 let provider_cfg = provider.clone();
                 let key = api_key;
 
+                // Create cancellation channel
+                let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
+                self.stream_cancel = Some(cancel_tx);
+
                 sender.command(move |out, _shutdown| async move {
                     let mut stream = AiService::stream_chat(
                         &provider_cfg,
@@ -348,6 +364,10 @@ impl Component for ChatPanel {
                         &key,
                     );
                     while let Some(chunk) = stream.next().await {
+                        // Check cancellation between tokens
+                        if *cancel_rx.borrow() {
+                            return; // Silently drop — parent already saved partial
+                        }
                         match chunk {
                             StreamChunk::Token(token) => {
                                 if out.send(ChatCmdOut::TokenReceived(token)).is_err() {
@@ -368,7 +388,7 @@ impl Component for ChatPanel {
             }
             ChatPanelMsg::UpdatePartialResponse(text) => {
                 self.partial_response.push_str(&text);
-                self.update_streaming_message();
+                self.update_streaming_message(&sender);
             }
             ChatPanelMsg::StreamComplete(full_text) => {
                 self.streaming = false;
@@ -384,7 +404,7 @@ impl Component for ChatPanel {
                     let _ = sender.output(ChatPanelOutput::SaveMessage(assistant_message));
                 }
                 self.partial_response.clear();
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::StreamError(error) => {
                 self.streaming = false;
@@ -403,9 +423,44 @@ impl Component for ChatPanel {
                     }
                 }
                 self.partial_response.clear();
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
             // Branch operations
+            ChatPanelMsg::ShowEditDialog(message_id) => {
+                // Find the message
+                if let Some(msg) = self.messages.iter().find(|m| m.id == message_id).cloned() {
+                    let dialog = adw::AlertDialog::new(
+                        Some("Edit Message"),
+                        Some("Edit this message. The original will be kept as a branch."),
+                    );
+                    dialog.add_response("cancel", "Cancel");
+                    dialog.add_response("save", "Save");
+                    dialog.set_response_appearance("save", adw::ResponseAppearance::Suggested);
+                    dialog.set_default_response(Some("save"));
+                    dialog.set_close_response("cancel");
+
+                    // Content entry
+                    let entry = gtk::Entry::new();
+                    entry.set_text(&msg.content);
+                    entry.set_activates_default(true);
+                    dialog.set_extra_child(Some(&entry));
+
+                    let sender_clone = sender.clone();
+                    let msg_id = message_id.clone();
+                    dialog.connect_response(None, move |_, response| {
+                        if response == "save" {
+                            let new_content = entry.text().to_string();
+                            if !new_content.is_empty() {
+                                let _ = sender_clone.input_sender().send(ChatPanelMsg::EditMessage {
+                                    message_id: msg_id.clone(),
+                                    new_content,
+                                });
+                            }
+                        }
+                    });
+                    dialog.present(None::<&gtk::Widget>);
+                }
+            }
             ChatPanelMsg::EditMessage { message_id, new_content } => {
                 // Send edit to parent (AppModel) to update in DB
                 let _ = sender.output(ChatPanelOutput::EditMessage { message_id, new_content });
@@ -421,22 +476,16 @@ impl Component for ChatPanel {
                 let _ = sender.output(ChatPanelOutput::DeleteMessage(message_id));
                 // Remove from local messages
                 self.messages.retain(|m| m.id != id_clone);
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
-            ChatPanelMsg::SwitchBranch(branch_id) => {
-                // Switch to a different branch
-                self.active_branch_id = branch_id.clone();
-                // Request messages for the new branch
-                if let Some(ref conversation) = self.active_conversation {
-                    let _ = sender.output(ChatPanelOutput::LoadMessages {
-                        conversation_id: conversation.id.clone(),
-                        branch_id,
-                    });
-                }
+            ChatPanelMsg::MessageDeleted(message_id) => {
+                // Confirmation from parent after DB deletion
+                self.messages.retain(|m| m.id != message_id);
+                self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::BranchesLoaded(branches) => {
                 self.branches = branches;
-                self.rebuild_message_list();
+                self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::BranchCreated(branch) => {
                 self.branches.push(branch);
@@ -451,10 +500,36 @@ impl Component for ChatPanel {
                     });
                 }
             }
-            ChatPanelMsg::MessageDeleted(id) => {
-                // Remove from local messages
-                self.messages.retain(|m| m.id != id);
-                self.rebuild_message_list();
+            ChatPanelMsg::SwitchBranch(branch_id) => {
+                self.active_branch_id = branch_id.clone();
+                if let Some(ref conversation) = self.active_conversation {
+                    let _ = sender.output(ChatPanelOutput::LoadMessages {
+                        conversation_id: conversation.id.clone(),
+                        branch_id,
+                    });
+                }
+            }
+            ChatPanelMsg::SwitchBranchForMessage(message_id) => {
+                // Simple cycle: root (None) <-> first branch for this message
+                let sibling = self.branches.iter()
+                    .find(|b| b.parent_message_id.as_ref() == Some(&message_id));
+                let new_branch = match self.active_branch_id {
+                    Some(ref active) => {
+                        if sibling.map(|b| &b.id) == Some(active) {
+                            None // cycle back to root
+                        } else {
+                            sibling.map(|b| b.id.clone())
+                        }
+                    }
+                    None => sibling.map(|b| b.id.clone()),
+                };
+                self.active_branch_id = new_branch.clone();
+                if let Some(ref conversation) = self.active_conversation {
+                    let _ = sender.output(ChatPanelOutput::LoadMessages {
+                        conversation_id: conversation.id.clone(),
+                        branch_id: new_branch,
+                    });
+                }
             }
         }
     }
@@ -465,6 +540,10 @@ impl Component for ChatPanel {
         sender: ComponentSender<Self>,
         _root: &Self::Root,
     ) {
+        // Ignore stale outputs if streaming was cancelled
+        if !self.streaming {
+            return;
+        }
         match msg {
             ChatCmdOut::TokenReceived(token) => {
                 let _ = sender.input_sender().send(ChatPanelMsg::UpdatePartialResponse(token));
@@ -481,7 +560,7 @@ impl Component for ChatPanel {
 
 impl ChatPanel {
     /// Rebuild the message list from self.messages
-    fn rebuild_message_list(&mut self) {
+    fn rebuild_message_list(&mut self, sender: &ComponentSender<ChatPanel>) {
         // Clear existing messages
         while let Some(child) = self.messages_container.first_child() {
             self.messages_container.remove(&child);
@@ -499,7 +578,16 @@ impl ChatPanel {
                 has_siblings,
             };
             let row = MessageRow::new(&init);
-            let widget = row.widget();
+            let sender_clone = sender.clone();
+            let widget = row.widget(Rc::new(move |action| {
+                let msg = match action {
+                    MessageRowAction::Edit(id) => ChatPanelMsg::ShowEditDialog(id),
+                    MessageRowAction::Regenerate(id) => ChatPanelMsg::RegenerateMessage(id),
+                    MessageRowAction::Delete(id) => ChatPanelMsg::DeleteMessage(id),
+                    MessageRowAction::NavigateBranches(id) => ChatPanelMsg::SwitchBranchForMessage(id),
+                };
+                let _ = sender_clone.input_sender().send(msg);
+            }));
             self.messages_container.append(&widget);
         }
 
@@ -520,13 +608,13 @@ impl ChatPanel {
                 has_siblings: false,
             };
             let row = MessageRow::new(&init);
-            let widget = row.widget();
+            let widget = row.widget(Rc::new(|_| {}));
             self.messages_container.append(&widget);
         }
     }
 
     /// Update the currently streaming message
-    fn update_streaming_message(&mut self) {
-        self.rebuild_message_list();
+    pub fn update_streaming_message(&mut self, sender: &ComponentSender<ChatPanel>) {
+        self.rebuild_message_list(sender);
     }
 }
