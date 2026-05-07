@@ -404,6 +404,10 @@ impl Component for ChatPanel {
                     });
                     return;
                 };
+
+                // Assemble prompt with persona injection and template resolution.
+                // PromptEngine injects the persona block between the character system prompt
+                // and conversation history, then resolves {{user}}, {{char}}, {{persona.*}}.
                 let assembled = PromptEngine::assemble(character, self.active_persona.as_ref(), &self.messages);
                 let system_prompt = assembled.preamble;
                 let messages = self.messages.clone();
