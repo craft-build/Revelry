@@ -104,12 +104,12 @@ Plans:
   2. AI prompts are assembled with the correct priority layers: sticky system+character → activated lorebooks → semi-sticky persona → truncated history
   3. User can add lorebook entries to a character with keywords, and those entries activate and inject into context when keywords appear in conversation
   4. Lorebook activation respects recursive depth limits and token budgets so world info doesn't consume the entire context
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md — Token counting service and lorebook data layer (Wave 1)
+- [ ] 05-02-PLAN.md — Budget-aware prompt assembly and lorebook activation engine (Wave 2)
+- [ ] 05-03-PLAN.md — Context utilization UI and lorebook editor (Wave 3)
 
 **UI hint**: yes
 
