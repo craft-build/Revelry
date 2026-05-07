@@ -107,9 +107,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Token counting service and lorebook data layer (Wave 1)
-- [ ] 05-02-PLAN.md — Budget-aware prompt assembly and lorebook activation engine (Wave 2)
-- [ ] 05-03-PLAN.md — Context utilization UI and lorebook editor (Wave 3)
+- [ ] 05-01-PLAN.md — Token counting service and lorebook data layer
+- [ ] 05-02-PLAN.md — Budget-aware prompt assembly and lorebook activation engine
+- [ ] 05-03-PLAN.md — Context utilization UI, lorebook editor, and provider settings
 
 **UI hint**: yes
 
