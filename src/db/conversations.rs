@@ -10,8 +10,10 @@ pub fn start_conversation(
     conn: &Connection,
     character: &CharacterCardV2,
     provider_id: &str,
+    creator_persona_id: Option<&str>,
 ) -> Result<Conversation> {
-    let conversation = Conversation::new(character.id.clone(), provider_id.to_string());
+    let mut conversation = Conversation::new(character.id.clone(), provider_id.to_string());
+    conversation.creator_persona_id = creator_persona_id.map(|s| s.to_string());
 
     // Insert the conversation
     conn.prepare_cached(
@@ -190,6 +192,19 @@ pub fn count_messages_in_conversation(conn: &Connection, conversation_id: &str) 
     Ok(count)
 }
 
+/// Updates the creator_persona_id for a conversation.
+pub fn update_conversation_persona(
+    conn: &Connection,
+    conversation_id: &str,
+    persona_id: Option<&str>,
+) -> Result<()> {
+    conn.prepare_cached(
+        "UPDATE conversations SET creator_persona_id = ?1 WHERE id = ?2"
+    )?
+    .execute(params![persona_id, conversation_id])?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -273,7 +288,7 @@ mod tests {
         crate::db::characters::insert_character(&conn, &character).expect("Insert character");
         insert_provider(&conn, &provider).expect("Insert provider");
 
-        let conversation = start_conversation(&conn, &character, &provider.id).expect("Start conversation");
+        let conversation = start_conversation(&conn, &character, &provider.id, None).expect("Start conversation");
 
         // Conversation should have UUID and correct IDs
         assert!(!conversation.id.is_empty());
@@ -297,7 +312,7 @@ mod tests {
         crate::db::characters::insert_character(&conn, &character).expect("Insert character");
         insert_provider(&conn, &provider).expect("Insert provider");
 
-        let conversation = start_conversation(&conn, &character, &provider.id).expect("Start conversation");
+        let conversation = start_conversation(&conn, &character, &provider.id, None).expect("Start conversation");
 
         // Save additional messages
         let user_msg = Message::new(
@@ -331,9 +346,9 @@ mod tests {
         insert_provider(&conn, &provider).expect("Insert provider");
 
         // Create two conversations with a small delay
-        let conv1 = start_conversation(&conn, &character, &provider.id).expect("Start conv1");
+        let conv1 = start_conversation(&conn, &character, &provider.id, None).expect("Start conv1");
         std::thread::sleep(std::time::Duration::from_millis(10));
-        let conv2 = start_conversation(&conn, &character, &provider.id).expect("Start conv2");
+        let conv2 = start_conversation(&conn, &character, &provider.id, None).expect("Start conv2");
 
         // Load conversations - should be ordered by updated_at DESC (most recent first)
         let conversations = load_conversations(&conn).expect("Load conversations");
@@ -351,7 +366,7 @@ mod tests {
         crate::db::characters::insert_character(&conn, &character).expect("Insert character");
         insert_provider(&conn, &provider).expect("Insert provider");
 
-        let conversation = start_conversation(&conn, &character, &provider.id).expect("Start conversation");
+        let conversation = start_conversation(&conn, &character, &provider.id, None).expect("Start conversation");
 
         // Save additional message
         let msg = Message::new(
@@ -385,7 +400,7 @@ mod tests {
         crate::db::characters::insert_character(&conn, &character).expect("Insert character");
         insert_provider(&conn, &provider).expect("Insert provider");
 
-        let conversation = start_conversation(&conn, &character, &provider.id).expect("Start conversation");
+        let conversation = start_conversation(&conn, &character, &provider.id, None).expect("Start conversation");
         let messages = load_messages(&conn, &conversation.id, None).expect("Load messages");
         let initial_msg = &messages[0];
 
@@ -406,7 +421,7 @@ mod tests {
         crate::db::characters::insert_character(&conn, &character).expect("Insert character");
         insert_provider(&conn, &provider).expect("Insert provider");
 
-        let conversation = start_conversation(&conn, &character, &provider.id).expect("Start conversation");
+        let conversation = start_conversation(&conn, &character, &provider.id, None).expect("Start conversation");
         let messages = load_messages(&conn, &conversation.id, None).expect("Load messages");
         let parent_msg = &messages[0];
 
@@ -433,7 +448,7 @@ mod tests {
         crate::db::characters::insert_character(&conn, &character).expect("Insert character");
         insert_provider(&conn, &provider).expect("Insert provider");
 
-        let conversation = start_conversation(&conn, &character, &provider.id).expect("Start conversation");
+        let conversation = start_conversation(&conn, &character, &provider.id, None).expect("Start conversation");
 
         // Create a branch
         let branch = MessageBranch::new(

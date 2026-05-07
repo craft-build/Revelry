@@ -70,6 +70,7 @@ pub struct AppModel {
     character_editor: Option<relm4::Controller<CharacterEditor>>,
     persona_editor: Option<relm4::Controller<PersonaEditor>>,
     personas: Vec<Persona>,
+    global_default_persona_id: Option<String>,
     view_stack: adw::ViewStack,
     toast_overlay: adw::ToastOverlay,
     // Sidebar state (dynamically managed, not in view!)
@@ -228,6 +229,7 @@ impl SimpleComponent for AppModel {
             character_editor: None,
             persona_editor: None,
             personas: Vec::new(),
+            global_default_persona_id: None,
             view_stack: adw::ViewStack::new(),
             toast_overlay: adw::ToastOverlay::new(),
             sidebar_stack: gtk::Stack::new(),
@@ -358,6 +360,12 @@ impl SimpleComponent for AppModel {
                     let provider = self.providers.iter().find(|p| p.id == conv.provider_id).cloned();
                     self.active_conversation = Some(conv.clone());
                     self.active_branch_id = None;
+                    // Resolve the active persona for this conversation
+                    let active_persona = if let Some(ref persona_id) = conv.creator_persona_id {
+                        self.personas.iter().find(|p| p.id == *persona_id).cloned()
+                    } else {
+                        None
+                    };
                     if let Some(ref character) = character {
                         let _ = self.chat_panel.sender().send(ChatPanelMsg::LoadConversation {
                             conversation: conv,
@@ -365,6 +373,8 @@ impl SimpleComponent for AppModel {
                             character: character.clone(),
                         });
                     }
+                    // Set active persona in chat panel
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::SetActivePersona(active_persona));
                     if let Some(p) = provider {
                         let _ = self.chat_panel.sender().send(ChatPanelMsg::SetActiveProvider(Some(p)));
                     }
@@ -438,6 +448,12 @@ impl SimpleComponent for AppModel {
                     let character = self.characters.iter()
                         .find(|c| c.id == conv.character_id)
                         .cloned();
+                    // Resolve the active persona for this conversation
+                    let active_persona = if let Some(ref persona_id) = conv.creator_persona_id {
+                        self.personas.iter().find(|p| p.id == *persona_id).cloned()
+                    } else {
+                        None
+                    };
                     // Load messages for the conversation
                     self.db_worker.sender().send(DbInput::LoadMessages {
                         conversation_id: conv.id.clone(),
@@ -447,6 +463,8 @@ impl SimpleComponent for AppModel {
                     self.active_view = ActiveView::Chat;
                     self.active_conversation = Some(conv.clone());
                     self.sync_view_stack();
+                    // Set active persona in chat panel
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::SetActivePersona(active_persona));
                     // Forward to chat panel once we have the character
                     if let Some(character) = character {
                         let _ = self.chat_panel.sender().send(ChatPanelMsg::LoadConversation {
@@ -490,7 +508,11 @@ impl SimpleComponent for AppModel {
                     self.personas = personas.clone();
                     let _ = self.characters_panel.sender().send(CharactersPanelMsg::PersonasLoaded(personas.clone()));
                     // Forward to settings panel for default persona dropdown
-                    let _ = self.settings_panel.sender().send(SettingsPanelMsg::PersonasLoaded(personas));
+                    let _ = self.settings_panel.sender().send(SettingsPanelMsg::PersonasLoaded(personas.clone()));
+                    // Forward to chat panel for persona selector
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::PersonasLoaded(personas));
+                    // Resolve global default persona ID from app settings
+                    self.db_worker.sender().send(DbInput::LoadAppSetting("default_persona_id".to_string())).unwrap();
                 }
                 DbOutput::PersonaSaved(_) => {
                     // Reload personas after save
@@ -503,11 +525,25 @@ impl SimpleComponent for AppModel {
                     self.show_toast("Persona deleted");
                 }
                 DbOutput::GlobalDefaultPersonaSet => {
+                    self.db_worker.sender().send(DbInput::LoadAppSetting("default_persona_id".to_string())).unwrap();
                     self.show_toast("Default persona updated");
                 }
-                _ => {
-                    // Handle other DbOutput variants (AppSettingLoaded, AppSettingSaved, MessageCount)
-                    // These are handled by other components
+                DbOutput::AppSettingLoaded(value) => {
+                    // Track which setting was loaded — for init-time default_persona_id query
+                    if let Some(id) = value {
+                        self.global_default_persona_id = Some(id);
+                    } else {
+                        self.global_default_persona_id = None;
+                    }
+                }
+                DbOutput::AppSettingSaved => {
+                    // Acknowledged — no action needed
+                }
+                DbOutput::MessageCount(_) => {
+                    // Used by conversation list — no action here
+                }
+                DbOutput::ConversationPersonaUpdated(_) => {
+                    // Conversation persona updated in DB — no further action needed
                 }
             },
             AppMsg::SettingsOutput(output) => match output {
@@ -555,9 +591,12 @@ impl SimpleComponent for AppModel {
                 }
             },
             AppMsg::StartConversationWithProvider { character_id, provider_id } => {
+                // Resolve persona using assignment hierarchy: char default -> global default -> none
+                let resolved_persona_id = self.resolve_persona_for_new_conversation(&character_id);
                 self.db_worker.sender().send(DbInput::StartConversation {
                     character_id,
                     provider_id,
+                    creator_persona_id: resolved_persona_id,
                 }).unwrap();
             }
             AppMsg::CharactersOutput(output) => match output {
@@ -624,9 +663,11 @@ impl SimpleComponent for AppModel {
                     } else {
                         // Only one provider — use it directly
                         let provider = self.providers.first().cloned().unwrap();
+                        let resolved_persona_id = self.resolve_persona_for_new_conversation(&character_id);
                         self.db_worker.sender().send(DbInput::StartConversation {
                             character_id,
                             provider_id: provider.id,
+                            creator_persona_id: resolved_persona_id,
                         }).unwrap();
                     }
                 }
@@ -863,7 +904,13 @@ impl SimpleComponent for AppModel {
             },
             AppMsg::ChatOutput(output) => match output {
                 ChatPanelOutput::StartConversation { character_id, provider_id } => {
-                    self.db_worker.sender().send(DbInput::StartConversation { character_id, provider_id }).unwrap();
+                    // Resolve persona using assignment hierarchy
+                    let resolved_persona_id = self.resolve_persona_for_new_conversation(&character_id);
+                    self.db_worker.sender().send(DbInput::StartConversation {
+                        character_id,
+                        provider_id,
+                        creator_persona_id: resolved_persona_id,
+                    }).unwrap();
                 }
                 ChatPanelOutput::SaveMessage(msg) => {
                     self.db_worker.sender().send(DbInput::SaveMessage(msg)).unwrap();
@@ -918,8 +965,11 @@ impl SimpleComponent for AppModel {
                     self.db_worker.sender().send(DbInput::CreateBranch(branch)).unwrap();
                 }
                 ChatPanelOutput::SetConversationPersona { conversation_id, persona_id } => {
-                    // Will be fully wired in Task 2 — for now just log
-                    tracing::info!("Persona change requested: conv={} persona={:?}", conversation_id, persona_id);
+                    // Update conversation's creator_persona_id in DB
+                    self.db_worker.sender().send(DbInput::UpdateConversationPersona {
+                        conversation_id,
+                        persona_id,
+                    }).unwrap();
                 }
             },
             AppMsg::EditorOutput(output) => match output {
@@ -953,6 +1003,26 @@ impl SimpleComponent for AppModel {
 }
 
 impl AppModel {
+    /// Resolve persona for a new conversation using the assignment hierarchy:
+    /// 1. Character default persona
+    /// 2. Global default persona
+    /// 3. None
+    fn resolve_persona_for_new_conversation(&self, character_id: &str) -> Option<String> {
+        // Step 1: Character default
+        let character = self.characters.iter().find(|c| c.id == character_id);
+        if let Some(Some(ref id)) = character.map(|c| &c.default_persona_id) {
+            return Some(id.clone());
+        }
+
+        // Step 2: Global default
+        if let Some(ref id) = self.global_default_persona_id {
+            return Some(id.clone());
+        }
+
+        // Step 3: None
+        None
+    }
+
     fn sync_view_stack(&self) {
         let name = match self.active_view {
             ActiveView::Chat => "chat",

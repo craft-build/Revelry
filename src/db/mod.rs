@@ -31,7 +31,7 @@ pub enum DbInput {
     DeletePersona(String),
     SetGlobalDefaultPersona(Option<String>),
     // Conversation operations
-    StartConversation { character_id: String, provider_id: String },
+    StartConversation { character_id: String, provider_id: String, creator_persona_id: Option<String> },
     LoadConversations,
     LoadMessages { conversation_id: String, branch_id: Option<String> },
     SaveMessage(Message),
@@ -42,6 +42,8 @@ pub enum DbInput {
     // Branch operations
     LoadBranches(String),
     CreateBranch(crate::domain::conversation::MessageBranch),
+    // Persona-conversation operations
+    UpdateConversationPersona { conversation_id: String, persona_id: Option<String> },
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -70,6 +72,7 @@ pub enum DbOutput {
     MessageDeleted(String),
     ConversationDeleted(String),
     MessageCount(i32),
+    ConversationPersonaUpdated(String),
     // Branch outputs
     BranchesLoaded(Vec<crate::domain::conversation::MessageBranch>),
     BranchCreated(crate::domain::conversation::MessageBranch),
@@ -183,11 +186,11 @@ impl Worker for DbService {
                 personas::set_global_default_persona_id(&self.conn, id.as_deref())
                     .map(|_| DbOutput::GlobalDefaultPersonaSet)
             }
-            DbInput::StartConversation { character_id, provider_id } => {
+            DbInput::StartConversation { character_id, provider_id, creator_persona_id } => {
                 // Load the character first
                 match characters::load_character(&self.conn, &character_id) {
                     Ok(Some(character)) => {
-                        conversations::start_conversation(&self.conn, &character, &provider_id)
+                        conversations::start_conversation(&self.conn, &character, &provider_id, creator_persona_id.as_deref())
                             .map(DbOutput::ConversationStarted)
                     }
                     Ok(None) => Err(anyhow::anyhow!("Character not found: {}", character_id)),
@@ -229,6 +232,10 @@ impl Worker for DbService {
             DbInput::CreateBranch(branch) => {
                 conversations::create_branch(&self.conn, &branch)
                     .map(|_| DbOutput::BranchCreated(branch))
+            }
+            DbInput::UpdateConversationPersona { conversation_id, persona_id } => {
+                conversations::update_conversation_persona(&self.conn, &conversation_id, persona_id.as_deref())
+                    .map(|_| DbOutput::ConversationPersonaUpdated(conversation_id))
             }
         };
 
