@@ -1,10 +1,12 @@
 ---
 phase: 4
 slug: personas-template-resolution
-status: draft
+status: approved
 adwaita: true
 icon_library: relm4-icons
 created: 2026-05-05
+updated: 2026-05-06
+reviewed_at: 2026-05-06
 ---
 
 # Phase 4 — UI Design Contract
@@ -49,6 +51,7 @@ Inherited from Phase 1 (multiples of 4):
 - **Persona block preview area:** 16px (lg) internal padding, `--card-bg-color` background
 - **Persona popover row padding:** 12px (md) vertical, 16px (lg) horizontal
 - **Read-only text view margins:** 8px (sm) internal padding for block preview
+- **Text area label gap:** 12px (md) — space between GtkLabel (field title) and GtkTextView
 
 ---
 
@@ -62,7 +65,7 @@ Inherited from Phase 1 — use Adwaita CSS style classes exclusively. No hard-co
 | Heading | `.heading` | 16pt | 700 | 1.2 | Wizard step titles, preferences group titles |
 | Caption | `.caption` | 12pt | 400 | 1.4 | Persona preview snippets, timestamp, assignment source |
 | Caption Heading | `.caption-heading` | 12pt | 700 | 1.4 | "Step N of 5" indicator, tip labels |
-| Title 4 | `.title-4` | 18pt | 700 | 1.2 | Persona editor window title |
+| Title 4 | `.title-4` | 18pt | 700 | 1.2 | Persona editor window title, search empty state title |
 | Title 1 | `.title-1` | 24pt | 800 | 1.1 | Persona library empty state |
 
 **Phase 4 Specific:**
@@ -70,6 +73,7 @@ Inherited from Phase 1 — use Adwaita CSS style classes exclusively. No hard-co
 - **Personality preview snippet (truncated):** `.caption` class, max 2 lines, ellipsize at word boundary
 - **Persona block preview (read-only text):** `.body` class with `--card-bg-color` background. No monospace font — use system default for readability.
 - **Assignment hierarchy label in header:** `.caption` class, clickable
+- **Text area placeholder/description labels:** `.caption` or `.dimmed` class above GtkTextView (GTK4 GtkTextView has no native `set_placeholder_text()`; always use a GtkLabel above the text area for field description)
 
 ---
 
@@ -84,19 +88,19 @@ Inherited from Phase 1 — use Adwaita semantic CSS variables exclusively.
 | Accent | `--accent-bg-color` | #3584e4 | #3584e4 | **See extended reserved list below** |
 | Destructive | `--destructive-bg-color` | #e01b24 | #e01b24 | Delete persona confirmation |
 | Success | `--success-bg-color` | #33d17a | #33d17a | Persona saved toast highlight |
-| Error | `--error-bg-color` | #e01b24 | #e01b24 | Validation error on required fields (name, personality) |
+| Error | `--error-bg-color` | #e01b24 | #e01b24 | Validation error on required fields (name, personality), character limit exceeded |
 
 **Accent reserved-for (Phase 4 extensions):**
-- `suggested-action` buttons: "Create Persona", "Save", "Next" in wizard
+- `suggested-action` buttons: "Create Persona", "Save Persona", "Next" in wizard
 - Active/selected persona in chat header popover (checkmark + row highlight)
 - Currently assigned persona indicator in Settings and Character Editor dropdowns
 - **Not for:** General library row selection (uses standard sidebar selection), avatar borders
 
 **Phase 4 Style Class Usage:**
-- `.suggested-action` → primary wizard navigation (Next, Save)
+- `.suggested-action` → primary wizard navigation (Next, Save Persona)
 - `.destructive-action` → Delete persona button and confirmation
-- `.error` → validation messages below required fields
-- `.caption` + `.dimmed` → unassigned state: "No persona assigned"
+- `.error` → validation messages below required fields, character counter over-limit
+- `.caption` + `.dimmed` → unassigned state: "No persona assigned", placeholder labels
 - `.accent` → active persona name in chat header subtitle
 
 ---
@@ -107,13 +111,15 @@ Inherited from Phase 1 — use Adwaita semantic CSS variables exclusively.
 
 | Widget / Component | GTK/libadwaita Type | Purpose | CSS / Style |
 |-------------------|---------------------|---------|-------------|
-| PersonaEditor | `AdwPreferencesWindow` | Multi-step wizard for new/edit persona | — |
-| PersonaEditorNav | `GtkBox` (horizontal) | Bottom bar with Back / Next / Save / Cancel | `spacing: lg` |
-| PersonaListView | `GtkFlowBox` | Persona library grid in CharactersPanel tab | ` homogeneous: true, max_children_per_line: 1` (list-style) |
+| PersonaEditor | `AdwPreferencesWindow` | Multi-step wizard for new/edit persona | Contains internal `AdwNavigationView` for page stack |
+| PersonaEditorNav | `GtkBox` (horizontal) | Bottom bar with Back / Next / Save Persona / Close | `spacing: lg` |
+| PersonaListView | `GtkFlowBox` | Persona library grid in CharactersPanel tab | `homogeneous: true, max_children_per_line: 1` (list-style) |
 | PersonaRow | `GtkListBoxRow` | Single persona entry in library | — |
 | PersonaPopover | `GtkPopover` | Chat header persona selector | — |
 | PersonaBlockPreview | `GtkTextView` (read-only) | Review step assembled block preview | `--card-bg-color` bg, non-editable, `.body` |
 | AssignmentComboRow | `AdwComboRow` | Dropdown for persona selection in Settings and Character Editor | — |
+| FieldLabel | `GtkLabel` | Descriptive label above GtkTextView fields (placeholder replacement) | `.caption` or `.heading` |
+| CharCounter | `GtkLabel` | Character limit indicator for name field | `.caption`, switches to `.error` when over limit |
 
 ### Existing Widgets Reused / Modified
 
@@ -130,6 +136,7 @@ Inherited from Phase 1 — use Adwaita semantic CSS variables exclusively.
 | Widget | Purpose | CSS Classes |
 |--------|---------|-------------|
 | `AdwPreferencesWindow` | Persona editor wizard shell | — |
+| `AdwNavigationView` | Internal page stack (managed by PreferencesWindow) | — |
 | `AdwPreferencesPage` | Each wizard step page | — |
 | `AdwPreferencesGroup` | Logical field grouping per step | — |
 | `AdwEntryRow` | Single-line text: name, appearance, role, speech_style, tags | — |
@@ -138,13 +145,15 @@ Inherited from Phase 1 — use Adwaita semantic CSS variables exclusively.
 | `GtkTextView` (read-only) | Persona block preview in Review step | `.body` |
 | `GtkPopover` | Chat header persona selector overlay | — |
 | `GtkListBox` | Persona popover list | — |
-| `AdwStatusPage` | Empty states (no personas, library empty) | — |
+| `AdwStatusPage` | Empty states (no personas, library empty, search empty) | — |
 | `AdwMessageDialog` | Delete persona confirmation | `.destructive-action` on confirm |
 | `AdwToast` | Success/error feedback | — |
-| `GtkButton` | Next, Back, Save, Cancel, Create, Edit, Delete | varies |
+| `GtkButton` | Next, Back, Save Persona, Close, Create Persona, Edit Persona, Delete | varies |
 | `GtkImage` | Placeholder avatar icon (`user-symbolic`) | — |
 | `AdwClamp` | Constrain wizard form width | — |
-| `GtkScrolledWindow` | Scrollable wizard content | — |
+| `GtkScrolledWindow` | Scrollable wizard content, scrollable library | — |
+| `GtkLabel` | Field labels, hints, character counters, step indicators | varies |
+| `GtkFrame` | Border/container for block preview area | `shadow: inset` |
 
 ---
 
@@ -153,6 +162,17 @@ Inherited from Phase 1 — use Adwaita semantic CSS variables exclusively.
 ### 1. Persona Editor Wizard (AdwPreferencesWindow)
 
 Window title: "New Persona" (creation) or "Edit Persona" (editing).
+Wizard uses AdwPreferencesWindow's built-in AdwNavigationView for page management. Each step is an AdwPreferencesPage pushed onto the navigation stack.
+
+**Step Mapping:**
+
+| Step | Title | Navigation Buttons | Required Fields | Validation |
+|------|-------|-------------------|-----------------|------------|
+| 1 | Basic Info | [Close] [Next ▶] | Name | Non-empty, max 100 chars |
+| 2 | Background | [← Back] [Next ▶] | — | — |
+| 3 | Personality | [← Back] [Next ▶] | Personality | Non-empty |
+| 4 | Relationships | [← Back] [Next ▶] | — | — |
+| 5 | Review | [← Back] [Save Persona] | — | Full model re-validated on Save Persona press |
 
 ```
 AdwPreferencesWindow
@@ -165,31 +185,40 @@ AdwPreferencesWindow
 │   │   └── AdwClamp
 │   │       └── AdwPreferencesGroup "Basic Info"
 │   │           ├── AdwEntryRow "Name" *
+│   │           ├── GtkLabel (.caption, character counter): "0/100"
 │   │           ├── AdwEntryRow "Appearance"
-│   │           └── AdwEntryRow "Tags" (comma-separated, optional)
+│   │           └── AdwEntryRow "Tags"
+│   │               └── subtitle: "Comma-separated, optional"
 │   │
 │   └── GtkBox (horizontal, spacing: lg)
-│       ├── [Cancel] (.flat)
+│       ├── [Close] (.flat)
 │       └── [Next ▶] (.suggested-action)
 ```
 
 **Step 2 — Background:**
 - `AdwPreferencesGroup "Background"`
   - `GtkLabel (.heading): "Background Story"` (above text area)
+  - `GtkLabel (.caption, .dimmed): "Describe your persona's history and life story."`
   - `GtkTextView` (multi-line, 4-6 lines visible, expands)
-  - `GtkLabel (.heading): "Role Description"` (margin-top: xl)
+  - `GtkLabel (.heading, margin-top: xl): "Role Description"`
+  - `GtkLabel (.caption, .dimmed): "Your persona's role or occupation."`
   - `AdwEntryRow "Role"`
+- Navigation: `[← Back]` `[Next ▶]`
 
 **Step 3 — Personality (required fields marked with *):**
 - `AdwPreferencesGroup "Personality"`
   - `GtkLabel (.heading): "Personality" *`
+  - `GtkLabel (.caption, .dimmed): "Core traits, temperament, and behavioral patterns."`
   - `GtkTextView` (multi-line, 4-6 lines visible, expands)
-  - `GtkLabel (.heading): "Speech Style"` (margin-top: xl)
+  - `GtkLabel (.heading, margin-top: xl): "Speech Style"`
+  - `GtkLabel (.caption, .dimmed): "How this persona speaks (formal, slang, poetic, etc.)."`
   - `AdwEntryRow "Speech Style"`
+- Navigation: `[← Back]` `[Next ▶]`
 
 **Step 4 — Relationships:**
 - `AdwPreferencesGroup "Relationships"`
   - `GtkLabel (.heading): "Relationships"`
+  - `GtkLabel (.caption, .dimmed): "Connections with other characters or personas."`
   - `GtkTextView` (multi-line, 4-6 lines visible)
 - Navigation: `[← Back]` `[Next ▶]`
 
@@ -204,137 +233,25 @@ AdwPreferencesWindow
   │        Appearance: Brown hair, green eyes
   │        Personality: Friendly and curious..."
   - `GtkLabel (.caption, .dimmed): "Empty fields are omitted from the prompt."`
-- Navigation: `[← Back]` `[Save]` (.suggested-action)
+- Navigation: `[← Back]` `[Save Persona]` (.suggested-action)
 
 **Validation:**
-- Step 1: Name must be non-empty (max 100 chars). Show `.error` label below field if empty on Next attempt.
+- Step 1: Name must be non-empty (max 100 chars). Show `.error` label below field + counter turns `.error` if empty or over limit on Next attempt.
 - Step 3: Personality must be non-empty. Show `.error` label if empty on Next attempt.
 - Block navigation to next step until required fields in current step are valid.
-- Review step always allows Back; Save validates entire model again.
+- Review step always allows Back; Save Persona validates entire model again.
 
----
-
-### 2. Persona Library (CharactersPanel — Personas Tab)
-
-```
-CharactersPanel
-├── AdwViewSwitcher [Characters | Personas]
-│
-└── [Personas tab active]
-    ├── GtkBox (horizontal, spacing: md, margin: lg)
-    │   ├── GtkSearchEntry "Search personas..."
-    │   └── GtkButton "+ Create Persona" (.suggested-action)
-    │
-    └── GtkScrolledWindow
-        └── GtkFlowBox (list-style, max_children_per_line: 1, homogeneous)
-            ├── [When personas exist]
-            │   └── GtkFlowBoxChild
-            │       └── GtkListBoxRow (min-height: 64)
-            │           ├── GtkBox (horizontal, spacing: md)
-            │           │   ├── GtkImage (icon: "user-symbolic", 48×48)
-            │           │   └── GtkBox (vertical, spacing: xs)
-            │           │       ├── GtkLabel (.heading): "Alice"
-            │           │       └── GtkLabel (.caption, .dimmed, ellipsize)
-            │           │           "Friendly, curious, and adventurous..."
-            │           └── GtkBox (horizontal, spacing: sm)
-            │               ├── GtkButton "Edit" (.flat)
-            │               └── GtkButton "Delete" (.flat)
-            │                   hover: `.destructive-action`
-            │
-            └── [When no personas]
-                └── AdwStatusPage
-                    ├── icon-name: "user-symbolic"
-                    ├── title (.title-1): "No Personas Yet"
-                    └── description (.body):
-                        "Create your first persona to bring yourself into roleplay conversations."
-```
-
----
-
-### 3. Settings — Global Default Persona
-
-```
-SettingsPanel → AdwPreferencesPage "General"
-└── AdwPreferencesGroup "Roleplay Defaults"
-    └── AdwComboRow "Default Persona"
-        ├── subtitle: "Used when a character has no default persona"
-        ├── selected: "(None)"
-        ├── "(None)" → no global default; falls back to raw User
-        ├── "Alice"
-        ├── "Bob"
-        └── ...
-```
-
----
-
-### 4. Character Editor — Per-Character Default Persona
-
-```
-CharacterEditor → Step: Basic Info
-└── AdwPreferencesGroup "Basic Information"
-    ├── AdwEntryRow "Name" (existing)
-    ├── AdwEntryRow "Description" (existing)
-    └── AdwComboRow "Default Persona" (NEW)
-        ├── subtitle: "Auto-selected when starting a conversation"
-        ├── "(None)" → falls back to global default or raw User
-        ├── "Alice"
-        ├── "Bob"
-        └── ...
-    [Optional caption below]:
-    GtkLabel (.caption, .dimmed):
-        "Tip: Use {{user}} and {{char}} in description fields. They are replaced when sending messages."
-```
-
----
-
-### 5. Chat Header — Per-Conversation Persona Selector
-
-```
-AdwHeaderBar (ChatPanel)
-├── [Sidebar Toggle] (existing)
-├── GtkBox (horizontal, spacing: md)
-│   ├── AdwAvatar (character, 40×40) (existing)
-│   └── GtkBox (vertical, spacing: 0)
-│       ├── GtkLabel (.heading): "Character Name" (existing)
-│       └── GtkLabel (.caption, clickable): "as Alice ▾"
-│           └── [onclick] → GtkPopover
-│               ├── GtkLabel (.heading): "Persona"
-│               ├── GtkListBox
-│               │   ├── GtkListBoxRow: "(Default)"
-│               │   │   └── GtkLabel (.caption, .dimmed): "Use character or global default"
-│               │   ├── GtkListBoxRow: "✓ Alice" (active)
-│               │   ├── GtkListBoxRow: "Bob"
-│               │   └── GtkListBoxRow: "Eve"
-│               └── GtkButton "Manage Personas..." (.flat)
-│                   → switches to CharactersPanel Personas tab
-│
-└── [Window controls + Stop button] (existing)
-```
-
-**Persona subtitle states:**
-- Persona assigned: `.caption, .accent` → "as Alice"
-- No persona (raw User): `.caption, .dimmed` → "as User" (or hidden entirely)
-- Unset (using hierarchy fallback): `.caption, .dimmed` → "as Alice (default)"
-
----
-
-## Interaction Specifications
-
-### Persona Editor Wizard Flow
-
-1. User clicks "Create Persona" in library tab or "Edit" on a persona row.
-2. **If New:** PersonaEditor opens with empty fields, step 1 active.
-   **If Edit:** PersonaEditor opens with populated fields, step 1 active.
-3. User fills step fields and clicks **Next**. Validation runs:
-   - If invalid: `.error` label appears below invalid field; button remains sensitive.
-   - If valid: advances to next step.
-4. User can click **Back** on steps 2-5 to return and edit.
-5. On Review step, user clicks **Save**.
-   - Dispatches `SavePersona` to DbService.
-   - On `PersonaSaved`: closes editor, toast "Persona created" / "Persona updated", library refreshes.
-   - On error: shows `.error` toast, keeps editor open.
-6. **Cancel** at any step closes editor with `AdwMessageDialog` confirmation if any field has unsaved changes:
+**Close Action:**
+- **Close** at any step closes editor with `AdwMessageDialog` confirmation if any field has unsaved changes:
    - "Discard changes?" → [Keep Editing] [Discard]
+
+### Persona Library Search Behavior
+
+- **Real-time filter:** As user types in `GtkSearchEntry`, list filters instantly (no debounce — local in-memory list, < 100 items expected).
+- **Match targets:** `name` (case-insensitive prefix and substring) and `personality` (case-insensitive substring).
+- **Sort:** Alphabetical ascending by `name` (case-insensitive natural sort).
+- **Clear:** Escape key clears search entry and restores full list. "x" clear button in search entry also clears.
+- **Empty result:** Shows "No Matching Personas" status page.
 
 ### Persona Assignment Hierarchy Resolution (UI Behavior)
 
@@ -352,13 +269,21 @@ User starts conversation → System evaluates hierarchy:
 - Character editor shows `(None)` when no character default.
 - Chat popover shows checkmark on resolved persona; `(Default)` option clears conversation override.
 
+### Persona Popover Keyboard Navigation
+
+- **↑ / ↓ arrows:** Navigate up/down the persona list.
+- **Enter:** Select focused persona list row → close popover → apply change.
+- **Escape:** Close popover with no change.
+- **Tab / Shift+Tab:** Cycle through list rows and "Manage Personas..." button.
+- **Space:** Activate focused row (same as Enter).
+
 ### Persona Delete Flow
 
 1. User clicks "Delete" on persona row (hover reveals `.destructive-action` style).
 2. `AdwMessageDialog` appears:
    - Title: "Delete Persona?"
    - Body: "This will permanently delete '{name}'. Conversations using this persona will fall back to the next available persona in the assignment hierarchy."
-   - Buttons: [Cancel] [Delete] (`.destructive-action`)
+    - Buttons: [Don't Delete] [Delete] (`.destructive-action`)
 3. On confirm: dispatch `DeletePersona(id)` → DbService.
 4. On `PersonaDeleted`: remove row from library, toast "Persona deleted".
 5. Conversations referencing deleted persona automatically resolve to next hierarchy level on next prompt assembly (no UI notification needed).
@@ -380,17 +305,34 @@ User starts conversation → System evaluates hierarchy:
 | Element | Copy |
 |---------|------|
 | Primary CTA (library) | **Create Persona** — shown as `.suggested-action` button |
-| Primary CTA (wizard, final step) | **Save** — shown as `.suggested-action` button |
-| Wizard navigation | **Next**, **Back**, **Cancel** |
-| Empty state heading (persona library) | "No Personas Yet" |
-| Empty state body (persona library) | "Create your first persona to bring yourself into roleplay conversations." |
-| Empty state heading (persona popover, no personas) | *(not applicable — popover shows "Manage Personas..." link instead)* |
-| Dropdown placeholder (no personas) | "(None)" |
-| Dropdown option (no global default) | "(None)" |
+| Primary CTA (wizard, final step) | **Save Persona** — shown as `.suggested-action` button |
+| Wizard navigation | **Next**, **Back**, **Close** |
+| Empty state heading (persona library, no personas) | "No Personas Yet" |
+| Empty state body (persona library, no personas) | "Create your first persona to bring yourself into roleplay conversations." |
+| Empty state heading (persona library, search empty) | "No Matching Personas" |
+| Empty state body (persona library, search empty) | "Try a different search term." |
+| Search placeholder | "Search personas..." |
+| Dropdown placeholder (no global default) | "(None)" |
 | Dropdown option (no character default) | "(None)" |
 | Dropdown option (use hierarchy) | "(Default)" |
-| Error state (wizard validation — empty name) | "Name is required."
-| Error state (wizard validation — empty personality) | "Personality is required."
+| Name field label | "Name" |
+| Name field character counter | "{n}/100" |
+| Appearance field label | "Appearance" |
+| Tags field label | "Tags" |
+| Tags field subtitle | "Comma-separated, optional" |
+| Background label | "Background Story" |
+| Background hint | "Describe your persona's history and life story." |
+| Role label | "Role Description" |
+| Role hint | "Your persona's role or occupation." |
+| Personality label | "Personality" |
+| Personality hint | "Core traits, temperament, and behavioral patterns." |
+| Speech style label | "Speech Style" |
+| Speech style hint | "How this persona speaks (formal, slang, poetic, etc.)." |
+| Relationships label | "Relationships" |
+| Relationships hint | "Connections with other characters or personas." |
+| Error state (wizard validation — empty name) | "Name is required." |
+| Error state (wizard validation — name too long) | "Name must be 100 characters or fewer." |
+| Error state (wizard validation — empty personality) | "Personality is required." |
 | Error state (save failure) | "Could not save persona. Please check required fields and try again." |
 | Destructive confirmation (delete persona) | "Delete Persona?" — "This will permanently delete '{name}'. Conversations using this persona will fall back to the next available persona in the assignment hierarchy." |
 | Discard confirmation (wizard cancel) | "Discard changes?" — "Your changes will be lost." |
@@ -404,9 +346,13 @@ User starts conversation → System evaluates hierarchy:
 | Review step caption (empty fields) | "Empty fields are omitted from the prompt." |
 | Persona subtitle (assigned) | "as {Name}" |
 | Persona subtitle (none) | "as User" |
+| Persona subtitle (fallback) | "as {Name} (default)" |
 | Persona popover title | "Persona" |
 | Persona popover action | "Manage Personas..." |
 | Persona popover option (default) | "(Default)" |
+| Persona popover option (default subtitle) | "Use character or global default" |
+| Settings combo subtitle | "Used when a character has no default persona" |
+| Character editor combo subtitle | "Auto-selected when starting a conversation" |
 
 ---
 
@@ -416,10 +362,14 @@ User starts conversation → System evaluates hierarchy:
 |----------|--------|---------|
 | Escape | Close persona editor (with discard confirmation if dirty) | PersonaEditor focused |
 | Escape | Close persona popover | PersonaPopover open |
+| Escape | Clear search entry (if has text) / unfocus search | GtkSearchEntry focused in library |
 | Ctrl+Enter | Save persona (on Review step) | PersonaEditor focused |
 | Tab | Advance to next field | Wizard form |
 | Shift+Tab | Return to previous field | Wizard form |
-| Enter | Activate focused button (Next, Save, etc.) | Wizard navigation bar |
+| Enter | Activate focused button (Next, Save Persona, etc.) | Wizard navigation bar |
+| ↑ / ↓ | Navigate persona popover list | PersonaPopover open |
+| Enter | Select focused persona from popover | PersonaPopover open |
+| Space | Activate focused list row in popover | PersonaPopover open |
 
 ---
 
@@ -430,6 +380,7 @@ User starts conversation → System evaluates hierarchy:
 | Persona save/delete | `AdwToast` (success/error) | Database operations on worker thread are fast (< 50ms). No spinner needed. Feedback via toast. |
 | Persona library load | `GtkSpinner` (centered, transient) | Only shown on first load or explicit refresh. List populated from in-memory model after initial load. |
 | Wizard field validation | `GtkLabel` (`.error`) | Instant synchronous validation. No async indicator. |
+| Name field character count | `GtkLabel` (`.caption` → `.error` if over limit) | Updates on every keystroke. Synchronous. |
 
 ---
 
@@ -493,15 +444,19 @@ Adding a `.caption, .dimmed` tip below the Description field in the Character Ed
 
 Per D-14, users can change persona mid-conversation via the chat header popover. This updates `conversation.creator_persona_id` immediately. Existing messages are preserved as-is; only future messages use the new persona. This is **not** the v2 retroactive branch regeneration (PERS-A01 deferred).
 
+### Text Area Placeholder Pattern
+
+GTK4 `GtkTextView` does not support `set_placeholder_text()` (unlike `GtkEntry`). All multi-line text fields in the persona wizard use a `GtkLabel` with `.caption` or `.dimmed` style positioned directly above the `GtkTextView` to provide field context and hints. This is the standard GNOME pattern for text area descriptions.
+
 ---
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-06
