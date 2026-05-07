@@ -14,6 +14,7 @@ use crate::ui::settings::SettingsPanelMsg;
 use crate::ui::{
     CharacterEditor, CharacterEditorInit, CharacterEditorOutput, CharactersPanel,
     CharactersPanelMsg, CharactersPanelOutput, ChatPanel, ChatPanelMsg, ChatPanelOutput,
+    PersonaEditor, PersonaEditorInit, PersonaEditorOutput,
     SettingsPanel, SettingsPanelOutput,
 };
 
@@ -37,6 +38,7 @@ pub enum AppMsg {
     CharactersOutput(CharactersPanelOutput),
     ChatOutput(ChatPanelOutput),
     EditorOutput(CharacterEditorOutput),
+    PersonaEditorOutput(PersonaEditorOutput),
     ShowToast(String),
     Quit,
 }

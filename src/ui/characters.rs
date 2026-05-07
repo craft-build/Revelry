@@ -7,17 +7,22 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::domain::character::CharacterCardV2;
+use crate::domain::persona::Persona;
 use crate::ui::character_card::create_card_widget;
 
 /// Characters panel showing character library with search, tabs, and import/export.
 pub struct CharactersPanelModel {
     characters: Vec<CharacterCardV2>,
+    personas: Vec<Persona>,
     search_query: Rc<RefCell<String>>,
+    persona_search_query: Rc<RefCell<String>>,
     searchable_map: Rc<RefCell<HashMap<String, String>>>,
     active_tab: CharacterTab,
 
     flowbox: gtk::FlowBox,
     empty_state: adw::StatusPage,
+    persona_list: gtk::ListBox,
+    persona_empty: adw::StatusPage,
 }
 
 /// Tab identifiers for the character/persona switcher.
@@ -31,8 +36,11 @@ pub enum CharacterTab {
 #[derive(Debug)]
 pub enum CharactersPanelMsg {
     CharactersLoaded(Vec<CharacterCardV2>),
+    PersonasLoaded(Vec<Persona>),
     SearchChanged(String),
+    PersonaSearchChanged(String),
     NewCharacter,
+    NewPersona,
     ImportCharacter,
     ImportResult(Result<CharacterCardV2, String>),
     ExportCharacter(String),
@@ -40,6 +48,9 @@ pub enum CharactersPanelMsg {
     DeleteCharacter(String),
     ConfirmDelete(String),
     EditCharacter(String),
+    EditPersona(String),
+    DeletePersona(String),
+    ConfirmDeletePersona(String),
     StartConversation(String),
     SwitchTab(CharacterTab),
 }
@@ -55,6 +66,8 @@ pub enum CharactersPanelOutput {
     SaveCharacter(CharacterCardV2),
     DeleteCharacter(String),
     EditCharacter(String),
+    EditPersona(String),
+    DeletePersona(String),
     StartConversation(String),
     RequestImport,
     RequestExport(String),
@@ -84,7 +97,7 @@ impl Component for CharactersPanelModel {
                 #[name(search_entry)]
                 gtk::SearchEntry {
                     set_hexpand: true,
-                    set_placeholder_text: Some("Search characters..."),
+                    set_placeholder_text: Some("Search..."),
                     connect_search_changed[sender] => move |entry| {
                         let query = entry.text().to_string();
                         let _ = sender.input_sender().send(CharactersPanelMsg::SearchChanged(query));
@@ -93,13 +106,13 @@ impl Component for CharactersPanelModel {
 
                 gtk::Button {
                     set_icon_name: "add",
-                    set_tooltip_text: Some("New Character"),
+                    set_tooltip_text: Some("New"),
                     connect_clicked => CharactersPanelMsg::NewCharacter,
                 },
 
                 gtk::Button {
                     set_icon_name: "folder-open",
-                    set_tooltip_text: Some("Import Character"),
+                    set_tooltip_text: Some("Import"),
                     connect_clicked => CharactersPanelMsg::ImportCharacter,
                 },
             },
@@ -139,6 +152,7 @@ impl Component for CharactersPanelModel {
         flowbox.set_margin_bottom(8);
 
         let search_query = Rc::new(RefCell::new(String::new()));
+        let persona_search_query = Rc::new(RefCell::new(String::new()));
         let searchable_map: Rc<RefCell<HashMap<String, String>>> =
             Rc::new(RefCell::new(HashMap::new()));
 
@@ -178,14 +192,41 @@ impl Component for CharactersPanelModel {
         characters_page_box.append(&flowbox);
         characters_page_box.append(&empty_state);
 
-        // Build the personas page (placeholder)
-        let personas_page = adw::StatusPage::new();
-        personas_page.set_icon_name(Some("mood"));
-        personas_page.set_title("My Personas");
-        personas_page.set_description(Some(
-            "Personas are coming in a future update. They'll let you define your own identity for roleplay.",
+        // Build the personas page with ListBox
+        let personas_page_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+
+        let persona_list = gtk::ListBox::new();
+        persona_list.set_selection_mode(gtk::SelectionMode::None);
+        persona_list.set_margin_start(8);
+        persona_list.set_margin_end(8);
+        persona_list.set_margin_top(4);
+        persona_list.set_margin_bottom(8);
+        persona_list.add_css_class("boxed-list");
+
+        // Persona search bar
+        let persona_search_entry = gtk::SearchEntry::new();
+        persona_search_entry.set_placeholder_text(Some("Search personas..."));
+        personas_page_box.append(&persona_search_entry);
+
+        let persona_empty = adw::StatusPage::new();
+        persona_empty.set_icon_name(Some("mood"));
+        persona_empty.set_title("No Personas Yet");
+        persona_empty.set_description(Some(
+            "Create a persona to define your identity in roleplay.",
         ));
-        personas_page.set_vexpand(true);
+        persona_empty.set_vexpand(true);
+
+        personas_page_box.append(&persona_list);
+        personas_page_box.append(&persona_empty);
+
+        // Connect persona search
+        let sender_clone = sender.clone();
+        persona_search_entry.connect_search_changed(move |entry| {
+            let query = entry.text().to_string();
+            let _ = sender_clone
+                .input_sender()
+                .send(CharactersPanelMsg::PersonaSearchChanged(query));
+        });
 
         // Add pages to ViewStack
         let char_page = widgets
@@ -196,7 +237,7 @@ impl Component for CharactersPanelModel {
 
         let pers_page = widgets
             .content_stack
-            .add_named(&personas_page, Some("personas"));
+            .add_named(&personas_page_box, Some("personas"));
         pers_page.set_title(Some("My Personas"));
         pers_page.set_icon_name(Some("mood"));
 
@@ -219,12 +260,16 @@ impl Component for CharactersPanelModel {
 
         let model = CharactersPanelModel {
             characters: Vec::new(),
+            personas: Vec::new(),
             search_query,
+            persona_search_query,
             searchable_map,
             active_tab: CharacterTab::Characters,
 
             flowbox,
             empty_state,
+            persona_list,
+            persona_empty,
         };
 
         ComponentParts { model, widgets }
@@ -241,13 +286,24 @@ impl Component for CharactersPanelModel {
                 self.characters = chars;
                 self.rebuild_flowbox(&sender);
             }
+            CharactersPanelMsg::PersonasLoaded(personas) => {
+                self.personas = personas;
+                self.rebuild_persona_list(&sender);
+            }
             CharactersPanelMsg::SearchChanged(query) => {
                 *self.search_query.borrow_mut() = query;
                 self.flowbox.invalidate_filter();
                 self.update_empty_state();
             }
+            CharactersPanelMsg::PersonaSearchChanged(query) => {
+                *self.persona_search_query.borrow_mut() = query;
+                self.filter_persona_list();
+            }
             CharactersPanelMsg::NewCharacter => {
                 let _ = sender.output(CharactersPanelOutput::EditCharacter(String::new()));
+            }
+            CharactersPanelMsg::NewPersona => {
+                let _ = sender.output(CharactersPanelOutput::EditPersona(String::new()));
             }
             CharactersPanelMsg::ImportCharacter => {
                 let _ = sender.output(CharactersPanelOutput::RequestImport);
@@ -257,16 +313,12 @@ impl Component for CharactersPanelModel {
                     self.characters.push(character);
                     self.rebuild_flowbox(&sender);
                 }
-                Err(_msg) => {
-                    // Error toast will be handled by parent
-                }
+                Err(_msg) => {}
             },
             CharactersPanelMsg::ExportCharacter(id) => {
                 let _ = sender.output(CharactersPanelOutput::RequestExport(id));
             }
-            CharactersPanelMsg::ExportComplete(_result) => {
-                // Toast handled by parent
-            }
+            CharactersPanelMsg::ExportComplete(_result) => {}
             CharactersPanelMsg::DeleteCharacter(id) => {
                 let name = self.characters.iter()
                     .find(|c| c.id == id)
@@ -300,6 +352,40 @@ impl Component for CharactersPanelModel {
             }
             CharactersPanelMsg::EditCharacter(id) => {
                 let _ = sender.output(CharactersPanelOutput::EditCharacter(id));
+            }
+            CharactersPanelMsg::EditPersona(id) => {
+                let _ = sender.output(CharactersPanelOutput::EditPersona(id));
+            }
+            CharactersPanelMsg::DeletePersona(id) => {
+                let name = self.personas.iter()
+                    .find(|p| p.id == id)
+                    .map(|p| p.name.as_str())
+                    .unwrap_or("this persona");
+
+                let dialog = adw::AlertDialog::new(
+                    Some("Delete Persona?"),
+                    Some(&format!(
+                        "This will permanently delete {}. This cannot be undone.",
+                        name
+                    )),
+                );
+                dialog.add_response("cancel", "Cancel");
+                dialog.add_response("delete", "Delete");
+                dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
+                dialog.set_close_response("cancel");
+
+                let sender_clone = sender.clone();
+                let id_clone = id.clone();
+                dialog.connect_response(None, move |_, response| {
+                    if response == "delete" {
+                        let _ = sender_clone.input_sender().send(CharactersPanelMsg::ConfirmDeletePersona(id_clone.clone()));
+                    }
+                });
+
+                dialog.present(None::<&gtk::Window>);
+            }
+            CharactersPanelMsg::ConfirmDeletePersona(id) => {
+                let _ = sender.output(CharactersPanelOutput::DeletePersona(id));
             }
             CharactersPanelMsg::StartConversation(id) => {
                 let _ = sender.output(CharactersPanelOutput::StartConversation(id));
@@ -377,26 +463,6 @@ impl CharactersPanelModel {
             let card_widget =
                 create_card_widget(character, character.avatar_path.as_deref());
 
-            // Delete button in the top-right of the card header
-            let export_btn = gtk::Button::new();
-            export_btn.add_css_class("flat");
-            export_btn.add_css_class("circular");
-            export_btn.set_tooltip_text(Some("Export Character"));
-            export_btn.set_icon_name("document-save");
-            export_btn.set_halign(gtk::Align::End);
-            export_btn.set_valign(gtk::Align::Start);
-            export_btn.set_margin_top(4);
-            export_btn.set_margin_end(4);
-
-            let id_clone = character.id.clone();
-            let sender_clone = sender.clone();
-            let gesture = gtk::GestureClick::new();
-            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
-            gesture.connect_released(move |_, _, _, _| {
-                let _ = sender_clone.input_sender().send(CharactersPanelMsg::ExportCharacter(id_clone.clone()));
-            });
-            export_btn.add_controller(gesture);
-
             // Edit button
             let edit_btn = gtk::Button::new();
             edit_btn.add_css_class("flat");
@@ -437,12 +503,31 @@ impl CharactersPanelModel {
             });
             delete_btn.add_controller(gesture);
 
+            let export_btn = gtk::Button::new();
+            export_btn.add_css_class("flat");
+            export_btn.add_css_class("circular");
+            export_btn.set_tooltip_text(Some("Export Character"));
+            export_btn.set_icon_name("document-save");
+            export_btn.set_halign(gtk::Align::End);
+            export_btn.set_valign(gtk::Align::Start);
+            export_btn.set_margin_top(4);
+            export_btn.set_margin_end(4);
+
+            let id_clone = character.id.clone();
+            let sender_clone = sender.clone();
+            let gesture = gtk::GestureClick::new();
+            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+            gesture.connect_released(move |_, _, _, _| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::ExportCharacter(id_clone.clone()));
+            });
+            export_btn.add_controller(gesture);
+
             // Wrap card + buttons in an overlay so they sit inside the card
             let overlay = gtk::Overlay::new();
             overlay.set_child(Some(&card_widget));
-            overlay.add_overlay(&export_btn);
             overlay.add_overlay(&edit_btn);
             overlay.add_overlay(&delete_btn);
+            overlay.add_overlay(&export_btn);
 
             let child = gtk::FlowBoxChild::new();
             child.set_widget_name(&character.id);
@@ -453,5 +538,96 @@ impl CharactersPanelModel {
 
         // Apply current search filter to new children
         self.flowbox.invalidate_filter();
+    }
+
+    /// Rebuild the persona list from model data.
+    fn rebuild_persona_list(&self, sender: &ComponentSender<Self>) {
+        while let Some(child) = self.persona_list.first_child() {
+            self.persona_list.remove(&child);
+        }
+
+        let query = self.persona_search_query.borrow().to_lowercase();
+
+        let filtered: Vec<&Persona> = self.personas.iter()
+            .filter(|p| {
+                if query.is_empty() { return true; }
+                p.name.to_lowercase().contains(&query) ||
+                p.personality.to_lowercase().contains(&query)
+            })
+            .collect();
+
+        let is_empty = filtered.is_empty();
+        self.persona_list.set_visible(!is_empty);
+        self.persona_empty.set_visible(is_empty);
+
+        for persona in filtered {
+            let row = adw::ActionRow::new();
+            row.set_title(&persona.name);
+            let subtitle = if persona.personality.len() > 60 {
+                format!("{}", &persona.personality[..60])
+            } else {
+                persona.personality.clone()
+            };
+            row.set_subtitle(&subtitle);
+            row.set_activatable(true);
+
+            let id_clone = persona.id.clone();
+            let sender_clone = sender.clone();
+            row.connect_activated(move |_row| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::EditPersona(id_clone.clone()));
+            });
+
+            let edit_btn = gtk::Button::new();
+            edit_btn.set_icon_name("edit");
+            edit_btn.add_css_class("flat");
+            edit_btn.set_valign(gtk::Align::Center);
+            let id_clone = persona.id.clone();
+            let sender_clone = sender.clone();
+            edit_btn.connect_clicked(move |_| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::EditPersona(id_clone.clone()));
+            });
+
+            let delete_btn = gtk::Button::new();
+            delete_btn.set_icon_name("user-trash-symbolic");
+            delete_btn.add_css_class("flat");
+            delete_btn.add_css_class("destructive-action");
+            delete_btn.set_valign(gtk::Align::Center);
+            let id_clone = persona.id.clone();
+            let sender_clone = sender.clone();
+            delete_btn.connect_clicked(move |_| {
+                let _ = sender_clone.input_sender().send(CharactersPanelMsg::DeletePersona(id_clone.clone()));
+            });
+
+            let box_widget = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+            box_widget.append(&edit_btn);
+            box_widget.append(&delete_btn);
+            row.add_suffix(&box_widget);
+
+            self.persona_list.append(&row);
+        }
+    }
+
+    /// Filter persona list based on current search query.
+    fn filter_persona_list(&self) {
+        // Rebuild since filter criteria changed
+        // The rebuild_persona_list method references sender which we don't have here,
+        // but we can just hide rows that don't match.
+        let query = self.persona_search_query.borrow().to_lowercase();
+        let mut child = self.persona_list.first_child();
+        let mut index = 0;
+        while let Some(c) = child {
+            let visible = if query.is_empty() {
+                true
+            } else if let Some(row) = c.downcast_ref::<adw::ActionRow>() {
+                let name = row.title().to_string();
+                let subtitle = row.subtitle().map(|s| s.to_string()).unwrap_or_default();
+                name.to_lowercase().contains(&query) || subtitle.to_lowercase().contains(&query)
+            } else {
+                true
+            };
+            c.set_visible(visible);
+            child = c.next_sibling();
+            index += 1;
+        }
     }
 }
