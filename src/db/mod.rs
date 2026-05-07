@@ -2,10 +2,12 @@ pub mod characters;
 pub mod conversations;
 pub mod migrations;
 pub mod models;
+pub mod personas;
 pub mod providers;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
+use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
 use relm4::{ComponentSender, Worker};
 use rusqlite::Connection;
@@ -23,6 +25,11 @@ pub enum DbInput {
     SaveCharacter(CharacterCardV2),
     DeleteCharacter(String),
     SearchCharacters(String),
+    // Persona operations
+    LoadPersonas,
+    SavePersona(Persona),
+    DeletePersona(String),
+    SetGlobalDefaultPersona(Option<String>),
     // Conversation operations
     StartConversation { character_id: String, provider_id: String },
     LoadConversations,
@@ -49,6 +56,11 @@ pub enum DbOutput {
     CharacterSaved(CharacterCardV2),
     CharacterDeleted(String),
     CharactersSearched(Vec<CharacterCardV2>),
+    // Persona outputs
+    PersonasLoaded(Vec<Persona>),
+    PersonaSaved(Persona),
+    PersonaDeleted(String),
+    GlobalDefaultPersonaSet,
     // Conversation outputs
     ConversationStarted(Conversation),
     ConversationsLoaded(Vec<Conversation>),
@@ -145,7 +157,32 @@ impl Worker for DbService {
                 characters::search_characters(&self.conn, &query)
                     .map(DbOutput::CharactersSearched)
             }
-            // Conversation operations
+            DbInput::LoadPersonas => {
+                personas::load_personas(&self.conn)
+                    .map(DbOutput::PersonasLoaded)
+            }
+            DbInput::SavePersona(p) => {
+                let existing = personas::load_persona(&self.conn, &p.id);
+                match existing {
+                    Ok(Some(_)) => {
+                        personas::update_persona(&self.conn, &p)
+                            .map(|_| DbOutput::PersonaSaved(p))
+                    }
+                    Ok(None) => {
+                        personas::insert_persona(&self.conn, &p)
+                            .map(|_| DbOutput::PersonaSaved(p))
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+            DbInput::DeletePersona(id) => {
+                personas::delete_persona(&self.conn, &id)
+                    .map(|_| DbOutput::PersonaDeleted(id))
+            }
+            DbInput::SetGlobalDefaultPersona(id) => {
+                personas::set_global_default_persona_id(&self.conn, id.as_deref())
+                    .map(|_| DbOutput::GlobalDefaultPersonaSet)
+            }
             DbInput::StartConversation { character_id, provider_id } => {
                 // Load the character first
                 match characters::load_character(&self.conn, &character_id) {

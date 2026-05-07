@@ -1,5 +1,6 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
+use crate::domain::persona::Persona;
 use crate::domain::provider::{ProviderConfig, ProviderType};
 use chrono::NaiveDateTime;
 use rusqlite::Row;
@@ -114,6 +115,49 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
         extensions,
         creator_notes: row.get("creator_notes")?,
         character_book,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Converts a database row into a Persona.
+/// Tags are deserialized from a JSON array stored as TEXT.
+/// Timestamps are stored as TEXT and parsed with the standard format.
+pub fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+
+    let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+    let updated_at = NaiveDateTime::parse_from_str(&updated_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    let tags_str: String = row.get("tags")?;
+    let tags: Vec<String> = serde_json::from_str(&tags_str)
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    Ok(Persona {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        appearance: row.get("appearance")?,
+        personality: row.get("personality")?,
+        background: row.get("background")?,
+        role_description: row.get("role_description")?,
+        relationships: row.get("relationships")?,
+        speech_style: row.get("speech_style")?,
+        tags,
         created_at,
         updated_at,
     })

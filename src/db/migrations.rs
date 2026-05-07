@@ -116,6 +116,25 @@ pub fn get_migrations() -> Migrations<'static> {
         // Migration 6: Add model_name to providers table
         M::up("ALTER TABLE providers ADD COLUMN model_name TEXT NOT NULL DEFAULT '';")
         .down("ALTER TABLE providers DROP COLUMN model_name;"),
+        // Migration 7: Create personas table, add default_persona_id to characters
+        M::up(
+            "CREATE TABLE personas (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                appearance TEXT NOT NULL DEFAULT '',
+                personality TEXT NOT NULL DEFAULT '',
+                background TEXT NOT NULL DEFAULT '',
+                role_description TEXT NOT NULL DEFAULT '',
+                relationships TEXT NOT NULL DEFAULT '',
+                speech_style TEXT NOT NULL DEFAULT '',
+                tags TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            ALTER TABLE characters ADD COLUMN default_persona_id TEXT;"
+        )
+        .down("ALTER TABLE characters DROP COLUMN default_persona_id; DROP TABLE personas;"),
     ])
 }
 
