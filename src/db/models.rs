@@ -115,6 +115,7 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
         extensions,
         creator_notes: row.get("creator_notes")?,
         character_book,
+        default_persona_id: row.get("default_persona_id")?,
         created_at,
         updated_at,
     })

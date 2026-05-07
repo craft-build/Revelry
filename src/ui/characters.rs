@@ -203,10 +203,27 @@ impl Component for CharactersPanelModel {
         persona_list.set_margin_bottom(8);
         persona_list.add_css_class("boxed-list");
 
-        // Persona search bar
+        // Persona search bar + New button
+        let persona_toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        persona_toolbar.set_margin_start(8);
+        persona_toolbar.set_margin_end(8);
+        persona_toolbar.set_margin_top(4);
+
         let persona_search_entry = gtk::SearchEntry::new();
         persona_search_entry.set_placeholder_text(Some("Search personas..."));
-        personas_page_box.append(&persona_search_entry);
+        persona_search_entry.set_hexpand(true);
+        persona_toolbar.append(&persona_search_entry);
+
+        let new_persona_btn = gtk::Button::new();
+        new_persona_btn.set_icon_name("add");
+        new_persona_btn.set_tooltip_text(Some("New Persona"));
+        let sender_clone = sender.clone();
+        new_persona_btn.connect_clicked(move |_| {
+            let _ = sender_clone.input_sender().send(CharactersPanelMsg::NewPersona);
+        });
+        persona_toolbar.append(&new_persona_btn);
+
+        personas_page_box.append(&persona_toolbar);
 
         let persona_empty = adw::StatusPage::new();
         persona_empty.set_icon_name(Some("mood"));

@@ -2,6 +2,7 @@ use adw::prelude::*;
 use relm4::prelude::*;
 use relm4::{adw, gtk, Component, ComponentParts, ComponentSender};
 
+use crate::domain::persona::Persona;
 use crate::domain::provider::{ProviderConfig, ProviderType};
 use crate::secrets::KeyringStore;
 use crate::service::provider_test::{self, ProviderTestResult};
@@ -18,13 +19,16 @@ pub enum TestState {
 /// Settings panel with provider configuration.
 pub struct SettingsPanel {
     providers: Vec<ProviderConfig>,
+    personas: Vec<Persona>,
     test_states: std::collections::HashMap<String, TestState>,
     // Widget references needed for imperative updates in update()
     providers_group: adw::PreferencesGroup,
+    persona_group: adw::PreferencesGroup,
     toast_overlay: adw::ToastOverlay,
     // Track rows added to providers_group so we can remove them by reference
     // (iterating GTK widget tree is wrong — see GNOME discourse #13538)
     provider_rows: Vec<adw::PreferencesRow>,
+    persona_rows: Vec<adw::PreferencesRow>,
     // Keep the config page controller alive while the PreferencesDialog is open.
     // Without this, the controller is dropped when open_provider_config() returns,
     // shutting down the component runtime and causing a panic on any user interaction.
@@ -45,6 +49,8 @@ pub enum SettingsPanelMsg {
     KeyLoaded(String, String), // (provider_id, api_key) — sent by parent after keyring load
     TestResult(String, ProviderTestResult),
     KeyringError(String),
+    PersonasLoaded(Vec<Persona>),
+    DefaultPersonaChanged(String), // the selected persona ID, or empty string for "None"
 }
 
 /// Command output from background threads.
@@ -62,6 +68,7 @@ pub enum SettingsPanelOutput {
     DeleteProvider(String),
     DeleteKey(String),
     TestProvider(String),
+    SetGlobalDefaultPersona(Option<String>),
 }
 
 #[relm4::component(pub)]
@@ -91,6 +98,12 @@ impl Component for SettingsPanel {
                         set_title: "AI Providers",
                         set_description: Some("Configure AI providers for chat and roleplay."),
                     },
+
+                    #[name(persona_group)]
+                    adw::PreferencesGroup {
+                        set_title: "Persona",
+                        set_description: Some("Set the default persona for roleplay."),
+                    },
                 },
             },
         }
@@ -105,9 +118,12 @@ impl Component for SettingsPanel {
 
         let model = SettingsPanel {
             providers: Vec::new(),
+            personas: Vec::new(),
             test_states: std::collections::HashMap::new(),
             providers_group: widgets.providers_group.clone(),
+            persona_group: widgets.persona_group.clone(),
             provider_rows: Vec::new(),
+            persona_rows: Vec::new(),
             toast_overlay: root.clone(),
             config_page: None,
         };
@@ -210,6 +226,14 @@ impl Component for SettingsPanel {
             }
             SettingsPanelMsg::KeyringError(msg) => {
                 self.show_toast(&msg);
+            }
+            SettingsPanelMsg::PersonasLoaded(personas) => {
+                self.personas = personas;
+                self.rebuild_persona_dropdown(&sender);
+            }
+            SettingsPanelMsg::DefaultPersonaChanged(id) => {
+                let persona_id = if id.is_empty() { None } else { Some(id) };
+                let _ = sender.output(SettingsPanelOutput::SetGlobalDefaultPersona(persona_id));
             }
         }
     }
@@ -327,6 +351,48 @@ impl SettingsPanel {
                 self.provider_rows.push(row.upcast());
             }
         }
+    }
+
+    /// Rebuild the persona dropdown in the Persona PreferencesGroup.
+    fn rebuild_persona_dropdown(&mut self, sender: &ComponentSender<Self>) {
+        let group = &self.persona_group;
+
+        // Remove previously-added rows
+        for row in &self.persona_rows {
+            group.remove(row);
+        }
+        self.persona_rows.clear();
+
+        // Build a list of options: "None" + persona names
+        let mut options: Vec<String> = vec!["None".to_string()];
+        let mut persona_ids: Vec<String> = vec![String::new()]; // empty = None
+        for persona in &self.personas {
+            options.push(persona.name.clone());
+            persona_ids.push(persona.id.clone());
+        }
+
+        // Use a DropDown with a StringList model
+        let model = gtk::StringList::new(&options.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let dropdown = gtk::DropDown::new(Some(model), None::<&gtk::Expression>);
+        dropdown.set_enable_search(true);
+        dropdown.set_selected(0); // Default to "None"
+
+        // Connect selection-changed
+        let persona_ids_clone = persona_ids.clone();
+        let sender_clone = sender.clone();
+        dropdown.connect_selected_item_notify(move |dropdown| {
+            let idx = dropdown.selected() as usize;
+            let id = persona_ids_clone.get(idx).cloned().unwrap_or_default();
+            let _ = sender_clone.input_sender().send(SettingsPanelMsg::DefaultPersonaChanged(id));
+        });
+
+        let row = adw::PreferencesRow::builder()
+            .title("Default Persona")
+            .build();
+        row.set_child(Some(&dropdown));
+
+        group.add(&row);
+        self.persona_rows.push(row.upcast());
     }
 
     /// Open the provider configuration page.

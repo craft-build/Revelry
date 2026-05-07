@@ -7,6 +7,7 @@ use relm4::{
 use crate::db::{DbInput, DbOutput, DbService};
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
+use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
 use crate::secrets::KeyringStore;
 use crate::service::card_io;
@@ -67,6 +68,8 @@ pub struct AppModel {
     characters_panel: relm4::Controller<CharactersPanel>,
     settings_panel: relm4::Controller<SettingsPanel>,
     character_editor: Option<relm4::Controller<CharacterEditor>>,
+    persona_editor: Option<relm4::Controller<PersonaEditor>>,
+    personas: Vec<Persona>,
     view_stack: adw::ViewStack,
     toast_overlay: adw::ToastOverlay,
     // Sidebar state (dynamically managed, not in view!)
@@ -223,6 +226,8 @@ impl SimpleComponent for AppModel {
             characters_panel,
             settings_panel,
             character_editor: None,
+            persona_editor: None,
+            personas: Vec::new(),
             view_stack: adw::ViewStack::new(),
             toast_overlay: adw::ToastOverlay::new(),
             sidebar_stack: gtk::Stack::new(),
@@ -330,6 +335,7 @@ impl SimpleComponent for AppModel {
         model.db_worker.sender().send(DbInput::LoadProviders).unwrap();
         model.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
         model.db_worker.sender().send(DbInput::LoadConversations).unwrap();
+        model.db_worker.sender().send(DbInput::LoadPersonas).unwrap();
 
         // Build sidebar now that widget refs are set
         model.refresh_sidebar(&sender);
@@ -480,6 +486,25 @@ impl SimpleComponent for AppModel {
                 DbOutput::MessageDeleted(id) => {
                     let _ = self.chat_panel.sender().send(ChatPanelMsg::MessageDeleted(id));
                 }
+                DbOutput::PersonasLoaded(personas) => {
+                    self.personas = personas.clone();
+                    let _ = self.characters_panel.sender().send(CharactersPanelMsg::PersonasLoaded(personas.clone()));
+                    // Forward to settings panel for default persona dropdown
+                    let _ = self.settings_panel.sender().send(SettingsPanelMsg::PersonasLoaded(personas));
+                }
+                DbOutput::PersonaSaved(_) => {
+                    // Reload personas after save
+                    self.db_worker.sender().send(DbInput::LoadPersonas).unwrap();
+                    self.show_toast("Persona saved");
+                }
+                DbOutput::PersonaDeleted(_) => {
+                    // Reload personas after delete
+                    self.db_worker.sender().send(DbInput::LoadPersonas).unwrap();
+                    self.show_toast("Persona deleted");
+                }
+                DbOutput::GlobalDefaultPersonaSet => {
+                    self.show_toast("Default persona updated");
+                }
                 _ => {
                     // Handle other DbOutput variants (AppSettingLoaded, AppSettingSaved, MessageCount)
                     // These are handled by other components
@@ -524,6 +549,9 @@ impl SimpleComponent for AppModel {
                             .unwrap_or_default();
                         let _ = settings_sender.send(SettingsPanelMsg::KeyLoaded(id_clone, api_key));
                     });
+                }
+                SettingsPanelOutput::SetGlobalDefaultPersona(id) => {
+                    self.db_worker.sender().send(DbInput::SetGlobalDefaultPersona(id)).unwrap();
                 }
             },
             AppMsg::StartConversationWithProvider { character_id, provider_id } => {
@@ -808,6 +836,30 @@ impl SimpleComponent for AppModel {
                         },
                     );
                 }
+                CharactersPanelOutput::EditPersona(id) => {
+                    let editor_init = if id.is_empty() {
+                        PersonaEditorInit::New
+                    } else {
+                        let persona = self.personas.iter().find(|p| p.id == id).cloned();
+                        match persona {
+                            Some(p) => PersonaEditorInit::Edit(p),
+                            None => {
+                                self.show_toast("Persona not found");
+                                return;
+                            }
+                        }
+                    };
+
+                    let editor = PersonaEditor::builder()
+                        .launch(editor_init)
+                        .forward(sender.input_sender(), AppMsg::PersonaEditorOutput);
+
+                    editor.widget().present();
+                    self.persona_editor = Some(editor);
+                }
+                CharactersPanelOutput::DeletePersona(id) => {
+                    self.db_worker.sender().send(DbInput::DeletePersona(id)).unwrap();
+                }
             },
             AppMsg::ChatOutput(output) => match output {
                 ChatPanelOutput::StartConversation { character_id, provider_id } => {
@@ -873,6 +925,15 @@ impl SimpleComponent for AppModel {
                 }
                 CharacterEditorOutput::Cancelled => {
                     self.character_editor = None;
+                }
+            },
+            AppMsg::PersonaEditorOutput(output) => match output {
+                PersonaEditorOutput::Saved(persona) => {
+                    self.db_worker.sender().send(DbInput::SavePersona(persona)).unwrap();
+                    self.persona_editor = None;
+                }
+                PersonaEditorOutput::Cancelled => {
+                    self.persona_editor = None;
                 }
             },
             AppMsg::ShowToast(message) => {

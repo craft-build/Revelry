@@ -3,6 +3,7 @@ use relm4::prelude::*;
 use relm4::{adw, gtk, ComponentParts, ComponentSender};
 
 use crate::domain::character::CharacterCardV2;
+use crate::domain::persona::Persona;
 
 // Type alias — the #[relm4::component] macro generates a `CharacterEditorModel` widgets
 // struct, but we export the component type as `CharacterEditor` for downstream consumers.
@@ -34,6 +35,8 @@ pub struct CharacterEditorModel {
     creator_row: adw::EntryRow,
     avatar_button: gtk::Button,
     window: adw::PreferencesWindow,
+    available_personas: Vec<Persona>,
+    persona_dropdown_row: adw::PreferencesRow,
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +63,7 @@ pub enum CharacterEditorMsg {
     ChooseAvatar,
     AvatarSelected(String),
     SwitchPage(EditorPage),
+    SetDefaultPersona(String),
     Save,
     Cancel,
 }
@@ -130,6 +134,11 @@ impl Component for CharacterEditorModel {
                     #[name(creator_row)]
                     adw::EntryRow {
                         set_title: "Creator",
+                    },
+
+                    #[name(persona_dropdown_row)]
+                    adw::PreferencesRow {
+                        set_title: "Default Persona",
                     },
                 },
 
@@ -471,11 +480,16 @@ impl Component for CharacterEditorModel {
             creator_row: widgets.creator_row.clone(),
             avatar_button: widgets.avatar_button.clone(),
             window: root.clone(),
+            available_personas: Vec::new(),
+            persona_dropdown_row: widgets.persona_dropdown_row.clone(),
         };
 
         // Build dynamic lists (tags, alternate greetings) from initial data
         model.rebuild_tags(&sender);
         model.rebuild_greetings(&sender);
+
+        // Build persona dropdown inside the preferences row
+        model.rebuild_persona_dropdown(&sender);
 
         ComponentParts { model, widgets }
     }
@@ -581,6 +595,9 @@ impl Component for CharacterEditorModel {
             }
             CharacterEditorMsg::SwitchPage(page) => {
                 self.active_page = page;
+            }
+            CharacterEditorMsg::SetDefaultPersona(id) => {
+                self.character.default_persona_id = if id.is_empty() { None } else { Some(id) };
             }
             CharacterEditorMsg::Save => {
                 // Validate name is non-empty
@@ -728,5 +745,38 @@ impl CharacterEditorModel {
 
             self.greetings_container.append(&row);
         }
+    }
+
+    /// Rebuild the persona dropdown inside the preferences row.
+    /// Creates a DropDown with "None" + all available persona names.
+    fn rebuild_persona_dropdown(&self, sender: &ComponentSender<Self>) {
+        // Build options: "None" + persona names
+        let mut options: Vec<String> = vec!["None".to_string()];
+        let mut persona_ids: Vec<String> = vec![String::new()];
+        for persona in &self.available_personas {
+            options.push(persona.name.clone());
+            persona_ids.push(persona.id.clone());
+        }
+
+        let model = gtk::StringList::new(&options.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let dropdown = gtk::DropDown::new(Some(model), None::<&gtk::Expression>);
+
+        // Select current default_persona_id if set
+        if let Some(ref persona_id) = self.character.default_persona_id {
+            if let Some(idx) = persona_ids.iter().position(|id| id == persona_id) {
+                dropdown.set_selected(idx as u32);
+            }
+        }
+
+        // Connect selection-changed
+        let persona_ids_clone = persona_ids;
+        let sender_clone = sender.clone();
+        dropdown.connect_selected_item_notify(move |dd| {
+            let idx = dd.selected() as usize;
+            let id = persona_ids_clone.get(idx).cloned().unwrap_or_default();
+            let _ = sender_clone.input_sender().send(CharacterEditorMsg::SetDefaultPersona(id));
+        });
+
+        self.persona_dropdown_row.set_child(Some(&dropdown));
     }
 }

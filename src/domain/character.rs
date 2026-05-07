@@ -43,6 +43,10 @@ pub struct CharacterCardV2 {
     /// Maps to V2 spec's `character_book` field.
     #[serde(default = "default_character_book")]
     pub character_book: serde_json::Value,
+    /// Per-character default persona ID for persona assignment hierarchy.
+    /// Maps to the `default_persona_id` column added in Migration 007.
+    #[serde(default)]
+    pub default_persona_id: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -128,6 +132,7 @@ impl CharaCardV2Spec {
             extensions: self.data.extensions.clone(),
             creator_notes: self.data.creator_notes.clone(),
             character_book: self.data.character_book.clone(),
+            default_persona_id: None,
             created_at: now,
             updated_at: now,
         }
@@ -173,6 +178,7 @@ impl CharacterCardV2 {
             extensions: serde_json::Value::Null,
             creator_notes: String::new(),
             character_book: serde_json::Value::Null,
+            default_persona_id: None,
             created_at: now,
             updated_at: now,
         }
@@ -239,6 +245,7 @@ impl CharacterV1 {
             extensions: serde_json::Value::Null,
             creator_notes: self.creator_notes.clone(),
             character_book: serde_json::Value::Null,
+            default_persona_id: None,
             created_at: now,
             updated_at: now,
         }
