@@ -1,5 +1,7 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Message, MessageRole};
+use crate::domain::persona::Persona;
+use crate::service::template;
 
 /// An assembled prompt ready to send to the AI provider.
 /// Contains the system prompt (preamble) and chat history as rig messages.
@@ -13,10 +15,13 @@ pub struct AssembledPrompt {
 pub struct PromptEngine;
 
 impl PromptEngine {
-    /// Assembles a prompt from a character and conversation messages.
+    /// Assembles a prompt from a character, optional persona, and conversation messages.
     /// Returns an AssembledPrompt with the system prompt and chat history.
-    pub fn assemble(character: &CharacterCardV2, messages: &[Message]) -> AssembledPrompt {
-        let preamble = build_system_prompt(character);
+    ///
+    /// The persona block is injected between the character system prompt and
+    /// conversation history, then all template variables are resolved.
+    pub fn assemble(character: &CharacterCardV2, persona: Option<&Persona>, messages: &[Message]) -> AssembledPrompt {
+        let preamble = build_system_prompt_with_persona(character, persona);
         let chat_history = build_chat_history(messages);
 
         AssembledPrompt {
@@ -26,10 +31,9 @@ impl PromptEngine {
     }
 
     /// Assembles a prompt for the first message (no chat history).
-    /// Used when starting a new conversation - the character's first_mes is already
-    /// stored as the initial message, so we just need the system prompt.
-    pub fn assemble_initial(character: &CharacterCardV2) -> AssembledPrompt {
-        let preamble = build_system_prompt(character);
+    /// Used when starting a new conversation.
+    pub fn assemble_initial(character: &CharacterCardV2, persona: Option<&Persona>) -> AssembledPrompt {
+        let preamble = build_system_prompt_with_persona(character, persona);
 
         AssembledPrompt {
             preamble,
@@ -38,9 +42,34 @@ impl PromptEngine {
     }
 }
 
-/// Builds the system prompt from character data.
-/// Combines system_prompt, personality, and scenario into a single prompt.
-pub fn build_system_prompt(character: &CharacterCardV2) -> String {
+/// Builds the system prompt from character data, optionally including a persona block.
+/// Template variables ({{user}}, {{char}}, {{persona.*}}) are resolved in the final output.
+fn build_system_prompt_with_persona(character: &CharacterCardV2, persona: Option<&Persona>) -> String {
+    let mut parts = Vec::new();
+
+    // 1. Character system prompt
+    let character_prompt = build_system_prompt(character);
+    if !character_prompt.is_empty() {
+        parts.push(character_prompt);
+    }
+
+    // 2. Persona block (injected between character and history)
+    if let Some(p) = persona {
+        let persona_block = template::build_persona_block(p);
+        if !persona_block.is_empty() {
+            parts.push(persona_block);
+        }
+    }
+
+    // Join parts
+    let raw_preamble = parts.join("\n\n");
+
+    // Resolve all template variables
+    template::resolve_variables(&raw_preamble, persona, character)
+}
+
+/// Builds the character-only system prompt (no persona, no template resolution).
+fn build_system_prompt(character: &CharacterCardV2) -> String {
     let mut parts = Vec::new();
 
     // Use the character's system_prompt if available
@@ -105,6 +134,7 @@ fn build_chat_history(messages: &[Message]) -> Vec<rig::message::Message> {
 mod tests {
     use super::*;
     use crate::domain::conversation::Message;
+    use crate::domain::persona::Persona;
     use chrono::NaiveDateTime;
 
     fn make_test_character() -> CharacterCardV2 {
@@ -136,7 +166,7 @@ mod tests {
     #[test]
     fn test_assemble_initial() {
         let character = make_test_character();
-        let prompt = PromptEngine::assemble_initial(&character);
+        let prompt = PromptEngine::assemble_initial(&character, None);
 
         assert!(!prompt.preamble.is_empty());
         assert!(prompt.preamble.contains("helpful assistant"));
@@ -151,10 +181,36 @@ mod tests {
             make_test_message(MessageRole::Assistant, "Hi there!"),
         ];
 
-        let prompt = PromptEngine::assemble(&character, &messages);
+        let prompt = PromptEngine::assemble(&character, None, &messages);
 
         assert!(!prompt.preamble.is_empty());
         assert_eq!(prompt.chat_history.len(), 2);
+    }
+
+    #[test]
+    fn test_assemble_initial_with_persona() {
+        let character = make_test_character();
+        let persona = Persona::new("Alice".to_string(), "Bold and charismatic".to_string());
+        let prompt = PromptEngine::assemble_initial(&character, Some(&persona));
+
+        assert!(prompt.preamble.contains("You are interacting with Alice, who is:"));
+        assert!(prompt.preamble.contains("Name: Alice"));
+        assert!(prompt.preamble.contains("Personality: Bold and charismatic"));
+    }
+
+    #[test]
+    fn test_assemble_with_persona_resolves_user_in_character_fields() {
+        let mut character = make_test_character();
+        character.system_prompt = "You are {{user}}'s assistant.".to_string();
+        let persona = Persona::new("Alice".to_string(), "Friendly".to_string());
+        let messages = vec![
+            make_test_message(MessageRole::User, "Hello!"),
+        ];
+
+        let prompt = PromptEngine::assemble(&character, Some(&persona), &messages);
+
+        // {{user}} in the character's system_prompt should be resolved
+        assert!(prompt.preamble.contains("You are Alice's assistant."), "Expected Alice in system prompt, got: {}", prompt.preamble);
     }
 
     #[test]

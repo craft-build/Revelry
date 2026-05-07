@@ -11,7 +11,7 @@ use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
 use crate::domain::provider::ProviderConfig;
 use crate::service::ai::{AiService, StreamChunk};
-use crate::service::prompt::build_system_prompt;
+use crate::service::prompt::PromptEngine;
 
 use self::input_bar::{InputBar, InputBarMsg, InputBarOutput};
 use self::message_row::{MessageRow, MessageRowInit, MessageRowAction};
@@ -347,7 +347,8 @@ impl Component for ChatPanel {
                     });
                     return;
                 };
-                let system_prompt = build_system_prompt(character);
+                let assembled = PromptEngine::assemble(character, None, &self.messages);
+                let system_prompt = assembled.preamble;
                 let messages = self.messages.clone();
                 let provider_cfg = provider.clone();
                 let key = api_key;
