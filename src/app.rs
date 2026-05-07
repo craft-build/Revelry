@@ -917,6 +917,10 @@ impl SimpleComponent for AppModel {
                 ChatPanelOutput::CreateBranch(branch) => {
                     self.db_worker.sender().send(DbInput::CreateBranch(branch)).unwrap();
                 }
+                ChatPanelOutput::SetConversationPersona { conversation_id, persona_id } => {
+                    // Will be fully wired in Task 2 — for now just log
+                    tracing::info!("Persona change requested: conv={} persona={:?}", conversation_id, persona_id);
+                }
             },
             AppMsg::EditorOutput(output) => match output {
                 CharacterEditorOutput::Saved(character) => {

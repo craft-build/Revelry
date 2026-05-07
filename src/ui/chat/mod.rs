@@ -9,6 +9,7 @@ use std::rc::Rc;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
+use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
 use crate::service::ai::{AiService, StreamChunk};
 use crate::service::prompt::PromptEngine;
@@ -23,6 +24,8 @@ pub struct ChatPanel {
     active_character: Option<CharacterCardV2>,
     active_provider: Option<ProviderConfig>,
     active_branch_id: Option<String>,
+    active_persona: Option<Persona>,
+    available_personas: Vec<Persona>,
     messages: Vec<Message>,
     branches: Vec<MessageBranch>,
     partial_response: String,
@@ -38,6 +41,8 @@ pub struct ChatPanel {
     // Widget references
     messages_container: gtk::ListBox,
     input_bar: relm4::Controller<InputBar>,
+    persona_button: gtk::MenuButton,
+    persona_listbox: gtk::ListBox,
 }
 
 /// Messages handled by ChatPanel.
@@ -75,6 +80,10 @@ pub enum ChatPanelMsg {
     ShowEditDialog(String),
     // Branch navigation from message row click
     SwitchBranchForMessage(String),
+    // Persona operations
+    SetActivePersona(Option<Persona>),
+    PersonasLoaded(Vec<Persona>),
+    ChangeConversationPersona(String), // persona ID, empty string = none
 }
 
 /// Command output from background operations (streaming, API calls).
@@ -102,6 +111,8 @@ pub enum ChatPanelOutput {
     LoadBranches(String),
     CreateBranch(MessageBranch),
     SwitchBranch(Option<String>),
+    // Persona operations
+    SetConversationPersona { conversation_id: String, persona_id: Option<String> },
 }
 
 #[relm4::component(pub)]
@@ -121,10 +132,19 @@ impl Component for ChatPanel {
                     set_spacing: 8,
 
                     #[name(character_avatar)]
-                    adw::Avatar::new(32, None::<&str>, false),
+                    adw::Avatar {
+                        set_size: 32,
+                        #[watch]
+                        set_text: model.active_character.as_ref().map(|c| c.name.as_str()),
+                    },
 
                     #[name(character_name_label)]
-                    gtk::Label::new(None::<&str>),
+                    gtk::Label {
+                        #[watch]
+                        set_label: &model.active_character.as_ref()
+                            .map(|c| c.name.clone())
+                            .unwrap_or_default(),
+                    },
                 },
 
                 #[name(stop_button)]
@@ -178,11 +198,25 @@ impl Component for ChatPanel {
         messages_container.set_margin_bottom(8);
         messages_container.add_css_class("message-list");
 
+        // Create persona selector widgets
+        let persona_listbox = gtk::ListBox::new();
+        persona_listbox.set_selection_mode(gtk::SelectionMode::None);
+
+        let persona_button = gtk::MenuButton::new();
+        persona_button.set_label("as User");
+        persona_button.add_css_class("flat");
+        persona_button.add_css_class("caption");
+        persona_button.add_css_class("dim-label");
+        persona_button.set_has_frame(false);
+        persona_button.set_visible(false);
+
         let model = ChatPanel {
             active_conversation: None,
             active_character: None,
             active_provider: None,
             active_branch_id: None,
+            active_persona: None,
+            available_personas: Vec::new(),
             messages: Vec::new(),
             branches: Vec::new(),
             partial_response: String::new(),
@@ -195,6 +229,8 @@ impl Component for ChatPanel {
             stream_cancel: None,
             messages_container,
             input_bar,
+            persona_button: persona_button.clone(),
+            persona_listbox: persona_listbox.clone(),
         };
 
         let input_bar_widget = model.input_bar.widget().clone();
@@ -203,6 +239,35 @@ impl Component for ChatPanel {
 
         // Add messages container to scrolled window
         widgets.messages_scrolled.set_child(Some(&model.messages_container));
+
+        // Set up persona popover and add button to header
+        let persona_popover = gtk::Popover::new();
+        persona_popover.set_child(Some(&persona_listbox));
+        persona_button.set_popover(Some(&persona_popover));
+        widgets.header_box.append(&persona_button);
+
+        // Populate initial "User (No Persona)" row in popover
+        {
+            let none_row = gtk::ListBoxRow::new();
+            let label = gtk::Label::new(Some("User (No Persona)"));
+            label.set_xalign(0.0);
+            label.set_margin_start(8);
+            label.set_margin_end(8);
+            label.set_margin_top(4);
+            label.set_margin_bottom(4);
+            none_row.set_child(Some(&label));
+            persona_listbox.append(&none_row);
+        }
+
+        // Connect row-activated signal on persona listbox
+        let sender_clone = sender.clone();
+        persona_listbox.connect_row_activated(move |_, row| {
+            let index = row.index();
+            if index == 0 {
+                let _ = sender_clone.input_sender().send(ChatPanelMsg::ChangeConversationPersona(String::new()));
+            }
+            // Other rows are handled after PersonasLoaded rebuilds the listbox
+        });
 
         // Request conversations if providers exist
         if init {
@@ -238,19 +303,8 @@ impl Component for ChatPanel {
                     .find(|p| p.id == conversation.provider_id)
                     .cloned();
 
-                // Update header
-                if let Some(header) = root.first_child()
-                    .and_then(|c| c.downcast::<adw::HeaderBar>().ok())
-                {
-                    // Update character name label
-                    if let Some(box_widget) = header.first_child() {
-                        if let Some(name_label) = box_widget.last_child() {
-                            if let Some(label) = name_label.downcast_ref::<gtk::Label>() {
-                                label.set_label(&character.name);
-                            }
-                        }
-                    }
-                }
+                // Show persona button since we have a conversation
+                self.persona_button.set_visible(true);
 
                 // Rebuild message list
                 self.rebuild_message_list(&sender);
@@ -258,7 +312,10 @@ impl Component for ChatPanel {
             ChatPanelMsg::ClearConversation => {
                 self.active_conversation = None;
                 self.active_character = None;
+                self.active_persona = None;
                 self.messages.clear();
+                self.persona_button.set_visible(false);
+                self.update_persona_display();
                 self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::CharactersLoaded(characters) => {
@@ -347,7 +404,7 @@ impl Component for ChatPanel {
                     });
                     return;
                 };
-                let assembled = PromptEngine::assemble(character, None, &self.messages);
+                let assembled = PromptEngine::assemble(character, self.active_persona.as_ref(), &self.messages);
                 let system_prompt = assembled.preamble;
                 let messages = self.messages.clone();
                 let provider_cfg = provider.clone();
@@ -532,6 +589,39 @@ impl Component for ChatPanel {
                     });
                 }
             }
+            // Persona operations
+            ChatPanelMsg::SetActivePersona(persona) => {
+                self.active_persona = persona;
+                self.update_persona_display();
+                // Rebuild message list to update user persona labels
+                self.rebuild_message_list(&sender);
+            }
+            ChatPanelMsg::PersonasLoaded(personas) => {
+                self.available_personas = personas;
+                self.rebuild_persona_popover(&sender);
+            }
+            ChatPanelMsg::ChangeConversationPersona(persona_id) => {
+                // Update local state
+                if persona_id.is_empty() {
+                    self.active_persona = None;
+                } else {
+                    self.active_persona = self.available_personas.iter()
+                        .find(|p| p.id == persona_id)
+                        .cloned();
+                }
+                self.update_persona_display();
+
+                // Emit to AppModel to update DB
+                if let Some(ref conv) = self.active_conversation {
+                    let _ = sender.output(ChatPanelOutput::SetConversationPersona {
+                        conversation_id: conv.id.clone(),
+                        persona_id: if persona_id.is_empty() { None } else { Some(persona_id) },
+                    });
+                }
+
+                // Rebuild message list to update user persona labels
+                self.rebuild_message_list(&sender);
+            }
         }
     }
 
@@ -576,6 +666,7 @@ impl ChatPanel {
             let init = MessageRowInit {
                 message: message.clone(),
                 character_name: self.active_character.as_ref().map(|c| c.name.clone()),
+                user_persona_name: self.active_persona.as_ref().map(|p| p.name.clone()),
                 has_siblings,
             };
             let row = MessageRow::new(&init);
@@ -606,6 +697,7 @@ impl ChatPanel {
             let init = MessageRowInit {
                 message: streaming_msg,
                 character_name: self.active_character.as_ref().map(|c| c.name.clone()),
+                user_persona_name: self.active_persona.as_ref().map(|p| p.name.clone()),
                 has_siblings: false,
             };
             let row = MessageRow::new(&init);
@@ -617,5 +709,58 @@ impl ChatPanel {
     /// Update the currently streaming message
     pub fn update_streaming_message(&mut self, sender: &ComponentSender<ChatPanel>) {
         self.rebuild_message_list(sender);
+    }
+
+    /// Update the persona button label to reflect the active persona.
+    fn update_persona_display(&self) {
+        let label = self.active_persona.as_ref()
+            .map(|p| format!("as {}", p.name))
+            .unwrap_or_else(|| "as User".to_string());
+        self.persona_button.set_label(&label);
+    }
+
+    /// Rebuild the persona selection popover with the current persona list.
+    fn rebuild_persona_popover(&self, sender: &ComponentSender<ChatPanel>) {
+        // Clear existing rows
+        while let Some(child) = self.persona_listbox.first_child() {
+            self.persona_listbox.remove(&child);
+        }
+
+        // "User (No Persona)" row (index 0)
+        let none_row = gtk::ListBoxRow::new();
+        let none_label = gtk::Label::new(Some("User (No Persona)"));
+        none_label.set_xalign(0.0);
+        none_label.set_margin_start(8);
+        none_label.set_margin_end(8);
+        none_label.set_margin_top(4);
+        none_label.set_margin_bottom(4);
+        none_row.set_child(Some(&none_label));
+        self.persona_listbox.append(&none_row);
+
+        // Persona rows (index 1..N)
+        for persona in &self.available_personas {
+            let row = gtk::ListBoxRow::new();
+            let label = gtk::Label::new(Some(&persona.name));
+            label.set_xalign(0.0);
+            label.set_margin_start(8);
+            label.set_margin_end(8);
+            label.set_margin_top(4);
+            label.set_margin_bottom(4);
+            row.set_child(Some(&label));
+            self.persona_listbox.append(&row);
+        }
+
+        // Disconnect old row-activated handlers and connect new one
+        // We store persona IDs by index for lookup in the signal handler
+        let persona_ids: Vec<String> = std::iter::once(String::new())
+            .chain(self.available_personas.iter().map(|p| p.id.clone()))
+            .collect();
+        let sender_clone = sender.clone();
+        self.persona_listbox.connect_row_activated(move |_, row| {
+            let index = row.index() as usize;
+            if let Some(id) = persona_ids.get(index) {
+                let _ = sender_clone.input_sender().send(ChatPanelMsg::ChangeConversationPersona(id.clone()));
+            }
+        });
     }
 }

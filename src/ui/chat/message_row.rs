@@ -23,6 +23,7 @@ pub struct MessageRow {
     pub formatted: String,
     pub timestamp: chrono::NaiveDateTime,
     pub character_name: Option<String>,
+    pub user_persona_name: Option<String>,
     pub has_siblings: bool,
     pub is_editing: bool,
     pub edit_buffer: Option<gtk::TextBuffer>,
@@ -33,6 +34,7 @@ pub struct MessageRow {
 pub struct MessageRowInit {
     pub message: Message,
     pub character_name: Option<String>,
+    pub user_persona_name: Option<String>,
     pub has_siblings: bool,
 }
 
@@ -52,6 +54,7 @@ impl MessageRow {
             formatted,
             timestamp: init.message.timestamp,
             character_name: init.character_name.clone(),
+            user_persona_name: init.user_persona_name.clone(),
             has_siblings: init.has_siblings,
             is_editing: false,
             edit_buffer: None,
@@ -70,7 +73,7 @@ impl MessageRow {
             MessageRole::User => (
                 gtk::Align::End,
                 "user-message",
-                "You",
+                self.user_persona_name.as_deref().unwrap_or("You"),
             ),
             MessageRole::System => (
                 gtk::Align::Start,
