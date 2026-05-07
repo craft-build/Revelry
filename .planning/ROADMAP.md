@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: App Shell & Provider Foundation** - Runnable GTK4/Adwaita app with adaptive layout, provider configuration, and secure API key storage
 - [x] **Phase 2: Character System & Library** - CharacterCardV2 CRUD, import/export, and searchable character library
 - [ ] **Phase 3: AI Chat & Streaming** - Streaming AI conversations with branching, message CRUD, and markdown rendering
-- [ ] **Phase 4: Personas & Template Resolution** - User personas with structured fields, assignment hierarchy, and full template variable resolution
+- [x] **Phase 4: Personas & Template Resolution** - User personas with structured fields, assignment hierarchy, and full template variable resolution
 - [ ] **Phase 5: Context Engineering & Lorebook** - Token budgeting, layered prompt assembly, and keyword-activated lorebook system
 - [ ] **Phase 6: Generation Controls, Regex & Data** - AI parameter presets, regex post-processing, and backup/restore
 
@@ -91,7 +91,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Persona domain model, database schema (M007), CRUD, template resolver, persona block builder
 - [x] 04-02-PLAN.md — Persona editor wizard, persona library list, settings + character editor dropdowns
-- [ ] 04-03-PLAN.md — Chat header persona selector, assignment hierarchy resolution, prompt injection into AI stream
+- [x] 04-03-PLAN.md — Chat header persona selector, assignment hierarchy resolution, prompt injection into AI stream
 
 **UI hint**: yes
 
@@ -142,6 +142,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. App Shell & Provider Foundation | 3/3 | Complete | 2026-04-29 |
 | 2. Character System & Library | 3/3 | Complete | 2026-04-30 |
 | 3. AI Chat & Streaming | 0/3 | Not started | - |
-| 4. Personas & Template Resolution | 2/3 | In Progress | - |
+| 4. Personas & Template Resolution | 3/3 | Complete | 2026-05-07 |
 | 5. Context Engineering & Lorebook | 0/3 | Not started | - |
 | 6. Generation Controls, Regex & Data | 0/3 | Not started | - |

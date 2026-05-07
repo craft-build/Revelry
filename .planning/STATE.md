@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-05-07T04:43:27Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-05-07T04:52:15Z"
 last_activity: 2026-05-07
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 8
-  percent: 67
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Users can roleplay with AI characters through any AI provider they choose — cloud or local — with complete creative freedom and complete data privacy.
-**Current focus:** Phase 04 — personas-template-resolution (2 of 3 plans complete)
+**Current focus:** Phase 04 — personas-template-resolution (3 of 3 plans COMPLETE)
 
 ## Current Position
 
-Phase: 04 (personas-template-resolution) — EXECUTING
-Plan: 04-03 (next to execute)
-Status: Plan 04-02 complete, ready for 04-03
+Phase: 04 (personas-template-resolution) — COMPLETE
+Plan: 04-03 (completed)
+Status: Phase 04 complete, ready for Phase 05
 Last activity: 2026-05-07
 
-Progress: [██████----] 67%
+Progress: [███████---] 75%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
-- Average duration: 15 min
-- Total execution time: 2.0 hours
+- Total plans completed: 9
+- Average duration: 14 min
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
@@ -46,20 +46,20 @@ Progress: [██████----] 67%
 |-------|-------|-------|----------|
 | Phase 01 | 3 | - | - |
 | Phase 02 | 3 | 82 min | 27 min |
-| Phase 04 | 2 | 8 min | 4 min |
+| Phase 04 | 3 | 14 min | 5 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 8min, 56min, 8min, 18min, 4min
+- Last 5 plans: 56min, 8min, 18min, 4min, 6min
 - Trend: Variable
 
-| Phase 04 P02 | 4 | 2 tasks | 7 files |
+| Phase 04 P03 | 6 | 3 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-05-07T04:43:27Z
-Stopped at: Completed 04-02-PLAN.md
-Resume file: .planning/phases/04-personas-template-resolution/04-03-PLAN.md
+Last session: 2026-05-07T04:52:15Z
+Stopped at: Completed 04-03-PLAN.md
+Resume file: None (phase complete)
 
 ## Accumulated Context
 
@@ -79,6 +79,8 @@ Recent decisions affecting current work:
 - (04): Assignment hierarchy UX: Settings (global) + Character Editor (per-char) + Chat Header (per-conv)
 - (04): Assignment resolution: conversation → character → global → none
 - (04): Persona block injected between character system prompt and conversation history
+- (04): MenuButton+Popover for per-conversation persona selection in chat header
+- (04): Global default persona queried from app_settings on startup
 
 ### Pending Todos
 

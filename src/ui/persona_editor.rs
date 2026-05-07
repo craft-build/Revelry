@@ -127,7 +127,7 @@ impl Component for PersonaEditorModel {
             // Relationships Page
             add = &adw::PreferencesPage {
                 set_title: "Relationships",
-                set_icon_name: Some("emblem-people"),
+                set_icon_name: Some("people"),
 
                 adw::PreferencesGroup {
                     set_title: "Relationships",
@@ -156,7 +156,7 @@ impl Component for PersonaEditorModel {
             // Review/Save Page
             add = &adw::PreferencesPage {
                 set_title: "Review",
-                set_icon_name: Some("checkmark"),
+                set_icon_name: Some("done"),
 
                 adw::PreferencesGroup {
                     set_title: "Review Your Persona",
