@@ -41,11 +41,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### User Personas
 
-- [ ] **PERS-01**: User can create, edit, and delete user personas with structured fields (name, appearance, personality, background, role_description, relationships, speech_style, tags)
+- [x] **PERS-01**: User can create, edit, and delete user personas with structured fields (name, appearance, personality, background, role_description, relationships, speech_style, tags)
 - [ ] **PERS-02**: Active user persona data is injected into the AI prompt as a structured block between character definition and conversation history
 - [ ] **PERS-03**: Persona assignment follows a resolution hierarchy: per-conversation override → per-character default → global default persona → no persona (raw User)
-- [ ] **PERS-04**: User can assign a default persona to an AI character card (auto-selected when starting new conversations)
-- [ ] **PERS-05**: User can mark one persona as global default for new conversations without character-specific defaults
+- [x] **PERS-04**: User can assign a default persona to an AI character card (auto-selected when starting new conversations)
+- [x] **PERS-05**: User can mark one persona as global default for new conversations without character-specific defaults
 - [ ] **PERS-06**: {{user}} variable resolves to active persona's name; {{persona.*}} variables resolve to corresponding persona fields
 
 ### Context Engineering
@@ -185,11 +185,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-08 | Phase 3 | Pending |
 | CONV-09 | Phase 3 | Pending |
 | CONV-10 | Phase 3 | Pending |
-| PERS-01 | Phase 4 | Pending |
+| PERS-01 | Phase 4 | Complete (04-02) |
 | PERS-02 | Phase 4 | Pending |
 | PERS-03 | Phase 4 | Pending |
-| PERS-04 | Phase 4 | Pending |
-| PERS-05 | Phase 4 | Pending |
+| PERS-04 | Phase 4 | Complete (04-02) |
+| PERS-05 | Phase 4 | Complete (04-02) |
 | PERS-06 | Phase 4 | Pending |
 | CHAR-08 | Phase 4 | Pending |
 | CCTX-01 | Phase 5 | Pending |

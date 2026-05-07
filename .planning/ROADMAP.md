@@ -89,8 +89,8 @@ Plans:
   **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Persona domain model, database schema (M007), CRUD, template resolver, persona block builder
-- [ ] 04-02-PLAN.md — Persona editor wizard, persona library list, settings + character editor dropdowns
+- [x] 04-01-PLAN.md — Persona domain model, database schema (M007), CRUD, template resolver, persona block builder
+- [x] 04-02-PLAN.md — Persona editor wizard, persona library list, settings + character editor dropdowns
 - [ ] 04-03-PLAN.md — Chat header persona selector, assignment hierarchy resolution, prompt injection into AI stream
 
 **UI hint**: yes
@@ -142,6 +142,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. App Shell & Provider Foundation | 3/3 | Complete | 2026-04-29 |
 | 2. Character System & Library | 3/3 | Complete | 2026-04-30 |
 | 3. AI Chat & Streaming | 0/3 | Not started | - |
-| 4. Personas & Template Resolution | 0/3 | Planned, ready for execution | - |
+| 4. Personas & Template Resolution | 2/3 | In Progress | - |
 | 5. Context Engineering & Lorebook | 0/3 | Not started | - |
 | 6. Generation Controls, Regex & Data | 0/3 | Not started | - |
