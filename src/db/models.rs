@@ -120,6 +120,7 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
         creator_notes: row.get("creator_notes")?,
         character_book,
         default_persona_id: row.get("default_persona_id")?,
+        default_preset_id: row.get("default_preset_id")?,
         lorebook_scan_depth: row.get("lorebook_scan_depth")?,
         lorebook_recursive_depth: row.get("lorebook_recursive_depth")?,
         created_at,
@@ -194,6 +195,7 @@ pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
         character_id: row.get("character_id")?,
         provider_id: row.get("provider_id")?,
         creator_persona_id: row.get("creator_persona_id")?,
+        generation_preset_id: row.get("generation_preset_id")?,
         created_at,
         updated_at,
     })

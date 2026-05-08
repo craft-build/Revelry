@@ -50,6 +50,8 @@ pub enum DbInput {
     CreateBranch(crate::domain::conversation::MessageBranch),
     // Persona-conversation operations
     UpdateConversationPersona { conversation_id: String, persona_id: Option<String> },
+    // Preset-conversation operations
+    UpdateConversationPreset { conversation_id: String, preset_id: Option<String> },
     // Lorebook operations
     LoadLorebookEntries(String),
     SaveLorebookEntry(LorebookEntry),
@@ -92,6 +94,7 @@ pub enum DbOutput {
     ConversationDeleted(String),
     MessageCount(i32),
     ConversationPersonaUpdated(String),
+    ConversationPresetUpdated(String),
     // Branch outputs
     BranchesLoaded(Vec<crate::domain::conversation::MessageBranch>),
     BranchCreated(crate::domain::conversation::MessageBranch),
@@ -271,6 +274,10 @@ impl Worker for DbService {
             DbInput::UpdateConversationPersona { conversation_id, persona_id } => {
                 conversations::update_conversation_persona(&self.conn, &conversation_id, persona_id.as_deref())
                     .map(|_| DbOutput::ConversationPersonaUpdated(conversation_id))
+            }
+            DbInput::UpdateConversationPreset { conversation_id, preset_id } => {
+                conversations::update_conversation_preset(&self.conn, &conversation_id, preset_id.as_deref())
+                    .map(|_| DbOutput::ConversationPresetUpdated(conversation_id))
             }
             DbInput::LoadLorebookEntries(character_id) => {
                 lorebook::load_lorebook_entries(&self.conn, &character_id)

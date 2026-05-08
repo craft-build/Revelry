@@ -19,6 +19,7 @@ use crate::ui::{
     CharactersPanelMsg, CharactersPanelOutput, ChatPanel, ChatPanelMsg, ChatPanelOutput,
     LorebookEditorModel, LorebookEditorMsg, LorebookEditorOutput,
     PersonaEditor, PersonaEditorInit, PersonaEditorOutput,
+    PresetEditorInit, PresetEditorOutput,
     SettingsPanel, SettingsPanelOutput,
 };
 
@@ -44,6 +45,7 @@ pub enum ActiveView {
         EditorOutput(CharacterEditorOutput),
         PersonaEditorOutput(PersonaEditorOutput),
         LorebookEditorOutput(LorebookEditorOutput),
+        PresetEditorOutput(PresetEditorOutput),
         ShowToast(String),
         Quit,
     }
@@ -74,8 +76,11 @@ struct SidebarRowData {
         character_editor: Option<relm4::Controller<CharacterEditor>>,
         persona_editor: Option<relm4::Controller<PersonaEditor>>,
         lorebook_editor: Option<relm4::Controller<LorebookEditorModel>>,
+        preset_editor: Option<relm4::Controller<crate::ui::preset_editor::PresetEditorModel>>,
         personas: Vec<Persona>,
         global_default_persona_id: Option<String>,
+        global_default_preset_id: Option<String>,
+        pending_app_setting: Option<String>, // tracks which key was requested
         current_lorebook_character_id: Option<String>,
         presets: Vec<GenerationPreset>,
         regex_scripts: Vec<RegexScript>,
@@ -238,8 +243,11 @@ impl SimpleComponent for AppModel {
             character_editor: None,
             persona_editor: None,
             lorebook_editor: None,
+            preset_editor: None,
             personas: Vec::new(),
             global_default_persona_id: None,
+            global_default_preset_id: None,
+            pending_app_setting: None,
             current_lorebook_character_id: None,
             presets: Vec::new(),
             regex_scripts: Vec::new(),
@@ -352,6 +360,7 @@ impl SimpleComponent for AppModel {
         model.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
         model.db_worker.sender().send(DbInput::LoadConversations).unwrap();
         model.db_worker.sender().send(DbInput::LoadPersonas).unwrap();
+        model.db_worker.sender().send(DbInput::LoadPresets).unwrap();
 
         // Build sidebar now that widget refs are set
         model.refresh_sidebar(&sender);
@@ -526,6 +535,7 @@ impl SimpleComponent for AppModel {
                     // Forward to chat panel for persona selector
                     let _ = self.chat_panel.sender().send(ChatPanelMsg::PersonasLoaded(personas));
                     // Resolve global default persona ID from app settings
+                    self.pending_app_setting = Some("default_persona_id".to_string());
                     self.db_worker.sender().send(DbInput::LoadAppSetting("default_persona_id".to_string())).unwrap();
                 }
                 DbOutput::PersonaSaved(_) => {
@@ -539,16 +549,24 @@ impl SimpleComponent for AppModel {
                     self.show_toast("Persona deleted");
                 }
                 DbOutput::GlobalDefaultPersonaSet => {
+                    self.pending_app_setting = Some("default_persona_id".to_string());
                     self.db_worker.sender().send(DbInput::LoadAppSetting("default_persona_id".to_string())).unwrap();
                     self.show_toast("Default persona updated");
                 }
                 DbOutput::AppSettingLoaded(value) => {
-                    // Track which setting was loaded — for init-time default_persona_id query
-                    if let Some(id) = value {
-                        self.global_default_persona_id = Some(id);
-                    } else {
-                        self.global_default_persona_id = None;
+                    // Route the value to the correct field based on which key was requested
+                    match self.pending_app_setting.as_deref() {
+                        Some("default_persona_id") => {
+                            self.global_default_persona_id = value;
+                        }
+                        Some("default_preset_id") => {
+                            self.global_default_preset_id = value;
+                        }
+                        _ => {
+                            tracing::warn!("AppSettingLoaded received with unknown pending key: {:?}", self.pending_app_setting);
+                        }
                     }
+                    self.pending_app_setting = None;
                 }
                 DbOutput::AppSettingSaved => {
                     // Acknowledged — no action needed
@@ -558,6 +576,9 @@ impl SimpleComponent for AppModel {
                 }
                 DbOutput::ConversationPersonaUpdated(_) => {
                     // Conversation persona updated in DB — no further action needed
+                }
+                DbOutput::ConversationPresetUpdated(_) => {
+                    // Conversation preset updated in DB — no further action needed
                 }
                 DbOutput::LorebookEntriesLoaded(entries) => {
                     let entries_clone = entries.clone();
@@ -580,7 +601,18 @@ impl SimpleComponent for AppModel {
                     self.show_toast("Lorebook entry deleted");
                 }
                 DbOutput::PresetsLoaded(presets) => {
-                    self.presets = presets;
+                    self.presets = presets.clone();
+                    // Forward presets to Settings panel
+                    let _ = self.settings_panel.sender().send(SettingsPanelMsg::PresetsLoaded(presets.clone()));
+                    // Forward presets to Chat panel for popover
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::PresetsLoaded(presets));
+                    // Forward presets to character editor if open
+                    if let Some(ref editor) = self.character_editor {
+                        let _ = editor.sender().send(crate::ui::CharacterEditorMsg::PresetsLoaded(self.presets.clone()));
+                    }
+                    // Load global default preset ID
+                    self.pending_app_setting = Some("default_preset_id".to_string());
+                    self.db_worker.sender().send(DbInput::LoadAppSetting("default_preset_id".to_string())).unwrap();
                 }
                 DbOutput::PresetSaved(_) => {
                     self.db_worker.sender().send(DbInput::LoadPresets).unwrap();
@@ -652,6 +684,22 @@ impl SimpleComponent for AppModel {
                 }
                 SettingsPanelOutput::SetGlobalDefaultPersona(id) => {
                     self.db_worker.sender().send(DbInput::SetGlobalDefaultPersona(id)).unwrap();
+                }
+                SettingsPanelOutput::SetGlobalDefaultPreset(id) => {
+                    let value = id.unwrap_or_default();
+                    self.db_worker.sender().send(DbInput::SaveAppSetting {
+                        key: "default_preset_id".to_string(),
+                        value,
+                    }).unwrap();
+                    // Reload to sync model
+                    self.pending_app_setting = Some("default_preset_id".to_string());
+                    self.db_worker.sender().send(DbInput::LoadAppSetting("default_preset_id".to_string())).unwrap();
+                }
+                SettingsPanelOutput::SavePreset(preset) => {
+                    self.db_worker.sender().send(DbInput::SavePreset(preset)).unwrap();
+                }
+                SettingsPanelOutput::DeletePreset(id) => {
+                    self.db_worker.sender().send(DbInput::DeletePreset(id)).unwrap();
                 }
             },
             AppMsg::StartConversationWithProvider { character_id, provider_id } => {
@@ -1035,6 +1083,13 @@ impl SimpleComponent for AppModel {
                         persona_id,
                     }).unwrap();
                 }
+                ChatPanelOutput::SetConversationPreset { conversation_id, preset_id } => {
+                    // Update conversation's generation_preset_id in DB
+                    self.db_worker.sender().send(DbInput::UpdateConversationPreset {
+                        conversation_id,
+                        preset_id,
+                    }).unwrap();
+                }
                 ChatPanelOutput::LoadLorebookEntries(character_id) => {
                     // Load lorebook entries for the active character per D-08
                     self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
@@ -1077,6 +1132,15 @@ impl SimpleComponent for AppModel {
                 }
                 PersonaEditorOutput::Cancelled => {
                     self.persona_editor = None;
+                }
+            },
+            AppMsg::PresetEditorOutput(output) => match output {
+                PresetEditorOutput::Saved(preset) => {
+                    self.db_worker.sender().send(DbInput::SavePreset(preset)).unwrap();
+                    self.preset_editor = None;
+                }
+                PresetEditorOutput::Cancelled => {
+                    self.preset_editor = None;
                 }
             },
             AppMsg::ShowToast(message) => {

@@ -12,6 +12,9 @@ pub struct Conversation {
     pub character_id: String,
     pub provider_id: String,
     pub creator_persona_id: Option<String>,
+    /// Per-conversation preset override per D-03. Resolved via hierarchy:
+    /// conversation → character → global → none (provider defaults).
+    pub generation_preset_id: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -25,6 +28,7 @@ impl Conversation {
             character_id,
             provider_id,
             creator_persona_id: None,
+            generation_preset_id: None,
             created_at: now,
             updated_at: now,
         }

@@ -47,6 +47,10 @@ pub struct CharacterCardV2 {
     /// Maps to the `default_persona_id` column added in Migration 007.
     #[serde(default)]
     pub default_persona_id: Option<String>,
+    /// Per-character default preset ID for generation parameter hierarchy per D-03.
+    /// Maps to the `default_preset_id` column added in Migration 009.
+    #[serde(default)]
+    pub default_preset_id: Option<String>,
     /// Number of recent messages to scan for keyword matching when activating lorebook entries.
     /// Per D-10: per-character scan depth (default 2).
     #[serde(default = "default_lorebook_scan_depth")]
@@ -141,6 +145,7 @@ impl CharaCardV2Spec {
             creator_notes: self.data.creator_notes.clone(),
             character_book: self.data.character_book.clone(),
             default_persona_id: None,
+            default_preset_id: None,
             lorebook_scan_depth: 2,
             lorebook_recursive_depth: 2,
             created_at: now,
@@ -197,6 +202,7 @@ impl CharacterCardV2 {
             creator_notes: String::new(),
             character_book: serde_json::Value::Null,
             default_persona_id: None,
+            default_preset_id: None,
             lorebook_scan_depth: 2,
             lorebook_recursive_depth: 2,
             created_at: now,
@@ -266,6 +272,7 @@ impl CharacterV1 {
             creator_notes: self.creator_notes.clone(),
             character_book: serde_json::Value::Null,
             default_persona_id: None,
+            default_preset_id: None,
             lorebook_scan_depth: 2,
             lorebook_recursive_depth: 2,
             created_at: now,

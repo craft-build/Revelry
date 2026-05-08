@@ -9,6 +9,7 @@ use std::rc::Rc;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
+use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
@@ -28,6 +29,8 @@ pub struct ChatPanel {
     active_branch_id: Option<String>,
     active_persona: Option<Persona>,
     available_personas: Vec<Persona>,
+    available_presets: Vec<GenerationPreset>,
+    resolved_preset_id: Option<String>,
     messages: Vec<Message>,
     branches: Vec<MessageBranch>,
     partial_response: String,
@@ -47,6 +50,8 @@ pub struct ChatPanel {
     input_bar: relm4::Controller<InputBar>,
     persona_button: gtk::MenuButton,
     persona_listbox: gtk::ListBox,
+    preset_button: gtk::MenuButton,
+    preset_listbox: gtk::ListBox,
 }
 
 /// Messages handled by ChatPanel.
@@ -88,6 +93,8 @@ pub enum ChatPanelMsg {
     SetActivePersona(Option<Persona>),
     PersonasLoaded(Vec<Persona>),
     ChangeConversationPersona(String), // persona ID, empty string = none
+    PresetsLoaded(Vec<GenerationPreset>),
+    ChangeConversationPreset(String), // preset ID, empty string = none (clear override)
     // Context engineering
     UpdateContextUtilization(f64), // context utilization ratio (0.0-1.0)
     LorebookEntriesLoaded(Vec<LorebookEntry>),
@@ -120,6 +127,7 @@ pub enum ChatPanelOutput {
     SwitchBranch(Option<String>),
     // Persona operations
     SetConversationPersona { conversation_id: String, persona_id: Option<String> },
+    SetConversationPreset { conversation_id: String, preset_id: Option<String> },
     // Context engineering
     LoadLorebookEntries(String), // character_id — request lorebook entries from DB
 }
@@ -219,6 +227,18 @@ impl Component for ChatPanel {
         persona_button.set_has_frame(false);
         persona_button.set_visible(false);
 
+        // Create preset selector widgets
+        let preset_listbox = gtk::ListBox::new();
+        preset_listbox.set_selection_mode(gtk::SelectionMode::None);
+
+        let preset_button = gtk::MenuButton::new();
+        preset_button.set_label("🎯 Default");
+        preset_button.add_css_class("flat");
+        preset_button.add_css_class("caption");
+        preset_button.add_css_class("dim-label");
+        preset_button.set_has_frame(false);
+        preset_button.set_visible(false);
+
         let model = ChatPanel {
             active_conversation: None,
             active_character: None,
@@ -226,6 +246,8 @@ impl Component for ChatPanel {
             active_branch_id: None,
             active_persona: None,
             available_personas: Vec::new(),
+            available_presets: Vec::new(),
+            resolved_preset_id: None,
             messages: Vec::new(),
             branches: Vec::new(),
             partial_response: String::new(),
@@ -242,6 +264,8 @@ impl Component for ChatPanel {
             input_bar,
             persona_button: persona_button.clone(),
             persona_listbox: persona_listbox.clone(),
+            preset_button: preset_button.clone(),
+            preset_listbox: preset_listbox.clone(),
         };
 
         let input_bar_widget = model.input_bar.widget().clone();
@@ -256,6 +280,44 @@ impl Component for ChatPanel {
         persona_popover.set_child(Some(&persona_listbox));
         persona_button.set_popover(Some(&persona_popover));
         widgets.header_box.append(&persona_button);
+
+        // Set up preset popover and add button to header
+        let preset_popover = gtk::Popover::new();
+        preset_popover.set_child(Some(&preset_listbox));
+        preset_button.set_popover(Some(&preset_popover));
+        widgets.header_box.append(&preset_button);
+
+        // Populate initial "(Default)" row in preset popover
+        {
+            let default_row = gtk::ListBoxRow::new();
+            let default_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let label = gtk::Label::new(Some("(Default)"));
+            label.set_xalign(0.0);
+            label.set_margin_start(8);
+            label.set_margin_end(8);
+            label.set_margin_top(4);
+            label.set_margin_bottom(2);
+            let subtitle = gtk::Label::new(Some("Use character or global default"));
+            subtitle.add_css_class("caption");
+            subtitle.add_css_class("dim-label");
+            subtitle.set_xalign(0.0);
+            subtitle.set_margin_start(8);
+            subtitle.set_margin_end(8);
+            subtitle.set_margin_bottom(4);
+            default_box.append(&label);
+            default_box.append(&subtitle);
+            default_row.set_child(Some(&default_box));
+            preset_listbox.append(&default_row);
+        }
+
+        // Connect row-activated signal on preset listbox
+        let sender_clone = sender.clone();
+        preset_listbox.connect_row_activated(move |_, row| {
+            let index = row.index();
+            if index == 0 {
+                let _ = sender_clone.input_sender().send(ChatPanelMsg::ChangeConversationPreset(String::new()));
+            }
+        });
 
         // Populate initial "User (No Persona)" row in popover
         {
@@ -316,6 +378,7 @@ impl Component for ChatPanel {
 
                 // Show persona button since we have a conversation
                 self.persona_button.set_visible(true);
+                self.preset_button.set_visible(true);
 
                 // Request lorebook entries for this character per D-08
                 let _ = sender.output(ChatPanelOutput::LoadLorebookEntries(character.id.clone()));
@@ -331,7 +394,9 @@ impl Component for ChatPanel {
                 self.lorebook_entries.clear();
                 self.context_utilization = 0.0;
                 self.persona_button.set_visible(false);
+                self.preset_button.set_visible(false);
                 self.update_persona_display();
+                self.update_preset_display();
                 let _ = self.input_bar.sender().send(InputBarMsg::UpdateContextUtilization {
                     pct: 0.0,
                     truncated: 0,
@@ -668,6 +733,27 @@ impl Component for ChatPanel {
                 // Rebuild message list to update user persona labels
                 self.rebuild_message_list(&sender);
             }
+            ChatPanelMsg::PresetsLoaded(presets) => {
+                self.available_presets = presets;
+                self.rebuild_preset_popover(&sender);
+            }
+            ChatPanelMsg::ChangeConversationPreset(preset_id) => {
+                // Update local state
+                if preset_id.is_empty() {
+                    self.resolved_preset_id = None;
+                } else {
+                    self.resolved_preset_id = Some(preset_id.clone());
+                }
+                self.update_preset_display();
+
+                // Emit to AppModel to update DB
+                if let Some(ref conv) = self.active_conversation {
+                    let _ = sender.output(ChatPanelOutput::SetConversationPreset {
+                        conversation_id: conv.id.clone(),
+                        preset_id: if preset_id.is_empty() { None } else { Some(preset_id) },
+                    });
+                }
+            }
             ChatPanelMsg::UpdateContextUtilization(pct) => {
                 self.context_utilization = pct;
             }
@@ -769,6 +855,69 @@ impl ChatPanel {
             .map(|p| format!("as {}", p.name))
             .unwrap_or_else(|| "as User".to_string());
         self.persona_button.set_label(&label);
+    }
+
+    /// Update the preset button label to reflect the active preset.
+    fn update_preset_display(&self) {
+        let label = self.resolved_preset_id.as_ref()
+            .and_then(|id| self.available_presets.iter().find(|p| p.id == *id))
+            .map(|p| format!("🎯 {}", p.name))
+            .unwrap_or_else(|| "🎯 Default".to_string());
+        self.preset_button.set_label(&label);
+    }
+
+    /// Rebuild the preset selection popover with the current preset list.
+    fn rebuild_preset_popover(&self, sender: &ComponentSender<ChatPanel>) {
+        // Clear existing rows
+        while let Some(child) = self.preset_listbox.first_child() {
+            self.preset_listbox.remove(&child);
+        }
+
+        // "(Default)" row (index 0) — clears conversation override
+        let default_row = gtk::ListBoxRow::new();
+        let default_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let label = gtk::Label::new(Some("(Default)"));
+        label.set_xalign(0.0);
+        label.set_margin_start(8);
+        label.set_margin_end(8);
+        label.set_margin_top(4);
+        label.set_margin_bottom(2);
+        let subtitle = gtk::Label::new(Some("Use character or global default"));
+        subtitle.add_css_class("caption");
+        subtitle.add_css_class("dim-label");
+        subtitle.set_xalign(0.0);
+        subtitle.set_margin_start(8);
+        subtitle.set_margin_end(8);
+        subtitle.set_margin_bottom(4);
+        default_box.append(&label);
+        default_box.append(&subtitle);
+        default_row.set_child(Some(&default_box));
+        self.preset_listbox.append(&default_row);
+
+        // Preset rows (index 1..N)
+        let preset_ids: Vec<String> = std::iter::once(String::new())
+            .chain(self.available_presets.iter().map(|p| p.id.clone()))
+            .collect();
+        for preset in &self.available_presets {
+            let row = gtk::ListBoxRow::new();
+            let row_label = gtk::Label::new(Some(&preset.name));
+            row_label.set_xalign(0.0);
+            row_label.set_margin_start(8);
+            row_label.set_margin_end(8);
+            row_label.set_margin_top(4);
+            row_label.set_margin_bottom(4);
+            row.set_child(Some(&row_label));
+            self.preset_listbox.append(&row);
+        }
+
+        // Connect row-activated signal
+        let sender_clone = sender.clone();
+        self.preset_listbox.connect_row_activated(move |_, row| {
+            let index = row.index() as usize;
+            if let Some(id) = preset_ids.get(index) {
+                let _ = sender_clone.input_sender().send(ChatPanelMsg::ChangeConversationPreset(id.clone()));
+            }
+        });
     }
 
     /// Rebuild the persona selection popover with the current persona list.

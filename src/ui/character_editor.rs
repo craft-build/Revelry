@@ -3,6 +3,7 @@ use relm4::prelude::*;
 use relm4::{adw, gtk, ComponentParts, ComponentSender};
 
 use crate::domain::character::CharacterCardV2;
+use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 
@@ -38,6 +39,8 @@ pub struct CharacterEditorModel {
     window: adw::PreferencesWindow,
     available_personas: Vec<Persona>,
     persona_dropdown_row: adw::PreferencesRow,
+    available_presets: Vec<GenerationPreset>,
+    preset_dropdown_row: adw::PreferencesRow,
     // Lorebook fields per D-10, D-12
     lorebook_entries: Vec<LorebookEntry>,
     scan_depth_row: adw::SpinRow,
@@ -70,9 +73,12 @@ pub enum CharacterEditorMsg {
     AvatarSelected(String),
     SwitchPage(EditorPage),
     SetDefaultPersona(String),
+    SetDefaultPreset(String),
+    PresetsLoaded(Vec<GenerationPreset>),
     SetScanDepth(i32),
     SetRecursiveDepth(i32),
     LorebookEntriesLoaded(Vec<LorebookEntry>),
+    OpenLorebookEditor,
     Save,
     Cancel,
 }
@@ -81,6 +87,7 @@ pub enum CharacterEditorMsg {
 pub enum CharacterEditorOutput {
     Saved(CharacterCardV2),
     Cancelled,
+    OpenLorebookEditor(String), // character_id
 }
 
 #[derive(Debug, Clone)]
@@ -148,6 +155,11 @@ impl Component for CharacterEditorModel {
                     #[name(persona_dropdown_row)]
                     adw::PreferencesRow {
                         set_title: "Default Persona",
+                    },
+
+                    #[name(preset_dropdown_row)]
+                    adw::PreferencesRow {
+                        set_title: "Default Preset",
                     },
                 },
 
@@ -287,6 +299,14 @@ impl Component for CharacterEditorModel {
                         set_xalign: 0.0,
                         set_margin_top: 4,
                         set_margin_bottom: 4,
+                    },
+
+                    gtk::Button {
+                        set_label: "Edit Lorebook Entries",
+                        add_css_class: "suggested-action",
+                        set_halign: gtk::Align::Start,
+                        set_margin_top: 8,
+                        connect_clicked => CharacterEditorMsg::OpenLorebookEditor,
                     },
                 },
 
@@ -561,6 +581,8 @@ impl Component for CharacterEditorModel {
             window: root.clone(),
             available_personas: Vec::new(),
             persona_dropdown_row: widgets.persona_dropdown_row.clone(),
+            available_presets: Vec::new(),
+            preset_dropdown_row: widgets.preset_dropdown_row.clone(),
             lorebook_entries: Vec::new(),
             scan_depth_row: widgets.scan_depth_spin.clone(),
             recursive_depth_row: widgets.recursive_depth_spin.clone(),
@@ -681,6 +703,13 @@ impl Component for CharacterEditorModel {
             CharacterEditorMsg::SetDefaultPersona(id) => {
                 self.character.default_persona_id = if id.is_empty() { None } else { Some(id) };
             }
+            CharacterEditorMsg::SetDefaultPreset(id) => {
+                self.character.default_preset_id = if id.is_empty() { None } else { Some(id) };
+            }
+            CharacterEditorMsg::PresetsLoaded(presets) => {
+                self.available_presets = presets;
+                self.rebuild_preset_dropdown(&sender);
+            }
             CharacterEditorMsg::SetScanDepth(depth) => {
                 self.character.lorebook_scan_depth = depth;
             }
@@ -691,6 +720,9 @@ impl Component for CharacterEditorModel {
                 self.lorebook_entries = entries;
                 // Update the entry count label
                 // (Could also update via widget reference, but label update is simple)
+            }
+            CharacterEditorMsg::OpenLorebookEditor => {
+                let _ = sender.output(CharacterEditorOutput::OpenLorebookEditor(self.character.id.clone()));
             }
             CharacterEditorMsg::Save => {
                 // Validate name is non-empty
@@ -871,5 +903,43 @@ impl CharacterEditorModel {
         });
 
         self.persona_dropdown_row.set_child(Some(&dropdown));
+    }
+
+    /// Rebuild the preset dropdown inside the preferences row.
+    /// Creates a DropDown with "(None)" + built-in + custom preset names.
+    fn rebuild_preset_dropdown(&self, sender: &ComponentSender<Self>) {
+        // Build options: "(None)" + "Creative (Built-in)" + "Balanced (Built-in)" + "Precise (Built-in)" + custom
+        let mut options: Vec<String> = vec!["(None)".to_string()];
+        let mut preset_ids: Vec<String> = vec![String::new()];
+        for preset in &self.available_presets {
+            let label = if preset.is_builtin {
+                format!("{} (Built-in)", preset.name)
+            } else {
+                preset.name.clone()
+            };
+            options.push(label);
+            preset_ids.push(preset.id.clone());
+        }
+
+        let model = gtk::StringList::new(&options.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let dropdown = gtk::DropDown::new(Some(model), None::<&gtk::Expression>);
+
+        // Select current default_preset_id if set
+        if let Some(ref preset_id) = self.character.default_preset_id {
+            if let Some(idx) = preset_ids.iter().position(|id| id == preset_id) {
+                dropdown.set_selected(idx as u32);
+            }
+        }
+
+        // Connect selection-changed
+        let preset_ids_clone = preset_ids;
+        let sender_clone = sender.clone();
+        dropdown.connect_selected_item_notify(move |dd| {
+            let idx = dd.selected() as usize;
+            let id = preset_ids_clone.get(idx).cloned().unwrap_or_default();
+            let _ = sender_clone.input_sender().send(CharacterEditorMsg::SetDefaultPreset(id));
+        });
+
+        self.preset_dropdown_row.set_child(Some(&dropdown));
     }
 }

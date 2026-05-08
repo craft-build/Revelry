@@ -50,7 +50,7 @@ pub fn load_characters(conn: &Connection) -> Result<Vec<CharacterCardV2>> {
         "SELECT id, name, description, personality, scenario, first_mes, mes_example,
          system_prompt, post_history_instructions, alternate_greetings, tags, creator,
          character_version, avatar_path, extensions, creator_notes, character_book,
-         default_persona_id, lorebook_scan_depth, lorebook_recursive_depth, created_at, updated_at
+         default_persona_id, default_preset_id, lorebook_scan_depth, lorebook_recursive_depth, created_at, updated_at
          FROM characters ORDER BY updated_at DESC"
     )?;
     let characters = stmt.query_map([], |row| row_to_character(row))?;
@@ -67,7 +67,7 @@ pub fn load_character(conn: &Connection, id: &str) -> Result<Option<CharacterCar
         "SELECT id, name, description, personality, scenario, first_mes, mes_example,
          system_prompt, post_history_instructions, alternate_greetings, tags, creator,
          character_version, avatar_path, extensions, creator_notes, character_book,
-         default_persona_id, lorebook_scan_depth, lorebook_recursive_depth, created_at, updated_at
+         default_persona_id, default_preset_id, lorebook_scan_depth, lorebook_recursive_depth, created_at, updated_at
          FROM characters WHERE id = ?1"
     )?;
     let mut characters = stmt.query_map(params![id], |row| row_to_character(row))?;
@@ -140,7 +140,7 @@ pub fn search_characters(conn: &Connection, query: &str) -> Result<Vec<Character
         "SELECT c.id, c.name, c.description, c.personality, c.scenario, c.first_mes,
          c.mes_example, c.system_prompt, c.post_history_instructions, c.alternate_greetings,
          c.tags, c.creator, c.character_version, c.avatar_path, c.extensions,
-         c.creator_notes, c.character_book, c.default_persona_id,
+         c.creator_notes, c.character_book, c.default_persona_id, c.default_preset_id,
          c.lorebook_scan_depth, c.lorebook_recursive_depth, c.created_at, c.updated_at
          FROM characters c
          JOIN characters_fts f ON c.rowid = f.rowid

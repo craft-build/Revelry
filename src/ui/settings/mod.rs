@@ -4,6 +4,7 @@ use relm4::{adw, gtk, Component, ComponentParts, ComponentSender};
 
 use crate::domain::persona::Persona;
 use crate::domain::provider::{ProviderConfig, ProviderType};
+use crate::domain::generation::GenerationPreset;
 use crate::secrets::KeyringStore;
 use crate::service::provider_test::{self, ProviderTestResult};
 
@@ -20,19 +21,23 @@ pub enum TestState {
 pub struct SettingsPanel {
     providers: Vec<ProviderConfig>,
     personas: Vec<Persona>,
+    presets: Vec<GenerationPreset>,
     test_states: std::collections::HashMap<String, TestState>,
     // Widget references needed for imperative updates in update()
     providers_group: adw::PreferencesGroup,
     persona_group: adw::PreferencesGroup,
+    preset_group: adw::PreferencesGroup,
     toast_overlay: adw::ToastOverlay,
     // Track rows added to providers_group so we can remove them by reference
     // (iterating GTK widget tree is wrong — see GNOME discourse #13538)
     provider_rows: Vec<adw::PreferencesRow>,
     persona_rows: Vec<adw::PreferencesRow>,
+    preset_rows: Vec<adw::PreferencesRow>,
     // Keep the config page controller alive while the PreferencesDialog is open.
     // Without this, the controller is dropped when open_provider_config() returns,
     // shutting down the component runtime and causing a panic on any user interaction.
     config_page: Option<relm4::Controller<ProviderConfigPage>>,
+    preset_editor: Option<relm4::Controller<crate::ui::preset_editor::PresetEditorModel>>,
 }
 
 /// Messages handled by SettingsPanel.
@@ -51,6 +56,15 @@ pub enum SettingsPanelMsg {
     KeyringError(String),
     PersonasLoaded(Vec<Persona>),
     DefaultPersonaChanged(String), // the selected persona ID, or empty string for "None"
+    PresetsLoaded(Vec<GenerationPreset>),
+    DefaultPresetChanged(String), // the selected preset ID, or empty string for "None"
+    CreatePreset,
+    EditPreset(String),
+    DuplicatePreset(String),
+    DeletePreset(String),
+    ConfirmDeletePreset(String),
+    PresetSavedFromEditor(GenerationPreset),
+    PresetEditorCancelled,
 }
 
 /// Command output from background threads.
@@ -69,6 +83,9 @@ pub enum SettingsPanelOutput {
     DeleteKey(String),
     TestProvider(String),
     SetGlobalDefaultPersona(Option<String>),
+    SetGlobalDefaultPreset(Option<String>),
+    SavePreset(GenerationPreset),
+    DeletePreset(String),
 }
 
 #[relm4::component(pub)]
@@ -104,6 +121,12 @@ impl Component for SettingsPanel {
                         set_title: "Persona",
                         set_description: Some("Set the default persona for roleplay."),
                     },
+
+                    #[name(preset_group)]
+                    adw::PreferencesGroup {
+                        set_title: "Generation Presets",
+                        set_description: Some("Presets control how the AI generates responses. Assign a preset at the character or conversation level to override this default."),
+                    },
                 },
             },
         }
@@ -119,13 +142,17 @@ impl Component for SettingsPanel {
         let model = SettingsPanel {
             providers: Vec::new(),
             personas: Vec::new(),
+            presets: Vec::new(),
             test_states: std::collections::HashMap::new(),
             providers_group: widgets.providers_group.clone(),
             persona_group: widgets.persona_group.clone(),
+            preset_group: widgets.preset_group.clone(),
             provider_rows: Vec::new(),
             persona_rows: Vec::new(),
+            preset_rows: Vec::new(),
             toast_overlay: root.clone(),
             config_page: None,
+            preset_editor: None,
         };
 
         ComponentParts { model, widgets }
@@ -234,6 +261,64 @@ impl Component for SettingsPanel {
             SettingsPanelMsg::DefaultPersonaChanged(id) => {
                 let persona_id = if id.is_empty() { None } else { Some(id) };
                 let _ = sender.output(SettingsPanelOutput::SetGlobalDefaultPersona(persona_id));
+            }
+            SettingsPanelMsg::PresetsLoaded(presets) => {
+                self.presets = presets;
+                self.rebuild_preset_list(&sender);
+            }
+            SettingsPanelMsg::DefaultPresetChanged(id) => {
+                let preset_id = if id.is_empty() { None } else { Some(id) };
+                let _ = sender.output(SettingsPanelOutput::SetGlobalDefaultPreset(preset_id));
+            }
+            SettingsPanelMsg::CreatePreset => {
+                self.open_preset_editor(None, &sender);
+            }
+            SettingsPanelMsg::EditPreset(id) => {
+                let preset = self.presets.iter().find(|p| p.id == id).cloned();
+                if let Some(p) = preset {
+                    self.open_preset_editor(Some(p), &sender);
+                }
+            }
+            SettingsPanelMsg::DuplicatePreset(id) => {
+                let preset = self.presets.iter().find(|p| p.id == id).cloned();
+                if let Some(p) = preset {
+                    self.open_preset_editor_for_duplicate(p, &sender);
+                }
+            }
+            SettingsPanelMsg::DeletePreset(id) => {
+                let name = self.presets.iter().find(|p| p.id == id)
+                    .map(|p| p.name.as_str()).unwrap_or("this preset");
+
+                let dialog = adw::AlertDialog::new(
+                    Some("Delete Preset?"),
+                    Some(&format!(
+                        "This will permanently delete '{}'. Characters and conversations using this preset will fall back to the next available preset in the assignment hierarchy.",
+                        name
+                    )),
+                );
+                dialog.add_response("cancel", "Don't Delete");
+                dialog.add_response("delete", "Delete");
+                dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
+                dialog.set_close_response("cancel");
+
+                let sender_clone = sender.clone();
+                let id_clone = id.clone();
+                dialog.connect_response(None, move |_, response| {
+                    if response == "delete" {
+                        let _ = sender_clone.input_sender().send(SettingsPanelMsg::ConfirmDeletePreset(id_clone.clone()));
+                    }
+                });
+                dialog.present(None::<&gtk::Widget>);
+            }
+            SettingsPanelMsg::ConfirmDeletePreset(id) => {
+                let _ = sender.output(SettingsPanelOutput::DeletePreset(id));
+            }
+            SettingsPanelMsg::PresetSavedFromEditor(preset) => {
+                let _ = sender.output(SettingsPanelOutput::SavePreset(preset));
+                self.preset_editor = None;
+            }
+            SettingsPanelMsg::PresetEditorCancelled => {
+                self.preset_editor = None;
             }
         }
     }
@@ -456,6 +541,207 @@ impl SettingsPanel {
         let toast = adw::Toast::new(message);
         toast.set_timeout(3);
         self.toast_overlay.add_toast(toast);
+    }
+
+    /// Rebuild the preset list UI in the Presets PreferencesGroup.
+    fn rebuild_preset_list(&mut self, sender: &ComponentSender<Self>) {
+        let group = &self.preset_group;
+
+        // Remove previously-added rows
+        for row in &self.preset_rows {
+            group.remove(row);
+        }
+        self.preset_rows.clear();
+
+        // Add "Default Preset" dropdown row
+        let mut options: Vec<String> = vec!["(None)".to_string()];
+        let mut preset_ids: Vec<String> = vec![String::new()];
+        for preset in &self.presets {
+            let label = if preset.is_builtin {
+                format!("{} (Built-in)", preset.name)
+            } else {
+                preset.name.clone()
+            };
+            options.push(label);
+            preset_ids.push(preset.id.clone());
+        }
+
+        let model_list = gtk::StringList::new(&options.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let dropdown = gtk::DropDown::new(Some(model_list), None::<&gtk::Expression>);
+        dropdown.set_enable_search(true);
+        dropdown.set_selected(0);
+
+        let preset_ids_clone = preset_ids.clone();
+        let sender_clone = sender.clone();
+        dropdown.connect_selected_item_notify(move |dropdown| {
+            let idx = dropdown.selected() as usize;
+            let id = preset_ids_clone.get(idx).cloned().unwrap_or_default();
+            let _ = sender_clone.input_sender().send(SettingsPanelMsg::DefaultPresetChanged(id));
+        });
+
+        let subtitle_label = gtk::Label::new(Some("Used when a character has no preset assigned"));
+        subtitle_label.add_css_class("caption");
+        subtitle_label.add_css_class("dim-label");
+        subtitle_label.set_wrap(true);
+        subtitle_label.set_xalign(0.0);
+
+        let dropdown_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        dropdown_box.append(&dropdown);
+        dropdown_box.append(&subtitle_label);
+
+        let default_row = adw::PreferencesRow::builder()
+            .title("Default Preset")
+            .build();
+        default_row.set_child(Some(&dropdown_box));
+        group.add(&default_row);
+        self.preset_rows.push(default_row.upcast());
+
+        // Add preset list
+        if self.presets.is_empty() {
+            // Empty state
+            let status = adw::StatusPage::new();
+            status.set_title("No Custom Presets");
+            status.set_description(Some("Built-in presets (Creative, Balanced, Precise) are available by default. Create a custom preset to fine-tune generation parameters."));
+            let status_row = adw::PreferencesRow::builder().build();
+            status_row.set_child(Some(&status));
+            group.add(&status_row);
+            self.preset_rows.push(status_row.upcast());
+        } else {
+            let listbox = gtk::ListBox::new();
+            listbox.add_css_class("boxed-list");
+            listbox.set_selection_mode(gtk::SelectionMode::None);
+
+            for preset in &self.presets {
+                let row = adw::ActionRow::builder()
+                    .title(&preset.name)
+                    .build();
+
+                // Build subtitle: "Temp: {n} · Top-P: {n} · Max: {n}"
+                let max_str = if preset.max_tokens > 0 {
+                    preset.max_tokens.to_string()
+                } else {
+                    "Unlimited".to_string()
+                };
+                let subtitle = format!("Temp: {:.1} · Top-P: {:.2} · Max: {}", preset.temperature, preset.top_p, max_str);
+                row.set_subtitle(&subtitle);
+
+                if preset.is_builtin {
+                    // Lock icon
+                    let lock_icon = gtk::Image::from_icon_name("lock");
+                    lock_icon.add_css_class("dim-label");
+                    row.add_prefix(&lock_icon);
+
+                    // "Built-in" badge
+                    let badge = gtk::Label::new(Some("Built-in"));
+                    badge.add_css_class("caption");
+                    badge.add_css_class("accent");
+                    row.add_suffix(&badge);
+
+                    // Duplicate button
+                    let dup_btn = gtk::Button::with_label("Duplicate");
+                    dup_btn.add_css_class("flat");
+                    dup_btn.set_valign(gtk::Align::Center);
+                    let sender_clone = sender.clone();
+                    let id = preset.id.clone();
+                    dup_btn.connect_clicked(move |_| {
+                        let _ = sender_clone.input_sender().send(SettingsPanelMsg::DuplicatePreset(id.clone()));
+                    });
+                    row.add_suffix(&dup_btn);
+                } else {
+                    // Edit button
+                    let edit_btn = gtk::Button::with_label("Edit");
+                    edit_btn.add_css_class("flat");
+                    edit_btn.set_valign(gtk::Align::Center);
+                    let sender_clone = sender.clone();
+                    let id = preset.id.clone();
+                    edit_btn.connect_clicked(move |_| {
+                        let _ = sender_clone.input_sender().send(SettingsPanelMsg::EditPreset(id.clone()));
+                    });
+                    row.add_suffix(&edit_btn);
+
+                    // Delete button
+                    let del_btn = gtk::Button::with_label("Delete");
+                    del_btn.add_css_class("flat");
+                    del_btn.set_valign(gtk::Align::Center);
+                    let sender_clone = sender.clone();
+                    let id = preset.id.clone();
+                    del_btn.connect_clicked(move |_| {
+                        let _ = sender_clone.input_sender().send(SettingsPanelMsg::DeletePreset(id.clone()));
+                    });
+                    row.add_suffix(&del_btn);
+                }
+
+                listbox.append(&row);
+            }
+
+            let list_row = adw::PreferencesRow::builder().build();
+            list_row.set_child(Some(&listbox));
+            group.add(&list_row);
+            self.preset_rows.push(list_row.upcast());
+        }
+
+        // "Create Preset" button
+        let create_btn = gtk::Button::with_label("Create Preset");
+        create_btn.add_css_class("flat");
+        create_btn.set_halign(gtk::Align::Start);
+        create_btn.set_margin_top(8);
+        let sender_clone = sender.clone();
+        create_btn.connect_clicked(move |_| {
+            let _ = sender_clone.input_sender().send(SettingsPanelMsg::CreatePreset);
+        });
+        let create_row = adw::PreferencesRow::builder().build();
+        create_row.set_child(Some(&create_btn));
+        group.add(&create_row);
+        self.preset_rows.push(create_row.upcast());
+    }
+
+    /// Open the preset editor for creating or editing a preset.
+    fn open_preset_editor(
+        &mut self,
+        existing: Option<GenerationPreset>,
+        sender: &ComponentSender<Self>,
+    ) {
+        let init = match existing {
+            Some(p) => crate::ui::preset_editor::PresetEditorInit::Edit(p),
+            None => crate::ui::preset_editor::PresetEditorInit::New,
+        };
+
+        let editor = crate::ui::preset_editor::PresetEditorModel::builder()
+            .launch(init)
+            .forward(sender.input_sender(), |output| match output {
+                crate::ui::preset_editor::PresetEditorOutput::Saved(preset) => {
+                    SettingsPanelMsg::PresetSavedFromEditor(preset)
+                }
+                crate::ui::preset_editor::PresetEditorOutput::Cancelled => {
+                    SettingsPanelMsg::PresetEditorCancelled
+                }
+            });
+
+        editor.widget().present();
+        self.preset_editor = Some(editor);
+    }
+
+    /// Open the preset editor for duplicating a built-in preset.
+    fn open_preset_editor_for_duplicate(
+        &mut self,
+        preset: GenerationPreset,
+        sender: &ComponentSender<Self>,
+    ) {
+        let init = crate::ui::preset_editor::PresetEditorInit::Duplicate(preset);
+
+        let editor = crate::ui::preset_editor::PresetEditorModel::builder()
+            .launch(init)
+            .forward(sender.input_sender(), |output| match output {
+                crate::ui::preset_editor::PresetEditorOutput::Saved(preset) => {
+                    SettingsPanelMsg::PresetSavedFromEditor(preset)
+                }
+                crate::ui::preset_editor::PresetEditorOutput::Cancelled => {
+                    SettingsPanelMsg::PresetEditorCancelled
+                }
+            });
+
+        editor.widget().present();
+        self.preset_editor = Some(editor);
     }
 }
 

@@ -17,14 +17,15 @@ pub fn start_conversation(
 
     // Insert the conversation
     conn.prepare_cached(
-        "INSERT INTO conversations (id, character_id, provider_id, creator_persona_id, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
+        "INSERT INTO conversations (id, character_id, provider_id, creator_persona_id, generation_preset_id, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
     )?
     .execute(params![
         &conversation.id,
         &conversation.character_id,
         &conversation.provider_id,
         &conversation.creator_persona_id,
+        &conversation.generation_preset_id,
         conversation.created_at.to_string(),
         conversation.updated_at.to_string(),
     ])?;
@@ -46,7 +47,7 @@ pub fn start_conversation(
 /// Loads all conversations, ordered by updated_at descending (most recent first).
 pub fn load_conversations(conn: &Connection) -> Result<Vec<Conversation>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, character_id, provider_id, creator_persona_id, created_at, updated_at
+        "SELECT id, character_id, provider_id, creator_persona_id, generation_preset_id, created_at, updated_at
          FROM conversations ORDER BY updated_at DESC"
     )?;
     let conversations = stmt.query_map([], |row| row_to_conversation(row))?;
@@ -60,7 +61,7 @@ pub fn load_conversations(conn: &Connection) -> Result<Vec<Conversation>> {
 /// Loads a single conversation by ID.
 pub fn load_conversation(conn: &Connection, id: &str) -> Result<Option<Conversation>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, character_id, provider_id, creator_persona_id, created_at, updated_at
+        "SELECT id, character_id, provider_id, creator_persona_id, generation_preset_id, created_at, updated_at
          FROM conversations WHERE id = ?1"
     )?;
     let mut conversations = stmt.query_map(params![id], |row| row_to_conversation(row))?;
@@ -202,6 +203,19 @@ pub fn update_conversation_persona(
         "UPDATE conversations SET creator_persona_id = ?1 WHERE id = ?2"
     )?
     .execute(params![persona_id, conversation_id])?;
+    Ok(())
+}
+
+/// Updates the per-conversation generation preset override per D-03.
+pub fn update_conversation_preset(
+    conn: &Connection,
+    conversation_id: &str,
+    preset_id: Option<&str>,
+) -> Result<()> {
+    conn.prepare_cached(
+        "UPDATE conversations SET generation_preset_id = ?1 WHERE id = ?2"
+    )?
+    .execute(params![preset_id, conversation_id])?;
     Ok(())
 }
 
