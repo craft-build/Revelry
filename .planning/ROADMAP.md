@@ -123,12 +123,12 @@ Plans:
   3. User can define regex find-and-replace scripts per character that modify AI responses before display, with ReDoS vulnerability validation
   4. User can test regex scripts on sample text and see before/after preview
   5. User can export all data as SQL dump or ZIP archive, and import from a previously exported backup
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
-- [ ] 06-03: TBD
+- [ ] 06-01-PLAN.md — Generation preset and regex script data layer, DB schema M9, CRUD, built-in seeding, regex validation service
+- [ ] 06-02-PLAN.md — Preset editor, Settings preset page, assignment hierarchy UI, AiService generation parameter injection
+- [ ] 06-03-PLAN.md — Regex editor with test panel, regex execution pipeline, backup/restore SQL and ZIP
 
 **UI hint**: yes
 
