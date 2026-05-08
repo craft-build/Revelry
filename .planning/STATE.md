@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md (Phase 5 COMPLETE)
-last_updated: "2026-05-08T01:16:00Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-05-08T05:55:22Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_plans: 15
+  completed_plans: 14
+  percent: 93
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Users can roleplay with AI characters through any AI provider they choose — cloud or local — with complete creative freedom and complete data privacy.
-**Current focus:** Phase 05 — context-engineering-lorebook COMPLETE. Ready for Phase 6.
+**Current focus:** Phase 06 — generation-controls-regex-data IN PROGRESS.
 
 ## Current Position
 
-Phase: 05 (context-engineering-lorebook) — COMPLETE
-Plan: 3 plans (05-01, 05-02, 05-03) — ALL COMPLETE
-Status: Phase 5 complete, ready for Phase 6
+Phase: 06 (generation-controls-regex-data) — IN PROGRESS
+Plan: 3 plans (06-01, 06-02, 06-03) — 2/3 complete
+Status: Executing Wave 2
 Last activity: 2026-05-08
 
-Progress: [██████████] 100%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 12
+- Total plans completed: 14
 - Average duration: 10 min
 - Total execution time: 2.25 hours
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100%
 | Phase 02 | 3 | 82 min | 27 min |
 | Phase 04 | 3 | 14 min | 5 min |
 | Phase 05 | 3 | 14 min | 5 min |
+| Phase 06 | 2 | 10 min | 5 min |
 
 **Recent Trend:**
 
@@ -56,10 +57,12 @@ Progress: [██████████] 100%
 
 | Phase 05 P03 | 5 | 2 tasks | 7 files |
 
+| Phase 06 P02 | 5 | 2 tasks | 13 files |
+
 ## Session Continuity
 
-Last session: 2026-05-08T01:16:00Z
-Stopped at: Completed 05-03-PLAN.md (Phase 5 COMPLETE)
+Last session: 2026-05-08T05:55:22Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
 
 ## Accumulated Context
@@ -92,6 +95,10 @@ Recent decisions affecting current work:
 - (05): Recursive activation with iterative max depth counter (default 2)
 - (05): Soft per-entry token budgets with overflow
 - (05): Thin color-coded progress bar in input bar for context utilization
+- (06): GenerationParams uses Option fields — None = no override, not zero
+- (06): temperature/max_tokens via AgentBuilder natively; top_p/freq_penalty/pres_penalty/stop via additional_params JSON
+- (06): Provider-specific param filtering: Anthropic/Gemini/Cohere skip frequency_penalty/presence_penalty
+- (06): pending_app_setting field pattern for routing AppSettingLoaded to correct model field
 
 ### Pending Todos
 

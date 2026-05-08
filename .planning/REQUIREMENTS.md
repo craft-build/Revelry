@@ -60,10 +60,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Generation Controls
 
-- [ ] **GENR-01**: User can create, edit, and delete generation parameter presets (name, system prompt template, temperature, top_p, max_tokens, frequency_penalty, presence_penalty, stop sequences)
-- [ ] **GENR-02**: User can assign a generation preset at the character level (used as default for all conversations with that character)
-- [ ] **GENR-03**: User can override the generation preset at the conversation level
-- [ ] **GENR-04**: Built-in starter presets (Creative, Balanced, Precise) are available for new users
+- [x] **GENR-01**: User can create, edit, and delete generation parameter presets (name, system prompt template, temperature, top_p, max_tokens, frequency_penalty, presence_penalty, stop sequences)
+
+- [x] **GENR-02**: User can assign a generation preset at the character level (used as default for all conversations with that character)
+
+- [x] **GENR-03**: User can override the generation preset at the conversation level
+
+- [x] **GENR-04**: Built-in starter presets (Creative, Balanced, Precise) are available for new users
 
 ### Regex Scripting
 
@@ -199,10 +202,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CCTX-05 | Phase 5 | Complete (05-02) |
 | CCTX-06 | Phase 5 | Complete (05-02) |
 | CCTX-07 | Phase 5 | Complete (05-02) |
-| GENR-01 | Phase 6 | Pending |
-| GENR-02 | Phase 6 | Pending |
-| GENR-03 | Phase 6 | Pending |
-| GENR-04 | Phase 6 | Pending |
+| GENR-01 | Phase 6 | Complete |
+| GENR-02 | Phase 6 | Complete |
+| GENR-03 | Phase 6 | Complete |
+| GENR-04 | Phase 6 | Complete |
 | RGXO-01 | Phase 6 | Pending |
 | RGXO-02 | Phase 6 | Pending |
 | RGXO-03 | Phase 6 | Pending |

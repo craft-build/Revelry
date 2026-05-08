@@ -126,8 +126,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Generation preset and regex script data layer, DB schema M9, CRUD, built-in seeding, regex validation service
-- [ ] 06-02-PLAN.md — Preset editor, Settings preset page, assignment hierarchy UI, AiService generation parameter injection
+- [x] 06-01-PLAN.md — Generation preset and regex script data layer, DB schema M9, CRUD, built-in seeding, regex validation service
+- [x] 06-02-PLAN.md — Preset editor, Settings preset page, assignment hierarchy UI, AiService generation parameter injection
 - [ ] 06-03-PLAN.md — Regex editor with test panel, regex execution pipeline, backup/restore SQL and ZIP
 
 **UI hint**: yes
