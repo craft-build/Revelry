@@ -1,7 +1,7 @@
 ---
 phase: 6
 slug: generation-controls-regex-data
-status: draft
+status: approved
 adwaita: true
 icon_library: relm4-icons
 created: 2026-05-08
@@ -975,11 +975,11 @@ Per the 06-CONTEXT.md deferred items, preset sharing/export between users and re
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: FLAG (single-word confirmation buttons — standard GTK pattern, non-blocking)
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: FLAG (60/30/10 inherited from Phase 1, not re-declared — non-blocking)
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-08
