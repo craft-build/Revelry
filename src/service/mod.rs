@@ -4,5 +4,6 @@ pub mod lorebook;
 pub mod markdown;
 pub mod prompt;
 pub mod provider_test;
+pub mod regex;
 pub mod template;
 pub mod token_count;
