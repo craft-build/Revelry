@@ -4,7 +4,7 @@ use relm4::{
     adw, gtk, ComponentParts, ComponentSender, WorkerController,
 };
 
-use crate::db::{DbInput, DbOutput, DbService};
+use crate::db::{BackupFormat, DbInput, DbOutput, DbService};
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
 use crate::domain::generation::GenerationPreset;
@@ -649,6 +649,29 @@ impl SimpleComponent for AppModel {
                     }
                     self.show_toast("Regex script deleted");
                 }
+                DbOutput::SQLExported => {
+                    self.show_toast("SQL backup exported");
+                }
+                DbOutput::ZIPExported => {
+                    self.show_toast("ZIP backup exported");
+                }
+                DbOutput::BackupImported => {
+                    // Reload all data after import
+                    self.db_worker.sender().send(DbInput::LoadProviders).unwrap();
+                    self.db_worker.sender().send(DbInput::LoadCharacters).unwrap();
+                    self.db_worker.sender().send(DbInput::LoadConversations).unwrap();
+                    self.db_worker.sender().send(DbInput::LoadPersonas).unwrap();
+                    self.db_worker.sender().send(DbInput::LoadPresets).unwrap();
+                    // Close any open editors
+                    self.character_editor = None;
+                    self.persona_editor = None;
+                    self.lorebook_editor = None;
+                    self.preset_editor = None;
+                    self.show_toast("Data restored successfully");
+                }
+                DbOutput::BackupImportFailed(e) => {
+                    self.show_toast(&format!("Import failed: {}", e));
+                }
             },
             AppMsg::SettingsOutput(output) => match output {
                 SettingsPanelOutput::SaveProvider { config, api_key } => {
@@ -708,6 +731,26 @@ impl SimpleComponent for AppModel {
                 }
                 SettingsPanelOutput::DeletePreset(id) => {
                     self.db_worker.sender().send(DbInput::DeletePreset(id)).unwrap();
+                }
+                SettingsPanelOutput::ExportSQL(path) => {
+                    self.db_worker.sender().send(DbInput::ExportSQL { path: std::path::PathBuf::from(path) }).unwrap();
+                }
+                SettingsPanelOutput::ExportZIP(path) => {
+                    let avatar_dir = dirs::data_dir()
+                        .expect("data dir")
+                        .join("revelry")
+                        .join("avatars");
+                    self.db_worker.sender().send(DbInput::ExportZIP {
+                        path: std::path::PathBuf::from(path),
+                        avatar_dir,
+                    }).unwrap();
+                }
+                SettingsPanelOutput::ImportBackup { path, format } => {
+                    let backup_format = if format == "zip" { BackupFormat::ZIP } else { BackupFormat::SQL };
+                    self.db_worker.sender().send(DbInput::ImportBackup {
+                        path: std::path::PathBuf::from(path),
+                        format: backup_format,
+                    }).unwrap();
                 }
             },
             AppMsg::StartConversationWithProvider { character_id, provider_id } => {

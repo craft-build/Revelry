@@ -27,6 +27,7 @@ pub struct SettingsPanel {
     providers_group: adw::PreferencesGroup,
     persona_group: adw::PreferencesGroup,
     preset_group: adw::PreferencesGroup,
+    data_group: adw::PreferencesGroup,
     toast_overlay: adw::ToastOverlay,
     // Track rows added to providers_group so we can remove them by reference
     // (iterating GTK widget tree is wrong — see GNOME discourse #13538)
@@ -65,6 +66,11 @@ pub enum SettingsPanelMsg {
     ConfirmDeletePreset(String),
     PresetSavedFromEditor(GenerationPreset),
     PresetEditorCancelled,
+    // Data management
+    ExportSQL,
+    ExportZIP,
+    ImportBackup,
+    ConfirmImportBackup { path: String, format: String },
 }
 
 /// Command output from background threads.
@@ -86,6 +92,9 @@ pub enum SettingsPanelOutput {
     SetGlobalDefaultPreset(Option<String>),
     SavePreset(GenerationPreset),
     DeletePreset(String),
+    ExportSQL(String),     // path
+    ExportZIP(String),    // path
+    ImportBackup { path: String, format: String },
 }
 
 #[relm4::component(pub)]
@@ -127,6 +136,72 @@ impl Component for SettingsPanel {
                         set_title: "Generation Presets",
                         set_description: Some("Presets control how the AI generates responses. Assign a preset at the character or conversation level to override this default."),
                     },
+
+                    #[name(data_group)]
+                    adw::PreferencesGroup {
+                        set_title: "Data Management",
+                        set_description: Some("Export and import all application data including characters, conversations, personas, presets, and settings."),
+
+                        gtk::Label {
+                            set_label: "Create a backup of all application data.",
+                            add_css_class: "caption",
+                            set_xalign: 0.0,
+                            set_margin_bottom: 8,
+                        },
+
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_spacing: 12,
+
+                            gtk::Button {
+                                set_label: "Export as SQL",
+                                add_css_class: "flat",
+                                connect_clicked => SettingsPanelMsg::ExportSQL,
+                            },
+
+                            gtk::Button {
+                                set_label: "Export as ZIP",
+                                add_css_class: "flat",
+                                connect_clicked => SettingsPanelMsg::ExportZIP,
+                            },
+                        },
+
+                        gtk::Label {
+                            set_label: "SQL dump: portable text file that recreates all tables. ZIP archive: complete backup with database, avatars, and settings.",
+                            add_css_class: "caption",
+                            add_css_class: "dim-label",
+                            set_wrap: true,
+                            set_xalign: 0.0,
+                            set_margin_top: 4,
+                        },
+
+                        gtk::Separator {
+                            set_margin_top: 12,
+                            set_margin_bottom: 12,
+                        },
+
+                        gtk::Label {
+                            set_label: "Restore data from a previously exported backup.",
+                            add_css_class: "caption",
+                            set_xalign: 0.0,
+                            set_margin_bottom: 8,
+                        },
+
+                        gtk::Button {
+                            set_label: "Import Backup",
+                            add_css_class: "flat",
+                            connect_clicked => SettingsPanelMsg::ImportBackup,
+                        },
+
+                        gtk::Label {
+                            set_label: "⚠ Import replaces all existing data. This cannot be undone.",
+                            add_css_class: "caption",
+                            add_css_class: "error",
+                            set_wrap: true,
+                            set_xalign: 0.0,
+                            set_margin_top: 4,
+                        },
+                    },
                 },
             },
         }
@@ -147,6 +222,7 @@ impl Component for SettingsPanel {
             providers_group: widgets.providers_group.clone(),
             persona_group: widgets.persona_group.clone(),
             preset_group: widgets.preset_group.clone(),
+            data_group: widgets.data_group.clone(),
             provider_rows: Vec::new(),
             persona_rows: Vec::new(),
             preset_rows: Vec::new(),
@@ -319,6 +395,149 @@ impl Component for SettingsPanel {
             }
             SettingsPanelMsg::PresetEditorCancelled => {
                 self.preset_editor = None;
+            }
+            SettingsPanelMsg::ExportSQL => {
+                let filter = gtk::FileFilter::new();
+                filter.set_name(Some("SQL Files"));
+                filter.add_pattern("*.sql");
+
+                let filters = gtk::gio::ListStore::new::<gtk::FileFilter>();
+                filters.append(&filter);
+
+                let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
+                let dialog = gtk::FileDialog::builder()
+                    .title("Export SQL Backup")
+                    .modal(true)
+                    .accept_label("Export")
+                    .initial_name(format!("revelry_backup_{}.sql", timestamp))
+                    .filters(&filters)
+                    .default_filter(&filter)
+                    .build();
+
+                let sender_clone = sender.clone();
+                let parent = self.toast_overlay.root().and_downcast::<gtk::Window>();
+                dialog.save(
+                    parent.as_ref(),
+                    gtk::gio::Cancellable::NONE,
+                    move |result| {
+                        if let Ok(file) = result {
+                            if let Some(path) = file.path() {
+                                let _ = sender_clone.output(SettingsPanelOutput::ExportSQL(
+                                    path.to_string_lossy().to_string(),
+                                ));
+                            }
+                        }
+                    },
+                );
+            }
+            SettingsPanelMsg::ExportZIP => {
+                let filter = gtk::FileFilter::new();
+                filter.set_name(Some("ZIP Archives"));
+                filter.add_pattern("*.zip");
+
+                let filters = gtk::gio::ListStore::new::<gtk::FileFilter>();
+                filters.append(&filter);
+
+                let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
+                let dialog = gtk::FileDialog::builder()
+                    .title("Export ZIP Backup")
+                    .modal(true)
+                    .accept_label("Export")
+                    .initial_name(format!("revelry_backup_{}.zip", timestamp))
+                    .filters(&filters)
+                    .default_filter(&filter)
+                    .build();
+
+                let sender_clone = sender.clone();
+                let parent = self.toast_overlay.root().and_downcast::<gtk::Window>();
+                dialog.save(
+                    parent.as_ref(),
+                    gtk::gio::Cancellable::NONE,
+                    move |result| {
+                        if let Ok(file) = result {
+                            if let Some(path) = file.path() {
+                                let _ = sender_clone.output(SettingsPanelOutput::ExportZIP(
+                                    path.to_string_lossy().to_string(),
+                                ));
+                            }
+                        }
+                    },
+                );
+            }
+            SettingsPanelMsg::ImportBackup => {
+                let sql_filter = gtk::FileFilter::new();
+                sql_filter.set_name(Some("SQL Files"));
+                sql_filter.add_pattern("*.sql");
+
+                let zip_filter = gtk::FileFilter::new();
+                zip_filter.set_name(Some("ZIP Archives"));
+                zip_filter.add_pattern("*.zip");
+
+                let all_filter = gtk::FileFilter::new();
+                all_filter.set_name(Some("Backup Files"));
+                all_filter.add_pattern("*.sql");
+                all_filter.add_pattern("*.zip");
+
+                let filters = gtk::gio::ListStore::new::<gtk::FileFilter>();
+                filters.append(&all_filter);
+                filters.append(&sql_filter);
+                filters.append(&zip_filter);
+
+                let dialog = gtk::FileDialog::builder()
+                    .title("Import Backup")
+                    .modal(true)
+                    .accept_label("Select")
+                    .filters(&filters)
+                    .default_filter(&all_filter)
+                    .build();
+
+                let sender_clone = sender.clone();
+                let parent = self.toast_overlay.root().and_downcast::<gtk::Window>();
+                dialog.open(
+                    parent.as_ref(),
+                    gtk::gio::Cancellable::NONE,
+                    move |result| {
+                        if let Ok(file) = result {
+                            if let Some(path) = file.path() {
+                                let path_str = path.to_string_lossy().to_string();
+                                let format = if path_str.ends_with(".zip") {
+                                    "zip".to_string()
+                                } else {
+                                    "sql".to_string()
+                                };
+                                let _ = sender_clone.input_sender().send(
+                                    SettingsPanelMsg::ConfirmImportBackup {
+                                        path: path_str,
+                                        format,
+                                    },
+                                );
+                            }
+                        }
+                    },
+                );
+            }
+            SettingsPanelMsg::ConfirmImportBackup { path, format } => {
+                let dialog = adw::AlertDialog::new(
+                    Some("Replace All Data?"),
+                    Some("Importing this backup will replace ALL existing data — characters, conversations, personas, presets, and settings. This cannot be undone."),
+                );
+                dialog.add_response("cancel", "Cancel");
+                dialog.add_response("import", "Import");
+                dialog.set_response_appearance("import", adw::ResponseAppearance::Destructive);
+                dialog.set_close_response("cancel");
+
+                let sender_clone = sender.clone();
+                let path_clone = path.clone();
+                let format_clone = format.clone();
+                dialog.connect_response(None, move |_, resp| {
+                    if resp == "import" {
+                        let _ = sender_clone.output(SettingsPanelOutput::ImportBackup {
+                            path: path_clone.clone(),
+                            format: format_clone.clone(),
+                        });
+                    }
+                });
+                dialog.present(None::<&gtk::Widget>);
             }
         }
     }

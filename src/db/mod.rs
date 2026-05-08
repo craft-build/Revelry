@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod characters;
 pub mod conversations;
 pub mod generation;
@@ -65,6 +66,10 @@ pub enum DbInput {
     LoadRegexScripts(String),
     SaveRegexScript(RegexScript),
     DeleteRegexScript(String),
+    // Backup/restore operations
+    ExportSQL { path: PathBuf },
+    ExportZIP { path: PathBuf, avatar_dir: PathBuf },
+    ImportBackup { path: PathBuf, format: BackupFormat },
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -111,7 +116,19 @@ pub enum DbOutput {
     RegexScriptsLoaded(Vec<RegexScript>),
     RegexScriptSaved(RegexScript),
     RegexScriptDeleted(String),
+    // Backup/restore outputs
+    SQLExported,
+    ZIPExported,
+    BackupImported,
+    BackupImportFailed(String),
     Error(String),
+}
+
+/// Backup format for import operations.
+#[derive(Debug, Clone)]
+pub enum BackupFormat {
+    SQL,
+    ZIP,
 }
 
 /// Database service Worker running on a dedicated background thread.
@@ -119,6 +136,7 @@ pub enum DbOutput {
 /// This prevents main-loop blocking per PITFALLS.md Pitfall 3.
 pub struct DbService {
     conn: Connection, // !Send — stays on worker thread
+    db_path: PathBuf,  // Stored for backup operations
 }
 
 impl Worker for DbService {
@@ -135,7 +153,7 @@ impl Worker for DbService {
         generation::seed_builtin_presets(&conn)
             .unwrap_or_else(|e| panic!("Failed to seed built-in presets: {}", e));
         tracing::info!("Database initialized at {:?}", db_path);
-        DbService { conn }
+        DbService { conn, db_path: db_path.clone() }
     }
 
     fn update(&mut self, msg: DbInput, sender: ComponentSender<Self>) {
@@ -348,6 +366,51 @@ impl Worker for DbService {
             DbInput::DeleteRegexScript(id) => {
                 regex_scripts::delete_regex_script(&self.conn, &id)
                     .map(|_| DbOutput::RegexScriptDeleted(id))
+            }
+            DbInput::ExportSQL { path } => {
+                backup::export_sql_dump(&self.conn, &path)
+                    .map(|_| DbOutput::SQLExported)
+            }
+            DbInput::ExportZIP { path, avatar_dir } => {
+                backup::export_zip_archive(&self.db_path, &avatar_dir, &self.conn, &path)
+                    .map(|_| DbOutput::ZIPExported)
+            }
+            DbInput::ImportBackup { path, format } => {
+                let avatar_dir = dirs::data_dir()
+                    .expect("Could not determine data directory")
+                    .join("revelry")
+                    .join("avatars");
+                let result = match format {
+                    BackupFormat::SQL => backup::import_sql_dump(&self.db_path, &path),
+                    BackupFormat::ZIP => backup::import_zip_archive(&self.db_path, &avatar_dir, &path),
+                };
+                match result {
+                    Ok(()) => {
+                        // Reopen the connection after import
+                        if let Ok(new_conn) = Connection::open(&self.db_path) {
+                            self.conn = new_conn;
+                            let _ = self.conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;");
+                        }
+                        // Re-seed built-in presets (idempotent)
+                        let _ = generation::seed_builtin_presets(&self.conn);
+                        Ok(DbOutput::BackupImported)
+                    }
+                    Err(e) => {
+                        // Reopen connection even on failure
+                        if !self.db_path.exists() {
+                            if let Ok(mut new_conn) = Connection::open(&self.db_path) {
+                                let _ = migrations::run_migrations(&mut new_conn);
+                                let _ = new_conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;");
+                                self.conn = new_conn;
+                            }
+                        } else if let Ok(new_conn) = Connection::open(&self.db_path) {
+                            self.conn = new_conn;
+                            let _ = self.conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;");
+                        }
+                        // Return the error as a special output instead of failing
+                        Ok(DbOutput::BackupImportFailed(e.to_string()))
+                    }
+                }
             }
         };
 
