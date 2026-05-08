@@ -545,14 +545,15 @@ impl SimpleComponent for AppModel {
                 DbOutput::ConversationPersonaUpdated(_) => {
                     // Conversation persona updated in DB — no further action needed
                 }
-                DbOutput::LorebookEntriesLoaded(_) => {
-                    // Lorebook entries loaded — will be wired to UI in a later phase
+                DbOutput::LorebookEntriesLoaded(entries) => {
+                    // Forward lorebook entries to ChatPanel for context engineering
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::LorebookEntriesLoaded(entries));
                 }
                 DbOutput::LorebookEntrySaved(_) => {
-                    // Lorebook entry saved — will be wired to UI in a later phase
+                    // Lorebook entry saved — UI refresh handled by reloading entries
                 }
                 DbOutput::LorebookEntryDeleted(_) => {
-                    // Lorebook entry deleted — will be wired to UI in a later phase
+                    // Lorebook entry deleted — UI refresh handled by reloading entries
                 }
             },
             AppMsg::SettingsOutput(output) => match output {
@@ -979,6 +980,10 @@ impl SimpleComponent for AppModel {
                         conversation_id,
                         persona_id,
                     }).unwrap();
+                }
+                ChatPanelOutput::LoadLorebookEntries(character_id) => {
+                    // Load lorebook entries for the active character per D-08
+                    self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
                 }
             },
             AppMsg::EditorOutput(output) => match output {

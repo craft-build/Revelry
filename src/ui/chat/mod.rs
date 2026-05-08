@@ -9,10 +9,12 @@ use std::rc::Rc;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
+use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
 use crate::service::ai::{AiService, StreamChunk};
 use crate::service::prompt::PromptEngine;
+use crate::service::token_count::TokenCountService;
 
 use self::input_bar::{InputBar, InputBarMsg, InputBarOutput};
 use self::message_row::{MessageRow, MessageRowInit, MessageRowAction};
@@ -35,6 +37,8 @@ pub struct ChatPanel {
     providers: Vec<ProviderConfig>,
     editing_message_id: Option<String>,
     pending_user_text: Option<String>,
+    lorebook_entries: Vec<LorebookEntry>,
+    context_utilization: f64,
     
     stream_cancel: Option<tokio::sync::watch::Sender<bool>>,
     
@@ -84,6 +88,9 @@ pub enum ChatPanelMsg {
     SetActivePersona(Option<Persona>),
     PersonasLoaded(Vec<Persona>),
     ChangeConversationPersona(String), // persona ID, empty string = none
+    // Context engineering
+    UpdateContextUtilization(f64), // context utilization ratio (0.0-1.0)
+    LorebookEntriesLoaded(Vec<LorebookEntry>),
 }
 
 /// Command output from background operations (streaming, API calls).
@@ -113,6 +120,8 @@ pub enum ChatPanelOutput {
     SwitchBranch(Option<String>),
     // Persona operations
     SetConversationPersona { conversation_id: String, persona_id: Option<String> },
+    // Context engineering
+    LoadLorebookEntries(String), // character_id — request lorebook entries from DB
 }
 
 #[relm4::component(pub)]
@@ -226,6 +235,8 @@ impl Component for ChatPanel {
             providers: Vec::new(),
             editing_message_id: None,
             pending_user_text: None,
+            lorebook_entries: Vec::new(),
+            context_utilization: 0.0,
             stream_cancel: None,
             messages_container,
             input_bar,
@@ -306,6 +317,9 @@ impl Component for ChatPanel {
                 // Show persona button since we have a conversation
                 self.persona_button.set_visible(true);
 
+                // Request lorebook entries for this character per D-08
+                let _ = sender.output(ChatPanelOutput::LoadLorebookEntries(character.id.clone()));
+
                 // Rebuild message list
                 self.rebuild_message_list(&sender);
             }
@@ -314,8 +328,16 @@ impl Component for ChatPanel {
                 self.active_character = None;
                 self.active_persona = None;
                 self.messages.clear();
+                self.lorebook_entries.clear();
+                self.context_utilization = 0.0;
                 self.persona_button.set_visible(false);
                 self.update_persona_display();
+                let _ = self.input_bar.sender().send(InputBarMsg::UpdateContextUtilization {
+                    pct: 0.0,
+                    truncated: 0,
+                    tokens_used: 0,
+                    context_window: 0,
+                });
                 self.rebuild_message_list(&sender);
             }
             ChatPanelMsg::CharactersLoaded(characters) => {
@@ -405,10 +427,30 @@ impl Component for ChatPanel {
                     return;
                 };
 
-                // Assemble prompt with persona injection and template resolution.
-                // PromptEngine injects the persona block between the character system prompt
-                // and conversation history, then resolves {{user}}, {{char}}, {{persona.*}}.
-                let assembled = PromptEngine::assemble(character, self.active_persona.as_ref(), &self.messages);
+                // Assemble prompt with budget-aware context engineering.
+                // PromptEngine injects persona block, lorebook entries, and applies
+                // compression/truncation based on context window budget.
+                let token_service = TokenCountService::new();
+                let context_window = token_service.resolve_context_window_size(provider);
+                let assembled = PromptEngine::assemble_with_budget(
+                    character,
+                    self.active_persona.as_ref(),
+                    &self.messages,
+                    &self.lorebook_entries,
+                    &token_service,
+                    context_window,
+                );
+
+                // Update context utilization indicator in InputBar per D-14, D-15, D-16
+                let tokens_used = (assembled.context_utilization * context_window as f64) as usize;
+                let _ = self.input_bar.sender().send(InputBarMsg::UpdateContextUtilization {
+                    pct: assembled.context_utilization,
+                    truncated: assembled.truncated_messages,
+                    tokens_used,
+                    context_window: context_window as usize,
+                });
+                self.context_utilization = assembled.context_utilization;
+
                 let system_prompt = assembled.preamble;
                 let messages = self.messages.clone();
                 let provider_cfg = provider.clone();
@@ -625,6 +667,12 @@ impl Component for ChatPanel {
 
                 // Rebuild message list to update user persona labels
                 self.rebuild_message_list(&sender);
+            }
+            ChatPanelMsg::UpdateContextUtilization(pct) => {
+                self.context_utilization = pct;
+            }
+            ChatPanelMsg::LorebookEntriesLoaded(entries) => {
+                self.lorebook_entries = entries;
             }
         }
     }
