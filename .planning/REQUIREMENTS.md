@@ -50,13 +50,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Context Engineering
 
-- [ ] **CCTX-01**: Prompt assembly follows a prioritized layer system: system prompt + character card (sticky) → lorebook entries (activated) → user persona block (semi-sticky) → conversation history (volatile, oldest truncated first)
-- [ ] **CCTX-02**: Token counting uses tiktoken-rs BPE tokenization to track context window utilization
+- [x] **CCTX-01**: Prompt assembly follows a prioritized layer system: system prompt + character card (sticky) → lorebook entries (activated) → user persona block (semi-sticky) → conversation history (volatile, oldest truncated first)
+- [x] **CCTX-02**: Token counting uses tiktoken-rs BPE tokenization to track context window utilization
 - [ ] **CCTX-03**: User can see a context utilization indicator showing how much of the context window is consumed
 - [ ] **CCTX-04**: User can manage lorebook entries per character with key terms, secondary terms, content, insertion position, depth, and activation state
-- [ ] **CCTX-05**: Lorebook entries activate when keywords appear in the recent conversation and are injected into the AI context
-- [ ] **CCTX-06**: Lorebook supports recursive activation where activated entries can trigger other entries up to a configurable depth limit
-- [ ] **CCTX-07**: Lorebook entries have token budgeting to prevent world info from consuming the entire context
+- [x] **CCTX-05**: Lorebook entries activate when keywords appear in the recent conversation and are injected into the AI context
+- [x] **CCTX-06**: Lorebook supports recursive activation where activated entries can trigger other entries up to a configurable depth limit
+- [x] **CCTX-07**: Lorebook entries have token budgeting to prevent world info from consuming the entire context
 
 ### Generation Controls
 
@@ -192,13 +192,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERS-05 | Phase 4 | Complete (04-02) |
 | PERS-06 | Phase 4 | Pending |
 | CHAR-08 | Phase 4 | Pending |
-| CCTX-01 | Phase 5 | Pending |
-| CCTX-02 | Phase 5 | Pending |
+| CCTX-01 | Phase 5 | Complete (05-02) |
+| CCTX-02 | Phase 5 | Complete (05-01) |
 | CCTX-03 | Phase 5 | Pending |
 | CCTX-04 | Phase 5 | Pending |
-| CCTX-05 | Phase 5 | Pending |
-| CCTX-06 | Phase 5 | Pending |
-| CCTX-07 | Phase 5 | Pending |
+| CCTX-05 | Phase 5 | Complete (05-02) |
+| CCTX-06 | Phase 5 | Complete (05-02) |
+| CCTX-07 | Phase 5 | Complete (05-02) |
 | GENR-01 | Phase 6 | Pending |
 | GENR-02 | Phase 6 | Pending |
 | GENR-03 | Phase 6 | Pending |
