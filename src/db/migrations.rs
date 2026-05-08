@@ -135,6 +135,32 @@ pub fn get_migrations() -> Migrations<'static> {
             ALTER TABLE characters ADD COLUMN default_persona_id TEXT;"
         )
         .down("ALTER TABLE characters DROP COLUMN default_persona_id; DROP TABLE personas;"),
+        // Migration 8: Add context_window_size to providers, create lorebook_entries table,
+        // add lorebook_scan_depth and lorebook_recursive_depth to characters
+        M::up(
+            "ALTER TABLE providers ADD COLUMN context_window_size INTEGER;
+             
+             CREATE TABLE lorebook_entries (
+                 id TEXT PRIMARY KEY,
+                 character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+                 name TEXT NOT NULL DEFAULT '',
+                 keywords TEXT NOT NULL DEFAULT '[]',
+                 secondary_terms TEXT NOT NULL DEFAULT '[]',
+                 content TEXT NOT NULL DEFAULT '',
+                 insertion_position TEXT NOT NULL DEFAULT 'after_char',
+                 depth_from_bottom INTEGER NOT NULL DEFAULT 4,
+                 enabled INTEGER NOT NULL DEFAULT 1,
+                 token_budget INTEGER,
+                 sort_order INTEGER NOT NULL DEFAULT 0,
+                 created_at TEXT NOT NULL,
+                 updated_at TEXT NOT NULL
+             );
+             CREATE INDEX idx_lorebook_entries_character ON lorebook_entries(character_id, sort_order);
+
+             ALTER TABLE characters ADD COLUMN lorebook_scan_depth INTEGER NOT NULL DEFAULT 2;
+             ALTER TABLE characters ADD COLUMN lorebook_recursive_depth INTEGER NOT NULL DEFAULT 2;"
+        )
+        .down("ALTER TABLE characters DROP COLUMN lorebook_recursive_depth; ALTER TABLE characters DROP COLUMN lorebook_scan_depth; DROP INDEX IF EXISTS idx_lorebook_entries_character; DROP TABLE IF EXISTS lorebook_entries; ALTER TABLE providers DROP COLUMN context_window_size;"),
     ])
 }
 

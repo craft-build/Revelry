@@ -233,6 +233,7 @@ mod tests {
             provider_type: ProviderType::Ollama,
             base_url: Some("http://localhost:11434".to_string()),
             model_name: "llama3.2".to_string(),
+            context_window_size: None,
             enabled: true,
             created_at: NaiveDateTime::parse_from_str("2024-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S").unwrap(),
             updated_at: NaiveDateTime::parse_from_str("2024-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S").unwrap(),

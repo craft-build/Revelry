@@ -87,6 +87,11 @@ pub struct ProviderConfig {
     /// Model name to use with this provider (e.g. "gpt-4o-mini", "llama3.2").
     /// Required by rig-core to build an agent.
     pub model_name: String,
+    /// User override for context window size.
+    /// When Some(n) with n > 0, this takes priority over built-in model defaults.
+    /// Per D-02: Tier 1 in the 3-tier fallback.
+    #[serde(default)]
+    pub context_window_size: Option<i64>,
     pub enabled: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
@@ -102,6 +107,7 @@ impl ProviderConfig {
             name,
             base_url: provider_type.default_base_url().map(|s| s.to_string()),
             model_name: provider_type.default_model_name().to_string(),
+            context_window_size: None,
             provider_type,
             enabled: true,
             created_at: chrono::Local::now().naive_local(),

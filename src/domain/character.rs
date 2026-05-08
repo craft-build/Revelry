@@ -47,6 +47,14 @@ pub struct CharacterCardV2 {
     /// Maps to the `default_persona_id` column added in Migration 007.
     #[serde(default)]
     pub default_persona_id: Option<String>,
+    /// Number of recent messages to scan for keyword matching when activating lorebook entries.
+    /// Per D-10: per-character scan depth (default 2).
+    #[serde(default = "default_lorebook_scan_depth")]
+    pub lorebook_scan_depth: i32,
+    /// Maximum depth of recursive lorebook activation (how many times activated entries can trigger other entries).
+    /// Per D-12: recursive activation depth limit (default 2).
+    #[serde(default = "default_lorebook_recursive_depth")]
+    pub lorebook_recursive_depth: i32,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -133,6 +141,8 @@ impl CharaCardV2Spec {
             creator_notes: self.data.creator_notes.clone(),
             character_book: self.data.character_book.clone(),
             default_persona_id: None,
+            lorebook_scan_depth: 2,
+            lorebook_recursive_depth: 2,
             created_at: now,
             updated_at: now,
         }
@@ -153,6 +163,14 @@ fn default_extensions() -> serde_json::Value {
 
 fn default_character_book() -> serde_json::Value {
     serde_json::Value::Null
+}
+
+fn default_lorebook_scan_depth() -> i32 {
+    2
+}
+
+fn default_lorebook_recursive_depth() -> i32 {
+    2
 }
 
 impl CharacterCardV2 {
@@ -179,6 +197,8 @@ impl CharacterCardV2 {
             creator_notes: String::new(),
             character_book: serde_json::Value::Null,
             default_persona_id: None,
+            lorebook_scan_depth: 2,
+            lorebook_recursive_depth: 2,
             created_at: now,
             updated_at: now,
         }
@@ -246,6 +266,8 @@ impl CharacterV1 {
             creator_notes: self.creator_notes.clone(),
             character_book: serde_json::Value::Null,
             default_persona_id: None,
+            lorebook_scan_depth: 2,
+            lorebook_recursive_depth: 2,
             created_at: now,
             updated_at: now,
         }
@@ -412,5 +434,24 @@ mod tests {
         assert_eq!(character.extensions, serde_json::Value::Null);
         assert!(character.creator_notes.is_empty());
         assert_eq!(character.character_book, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn test_lorebook_defaults() {
+        let character = CharacterCardV2::new("Lorebook Test".to_string());
+        assert_eq!(character.lorebook_scan_depth, 2, "lorebook_scan_depth should default to 2");
+        assert_eq!(character.lorebook_recursive_depth, 2, "lorebook_recursive_depth should default to 2");
+    }
+
+    #[test]
+    fn test_lorebook_fields_serde_roundtrip() {
+        let mut character = CharacterCardV2::new("Lorebook Roundtrip".to_string());
+        character.lorebook_scan_depth = 5;
+        character.lorebook_recursive_depth = 3;
+        let json = serde_json::to_string(&character).expect("serialize failed");
+        let deserialized: CharacterCardV2 =
+            serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(deserialized.lorebook_scan_depth, 5);
+        assert_eq!(deserialized.lorebook_recursive_depth, 3);
     }
 }

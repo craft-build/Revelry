@@ -39,6 +39,7 @@ pub fn row_to_provider(row: &Row) -> rusqlite::Result<ProviderConfig> {
         provider_type,
         base_url: row.get("base_url")?,
         model_name: row.get("model_name")?,
+        context_window_size: row.get("context_window_size")?,
         enabled: row.get::<_, i32>("enabled")? != 0,
         created_at,
         updated_at,
@@ -116,6 +117,8 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
         creator_notes: row.get("creator_notes")?,
         character_book,
         default_persona_id: row.get("default_persona_id")?,
+        lorebook_scan_depth: row.get("lorebook_scan_depth")?,
+        lorebook_recursive_depth: row.get("lorebook_recursive_depth")?,
         created_at,
         updated_at,
     })
