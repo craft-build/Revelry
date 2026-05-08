@@ -3,7 +3,6 @@ use relm4::prelude::*;
 use relm4::{adw, gtk, ComponentParts, ComponentSender};
 
 use crate::domain::lorebook::{InsertionPosition, LorebookEntry};
-use chrono::NaiveDateTime;
 
 /// Lorebook editor component — manages a list of lorebook entries for one character.
 /// Per D-08: keyword-activated text injection entries with full CRUD.
@@ -45,7 +44,7 @@ pub enum LorebookEditorMsg {
 #[derive(Debug)]
 pub enum LorebookEditorOutput {
     SaveEntry(LorebookEntry),
-    DeleteEntry(String),
+    DeleteEntry(String, String), // (entry_id, character_id)
 }
 
 #[relm4::component(pub)]
@@ -184,7 +183,7 @@ impl Component for LorebookEditorModel {
                 dialog.present(Some(&self.window));
             }
             LorebookEditorMsg::ConfirmDelete(id) => {
-                let _ = sender.output(LorebookEditorOutput::DeleteEntry(id));
+                let _ = sender.output(LorebookEditorOutput::DeleteEntry(id, self.character_id.clone()));
             }
             LorebookEditorMsg::UpdateField(field, value) => {
                 if let Some(ref mut entry) = self.editing_entry {
@@ -268,7 +267,7 @@ impl LorebookEditorModel {
             // Note: toggling enabled is a save operation — for now, clicking Edit is required
 
             // Edit button
-            let edit_btn = gtk::Button::from_icon_name("document-edit");
+            let edit_btn = gtk::Button::from_icon_name("edit");
             edit_btn.add_css_class("flat");
             edit_btn.set_valign(gtk::Align::Center);
             let edit_id = entry.id.clone();
