@@ -1,6 +1,21 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::persona::Persona;
 
+/// 4-tier persona compression level per D-06.
+/// When context budget is tight, the persona block is progressively compressed
+/// from Full (all fields) → Trimmed (name, personality, appearance) → Minimal (name, personality) → Essential (name only).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PersonaCompressionTier {
+    /// All fields: name, personality, appearance, background, role, relationships, speech_style
+    Full,
+    /// Trimmed: name, personality, appearance only
+    Trimmed,
+    /// Minimal: name, personality only
+    Minimal,
+    /// Essential: name only
+    Essential,
+}
+
 /// Resolves template variables in a string using the provided persona and character.
 ///
 /// Supported variables:
@@ -79,6 +94,73 @@ pub fn build_persona_block(persona: &Persona) -> String {
     for (label, value) in fields {
         if !value.is_empty() {
             lines.push(format!("{}: {}", label, value));
+        }
+    }
+
+    lines.join("\n")
+}
+
+/// Builds a compressed persona injection block based on the compression tier per D-06.
+///
+/// Compression tiers:
+/// - Full: all non-empty fields (same as build_persona_block)
+/// - Trimmed: header + Name + Personality + Appearance only
+/// - Minimal: header + Name + Personality only
+/// - Essential: header + Name only
+///
+/// The header "You are interacting with {{user}}, who is:" is always included.
+/// Only non-empty fields are included within each tier.
+pub fn build_persona_block_compressed(persona: &Persona, tier: PersonaCompressionTier) -> String {
+    let mut lines = Vec::new();
+
+    // Header line always present (raw {{user}} — resolved later by PromptEngine)
+    lines.push("You are interacting with {{user}}, who is:".to_string());
+
+    match tier {
+        PersonaCompressionTier::Full => {
+            // Same as build_persona_block — all fields
+            let fields: Vec<(&str, &str)> = vec![
+                ("Name", &persona.name),
+                ("Personality", &persona.personality),
+                ("Appearance", &persona.appearance),
+                ("Background", &persona.background),
+                ("Role", &persona.role_description),
+                ("Relationships", &persona.relationships),
+                ("Speech Style", &persona.speech_style),
+            ];
+            for (label, value) in fields {
+                if !value.is_empty() {
+                    lines.push(format!("{}: {}", label, value));
+                }
+            }
+        }
+        PersonaCompressionTier::Trimmed => {
+            let fields: Vec<(&str, &str)> = vec![
+                ("Name", &persona.name),
+                ("Personality", &persona.personality),
+                ("Appearance", &persona.appearance),
+            ];
+            for (label, value) in fields {
+                if !value.is_empty() {
+                    lines.push(format!("{}: {}", label, value));
+                }
+            }
+        }
+        PersonaCompressionTier::Minimal => {
+            let fields: Vec<(&str, &str)> = vec![
+                ("Name", &persona.name),
+                ("Personality", &persona.personality),
+            ];
+            for (label, value) in fields {
+                if !value.is_empty() {
+                    lines.push(format!("{}: {}", label, value));
+                }
+            }
+        }
+        PersonaCompressionTier::Essential => {
+            if !persona.name.is_empty() {
+                lines.push(format!("Name: {}", persona.name));
+            }
         }
     }
 
@@ -237,5 +319,76 @@ mod tests {
         let block = build_persona_block(&persona);
         assert!(block.contains("You are interacting with {{user}}, who is:"));
         // {{user}} should not be resolved in build_persona_block — that's done later
+    }
+
+    #[test]
+    fn test_persona_compression_full_same_as_uncompressed() {
+        let mut persona = make_test_persona("Alice", "Bold and charismatic");
+        persona.appearance = "Red hair".to_string();
+        persona.background = "A wandering mage".to_string();
+        persona.role_description = "Mage".to_string();
+        persona.relationships = "Friend of Bob".to_string();
+        persona.speech_style = "Formal".to_string();
+
+        let block_full = build_persona_block_compressed(&persona, PersonaCompressionTier::Full);
+        let block_uncompressed = build_persona_block(&persona);
+
+        assert_eq!(block_full, block_uncompressed, "Full tier should match uncompressed persona block");
+    }
+
+    #[test]
+    fn test_persona_compression_trimmed() {
+        let mut persona = make_test_persona("Alice", "Bold and charismatic");
+        persona.appearance = "Red hair".to_string();
+        persona.background = "A wandering mage".to_string();
+
+        let block = build_persona_block_compressed(&persona, PersonaCompressionTier::Trimmed);
+
+        assert!(block.contains("You are interacting with {{user}}, who is:"));
+        assert!(block.contains("Name: Alice"));
+        assert!(block.contains("Personality: Bold and charismatic"));
+        assert!(block.contains("Appearance: Red hair"));
+        assert!(!block.contains("Background:"), "Trimmed should not include Background");
+        assert!(!block.contains("Role:"), "Trimmed should not include Role");
+        assert!(!block.contains("Relationships:"), "Trimmed should not include Relationships");
+        assert!(!block.contains("Speech Style:"), "Trimmed should not include Speech Style");
+    }
+
+    #[test]
+    fn test_persona_compression_minimal() {
+        let mut persona = make_test_persona("Alice", "Bold and charismatic");
+        persona.appearance = "Red hair".to_string();
+        persona.background = "A wandering mage".to_string();
+
+        let block = build_persona_block_compressed(&persona, PersonaCompressionTier::Minimal);
+
+        assert!(block.contains("You are interacting with {{user}}, who is:"));
+        assert!(block.contains("Name: Alice"));
+        assert!(block.contains("Personality: Bold and charismatic"));
+        assert!(!block.contains("Appearance:"), "Minimal should not include Appearance");
+        assert!(!block.contains("Background:"), "Minimal should not include Background");
+    }
+
+    #[test]
+    fn test_persona_compression_essential() {
+        let mut persona = make_test_persona("Alice", "Bold and charismatic");
+        persona.appearance = "Red hair".to_string();
+
+        let block = build_persona_block_compressed(&persona, PersonaCompressionTier::Essential);
+
+        assert!(block.contains("You are interacting with {{user}}, who is:"));
+        assert!(block.contains("Name: Alice"));
+        assert!(!block.contains("Personality:"), "Essential should not include Personality");
+        assert!(!block.contains("Appearance:"), "Essential should not include Appearance");
+    }
+
+    #[test]
+    fn test_persona_compression_essential_empty_name() {
+        // Edge case: empty name — essential tier produces just the header
+        let persona = Persona::new(String::new(), "Bold".to_string());
+        let block = build_persona_block_compressed(&persona, PersonaCompressionTier::Essential);
+
+        assert!(block.contains("You are interacting with {{user}}, who is:"));
+        assert!(!block.contains("Name:"));
     }
 }
