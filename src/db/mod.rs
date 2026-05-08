@@ -1,16 +1,20 @@
 pub mod characters;
 pub mod conversations;
+pub mod generation;
 pub mod lorebook;
 pub mod migrations;
 pub mod models;
 pub mod personas;
 pub mod providers;
+pub mod regex_scripts;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
+use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
+use crate::domain::regex_script::RegexScript;
 use relm4::{ComponentSender, Worker};
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -50,6 +54,15 @@ pub enum DbInput {
     LoadLorebookEntries(String),
     SaveLorebookEntry(LorebookEntry),
     DeleteLorebookEntry(String),
+    // Generation preset operations
+    LoadPresets,
+    SavePreset(GenerationPreset),
+    DeletePreset(String),
+    SeedBuiltInPresets,
+    // Regex script operations
+    LoadRegexScripts(String),
+    SaveRegexScript(RegexScript),
+    DeleteRegexScript(String),
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -86,6 +99,15 @@ pub enum DbOutput {
     LorebookEntriesLoaded(Vec<LorebookEntry>),
     LorebookEntrySaved(LorebookEntry),
     LorebookEntryDeleted(String),
+    // Generation preset outputs
+    PresetsLoaded(Vec<GenerationPreset>),
+    PresetSaved(GenerationPreset),
+    PresetDeleted(String),
+    BuiltInPresetsSeeded,
+    // Regex script outputs
+    RegexScriptsLoaded(Vec<RegexScript>),
+    RegexScriptSaved(RegexScript),
+    RegexScriptDeleted(String),
     Error(String),
 }
 
@@ -106,6 +128,9 @@ impl Worker for DbService {
             .unwrap_or_else(|e| panic!("Failed to open database at {:?}: {}", db_path, e));
         migrations::run_migrations(&mut conn)
             .unwrap_or_else(|e| panic!("Failed to run migrations: {}", e));
+        // Seed built-in presets after migrations (idempotent)
+        generation::seed_builtin_presets(&conn)
+            .unwrap_or_else(|e| panic!("Failed to seed built-in presets: {}", e));
         tracing::info!("Database initialized at {:?}", db_path);
         DbService { conn }
     }
@@ -268,6 +293,54 @@ impl Worker for DbService {
             DbInput::DeleteLorebookEntry(id) => {
                 lorebook::delete_lorebook_entry(&self.conn, &id)
                     .map(|_| DbOutput::LorebookEntryDeleted(id))
+            }
+            DbInput::LoadPresets => {
+                generation::load_presets(&self.conn)
+                    .map(DbOutput::PresetsLoaded)
+            }
+            DbInput::SavePreset(p) => {
+                let existing = generation::load_preset_by_id(&self.conn, &p.id);
+                match existing {
+                    Ok(Some(_)) => {
+                        generation::update_preset(&self.conn, &p)
+                            .map(|_| DbOutput::PresetSaved(p))
+                    }
+                    Ok(None) => {
+                        generation::insert_preset(&self.conn, &p)
+                            .map(|_| DbOutput::PresetSaved(p))
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+            DbInput::DeletePreset(id) => {
+                generation::delete_preset(&self.conn, &id)
+                    .map(|_| DbOutput::PresetDeleted(id))
+            }
+            DbInput::SeedBuiltInPresets => {
+                generation::seed_builtin_presets(&self.conn)
+                    .map(|_| DbOutput::BuiltInPresetsSeeded)
+            }
+            DbInput::LoadRegexScripts(character_id) => {
+                regex_scripts::load_regex_scripts(&self.conn, &character_id)
+                    .map(DbOutput::RegexScriptsLoaded)
+            }
+            DbInput::SaveRegexScript(s) => {
+                let existing = regex_scripts::load_regex_script_by_id(&self.conn, &s.id);
+                match existing {
+                    Ok(Some(_)) => {
+                        regex_scripts::update_regex_script(&self.conn, &s)
+                            .map(|_| DbOutput::RegexScriptSaved(s))
+                    }
+                    Ok(None) => {
+                        regex_scripts::insert_regex_script(&self.conn, &s)
+                            .map(|_| DbOutput::RegexScriptSaved(s))
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+            DbInput::DeleteRegexScript(id) => {
+                regex_scripts::delete_regex_script(&self.conn, &id)
+                    .map(|_| DbOutput::RegexScriptDeleted(id))
             }
         };
 

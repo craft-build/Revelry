@@ -161,6 +161,41 @@ pub fn get_migrations() -> Migrations<'static> {
              ALTER TABLE characters ADD COLUMN lorebook_recursive_depth INTEGER NOT NULL DEFAULT 2;"
         )
         .down("ALTER TABLE characters DROP COLUMN lorebook_recursive_depth; ALTER TABLE characters DROP COLUMN lorebook_scan_depth; DROP INDEX IF EXISTS idx_lorebook_entries_character; DROP TABLE IF EXISTS lorebook_entries; ALTER TABLE providers DROP COLUMN context_window_size;"),
+        // Migration 9: Create generation_presets and regex_scripts tables,
+        // add default_preset_id to characters, generation_preset_id to conversations
+        M::up(
+            "CREATE TABLE generation_presets (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                is_builtin INTEGER NOT NULL DEFAULT 0,
+                temperature REAL NOT NULL DEFAULT 0.8,
+                top_p REAL NOT NULL DEFAULT 0.9,
+                max_tokens INTEGER NOT NULL DEFAULT 0,
+                frequency_penalty REAL NOT NULL DEFAULT 0.0,
+                presence_penalty REAL NOT NULL DEFAULT 0.0,
+                stop_sequences TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE regex_scripts (
+                id TEXT PRIMARY KEY,
+                character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+                name TEXT NOT NULL DEFAULT '',
+                find_pattern TEXT NOT NULL DEFAULT '',
+                replace_pattern TEXT NOT NULL DEFAULT '',
+                flags TEXT NOT NULL DEFAULT 'gi',
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX idx_regex_scripts_character ON regex_scripts(character_id, sort_order);
+
+            ALTER TABLE characters ADD COLUMN default_preset_id TEXT;
+            ALTER TABLE conversations ADD COLUMN generation_preset_id TEXT;"
+        )
+        .down("ALTER TABLE conversations DROP COLUMN generation_preset_id; ALTER TABLE characters DROP COLUMN default_preset_id; DROP INDEX IF EXISTS idx_regex_scripts_character; DROP TABLE IF EXISTS regex_scripts; DROP TABLE IF EXISTS generation_presets;"),
     ])
 }
 

@@ -7,14 +7,17 @@ use relm4::{
 use crate::db::{DbInput, DbOutput, DbService};
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
+use crate::domain::generation::GenerationPreset;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
+use crate::domain::regex_script::RegexScript;
 use crate::secrets::KeyringStore;
 use crate::service::card_io;
 use crate::ui::settings::SettingsPanelMsg;
 use crate::ui::{
     CharacterEditor, CharacterEditorInit, CharacterEditorOutput, CharactersPanel,
     CharactersPanelMsg, CharactersPanelOutput, ChatPanel, ChatPanelMsg, ChatPanelOutput,
+    LorebookEditorModel, LorebookEditorMsg, LorebookEditorOutput,
     PersonaEditor, PersonaEditorInit, PersonaEditorOutput,
     SettingsPanel, SettingsPanelOutput,
 };
@@ -28,21 +31,22 @@ pub enum ActiveView {
 }
 
 /// Messages handled by the root AppModel.
-#[derive(Debug)]
-pub enum AppMsg {
-    SwitchView(ActiveView),
-    ToggleSidebar,
-    LoadConversationById(String),
-    DbResult(DbOutput),
-    SettingsOutput(SettingsPanelOutput),
-    StartConversationWithProvider { character_id: String, provider_id: String },
-    CharactersOutput(CharactersPanelOutput),
-    ChatOutput(ChatPanelOutput),
-    EditorOutput(CharacterEditorOutput),
-    PersonaEditorOutput(PersonaEditorOutput),
-    ShowToast(String),
-    Quit,
-}
+    #[derive(Debug)]
+    pub enum AppMsg {
+        SwitchView(ActiveView),
+        ToggleSidebar,
+        LoadConversationById(String),
+        DbResult(DbOutput),
+        SettingsOutput(SettingsPanelOutput),
+        StartConversationWithProvider { character_id: String, provider_id: String },
+        CharactersOutput(CharactersPanelOutput),
+        ChatOutput(ChatPanelOutput),
+        EditorOutput(CharacterEditorOutput),
+        PersonaEditorOutput(PersonaEditorOutput),
+        LorebookEditorOutput(LorebookEditorOutput),
+        ShowToast(String),
+        Quit,
+    }
 
 /// Minimum data needed to render a sidebar conversation row.
 struct SidebarRowData {
@@ -52,31 +56,36 @@ struct SidebarRowData {
 }
 
 /// Root application model holding global state and child panel controllers.
-pub struct AppModel {
-    active_view: ActiveView,
-    sidebar_visible: bool,
-    has_providers: bool,
-    characters: Vec<CharacterCardV2>,
-    providers: Vec<ProviderConfig>,
-    conversations: Vec<Conversation>,
-    conversation_messages: Vec<Message>,
-    active_conversation: Option<Conversation>,
-    active_branch_id: Option<String>,
-    db_worker: WorkerController<DbService>,
-    chat_panel: relm4::Controller<ChatPanel>,
-    #[allow(dead_code)]
-    characters_panel: relm4::Controller<CharactersPanel>,
-    settings_panel: relm4::Controller<SettingsPanel>,
-    character_editor: Option<relm4::Controller<CharacterEditor>>,
-    persona_editor: Option<relm4::Controller<PersonaEditor>>,
-    personas: Vec<Persona>,
-    global_default_persona_id: Option<String>,
-    view_stack: adw::ViewStack,
-    toast_overlay: adw::ToastOverlay,
-    // Sidebar state (dynamically managed, not in view!)
-    sidebar_stack: gtk::Stack,
-    sidebar_listbox: gtk::ListBox,
-}
+    pub struct AppModel {
+        active_view: ActiveView,
+        sidebar_visible: bool,
+        has_providers: bool,
+        characters: Vec<CharacterCardV2>,
+        providers: Vec<ProviderConfig>,
+        conversations: Vec<Conversation>,
+        conversation_messages: Vec<Message>,
+        active_conversation: Option<Conversation>,
+        active_branch_id: Option<String>,
+        db_worker: WorkerController<DbService>,
+        chat_panel: relm4::Controller<ChatPanel>,
+        #[allow(dead_code)]
+        characters_panel: relm4::Controller<CharactersPanel>,
+        settings_panel: relm4::Controller<SettingsPanel>,
+        character_editor: Option<relm4::Controller<CharacterEditor>>,
+        persona_editor: Option<relm4::Controller<PersonaEditor>>,
+        lorebook_editor: Option<relm4::Controller<LorebookEditorModel>>,
+        personas: Vec<Persona>,
+        global_default_persona_id: Option<String>,
+        current_lorebook_character_id: Option<String>,
+        presets: Vec<GenerationPreset>,
+        regex_scripts: Vec<RegexScript>,
+        current_regex_character_id: Option<String>,
+        view_stack: adw::ViewStack,
+        toast_overlay: adw::ToastOverlay,
+        // Sidebar state (dynamically managed, not in view!)
+        sidebar_stack: gtk::Stack,
+        sidebar_listbox: gtk::ListBox,
+    }
 
 #[relm4::component(pub)]
 impl SimpleComponent for AppModel {
@@ -228,8 +237,13 @@ impl SimpleComponent for AppModel {
             settings_panel,
             character_editor: None,
             persona_editor: None,
+            lorebook_editor: None,
             personas: Vec::new(),
             global_default_persona_id: None,
+            current_lorebook_character_id: None,
+            presets: Vec::new(),
+            regex_scripts: Vec::new(),
+            current_regex_character_id: None,
             view_stack: adw::ViewStack::new(),
             toast_overlay: adw::ToastOverlay::new(),
             sidebar_stack: gtk::Stack::new(),
@@ -546,14 +560,54 @@ impl SimpleComponent for AppModel {
                     // Conversation persona updated in DB — no further action needed
                 }
                 DbOutput::LorebookEntriesLoaded(entries) => {
-                    // Forward lorebook entries to ChatPanel for context engineering
+                    let entries_clone = entries.clone();
                     let _ = self.chat_panel.sender().send(ChatPanelMsg::LorebookEntriesLoaded(entries));
+                    if let Some(ref editor) = self.lorebook_editor {
+                        let _ = editor.sender().send(LorebookEditorMsg::SetEntries(entries_clone));
+                    }
                 }
-                DbOutput::LorebookEntrySaved(_) => {
-                    // Lorebook entry saved — UI refresh handled by reloading entries
+                DbOutput::LorebookEntrySaved(e) => {
+                    // Reload entries for the character
+                    let character_id = e.character_id.clone();
+                    self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
+                    self.show_toast("Lorebook entry saved");
                 }
-                DbOutput::LorebookEntryDeleted(_) => {
-                    // Lorebook entry deleted — UI refresh handled by reloading entries
+                DbOutput::LorebookEntryDeleted(id) => {
+                    // Reload entries for the tracked character
+                    if let Some(ref character_id) = self.current_lorebook_character_id {
+                        self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id.clone())).unwrap();
+                    }
+                    self.show_toast("Lorebook entry deleted");
+                }
+                DbOutput::PresetsLoaded(presets) => {
+                    self.presets = presets;
+                }
+                DbOutput::PresetSaved(_) => {
+                    self.db_worker.sender().send(DbInput::LoadPresets).unwrap();
+                    self.show_toast("Preset saved");
+                }
+                DbOutput::PresetDeleted(_) => {
+                    self.db_worker.sender().send(DbInput::LoadPresets).unwrap();
+                    self.show_toast("Preset deleted");
+                }
+                DbOutput::BuiltInPresetsSeeded => {
+                    self.db_worker.sender().send(DbInput::LoadPresets).unwrap();
+                }
+                DbOutput::RegexScriptsLoaded(scripts) => {
+                    self.regex_scripts = scripts;
+                }
+                DbOutput::RegexScriptSaved(_) => {
+                    // Reload scripts for the current character
+                    if let Some(ref character_id) = self.current_regex_character_id {
+                        self.db_worker.sender().send(DbInput::LoadRegexScripts(character_id.clone())).unwrap();
+                    }
+                    self.show_toast("Regex script saved");
+                }
+                DbOutput::RegexScriptDeleted(_) => {
+                    if let Some(ref character_id) = self.current_regex_character_id {
+                        self.db_worker.sender().send(DbInput::LoadRegexScripts(character_id.clone())).unwrap();
+                    }
+                    self.show_toast("Regex script deleted");
                 }
             },
             AppMsg::SettingsOutput(output) => match output {
@@ -986,6 +1040,17 @@ impl SimpleComponent for AppModel {
                     self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
                 }
             },
+            AppMsg::LorebookEditorOutput(output) => match output {
+                LorebookEditorOutput::SaveEntry(entry) => {
+                    let character_id = entry.character_id.clone();
+                    self.current_lorebook_character_id = Some(character_id);
+                    self.db_worker.sender().send(DbInput::SaveLorebookEntry(entry)).unwrap();
+                }
+                LorebookEditorOutput::DeleteEntry(id, character_id) => {
+                    self.current_lorebook_character_id = Some(character_id);
+                    self.db_worker.sender().send(DbInput::DeleteLorebookEntry(id)).unwrap();
+                }
+            },
             AppMsg::EditorOutput(output) => match output {
                 CharacterEditorOutput::Saved(character) => {
                     self.db_worker.sender().send(DbInput::SaveCharacter(character)).unwrap();
@@ -993,6 +1058,16 @@ impl SimpleComponent for AppModel {
                 }
                 CharacterEditorOutput::Cancelled => {
                     self.character_editor = None;
+                }
+                CharacterEditorOutput::OpenLorebookEditor(character_id) => {
+                    let controller = LorebookEditorModel::builder()
+                        .launch(character_id.clone())
+                        .forward(sender.input_sender(), |output| AppMsg::LorebookEditorOutput(output));
+                    controller.widget().present();
+                    self.current_lorebook_character_id = Some(character_id.clone());
+                    self.lorebook_editor = Some(controller);
+                    // Load existing entries
+                    self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
                 }
             },
             AppMsg::PersonaEditorOutput(output) => match output {

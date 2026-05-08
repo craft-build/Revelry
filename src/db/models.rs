@@ -1,8 +1,10 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
+use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{InsertionPosition, LorebookEntry};
 use crate::domain::persona::Persona;
 use crate::domain::provider::{ProviderConfig, ProviderType};
+use crate::domain::regex_script::RegexScript;
 use chrono::NaiveDateTime;
 use rusqlite::Row;
 use std::str::FromStr;
@@ -308,6 +310,82 @@ pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
         enabled: row.get::<_, i32>("enabled")? != 0,
         token_budget: row.get("token_budget")?,
         sort_order: row.get("sort_order")?,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Converts a database row into a GenerationPreset.
+/// stop_sequences is deserialized from JSON array stored as TEXT.
+/// Timestamps are stored as TEXT and parsed with the standard format.
+pub fn row_to_generation_preset(row: &Row) -> rusqlite::Result<GenerationPreset> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+
+    let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+    let updated_at = NaiveDateTime::parse_from_str(&updated_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    let stop_sequences_str: String = row.get("stop_sequences")?;
+    let stop_sequences: Vec<String> = serde_json::from_str(&stop_sequences_str)
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    Ok(GenerationPreset {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        is_builtin: row.get::<_, i32>("is_builtin")? != 0,
+        temperature: row.get("temperature")?,
+        top_p: row.get("top_p")?,
+        max_tokens: row.get("max_tokens")?,
+        frequency_penalty: row.get("frequency_penalty")?,
+        presence_penalty: row.get("presence_penalty")?,
+        stop_sequences,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Converts a database row into a RegexScript.
+/// Timestamps are stored as TEXT and parsed with the standard format.
+pub fn row_to_regex_script(row: &Row) -> rusqlite::Result<RegexScript> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+
+    let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+    let updated_at = NaiveDateTime::parse_from_str(&updated_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    Ok(RegexScript {
+        id: row.get("id")?,
+        character_id: row.get("character_id")?,
+        name: row.get("name")?,
+        find_pattern: row.get("find_pattern")?,
+        replace_pattern: row.get("replace_pattern")?,
+        flags: row.get("flags")?,
+        sort_order: row.get("sort_order")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
         created_at,
         updated_at,
     })
