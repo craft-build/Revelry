@@ -13,7 +13,7 @@ use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
-use crate::service::ai::{AiService, StreamChunk};
+use crate::service::ai::{AiService, GenerationParams, StreamChunk};
 use crate::service::prompt::PromptEngine;
 use crate::service::token_count::TokenCountService;
 
@@ -31,6 +31,7 @@ pub struct ChatPanel {
     available_personas: Vec<Persona>,
     available_presets: Vec<GenerationPreset>,
     resolved_preset_id: Option<String>,
+    global_default_preset_id: Option<String>,
     messages: Vec<Message>,
     branches: Vec<MessageBranch>,
     partial_response: String,
@@ -95,6 +96,7 @@ pub enum ChatPanelMsg {
     ChangeConversationPersona(String), // persona ID, empty string = none
     PresetsLoaded(Vec<GenerationPreset>),
     ChangeConversationPreset(String), // preset ID, empty string = none (clear override)
+    SetGlobalDefaultPreset(Option<String>), // global default preset ID from AppModel
     // Context engineering
     UpdateContextUtilization(f64), // context utilization ratio (0.0-1.0)
     LorebookEntriesLoaded(Vec<LorebookEntry>),
@@ -248,6 +250,7 @@ impl Component for ChatPanel {
             available_personas: Vec::new(),
             available_presets: Vec::new(),
             resolved_preset_id: None,
+            global_default_preset_id: None,
             messages: Vec::new(),
             branches: Vec::new(),
             partial_response: String::new(),
@@ -520,6 +523,7 @@ impl Component for ChatPanel {
                 let messages = self.messages.clone();
                 let provider_cfg = provider.clone();
                 let key = api_key;
+                let gen_params = self.resolve_generation_params();
 
                 // Create cancellation channel
                 let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
@@ -531,6 +535,7 @@ impl Component for ChatPanel {
                         &system_prompt,
                         &messages,
                         &key,
+                        gen_params,
                     );
                     while let Some(chunk) = stream.next().await {
                         // Check cancellation between tokens
@@ -754,6 +759,9 @@ impl Component for ChatPanel {
                     });
                 }
             }
+            ChatPanelMsg::SetGlobalDefaultPreset(id) => {
+                self.global_default_preset_id = id;
+            }
             ChatPanelMsg::UpdateContextUtilization(pct) => {
                 self.context_utilization = pct;
             }
@@ -864,6 +872,39 @@ impl ChatPanel {
             .map(|p| format!("🎯 {}", p.name))
             .unwrap_or_else(|| "🎯 Default".to_string());
         self.preset_button.set_label(&label);
+    }
+
+    /// Resolve generation params using the preset hierarchy (D-03):
+    /// 1. Conversation override (resolved_preset_id)
+    /// 2. Character default (active_character.default_preset_id)
+    /// 3. Global default (global_default_preset_id)
+    /// 4. None → provider defaults (D-13)
+    fn resolve_generation_params(&self) -> GenerationParams {
+        // Step 1: Conversation override
+        if let Some(ref preset_id) = self.resolved_preset_id {
+            if let Some(preset) = self.available_presets.iter().find(|p| p.id == *preset_id) {
+                return GenerationParams::from_preset(Some(preset));
+            }
+        }
+
+        // Step 2: Character default
+        if let Some(ref character) = self.active_character {
+            if let Some(ref preset_id) = character.default_preset_id {
+                if let Some(preset) = self.available_presets.iter().find(|p| p.id == *preset_id) {
+                    return GenerationParams::from_preset(Some(preset));
+                }
+            }
+        }
+
+        // Step 3: Global default
+        if let Some(ref preset_id) = self.global_default_preset_id {
+            if let Some(preset) = self.available_presets.iter().find(|p| p.id == *preset_id) {
+                return GenerationParams::from_preset(Some(preset));
+            }
+        }
+
+        // Step 4: No preset → provider defaults (D-13)
+        GenerationParams::default()
     }
 
     /// Rebuild the preset selection popover with the current preset list.

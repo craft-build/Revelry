@@ -560,7 +560,9 @@ impl SimpleComponent for AppModel {
                             self.global_default_persona_id = value;
                         }
                         Some("default_preset_id") => {
-                            self.global_default_preset_id = value;
+                            self.global_default_preset_id = value.clone();
+                            // Forward to ChatPanel for preset resolution
+                            let _ = self.chat_panel.sender().send(ChatPanelMsg::SetGlobalDefaultPreset(value));
                         }
                         _ => {
                             tracing::warn!("AppSettingLoaded received with unknown pending key: {:?}", self.pending_app_setting);
