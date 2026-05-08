@@ -1,30 +1,83 @@
+use crate::db::models::row_to_regex_script;
 use crate::domain::regex_script::RegexScript;
 use anyhow::Result;
 use rusqlite::{params, Connection};
 
 /// Inserts a new regex script into the database.
 pub fn insert_regex_script(conn: &Connection, script: &RegexScript) -> Result<()> {
-    todo!("RED phase — not yet implemented")
+    conn.prepare_cached(
+        "INSERT INTO regex_scripts (id, character_id, name, find_pattern, replace_pattern,
+         flags, sort_order, enabled, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"
+    )?
+    .execute(params![
+        script.id,
+        script.character_id,
+        script.name,
+        script.find_pattern,
+        script.replace_pattern,
+        script.flags,
+        script.sort_order,
+        script.enabled as i32,
+        script.created_at.to_string(),
+        script.updated_at.to_string(),
+    ])?;
+    Ok(())
 }
 
 /// Loads all regex scripts for a character, ordered by sort_order.
 pub fn load_regex_scripts(conn: &Connection, character_id: &str) -> Result<Vec<RegexScript>> {
-    todo!("RED phase — not yet implemented")
-}
-
-/// Updates an existing regex script in the database.
-pub fn update_regex_script(conn: &Connection, script: &RegexScript) -> Result<()> {
-    todo!("RED phase — not yet implemented")
-}
-
-/// Deletes a regex script by ID.
-pub fn delete_regex_script(conn: &Connection, id: &str) -> Result<()> {
-    todo!("RED phase — not yet implemented")
+    let mut stmt = conn.prepare_cached(
+        "SELECT id, character_id, name, find_pattern, replace_pattern,
+                flags, sort_order, enabled, created_at, updated_at
+         FROM regex_scripts WHERE character_id = ?1 ORDER BY sort_order"
+    )?;
+    let scripts = stmt.query_map(params![character_id], |row| row_to_regex_script(row))?;
+    let mut result = Vec::new();
+    for script in scripts {
+        result.push(script?);
+    }
+    Ok(result)
 }
 
 /// Loads a single regex script by ID.
 pub fn load_regex_script_by_id(conn: &Connection, id: &str) -> Result<Option<RegexScript>> {
-    todo!("RED phase — not yet implemented")
+    let mut stmt = conn.prepare_cached(
+        "SELECT id, character_id, name, find_pattern, replace_pattern,
+                flags, sort_order, enabled, created_at, updated_at
+         FROM regex_scripts WHERE id = ?1"
+    )?;
+    let mut scripts = stmt.query_map(params![id], |row| row_to_regex_script(row))?;
+    match scripts.next() {
+        Some(s) => Ok(Some(s?)),
+        None => Ok(None),
+    }
+}
+
+/// Updates an existing regex script in the database.
+pub fn update_regex_script(conn: &Connection, script: &RegexScript) -> Result<()> {
+    conn.prepare_cached(
+        "UPDATE regex_scripts SET name = ?1, find_pattern = ?2, replace_pattern = ?3,
+         flags = ?4, sort_order = ?5, enabled = ?6, updated_at = ?7 WHERE id = ?8"
+    )?
+    .execute(params![
+        script.name,
+        script.find_pattern,
+        script.replace_pattern,
+        script.flags,
+        script.sort_order,
+        script.enabled as i32,
+        script.updated_at.to_string(),
+        script.id,
+    ])?;
+    Ok(())
+}
+
+/// Deletes a regex script by ID.
+pub fn delete_regex_script(conn: &Connection, id: &str) -> Result<()> {
+    conn.prepare_cached("DELETE FROM regex_scripts WHERE id = ?1")?
+        .execute(params![id])?;
+    Ok(())
 }
 
 #[cfg(test)]

@@ -1,3 +1,4 @@
+use crate::db::models::row_to_generation_preset;
 use crate::domain::generation::GenerationPreset;
 use anyhow::Result;
 use rusqlite::{params, Connection};
@@ -5,35 +6,150 @@ use rusqlite::{params, Connection};
 /// Seeds built-in presets (Creative, Balanced, Precise) using INSERT OR IGNORE.
 /// Idempotent — safe to call multiple times. Fixed UUIDs ensure stability.
 pub fn seed_builtin_presets(conn: &Connection) -> Result<()> {
-    todo!("RED phase — not yet implemented")
+    let presets = [
+        GenerationPreset::creative(),
+        GenerationPreset::balanced(),
+        GenerationPreset::precise(),
+    ];
+    for preset in &presets {
+        let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
+        conn.prepare_cached(
+            "INSERT OR IGNORE INTO generation_presets
+             (id, name, is_builtin, temperature, top_p, max_tokens, frequency_penalty,
+              presence_penalty, stop_sequences, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
+        )?
+        .execute(params![
+            preset.id,
+            preset.name,
+            preset.is_builtin as i32,
+            preset.temperature,
+            preset.top_p,
+            preset.max_tokens,
+            preset.frequency_penalty,
+            preset.presence_penalty,
+            stop_sequences_str,
+            preset.created_at.to_string(),
+            preset.updated_at.to_string(),
+        ])?;
+    }
+    Ok(())
 }
 
 /// Inserts a new generation preset into the database.
 /// stop_sequences is serialized as a JSON TEXT column.
 pub fn insert_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()> {
-    todo!("RED phase — not yet implemented")
+    let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
+    conn.prepare_cached(
+        "INSERT INTO generation_presets
+         (id, name, is_builtin, temperature, top_p, max_tokens, frequency_penalty,
+          presence_penalty, stop_sequences, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
+    )?
+    .execute(params![
+        preset.id,
+        preset.name,
+        preset.is_builtin as i32,
+        preset.temperature,
+        preset.top_p,
+        preset.max_tokens,
+        preset.frequency_penalty,
+        preset.presence_penalty,
+        stop_sequences_str,
+        preset.created_at.to_string(),
+        preset.updated_at.to_string(),
+    ])?;
+    Ok(())
 }
 
 /// Loads all generation presets ordered by is_builtin DESC, then name.
 pub fn load_presets(conn: &Connection) -> Result<Vec<GenerationPreset>> {
-    todo!("RED phase — not yet implemented")
+    let mut stmt = conn.prepare_cached(
+        "SELECT id, name, is_builtin, temperature, top_p, max_tokens, frequency_penalty,
+                presence_penalty, stop_sequences, created_at, updated_at
+         FROM generation_presets ORDER BY is_builtin DESC, name"
+    )?;
+    let presets = stmt.query_map([], |row| row_to_generation_preset(row))?;
+    let mut result = Vec::new();
+    for preset in presets {
+        result.push(preset?);
+    }
+    Ok(result)
 }
 
 /// Loads a single generation preset by ID.
 pub fn load_preset_by_id(conn: &Connection, id: &str) -> Result<Option<GenerationPreset>> {
-    todo!("RED phase — not yet implemented")
+    let mut stmt = conn.prepare_cached(
+        "SELECT id, name, is_builtin, temperature, top_p, max_tokens, frequency_penalty,
+                presence_penalty, stop_sequences, created_at, updated_at
+         FROM generation_presets WHERE id = ?1"
+    )?;
+    let mut presets = stmt.query_map(params![id], |row| row_to_generation_preset(row))?;
+    match presets.next() {
+        Some(p) => Ok(Some(p?)),
+        None => Ok(None),
+    }
 }
 
 /// Updates an existing generation preset.
 /// Returns error if preset is_builtin=true (built-in presets are read-only per D-14).
 pub fn update_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()> {
-    todo!("RED phase — not yet implemented")
+    // Check if preset is built-in — cannot update built-in presets
+    let existing = load_preset_by_id(conn, &preset.id)?;
+    match existing {
+        Some(p) if p.is_builtin => {
+            return Err(anyhow::anyhow!(
+                "Cannot update built-in preset '{}'. Built-in presets are read-only.",
+                p.name
+            ));
+        }
+        Some(_) => {} // Not built-in, proceed with update
+        None => {
+            return Err(anyhow::anyhow!("Preset not found: {}", preset.id));
+        }
+    }
+
+    let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
+    conn.prepare_cached(
+        "UPDATE generation_presets SET name = ?1, temperature = ?2, top_p = ?3,
+         max_tokens = ?4, frequency_penalty = ?5, presence_penalty = ?6,
+         stop_sequences = ?7, updated_at = ?8 WHERE id = ?9"
+    )?
+    .execute(params![
+        preset.name,
+        preset.temperature,
+        preset.top_p,
+        preset.max_tokens,
+        preset.frequency_penalty,
+        preset.presence_penalty,
+        stop_sequences_str,
+        preset.updated_at.to_string(),
+        preset.id,
+    ])?;
+    Ok(())
 }
 
 /// Deletes a generation preset by ID.
 /// Returns error if preset is_builtin=true (built-in presets are read-only per D-14).
 pub fn delete_preset(conn: &Connection, id: &str) -> Result<()> {
-    todo!("RED phase — not yet implemented")
+    // Check if preset is built-in — cannot delete built-in presets
+    let existing = load_preset_by_id(conn, id)?;
+    match existing {
+        Some(p) if p.is_builtin => {
+            return Err(anyhow::anyhow!(
+                "Cannot delete built-in preset '{}'. Built-in presets are read-only.",
+                p.name
+            ));
+        }
+        Some(_) => {} // Not built-in, proceed with delete
+        None => {
+            return Err(anyhow::anyhow!("Preset not found: {}", id));
+        }
+    }
+
+    conn.prepare_cached("DELETE FROM generation_presets WHERE id = ?1")?
+        .execute(params![id])?;
+    Ok(())
 }
 
 #[cfg(test)]
