@@ -545,6 +545,15 @@ impl SimpleComponent for AppModel {
                 DbOutput::ConversationPersonaUpdated(_) => {
                     // Conversation persona updated in DB — no further action needed
                 }
+                DbOutput::LorebookEntriesLoaded(_) => {
+                    // Lorebook entries loaded — will be wired to UI in a later phase
+                }
+                DbOutput::LorebookEntrySaved(_) => {
+                    // Lorebook entry saved — will be wired to UI in a later phase
+                }
+                DbOutput::LorebookEntryDeleted(_) => {
+                    // Lorebook entry deleted — will be wired to UI in a later phase
+                }
             },
             AppMsg::SettingsOutput(output) => match output {
                 SettingsPanelOutput::SaveProvider { config, api_key } => {

@@ -1,5 +1,6 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
+use crate::domain::lorebook::{InsertionPosition, LorebookEntry};
 use crate::domain::persona::Persona;
 use crate::domain::provider::{ProviderConfig, ProviderType};
 use chrono::NaiveDateTime;
@@ -247,5 +248,67 @@ pub fn row_to_message_branch(row: &Row) -> rusqlite::Result<MessageBranch> {
         parent_message_id: row.get("parent_message_id")?,
         label: row.get("label")?,
         created_at,
+    })
+}
+
+/// Converts a database row into a LorebookEntry.
+/// Keywords and secondary_terms are deserialized from JSON arrays stored as TEXT.
+/// InsertionPosition is stored as TEXT and parsed via FromStr.
+/// Timestamps are stored as TEXT and parsed with the standard format.
+pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+
+    let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+    let updated_at = NaiveDateTime::parse_from_str(&updated_at_str, "%Y-%m-%d %H:%M:%S%.f")
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    let keywords_str: String = row.get("keywords")?;
+    let keywords: Vec<String> = serde_json::from_str(&keywords_str)
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    let secondary_terms_str: String = row.get("secondary_terms")?;
+    let secondary_terms: Vec<String> = serde_json::from_str(&secondary_terms_str)
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(e),
+        ))?;
+
+    let insertion_position_str: String = row.get("insertion_position")?;
+    let insertion_position: InsertionPosition = InsertionPosition::from_str(&insertion_position_str)
+        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+            0,
+            rusqlite::types::Type::Text,
+            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+        ))?;
+
+    Ok(LorebookEntry {
+        id: row.get("id")?,
+        character_id: row.get("character_id")?,
+        name: row.get("name")?,
+        keywords,
+        secondary_terms,
+        content: row.get("content")?,
+        insertion_position,
+        depth_from_bottom: row.get("depth_from_bottom")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
+        token_budget: row.get("token_budget")?,
+        sort_order: row.get("sort_order")?,
+        created_at,
+        updated_at,
     })
 }

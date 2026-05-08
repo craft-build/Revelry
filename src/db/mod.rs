@@ -1,5 +1,6 @@
 pub mod characters;
 pub mod conversations;
+pub mod lorebook;
 pub mod migrations;
 pub mod models;
 pub mod personas;
@@ -7,6 +8,7 @@ pub mod providers;
 
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
+use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
 use relm4::{ComponentSender, Worker};
@@ -44,6 +46,10 @@ pub enum DbInput {
     CreateBranch(crate::domain::conversation::MessageBranch),
     // Persona-conversation operations
     UpdateConversationPersona { conversation_id: String, persona_id: Option<String> },
+    // Lorebook operations
+    LoadLorebookEntries(String),
+    SaveLorebookEntry(LorebookEntry),
+    DeleteLorebookEntry(String),
 }
 
 /// Output messages sent from the DbService Worker back to the UI.
@@ -76,6 +82,10 @@ pub enum DbOutput {
     // Branch outputs
     BranchesLoaded(Vec<crate::domain::conversation::MessageBranch>),
     BranchCreated(crate::domain::conversation::MessageBranch),
+    // Lorebook outputs
+    LorebookEntriesLoaded(Vec<LorebookEntry>),
+    LorebookEntrySaved(LorebookEntry),
+    LorebookEntryDeleted(String),
     Error(String),
 }
 
@@ -236,6 +246,28 @@ impl Worker for DbService {
             DbInput::UpdateConversationPersona { conversation_id, persona_id } => {
                 conversations::update_conversation_persona(&self.conn, &conversation_id, persona_id.as_deref())
                     .map(|_| DbOutput::ConversationPersonaUpdated(conversation_id))
+            }
+            DbInput::LoadLorebookEntries(character_id) => {
+                lorebook::load_lorebook_entries(&self.conn, &character_id)
+                    .map(DbOutput::LorebookEntriesLoaded)
+            }
+            DbInput::SaveLorebookEntry(e) => {
+                let existing = lorebook::load_lorebook_entry(&self.conn, &e.id);
+                match existing {
+                    Ok(Some(_)) => {
+                        lorebook::update_lorebook_entry(&self.conn, &e)
+                            .map(|_| DbOutput::LorebookEntrySaved(e))
+                    }
+                    Ok(None) => {
+                        lorebook::insert_lorebook_entry(&self.conn, &e)
+                            .map(|_| DbOutput::LorebookEntrySaved(e))
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+            DbInput::DeleteLorebookEntry(id) => {
+                lorebook::delete_lorebook_entry(&self.conn, &id)
+                    .map(|_| DbOutput::LorebookEntryDeleted(id))
             }
         };
 
