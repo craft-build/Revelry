@@ -486,6 +486,7 @@ pub enum ProviderConfigPageMsg {
     SetModelName(String),
     SetApiKey(String),
     SetEnabled(bool),
+    SetContextWindowSize(String),
     ApiKeyLoaded(String),
     TestConnection,
     TestResult(ProviderTestResult),
@@ -606,6 +607,29 @@ impl Component for ProviderConfigPage {
                 },
             },
 
+            // Model Settings group (D-02, UI-SPEC)
+            adw::PreferencesGroup {
+                set_title: "Model Settings",
+
+                #[name(context_window_row)]
+                adw::EntryRow {
+                    set_title: "Context Window Size",
+                    set_input_purpose: gtk::InputPurpose::Digits,
+                },
+
+                gtk::Label {
+                    set_label: "Override the model's context window size in tokens. Leave empty to use the model default.\nExample: 128000 for GPT-4o, 200000 for Claude 3.5",
+                    add_css_class: "caption",
+                    add_css_class: "dim-label",
+                    set_wrap: true,
+                    set_xalign: 0.0,
+                    set_margin_start: 12,
+                    set_margin_end: 12,
+                    set_margin_top: 4,
+                    set_margin_bottom: 4,
+                },
+            },
+
             // Connection Test group
             adw::PreferencesGroup {
                 set_title: "Connection Test",
@@ -667,6 +691,10 @@ impl Component for ProviderConfigPage {
         widgets.model_name_row.set_text(&config.model_name);
         widgets.enabled_row.set_active(config.enabled);
         widgets.combo_row.set_selected(provider_type_to_index(&config.provider_type));
+        // Set context window size if present per D-02
+        if let Some(size) = config.context_window_size {
+            widgets.context_window_row.set_text(&size.to_string());
+        }
 
         let model = ProviderConfigPage {
             config: config.clone(),
@@ -716,6 +744,11 @@ impl Component for ProviderConfigPage {
         });
 
         let sender_clone = sender.clone();
+        widgets.context_window_row.connect_changed(move |row| {
+            let _ = sender_clone.input_sender().send(ProviderConfigPageMsg::SetContextWindowSize(row.text().to_string()));
+        });
+
+        let sender_clone = sender.clone();
         model.test_btn.connect_clicked(move |_| {
             let _ = sender_clone.input_sender().send(ProviderConfigPageMsg::TestConnection);
         });
@@ -751,6 +784,13 @@ impl Component for ProviderConfigPage {
             }
             ProviderConfigPageMsg::SetEnabled(enabled) => {
                 self.config.enabled = enabled;
+            }
+            ProviderConfigPageMsg::SetContextWindowSize(value) => {
+                self.config.context_window_size = if value.trim().is_empty() {
+                    None
+                } else {
+                    value.trim().parse::<i64>().ok().filter(|&v| v > 0)
+                };
             }
             ProviderConfigPageMsg::ApiKeyLoaded(key) => {
                 self.api_key = key.clone();

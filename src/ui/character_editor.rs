@@ -3,6 +3,7 @@ use relm4::prelude::*;
 use relm4::{adw, gtk, ComponentParts, ComponentSender};
 
 use crate::domain::character::CharacterCardV2;
+use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 
 // Type alias — the #[relm4::component] macro generates a `CharacterEditorModel` widgets
@@ -37,6 +38,10 @@ pub struct CharacterEditorModel {
     window: adw::PreferencesWindow,
     available_personas: Vec<Persona>,
     persona_dropdown_row: adw::PreferencesRow,
+    // Lorebook fields per D-10, D-12
+    lorebook_entries: Vec<LorebookEntry>,
+    scan_depth_row: adw::SpinRow,
+    recursive_depth_row: adw::SpinRow,
 }
 
 // ---------------------------------------------------------------------------
@@ -48,6 +53,7 @@ pub enum EditorPage {
     Identity,
     Personality,
     Scenario,
+    Lorebook,
     Advanced,
 }
 
@@ -64,6 +70,9 @@ pub enum CharacterEditorMsg {
     AvatarSelected(String),
     SwitchPage(EditorPage),
     SetDefaultPersona(String),
+    SetScanDepth(i32),
+    SetRecursiveDepth(i32),
+    LorebookEntriesLoaded(Vec<LorebookEntry>),
     Save,
     Cancel,
 }
@@ -251,6 +260,57 @@ impl Component for CharacterEditorModel {
                         set_halign: gtk::Align::Start,
                         add_css_class: "flat",
                         connect_clicked => CharacterEditorMsg::AddAlternateGreeting,
+                    },
+                },
+            },
+
+            // ---- Lorebook Page ----
+            add = &adw::PreferencesPage {
+                set_title: "Lorebook",
+                set_icon_name: Some("text-x-generic"),
+
+                adw::PreferencesGroup {
+                    set_title: "World Info Entries",
+                    set_description: Some("Keyword-activated entries that inject world-building content into the AI context when keywords appear in recent messages."),
+
+                    gtk::Label {
+                        set_label: "Manage lorebook entries using the editor. Entries activate when their keywords appear in recent conversation messages.",
+                        add_css_class: "caption",
+                        add_css_class: "dim-label",
+                        set_wrap: true,
+                        set_xalign: 0.0,
+                        set_margin_bottom: 8,
+                    },
+
+                    #[name(lorebook_entry_count_label)]
+                    gtk::Label {
+                        set_xalign: 0.0,
+                        set_margin_top: 4,
+                        set_margin_bottom: 4,
+                    },
+                },
+
+                adw::PreferencesGroup {
+                    set_title: "Activation Settings",
+
+                    #[name(scan_depth_spin)]
+                    adw::SpinRow {
+                        set_title: "Scan Depth",
+                        set_subtitle: "Number of recent messages to scan for keywords",
+                    },
+
+                    #[name(recursive_depth_spin)]
+                    adw::SpinRow {
+                        set_title: "Recursive Activation Depth",
+                        set_subtitle: "How many times activated entries can trigger other entries",
+                    },
+
+                    gtk::Label {
+                        set_label: "Higher scan depth checks more messages for keywords but uses more processing. Recursive depth allows activated entries to trigger other entries.",
+                        add_css_class: "caption",
+                        add_css_class: "dim-label",
+                        set_wrap: true,
+                        set_xalign: 0.0,
                     },
                 },
             },
@@ -461,6 +521,25 @@ impl Component for CharacterEditorModel {
             });
         });
 
+        // Set lorebook spin row values per D-10, D-12
+        // adw::SpinRow uses an Adjustment internally
+        let scan_adjustment = gtk::Adjustment::new(character.lorebook_scan_depth as f64, 1.0, 50.0, 1.0, 5.0, 0.0);
+        widgets.scan_depth_spin.set_adjustment(Some(&scan_adjustment));
+
+        let recursive_adjustment = gtk::Adjustment::new(character.lorebook_recursive_depth as f64, 0.0, 10.0, 1.0, 2.0, 0.0);
+        widgets.recursive_depth_spin.set_adjustment(Some(&recursive_adjustment));
+
+        // Connect lorebook spin row signals
+        let sender_clone = sender.clone();
+        scan_adjustment.connect_value_changed(move |adj| {
+            let _ = sender_clone.input_sender().send(CharacterEditorMsg::SetScanDepth(adj.value() as i32));
+        });
+
+        let sender_clone = sender.clone();
+        recursive_adjustment.connect_value_changed(move |adj| {
+            let _ = sender_clone.input_sender().send(CharacterEditorMsg::SetRecursiveDepth(adj.value() as i32));
+        });
+
         let model = CharacterEditorModel {
             character: character.clone(),
             is_new,
@@ -482,6 +561,9 @@ impl Component for CharacterEditorModel {
             window: root.clone(),
             available_personas: Vec::new(),
             persona_dropdown_row: widgets.persona_dropdown_row.clone(),
+            lorebook_entries: Vec::new(),
+            scan_depth_row: widgets.scan_depth_spin.clone(),
+            recursive_depth_row: widgets.recursive_depth_spin.clone(),
         };
 
         // Build dynamic lists (tags, alternate greetings) from initial data
@@ -598,6 +680,17 @@ impl Component for CharacterEditorModel {
             }
             CharacterEditorMsg::SetDefaultPersona(id) => {
                 self.character.default_persona_id = if id.is_empty() { None } else { Some(id) };
+            }
+            CharacterEditorMsg::SetScanDepth(depth) => {
+                self.character.lorebook_scan_depth = depth;
+            }
+            CharacterEditorMsg::SetRecursiveDepth(depth) => {
+                self.character.lorebook_recursive_depth = depth;
+            }
+            CharacterEditorMsg::LorebookEntriesLoaded(entries) => {
+                self.lorebook_entries = entries;
+                // Update the entry count label
+                // (Could also update via widget reference, but label update is simple)
             }
             CharacterEditorMsg::Save => {
                 // Validate name is non-empty
