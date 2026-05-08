@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Character System & Library** - CharacterCardV2 CRUD, import/export, and searchable character library
 - [ ] **Phase 3: AI Chat & Streaming** - Streaming AI conversations with branching, message CRUD, and markdown rendering
 - [x] **Phase 4: Personas & Template Resolution** - User personas with structured fields, assignment hierarchy, and full template variable resolution
-- [ ] **Phase 5: Context Engineering & Lorebook** - Token budgeting, layered prompt assembly, and keyword-activated lorebook system
+- [x] **Phase 5: Context Engineering & Lorebook** - Token budgeting, layered prompt assembly, and keyword-activated lorebook system
 - [ ] **Phase 6: Generation Controls, Regex & Data** - AI parameter presets, regex post-processing, and backup/restore
 
 ## Phase Details
@@ -109,7 +109,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Token counting service and lorebook data layer
 - [x] 05-02-PLAN.md — Budget-aware prompt assembly and lorebook activation engine
-- [ ] 05-03-PLAN.md — Context utilization UI, lorebook editor, and provider settings
+- [x] 05-03-PLAN.md — Context utilization UI, lorebook editor, and provider settings
 
 **UI hint**: yes
 
