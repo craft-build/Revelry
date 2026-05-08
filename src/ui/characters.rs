@@ -23,6 +23,7 @@ pub struct CharactersPanelModel {
     empty_state: adw::StatusPage,
     persona_list: gtk::ListBox,
     persona_empty: adw::StatusPage,
+    persona_empty_btn: gtk::Button,
 }
 
 /// Tab identifiers for the character/persona switcher.
@@ -114,6 +115,12 @@ impl Component for CharactersPanelModel {
                     set_icon_name: "folder-open",
                     set_tooltip_text: Some("Import"),
                     connect_clicked => CharactersPanelMsg::ImportCharacter,
+                },
+
+                gtk::Button {
+                    set_icon_name: "face-smile",
+                    set_tooltip_text: Some("Manage Personas"),
+                    connect_clicked => CharactersPanelMsg::NewPersona,
                 },
             },
 
@@ -226,15 +233,26 @@ impl Component for CharactersPanelModel {
         personas_page_box.append(&persona_toolbar);
 
         let persona_empty = adw::StatusPage::new();
-        persona_empty.set_icon_name(Some("mood"));
+        persona_empty.set_icon_name(Some("face-smile"));
         persona_empty.set_title("No Personas Yet");
         persona_empty.set_description(Some(
-            "Create a persona to define your identity in roleplay.",
+            "Create a persona to customize your identity in roleplay conversations.",
         ));
         persona_empty.set_vexpand(true);
 
+        let persona_empty_btn = gtk::Button::with_label("Create First Persona");
+        persona_empty_btn.add_css_class("pill");
+        persona_empty_btn.add_css_class("suggested-action");
+        persona_empty_btn.set_halign(gtk::Align::Center);
+        persona_empty_btn.set_margin_top(8);
+        let sender_clone = sender.clone();
+        persona_empty_btn.connect_clicked(move |_| {
+            let _ = sender_clone.input_sender().send(CharactersPanelMsg::NewPersona);
+        });
+
         personas_page_box.append(&persona_list);
         personas_page_box.append(&persona_empty);
+        personas_page_box.append(&persona_empty_btn);
 
         // Connect persona search
         let sender_clone = sender.clone();
@@ -256,7 +274,7 @@ impl Component for CharactersPanelModel {
             .content_stack
             .add_named(&personas_page_box, Some("personas"));
         pers_page.set_title(Some("My Personas"));
-        pers_page.set_icon_name(Some("mood"));
+        pers_page.set_icon_name(Some("face-smile"));
 
         // Listen for tab changes
         let sender_clone = sender.clone();
@@ -287,6 +305,7 @@ impl Component for CharactersPanelModel {
             empty_state,
             persona_list,
             persona_empty,
+            persona_empty_btn,
         };
 
         ComponentParts { model, widgets }
@@ -576,6 +595,7 @@ impl CharactersPanelModel {
         let is_empty = filtered.is_empty();
         self.persona_list.set_visible(!is_empty);
         self.persona_empty.set_visible(is_empty);
+        self.persona_empty_btn.set_visible(is_empty);
 
         for persona in filtered {
             let row = adw::ActionRow::new();

@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: AI Chat & Streaming** - Streaming AI conversations with branching, message CRUD, and markdown rendering
 - [x] **Phase 4: Personas & Template Resolution** - User personas with structured fields, assignment hierarchy, and full template variable resolution
 - [x] **Phase 5: Context Engineering & Lorebook** - Token budgeting, layered prompt assembly, and keyword-activated lorebook system
-- [ ] **Phase 6: Generation Controls, Regex & Data** - AI parameter presets, regex post-processing, and backup/restore
+- [x] **Phase 6: Generation Controls, Regex & Data** - AI parameter presets, regex post-processing, and backup/restore
 
 ## Phase Details
 
@@ -128,7 +128,7 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — Generation preset and regex script data layer, DB schema M9, CRUD, built-in seeding, regex validation service
 - [x] 06-02-PLAN.md — Preset editor, Settings preset page, assignment hierarchy UI, AiService generation parameter injection
-- [ ] 06-03-PLAN.md — Regex editor with test panel, regex execution pipeline, backup/restore SQL and ZIP
+- [x] 06-03-PLAN.md — Regex editor with test panel, regex execution pipeline, backup/restore SQL and ZIP
 
 **UI hint**: yes
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. AI Chat & Streaming | 0/3 | Not started | - |
 | 4. Personas & Template Resolution | 3/3 | Complete | 2026-05-07 |
 | 5. Context Engineering & Lorebook | 3/3 | Complete | 2026-05-08 |
-| 6. Generation Controls, Regex & Data | 0/3 | Not started | - |
+| 6. Generation Controls, Regex & Data | 3/3 | Complete | 2026-05-08 |

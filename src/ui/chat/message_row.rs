@@ -86,10 +86,26 @@ impl MessageRow {
         root.set_halign(alignment);
         root.set_margin_start(12);
         root.set_margin_end(12);
-        root.set_margin_top(4);
-        root.set_margin_bottom(4);
+    root.set_margin_top(8);
+    root.set_margin_bottom(8);
         root.add_css_class("message-row");
         root.add_css_class(css_class);
+
+        // Apply message styling CSS
+        let css_provider = gtk::CssProvider::new();
+        css_provider.load_from_data(
+            ".message-content { border-radius: 8px; padding: 8px; } \
+             .assistant-content { background-color: var(--view-bg-color, #ffffff); } \
+             .user-content { background-color: var(--card-bg-color, #f5f5f5); } \
+             .system-content { background-color: var(--warning-bg-color, #f5e6cc); } \
+             .branch-indicator { min-width: 4px; min-height: 24px; padding: 0; border-radius: 2px; background-color: var(--accent-bg-color, #3584e4); opacity: 0.8; } \
+             .branch-indicator:hover { opacity: 1.0; }"
+        );
+        gtk::StyleContext::add_provider_for_display(
+            &root.display(),
+            &css_provider,
+            gtk::STYLE_PROVIDER_PRIORITY_USER,
+        );
 
         // Branch indicator (colored left border) — clickable to navigate branches
         if self.has_siblings {
@@ -97,6 +113,7 @@ impl MessageRow {
             indicator.set_width_request(4);
             indicator.add_css_class("branch-indicator");
             indicator.set_has_frame(false);
+            indicator.set_tooltip_text(Some("This message has alternative paths. Click to switch branch."));
             let msg_id_nav = self.message_id.clone();
             let on_action_nav = Rc::clone(&on_action);
             indicator.connect_clicked(move |_| {
@@ -113,6 +130,12 @@ impl MessageRow {
 
         let content_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
         content_box.set_halign(alignment);
+        content_box.add_css_class("message-content");
+        content_box.add_css_class(match self.role {
+            MessageRole::Assistant => "assistant-content",
+            MessageRole::User => "user-content",
+            MessageRole::System => "system-content",
+        });
 
         // Name label
         let name_label = gtk::Label::new(Some(name));

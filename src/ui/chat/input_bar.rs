@@ -16,8 +16,16 @@ pub struct InputBar {
     tokens_used: usize,
     /// Total context window for tooltip.
     context_window: usize,
+    /// System prompt tokens for tooltip breakdown.
+    system_tokens: usize,
+    /// Chat history tokens for tooltip breakdown.
+    history_tokens: usize,
+    /// Lorebook tokens for tooltip breakdown.
+    lorebook_tokens: usize,
     /// Widget reference for imperative CSS class updates.
     context_progress_bar: gtk::ProgressBar,
+    /// Warning/error icon shown at high utilization.
+    context_warning_icon: gtk::Image,
 }
 
 /// Messages handled by InputBar.
@@ -33,6 +41,9 @@ pub enum InputBarMsg {
         truncated: usize,
         tokens_used: usize,
         context_window: usize,
+        system_tokens: usize,
+        history_tokens: usize,
+        lorebook_tokens: usize,
     },
 }
 
@@ -54,12 +65,24 @@ impl Component for InputBar {
         gtk::Box {
             set_orientation: gtk::Orientation::Vertical,
 
-            #[name(context_progress_bar)]
-            gtk::ProgressBar {
-                #[watch]
-                set_fraction: model.context_utilization,
-                #[watch]
-                set_visible: model.context_utilization > 0.0,
+            gtk::Box {
+                set_orientation: gtk::Orientation::Horizontal,
+                set_spacing: 4,
+
+                #[name(context_progress_bar)]
+                gtk::ProgressBar {
+                    set_hexpand: true,
+                    #[watch]
+                    set_fraction: model.context_utilization,
+                    #[watch]
+                    set_visible: model.context_utilization > 0.0,
+                },
+
+                #[name(context_warning_icon)]
+                gtk::Image {
+                    #[watch]
+                    set_visible: model.context_utilization > 0.8,
+                },
             },
 
             gtk::Box {
@@ -72,6 +95,7 @@ impl Component for InputBar {
                 #[name(scrolled_window)]
                 gtk::ScrolledWindow {
                     set_hexpand: true,
+                    set_height_request: 60,
                     set_min_content_height: 60,
                     set_max_content_height: 200,
 
@@ -121,13 +145,18 @@ impl Component for InputBar {
             truncated_messages: 0,
             tokens_used: 0,
             context_window: 0,
+            system_tokens: 0,
+            history_tokens: 0,
+            lorebook_tokens: 0,
             context_progress_bar: gtk::ProgressBar::new(), // placeholder, replaced below
+            context_warning_icon: gtk::Image::new(), // placeholder, replaced below
         };
 
         let widgets = view_output!();
 
         // Update the progress bar reference from the actual widget
         model.context_progress_bar = widgets.context_progress_bar.clone();
+        model.context_warning_icon = widgets.context_warning_icon.clone();
 
         // Set up CSS for the context utilization progress bar per UI-SPEC
         let css_provider = gtk::CssProvider::new();
@@ -212,11 +241,14 @@ impl Component for InputBar {
                     .text(&self.text_buffer.start_iter(), &self.text_buffer.end_iter(), true);
                 self.has_text = !text.as_str().trim().is_empty();
             }
-            InputBarMsg::UpdateContextUtilization { pct, truncated, tokens_used, context_window } => {
+            InputBarMsg::UpdateContextUtilization { pct, truncated, tokens_used, context_window, system_tokens, history_tokens, lorebook_tokens } => {
                 self.context_utilization = pct;
                 self.truncated_messages = truncated;
                 self.tokens_used = tokens_used;
                 self.context_window = context_window;
+                self.system_tokens = system_tokens;
+                self.history_tokens = history_tokens;
+                self.lorebook_tokens = lorebook_tokens;
 
                 // Update CSS class based on percentage per D-15 and UI-SPEC
                 // Remove all tier CSS classes first
@@ -232,19 +264,27 @@ impl Component for InputBar {
                     self.context_progress_bar.add_css_class("error");
                 }
 
-                // Update tooltip per UI-SPEC
-                let pct_display = (pct * 100.0) as usize;
-                if truncated > 0 {
-                    self.context_progress_bar.set_tooltip_text(Some(&format!(
-                        "Using {} / {} tokens ({}%) — History truncated to fit context",
-                        tokens_used, context_window, pct_display
-                    )));
+                // Update warning/error icon
+                if pct > 0.95 {
+                    self.context_warning_icon.set_icon_name(Some("dialog-error"));
+                    self.context_warning_icon.set_visible(true);
+                } else if pct > 0.8 {
+                    self.context_warning_icon.set_icon_name(Some("dialog-warning"));
+                    self.context_warning_icon.set_visible(true);
                 } else {
-                    self.context_progress_bar.set_tooltip_text(Some(&format!(
-                        "Using {} / {} tokens ({}%)",
-                        tokens_used, context_window, pct_display
-                    )));
+                    self.context_warning_icon.set_visible(false);
                 }
+
+                // Update tooltip with breakdown per UI-SPEC
+                let pct_display = (pct * 100.0) as usize;
+                let mut tooltip = format!(
+                    "Using {} / {} tokens ({}%)\nSystem: {} tokens\nHistory: {} tokens\nLorebook: {} tokens",
+                    tokens_used, context_window, pct_display, system_tokens, history_tokens, lorebook_tokens
+                );
+                if truncated > 0 {
+                    tooltip.push_str("\nHistory truncated to fit context");
+                }
+                self.context_progress_bar.set_tooltip_text(Some(&tooltip));
             }
         }
     }

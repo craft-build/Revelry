@@ -70,16 +70,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Regex Scripting
 
-- [ ] **RGXO-01**: User can define regex find-and-replace scripts per character (find pattern, replace pattern, flags, execution order)
-- [ ] **RGXO-02**: Regex scripts modify AI responses before display
+- [x] **RGXO-01**: User can define regex find-and-replace scripts per character (find pattern, replace pattern, flags, execution order)
+- [x] **RGXO-02**: Regex scripts modify AI responses before display
 - [ ] **RGXO-03**: Regex patterns are validated for ReDoS vulnerability before being applied to live conversations
-- [ ] **RGXO-04**: User can test regex scripts on sample text with before/after preview panel
+- [x] **RGXO-04**: User can test regex scripts on sample text with before/after preview panel
 
 ### Data Management
 
-- [ ] **DATA-01**: User can export all application data as a portable SQL dump
-- [ ] **DATA-02**: User can export all application data as a ZIP archive (database, configuration, avatar images)
-- [ ] **DATA-03**: User can import application data from a previously exported SQL dump or ZIP archive
+- [x] **DATA-01**: User can export all application data as a portable SQL dump
+- [x] **DATA-02**: User can export all application data as a ZIP archive (database, configuration, avatar images)
+- [x] **DATA-03**: User can import application data from a previously exported SQL dump or ZIP archive
 
 ### UI Shell
 

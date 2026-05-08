@@ -55,6 +55,8 @@ pub struct ChatPanel {
     persona_listbox: gtk::ListBox,
     preset_button: gtk::MenuButton,
     preset_listbox: gtk::ListBox,
+    chat_stack: gtk::Stack,
+    empty_state: adw::StatusPage,
 }
 
 /// Messages handled by ChatPanel.
@@ -181,23 +183,15 @@ impl Component for ChatPanel {
             },
 
             #[wrap(Some)]
+            #[name(content_box)]
             set_content = &gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
 
-                #[name(messages_scrolled)]
-                gtk::ScrolledWindow {
+                #[name(chat_stack)]
+                gtk::Stack {
                     set_vexpand: true,
-
-                    #[name(messages_list_box)]
-                    gtk::ListBox {
-                        set_selection_mode: gtk::SelectionMode::None,
-                        set_margin_top: 8,
-                        set_margin_bottom: 8,
-                    },
+                    set_transition_type: gtk::StackTransitionType::Crossfade,
                 },
-
-                #[local_ref]
-                input_bar_widget -> gtk::Box {},
             },
         }
     }
@@ -245,7 +239,17 @@ impl Component for ChatPanel {
         preset_button.set_has_frame(false);
         preset_button.set_visible(false);
 
-        let model = ChatPanel {
+        // Create empty state status page
+        let empty_state_widget = adw::StatusPage::new();
+        empty_state_widget.set_icon_name(Some("chat"));
+        empty_state_widget.set_title("No Conversation Selected");
+        empty_state_widget.set_description(Some("Select a character from the sidebar to start chatting"));
+
+        // Create messages scrolled window
+        let messages_scrolled_widget = gtk::ScrolledWindow::new();
+        messages_scrolled_widget.set_vexpand(true);
+
+        let mut model = ChatPanel {
             active_conversation: None,
             active_character: None,
             active_provider: None,
@@ -274,14 +278,27 @@ impl Component for ChatPanel {
             persona_listbox: persona_listbox.clone(),
             preset_button: preset_button.clone(),
             preset_listbox: preset_listbox.clone(),
+            chat_stack: gtk::Stack::new(),
+            empty_state: empty_state_widget.clone(),
         };
 
         let input_bar_widget = model.input_bar.widget().clone();
 
         let widgets = view_output!();
 
-        // Add messages container to scrolled window
-        widgets.messages_scrolled.set_child(Some(&model.messages_container));
+        // Store widget references from the view
+        model.chat_stack = widgets.chat_stack.clone();
+
+        // Add input bar below the chat stack
+        widgets.content_box.append(&input_bar_widget);
+
+        // Set messages container as child of scrolled window
+        messages_scrolled_widget.set_child(Some(&model.messages_container));
+
+        // Add pages to chat stack
+        model.chat_stack.add_named(&empty_state_widget, Some("empty"));
+        model.chat_stack.add_named(&messages_scrolled_widget, Some("messages"));
+        model.chat_stack.set_visible_child_name("empty");
 
         // Set up persona popover and add button to header
         let persona_popover = gtk::Popover::new();
@@ -396,6 +413,9 @@ impl Component for ChatPanel {
 
                 // Rebuild message list
                 self.rebuild_message_list(&sender);
+
+                // Show messages page in chat stack
+                self.chat_stack.set_visible_child_name("messages");
             }
             ChatPanelMsg::ClearConversation => {
                 self.active_conversation = None;
@@ -409,11 +429,17 @@ impl Component for ChatPanel {
                 self.preset_button.set_visible(false);
                 self.update_persona_display();
                 self.update_preset_display();
+
+                // Show empty state page
+                self.chat_stack.set_visible_child_name("empty");
                 let _ = self.input_bar.sender().send(InputBarMsg::UpdateContextUtilization {
                     pct: 0.0,
                     truncated: 0,
                     tokens_used: 0,
                     context_window: 0,
+                    system_tokens: 0,
+                    history_tokens: 0,
+                    lorebook_tokens: 0,
                 });
                 self.rebuild_message_list(&sender);
             }
@@ -482,6 +508,7 @@ impl Component for ChatPanel {
             }
             ChatPanelMsg::ConversationStarted(conversation) => {
                 self.active_conversation = Some(conversation);
+                self.chat_stack.set_visible_child_name("messages");
             }
             ChatPanelMsg::MessagesLoaded(msgs) => {
                 self.messages = msgs;
@@ -525,6 +552,9 @@ impl Component for ChatPanel {
                     truncated: assembled.truncated_messages,
                     tokens_used,
                     context_window: context_window as usize,
+                    system_tokens: 0, // TODO: populate from AssembledPrompt breakdown
+                    history_tokens: 0, // TODO: populate from AssembledPrompt breakdown
+                    lorebook_tokens: 0, // TODO: populate from AssembledPrompt breakdown
                 });
                 self.context_utilization = assembled.context_utilization;
 

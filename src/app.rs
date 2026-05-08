@@ -46,8 +46,9 @@ pub enum ActiveView {
         PersonaEditorOutput(PersonaEditorOutput),
         LorebookEditorOutput(LorebookEditorOutput),
         PresetEditorOutput(PresetEditorOutput),
-        ShowToast(String),
-        Quit,
+    ShowToast(String),
+    ShowShortcutsDialog,
+    Quit,
     }
 
 /// Minimum data needed to render a sidebar conversation row.
@@ -346,6 +347,17 @@ impl SimpleComponent for AppModel {
                 {
                     let _ = sender_clone.send(AppMsg::CharactersOutput(
                         CharactersPanelOutput::EditCharacter(String::new()),
+                    ));
+                    return gtk::glib::Propagation::Stop;
+                }
+
+                // Ctrl+Shift+P → New persona
+                if modifier_ctrl
+                    && modifier.contains(gtk::gdk::ModifierType::SHIFT_MASK)
+                    && (key == gtk::gdk::Key::p || key == gtk::gdk::Key::P)
+                {
+                    let _ = sender_clone.send(AppMsg::CharactersOutput(
+                        CharactersPanelOutput::EditPersona(String::new()),
                     ));
                     return gtk::glib::Propagation::Stop;
                 }
@@ -1211,6 +1223,57 @@ impl SimpleComponent for AppModel {
             },
             AppMsg::ShowToast(message) => {
                 self.show_toast(&message);
+            }
+            AppMsg::ShowShortcutsDialog => {
+                let dialog = adw::AlertDialog::new(
+                    Some("Keyboard Shortcuts"),
+                    None,
+                );
+
+                let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
+                content.set_margin_start(12);
+                content.set_margin_end(12);
+                content.set_margin_top(8);
+                content.set_margin_bottom(8);
+
+                let shortcuts = [
+                    ("Ctrl+1 / Cmd+1", "Chat view"),
+                    ("Ctrl+2 / Cmd+2", "Characters view"),
+                    ("Ctrl+3 / Cmd+3", "Settings view"),
+                    ("Ctrl+Comma", "Settings view"),
+                    ("Ctrl+Shift+N", "New character"),
+                    ("Ctrl+Shift+P", "New persona"),
+                    ("F9", "Toggle sidebar"),
+                    ("Ctrl+Q / Cmd+Q", "Quit"),
+                    ("Ctrl+Enter / Cmd+Enter", "Send message"),
+                ];
+
+                for (shortcut, description) in &shortcuts {
+                    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+                    row.set_hexpand(true);
+
+                    let kbd = gtk::Label::new(Some(shortcut));
+                    kbd.add_css_class("kbd");
+                    kbd.add_css_class("caption");
+                    kbd.set_xalign(0.0);
+                    kbd.set_hexpand(true);
+
+                    let desc = gtk::Label::new(Some(description));
+                    desc.add_css_class("caption");
+                    desc.set_xalign(1.0);
+
+                    row.append(&kbd);
+                    row.append(&desc);
+                    content.append(&row);
+                }
+
+                dialog.set_extra_child(Some(&content));
+                dialog.add_response("close", "Close");
+                dialog.set_close_response("close");
+
+                let window = self.toast_overlay.ancestor(gtk::Window::static_type())
+                    .and_then(|w| w.downcast::<gtk::Window>().ok());
+                dialog.present(window.as_ref());
             }
             AppMsg::Quit => {
                 // The window will close via the main loop when the Quit message
