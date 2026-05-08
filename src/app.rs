@@ -628,7 +628,13 @@ impl SimpleComponent for AppModel {
                     self.db_worker.sender().send(DbInput::LoadPresets).unwrap();
                 }
                 DbOutput::RegexScriptsLoaded(scripts) => {
-                    self.regex_scripts = scripts;
+                    self.regex_scripts = scripts.clone();
+                    // Forward to character editor if open
+                    if let Some(ref editor) = self.character_editor {
+                        let _ = editor.sender().send(crate::ui::CharacterEditorMsg::RegexScriptsLoaded(scripts.clone()));
+                    }
+                    // Forward to chat panel for regex execution at display time per D-05
+                    let _ = self.chat_panel.sender().send(ChatPanelMsg::RegexScriptsLoaded(scripts));
                 }
                 DbOutput::RegexScriptSaved(_) => {
                     // Reload scripts for the current character
@@ -1096,6 +1102,10 @@ impl SimpleComponent for AppModel {
                     // Load lorebook entries for the active character per D-08
                     self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
                 }
+                ChatPanelOutput::LoadRegexScripts(character_id) => {
+                    // Load regex scripts for the active character per D-05
+                    self.db_worker.sender().send(DbInput::LoadRegexScripts(character_id)).unwrap();
+                }
             },
             AppMsg::LorebookEditorOutput(output) => match output {
                 LorebookEditorOutput::SaveEntry(entry) => {
@@ -1125,6 +1135,17 @@ impl SimpleComponent for AppModel {
                     self.lorebook_editor = Some(controller);
                     // Load existing entries
                     self.db_worker.sender().send(DbInput::LoadLorebookEntries(character_id)).unwrap();
+                }
+                CharacterEditorOutput::SaveRegexScript(script) => {
+                    self.current_regex_character_id = Some(script.character_id.clone());
+                    self.db_worker.sender().send(DbInput::SaveRegexScript(script)).unwrap();
+                }
+                CharacterEditorOutput::DeleteRegexScript(id) => {
+                    self.db_worker.sender().send(DbInput::DeleteRegexScript(id)).unwrap();
+                }
+                CharacterEditorOutput::LoadRegexScripts(character_id) => {
+                    self.current_regex_character_id = Some(character_id.clone());
+                    self.db_worker.sender().send(DbInput::LoadRegexScripts(character_id)).unwrap();
                 }
             },
             AppMsg::PersonaEditorOutput(output) => match output {

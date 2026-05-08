@@ -6,6 +6,8 @@ use crate::domain::character::CharacterCardV2;
 use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
+use crate::domain::regex_script::RegexScript;
+use crate::ui::regex_editor::RegexScriptEditorOutput;
 
 // Type alias — the #[relm4::component] macro generates a `CharacterEditorModel` widgets
 // struct, but we export the component type as `CharacterEditor` for downstream consumers.
@@ -45,6 +47,10 @@ pub struct CharacterEditorModel {
     lorebook_entries: Vec<LorebookEntry>,
     scan_depth_row: adw::SpinRow,
     recursive_depth_row: adw::SpinRow,
+    // Regex script fields
+    regex_scripts: Vec<RegexScript>,
+    regex_script_listbox: gtk::ListBox,
+    regex_editor: Option<relm4::Controller<crate::ui::regex_editor::RegexScriptEditorModel>>,
 }
 
 // ---------------------------------------------------------------------------
@@ -57,6 +63,7 @@ pub enum EditorPage {
     Personality,
     Scenario,
     Lorebook,
+    RegexScripts,
     Advanced,
 }
 
@@ -79,6 +86,12 @@ pub enum CharacterEditorMsg {
     SetRecursiveDepth(i32),
     LorebookEntriesLoaded(Vec<LorebookEntry>),
     OpenLorebookEditor,
+    RegexScriptsLoaded(Vec<RegexScript>),
+    AddRegexScript,
+    EditRegexScript(String),  // script_id
+    DeleteRegexScript(String), // script_id
+    ConfirmDeleteRegexScript(String),
+    RegexEditorOutput(RegexScriptEditorOutput),
     Save,
     Cancel,
 }
@@ -87,7 +100,10 @@ pub enum CharacterEditorMsg {
 pub enum CharacterEditorOutput {
     Saved(CharacterCardV2),
     Cancelled,
-    OpenLorebookEditor(String), // character_id
+    OpenLorebookEditor(String),    // character_id
+    SaveRegexScript(RegexScript),
+    DeleteRegexScript(String),       // script_id
+    LoadRegexScripts(String),        // character_id
 }
 
 #[derive(Debug, Clone)]
@@ -335,6 +351,41 @@ impl Component for CharacterEditorModel {
                 },
             },
 
+            // ---- Regex Scripts Page ----
+            add = &adw::PreferencesPage {
+                set_title: "Regex Scripts",
+                set_icon_name: Some("utilities-terminal-symbolic"),
+
+                adw::PreferencesGroup {
+                    set_title: "Post-Processing Scripts",
+                    set_description: Some("Regex scripts modify AI responses before display. Scripts run in order — each script's output becomes the next script's input."),
+
+                    #[local_ref]
+                    regex_script_listbox_widget -> gtk::ListBox {
+                        add_css_class: "boxed-list",
+                        set_selection_mode: gtk::SelectionMode::None,
+                    },
+
+                    gtk::Button {
+                        set_label: "Add Script",
+                        add_css_class: "flat",
+                        set_halign: gtk::Align::Start,
+                        set_margin_top: 8,
+                        connect_clicked => CharacterEditorMsg::AddRegexScript,
+                    },
+                },
+
+                adw::PreferencesGroup {
+                    gtk::Label {
+                        set_label: "Tip: Use the test panel in each script's editor to verify patterns before enabling them.",
+                        add_css_class: "caption",
+                        add_css_class: "dim-label",
+                        set_wrap: true,
+                        set_xalign: 0.0,
+                    },
+                },
+            },
+
             // ---- Advanced Page ----
             add = &adw::PreferencesPage {
                 set_title: "Advanced",
@@ -410,12 +461,19 @@ impl Component for CharacterEditorModel {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let widgets = view_output!();
-
         let (character, is_new) = match init {
             CharacterEditorInit::New => (CharacterCardV2::new(String::new()), true),
             CharacterEditorInit::Edit(c) => (c, false),
         };
+
+        // Create regex script listbox for local_ref BEFORE view_output!()
+        let regex_script_listbox = gtk::ListBox::new();
+        regex_script_listbox.add_css_class("boxed-list");
+        regex_script_listbox.set_selection_mode(gtk::SelectionMode::None);
+
+        let regex_script_listbox_widget = &regex_script_listbox;
+
+        let widgets = view_output!();
 
         // Set window title
         if is_new {
@@ -586,6 +644,9 @@ impl Component for CharacterEditorModel {
             lorebook_entries: Vec::new(),
             scan_depth_row: widgets.scan_depth_spin.clone(),
             recursive_depth_row: widgets.recursive_depth_spin.clone(),
+            regex_scripts: Vec::new(),
+            regex_script_listbox: regex_script_listbox.clone(),
+            regex_editor: None,
         };
 
         // Build dynamic lists (tags, alternate greetings) from initial data
@@ -594,6 +655,9 @@ impl Component for CharacterEditorModel {
 
         // Build persona dropdown inside the preferences row
         model.rebuild_persona_dropdown(&sender);
+
+        // Request regex scripts for this character from DB
+        let _ = sender.output(CharacterEditorOutput::LoadRegexScripts(model.character.id.clone()));
 
         ComponentParts { model, widgets }
     }
@@ -723,6 +787,73 @@ impl Component for CharacterEditorModel {
             }
             CharacterEditorMsg::OpenLorebookEditor => {
                 let _ = sender.output(CharacterEditorOutput::OpenLorebookEditor(self.character.id.clone()));
+            }
+            CharacterEditorMsg::RegexScriptsLoaded(scripts) => {
+                self.regex_scripts = scripts;
+                self.rebuild_regex_script_list(&sender);
+            }
+            CharacterEditorMsg::AddRegexScript => {
+                let new_script = RegexScript::new(
+                    self.character.id.clone(),
+                    String::new(),
+                    String::new(),
+                    String::new(),
+                );
+                let editor = crate::ui::regex_editor::RegexScriptEditorModel::builder()
+                    .launch((new_script, true))
+                    .forward(sender.input_sender(), |output| {
+                        CharacterEditorMsg::RegexEditorOutput(output)
+                    });
+                editor.widget().present();
+                self.regex_editor = Some(editor);
+            }
+            CharacterEditorMsg::EditRegexScript(id) => {
+                if let Some(script) = self.regex_scripts.iter().find(|s| s.id == id).cloned() {
+                    let editor = crate::ui::regex_editor::RegexScriptEditorModel::builder()
+                        .launch((script, false))
+                        .forward(sender.input_sender(), |output| {
+                            CharacterEditorMsg::RegexEditorOutput(output)
+                        });
+                    editor.widget().present();
+                    self.regex_editor = Some(editor);
+                }
+            }
+            CharacterEditorMsg::DeleteRegexScript(id) => {
+                let name = self.regex_scripts.iter().find(|s| s.id == id)
+                    .map(|s| s.name.as_str()).unwrap_or("this script");
+                let dialog = adw::AlertDialog::new(
+                    Some("Delete Script?"),
+                    Some(&format!(
+                        "This will permanently delete '{}' and remove its post-processing from AI responses. This cannot be undone.",
+                        name
+                    )),
+                );
+                dialog.add_response("cancel", "Don't Delete");
+                dialog.add_response("delete", "Delete");
+                dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
+                dialog.set_close_response("cancel");
+                let sc = sender.clone();
+                let id_clone = id.clone();
+                dialog.connect_response(None, move |_, resp| {
+                    if resp == "delete" {
+                        let _ = sc.input_sender().send(CharacterEditorMsg::ConfirmDeleteRegexScript(id_clone.clone()));
+                    }
+                });
+                dialog.present(Some(&self.window));
+            }
+            CharacterEditorMsg::ConfirmDeleteRegexScript(id) => {
+                let _ = sender.output(CharacterEditorOutput::DeleteRegexScript(id));
+            }
+            CharacterEditorMsg::RegexEditorOutput(output) => {
+                match output {
+                    crate::ui::regex_editor::RegexScriptEditorOutput::SaveScript(script) => {
+                        let _ = sender.output(CharacterEditorOutput::SaveRegexScript(script));
+                        self.regex_editor = None;
+                    }
+                    crate::ui::regex_editor::RegexScriptEditorOutput::Cancel => {
+                        self.regex_editor = None;
+                    }
+                }
             }
             CharacterEditorMsg::Save => {
                 // Validate name is non-empty
@@ -941,5 +1072,80 @@ impl CharacterEditorModel {
         });
 
         self.preset_dropdown_row.set_child(Some(&dropdown));
+    }
+
+    /// Rebuild the regex script list in the listbox per UI-SPEC §7.
+    fn rebuild_regex_script_list(&self, sender: &ComponentSender<Self>) {
+        // Clear existing children
+        while let Some(child) = self.regex_script_listbox.first_child() {
+            self.regex_script_listbox.remove(&child);
+        }
+
+        if self.regex_scripts.is_empty() {
+            let status = adw::StatusPage::new();
+            status.set_title("No Regex Scripts");
+            status.set_description(Some("Add regex scripts to modify AI responses before display. Scripts run in order and can transform text with find-and-replace patterns."));
+            let row = adw::ActionRow::builder().build();
+            row.set_child(Some(&status));
+            self.regex_script_listbox.append(&row);
+            return;
+        }
+
+        for script in &self.regex_scripts {
+            let row = adw::ActionRow::builder()
+                .title(&script.name)
+                .build();
+
+            // Subtitle: "{flags} · Find: {truncated_pattern}"
+            let truncated = if script.find_pattern.len() > 30 {
+                format!("{}…", &script.find_pattern[..30])
+            } else {
+                script.find_pattern.clone()
+            };
+            row.set_subtitle(&format!("{} · Find: {}", script.flags, truncated));
+
+            // Sort order suffix
+            let order_label = gtk::Label::new(Some(&format!("#{}", script.sort_order)));
+            order_label.add_css_class("caption");
+            order_label.set_valign(gtk::Align::Center);
+            row.add_suffix(&order_label);
+
+            // Enabled/disabled icon
+            let icon = gtk::Image::from_icon_name(if script.enabled { "object-select" } else { "cross-large" });
+            if !script.enabled {
+                icon.add_css_class("dim-label");
+            }
+            icon.set_valign(gtk::Align::Center);
+            row.add_suffix(&icon);
+
+            // Edit button
+            let edit_btn = gtk::Button::with_label("Edit");
+            edit_btn.add_css_class("flat");
+            edit_btn.set_valign(gtk::Align::Center);
+            let sc = sender.clone();
+            let id = script.id.clone();
+            edit_btn.connect_clicked(move |_| {
+                let _ = sc.input_sender().send(CharacterEditorMsg::EditRegexScript(id.clone()));
+            });
+            row.add_suffix(&edit_btn);
+
+            // Delete button
+            let del_btn = gtk::Button::with_label("Delete");
+            del_btn.add_css_class("flat");
+            del_btn.set_valign(gtk::Align::Center);
+            let sc = sender.clone();
+            let id = script.id.clone();
+            del_btn.connect_clicked(move |_| {
+                let _ = sc.input_sender().send(CharacterEditorMsg::DeleteRegexScript(id.clone()));
+            });
+            row.add_suffix(&del_btn);
+
+            // Dimmed if disabled
+            if !script.enabled {
+                row.add_css_class("dim-label");
+            }
+
+            self.regex_script_listbox.append(&row);
+        }
     }
 }

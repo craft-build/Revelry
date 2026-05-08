@@ -13,6 +13,7 @@ use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::LorebookEntry;
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
+use crate::domain::regex_script::RegexScript;
 use crate::service::ai::{AiService, GenerationParams, StreamChunk};
 use crate::service::prompt::PromptEngine;
 use crate::service::token_count::TokenCountService;
@@ -42,6 +43,7 @@ pub struct ChatPanel {
     editing_message_id: Option<String>,
     pending_user_text: Option<String>,
     lorebook_entries: Vec<LorebookEntry>,
+    regex_scripts: Vec<RegexScript>,
     context_utilization: f64,
     
     stream_cancel: Option<tokio::sync::watch::Sender<bool>>,
@@ -100,6 +102,7 @@ pub enum ChatPanelMsg {
     // Context engineering
     UpdateContextUtilization(f64), // context utilization ratio (0.0-1.0)
     LorebookEntriesLoaded(Vec<LorebookEntry>),
+    RegexScriptsLoaded(Vec<RegexScript>),
 }
 
 /// Command output from background operations (streaming, API calls).
@@ -132,6 +135,7 @@ pub enum ChatPanelOutput {
     SetConversationPreset { conversation_id: String, preset_id: Option<String> },
     // Context engineering
     LoadLorebookEntries(String), // character_id — request lorebook entries from DB
+    LoadRegexScripts(String),    // character_id — request regex scripts from DB
 }
 
 #[relm4::component(pub)]
@@ -261,6 +265,7 @@ impl Component for ChatPanel {
             editing_message_id: None,
             pending_user_text: None,
             lorebook_entries: Vec::new(),
+            regex_scripts: Vec::new(),
             context_utilization: 0.0,
             stream_cancel: None,
             messages_container,
@@ -386,6 +391,9 @@ impl Component for ChatPanel {
                 // Request lorebook entries for this character per D-08
                 let _ = sender.output(ChatPanelOutput::LoadLorebookEntries(character.id.clone()));
 
+                // Request regex scripts for this character per D-05
+                let _ = sender.output(ChatPanelOutput::LoadRegexScripts(character.id.clone()));
+
                 // Rebuild message list
                 self.rebuild_message_list(&sender);
             }
@@ -395,6 +403,7 @@ impl Component for ChatPanel {
                 self.active_persona = None;
                 self.messages.clear();
                 self.lorebook_entries.clear();
+                self.regex_scripts.clear();
                 self.context_utilization = 0.0;
                 self.persona_button.set_visible(false);
                 self.preset_button.set_visible(false);
@@ -768,6 +777,9 @@ impl Component for ChatPanel {
             ChatPanelMsg::LorebookEntriesLoaded(entries) => {
                 self.lorebook_entries = entries;
             }
+            ChatPanelMsg::RegexScriptsLoaded(scripts) => {
+                self.regex_scripts = scripts;
+            }
         }
     }
 
@@ -809,8 +821,20 @@ impl ChatPanel {
                 b.parent_message_id.as_ref() == Some(&message.id)
             });
 
+            // Apply regex scripts to assistant messages at display time per D-05
+            let display_content = if message.role == MessageRole::Assistant && !self.regex_scripts.is_empty() {
+                crate::service::regex::apply_regex_scripts(&message.content, &self.regex_scripts)
+            } else {
+                message.content.clone()
+            };
+
+            let display_message = Message {
+                content: display_content,
+                ..message.clone()
+            };
+
             let init = MessageRowInit {
-                message: message.clone(),
+                message: display_message,
                 character_name: self.active_character.as_ref().map(|c| c.name.clone()),
                 user_persona_name: self.active_persona.as_ref().map(|p| p.name.clone()),
                 has_siblings,

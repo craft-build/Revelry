@@ -6,6 +6,7 @@ mod characters;
 mod lorebook_editor;
 mod persona_editor;
 pub mod preset_editor;
+pub mod regex_editor;
 pub mod settings;
 
 pub use character_card::create_card_widget;
@@ -15,6 +16,7 @@ pub use chat::{ChatPanel, ChatPanelMsg, ChatPanelOutput, ChatCmdOut};
 pub use lorebook_editor::{LorebookEditorModel, LorebookEditorMsg, LorebookEditorOutput, LorebookField};
 pub use persona_editor::{PersonaEditorInit, PersonaEditorOutput};
 pub use preset_editor::{PresetEditorInit, PresetEditorOutput};
+pub use regex_editor::{RegexScriptEditorModel, RegexScriptEditorMsg, RegexScriptEditorOutput};
 
 /// Type alias — downstream consumers reference the component as `LorebookEditor`.
 pub type LorebookEditor = LorebookEditorModel;
