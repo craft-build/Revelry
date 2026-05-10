@@ -12,27 +12,36 @@ has changed.
 
 ---
 
-## Quick start
+## Desktop Development
 
+### Prerequisites
+- [Bun](https://bun.sh/) runtime
+- [Rust](https://rustup.rs/) toolchain (stable)
+- [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform
+
+### Development
 ```bash
-npm install
-npm run dev
+bun install          # Install JS dependencies
+bun tauri dev        # Start Tauri dev server (Rust + Vite HMR)
 ```
 
-Open <http://localhost:5173>. The app will load with mock characters,
-conversations, and personas so you can navigate every view without a backend.
-
-> **Note:** the project assumes Node 20+. Network access is required for the
-> initial install (Bits.ui, Tailwind v4, SvelteKit, lucide).
-
-### Other scripts
-
+### Production Build
 ```bash
-npm run build      # production build
-npm run preview    # preview the production build
-npm run check      # svelte-check + tsc
-npm run format     # prettier write
+bun tauri build      # Build production binary
 ```
+
+### Other Commands
+```bash
+bun run dev          # Vite dev server only (browser)
+bun run build        # SvelteKit static build only
+bun run tauri:check  # Tauri environment info
+bun run tauri:preview # Build + run production binary
+bun run check        # svelte-check + tsc
+bun run format       # prettier write
+```
+
+> **Note:** the project assumes Bun runtime. Network access is required for the
+> initial install (Bits.ui, Tailwind v4, SvelteKit, lucide, Tauri crates).
 
 ---
 
@@ -146,21 +155,22 @@ look. Used here for: `Avatar`, `Popover`, `Tooltip`, `Tabs`. Add more as needed
 
 ## Embedding in Tauri
 
-This UI is built as an SPA (`ssr = false` in the root layout) so it drops
-straight into Tauri:
+This UI is built as an SPA (`ssr = false` in the root layout) and already configured
+for Tauri via `@sveltejs/adapter-static` with `fallback: 'index.html'`. The
+`src-tauri/` directory contains the Rust backend scaffold with plugin registrations.
+
+To start developing:
 
 ```bash
-npm install -D @tauri-apps/cli
-npx tauri init
+bun tauri dev
 ```
 
-Point Tauri's `tauri.conf.json` `frontendDist` at `build/` (after `npm run
-build`) and Tauri serves the SPA in a webview. The Rust backend then exposes
-`invoke()` commands that map to the chat-engine, card-service, persona-service,
-etc. modules from §6.2 of the spec.
+The Rust backend exposes `invoke()` commands that map to the chat-engine,
+card-service, persona-service, etc. modules from §6.2 of the spec. Currently the
+backend is a minimal scaffold; real IPC commands will be added in Phase 2.
 
-If you'd rather skip Tauri and ship it as a web app, the same code runs against
-any HTTP backend that exposes the data shapes in `src/lib/types/index.ts`.
+If you'd rather skip Tauri and run it as a web app, use `bun run dev` for the
+Vite dev server on port 1420.
 
 ---
 
