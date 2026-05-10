@@ -9,9 +9,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Shell
 
-- [ ] **SHELL-01**: User can launch the app as a native desktop window (macOS, Linux, Windows)
-- [ ] **SHELL-02**: App runs the existing SvelteKit SPA in a Tauri webview with full routing
-- [ ] **SHELL-03**: App builds and runs correctly in both dev mode (`tauri dev`) and production mode (`tauri build`)
+- [x] **SHELL-01**: User can launch the app as a native desktop window (macOS, Linux, Windows)
+- [x] **SHELL-02**: App runs the existing SvelteKit SPA in a Tauri webview with full routing
+- [x] **SHELL-03**: App builds and runs correctly in both dev mode (`tauri dev`) and production mode (`tauri build`)
 
 ### Database
 
@@ -54,7 +54,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **CHAT-02**: User can stop generation mid-stream
 - [ ] **CHAT-03**: User can regenerate the last AI response
 - [ ] **CHAT-04**: User can edit a sent message and resend from that point
-- [ ] **CHAT-05**: User can send messages via Enter (or Ctrl+Enter based on settings)
+- [x] **CHAT-05**: User can send messages via Enter (or Ctrl+Enter based on settings)
 - [ ] **CHAT-06**: AI responses are rendered as formatted markdown (bold, italic, code blocks, lists, headers)
 
 ### Prompt Engineering
@@ -95,7 +95,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **SETT-01**: User can toggle between dark and light themes
 - [ ] **SETT-02**: App respects system appearance preference with manual override option
-- [ ] **SETT-03**: User can view and modify keyboard shortcuts
+- [x] **SETT-03**: User can view and modify keyboard shortcuts
 
 ### Design Document
 
@@ -142,9 +142,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SHELL-01 | Phase 1 | Pending |
-| SHELL-02 | Phase 1 | Pending |
-| SHELL-03 | Phase 1 | Pending |
+| SHELL-01 | Phase 1 | Done |
+| SHELL-02 | Phase 1 | Done |
+| SHELL-03 | Phase 1 | Done |
 | DB-01 | Phase 2 | Pending |
 | DB-02 | Phase 2 | Pending |
 | DB-03 | Phase 2 | Pending |
@@ -172,7 +172,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAT-02 | Phase 4 | Pending |
 | CHAT-03 | Phase 4 | Pending |
 | CHAT-04 | Phase 4 | Pending |
-| CHAT-05 | Phase 1 | Pending |
+| CHAT-05 | Phase 1 | Done |
 | CHAT-06 | Phase 6 | Pending |
 | PRMP-01 | Phase 5 | Pending |
 | PRMP-02 | Phase 5 | Pending |
@@ -198,7 +198,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REGX-05 | Phase 9 | Pending |
 | SETT-01 | Phase 10 | Pending |
 | SETT-02 | Phase 10 | Pending |
-| SETT-03 | Phase 1 | Pending |
+| SETT-03 | Phase 1 | Done |
 | DOC-01 | Phase 11 | Pending |
 | DIST-01 | Phase 11 | Pending |
 | DIST-02 | Phase 11 | Pending |
