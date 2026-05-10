@@ -1,7 +1,8 @@
 ---
 phase: 1
 slug: native-desktop-shell
-status: draft
+status: approved
+reviewed_at: 2026-05-10
 shadcn_initialized: false
 preset: none
 created: 2026-05-10
@@ -273,4 +274,4 @@ No design tokens, components, or visual patterns change in this phase.
 - [ ] Dimension 5 Spacing: PASS
 - [ ] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-10
