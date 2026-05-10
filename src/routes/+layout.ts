@@ -4,4 +4,4 @@
  * there is no server, just a packaged app.
  */
 export const ssr = false;
-export const prerender = false;
+export const prerender = true;
