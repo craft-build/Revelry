@@ -36,13 +36,22 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. All SvelteKit routes (home, chat, characters, settings) work inside the Tauri webview
   3. App runs correctly in both `tauri dev` and production `tauri build`
   4. Keyboard shortcuts (F9 sidebar, Enter/Ctrl+Enter send) still work
-**Plans**: TBD
+**Plans**: 4 plans in 2 waves
 
 Plans:
-- [ ] 01-01: Initialize Tauri v2 project (src-tauri/, Cargo.toml, tauri.conf.json)
-- [ ] 01-02: Switch SvelteKit to adapter-static with fallback
-- [ ] 01-03: Configure Tauri capabilities and permissions
-- [ ] 01-04: Verify dev and production builds on all platforms
+
+**Wave 1** *(autonomous — project scaffold + security layer)*
+- [ ] 01-01: Initialize Tauri v2 + Switch SvelteKit to adapter-static
+- [ ] 01-02: Configure Tauri v2 capabilities and permissions *(blocked on 01-01)*
+
+**Wave 2** *(manual — dev and production verification)*
+- [ ] 01-03: Verify dev mode — routes, keyboard shortcuts, drag region *(blocked on 01-01, 01-02)*
+- [ ] 01-04: Verify production build — `tauri build`, DevTools, CSP *(blocked on 01-01, 01-02)*
+
+**Cross-cutting constraints:**
+- Port alignment: Vite `server.port` (1420) must match Tauri `devUrl` — single point of failure across 01-01
+- Adapter-prerender contract: `svelte.config.js` adapter + `+layout.ts` prerender must stay consistent
+- Plugin registration triangle: `Cargo.toml` + `lib.rs` + `package.json` must all include the same plugins
 **UI hint**: yes
 
 ### Phase 2: Persistent Data
@@ -235,7 +244,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Native Desktop Shell | 0/4 | Not started | - |
+| 1. Native Desktop Shell | 0/4 | Planned | - |
 | 2. Persistent Data | 0/4 | Not started | - |
 | 3. Provider Setup | 0/4 | Not started | - |
 | 4. Live Conversations | 0/5 | Not started | - |
