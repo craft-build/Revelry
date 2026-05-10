@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "store",
+  "description": "Persistent store permissions — stub for future phases",
+  "windows": ["main"],
+  "permissions": [
+    "store:default"
+  ]
+}
