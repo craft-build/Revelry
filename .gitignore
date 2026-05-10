@@ -4,6 +4,7 @@
 # Tauri build artifacts
 src-tauri/target/
 src-tauri/gen/
+build/
 node_modules
 # IDE
 .idea/
@@ -13,6 +14,8 @@ node_modules
 .svelte*
 # macOS
 .DS_Store
+.gsd
+gtk_ref/target
 
 # Environment
 .env
