@@ -20,7 +20,7 @@
 - Issue: `MessageBubble.svelte` uses a hand-rolled regex for `*italic*` and `**bold**` only. No code blocks, lists, links, headers, or images. The function also does its own HTML escaping before regex substitution, which is a fragile pattern.
 - Files: `src/lib/components/chat/MessageBubble.svelte` (L49-56)
 - Impact: AI roleplay responses commonly contain code blocks, markdown links, and structured formatting. Users will see raw markdown syntax instead of rendered content.
-- Fix approach: Replace with a proper markdown parser (`marked`, `markdown-it`, or `pulldown-cmark` via the Rust backend). Sanitize the output with DOMPurify to prevent XSS.
+- Fix approach: Replace with a proper markdown parser (`marked`, `markdown-it`, or `pulldown-cmark` when the Tauri backend is built). Sanitize the output with DOMPurify to prevent XSS.
 
 **Hardcoded streaming simulation:**
 - Issue: `chat/[id]/+page.svelte` simulates token streaming with `setTimeout` and a fixed sample string. No real LLM integration.
@@ -38,7 +38,7 @@
 - Issue: `estimateTokens()` divides character count by 4. Real token counts vary wildly by language and tokenizer (BPE vs. unigram, code vs. prose, CJK text).
 - Files: `src/lib/utils/index.ts` (L31-33)
 - Impact: Context utilization bar in `MessageInput.svelte` is inaccurate. Users may hit context limits unexpectedly or see false warnings.
-- Fix approach: Backend should return `token_count` per message (already in the `Message` type). For client-side estimation, integrate `tiktoken` WASM or accept the backend's count via IPC.
+- Fix approach: When the Tauri backend is built, it should return `token_count` per message (already in the `Message` type). For now, integrate `tiktoken` WASM for client-side estimation; later, accept the backend's count via IPC.
 
 **No adapter-static — adapter-auto is wrong for Tauri:**
 - Issue: `svelte.config.js` uses `@sveltejs/adapter-auto`, which tries to detect the deployment platform. For a Tauri-packaged SPA, `adapter-static` is the correct choice (pre-rendered static files served by the webview).
@@ -89,8 +89,8 @@
 **API key display in settings:**
 - Risk: The settings page renders a fake API key value `"sk-…example…not-stored"` in an `<input type="password">` field with a reveal toggle. While currently a placeholder, the pattern of storing/displaying keys in client-side state is dangerous. If real keys ever flow through `AppState`, they'd be inspectable in browser devtools.
 - Files: `src/routes/settings/+page.svelte` (L79-96)
-- Current mitigation: Keys are not stored in the front-end. The design doc specifies OS keychain storage via the Rust backend.
-- Recommendations: Never allow real API keys into `AppState`. All key operations (store, retrieve, test) must go through Tauri IPC to the Rust backend, which uses the OS keychain (keyring crate). The settings UI should only show key status (set/not set), never the value.
+- Current mitigation: Keys are not stored in the front-end. The design doc specifies OS keychain storage via the Tauri backend.
+- Recommendations: **Future Tauri concern (reference: `gtk_ref/`)** — When building the Tauri backend, never allow real API keys into `AppState`. All key operations (store, retrieve, test) must go through Tauri IPC to the Rust backend, which uses the OS keychain (keyring crate). The `gtk_ref/` archival code demonstrates the keyring integration pattern to follow. The settings UI should only show key status (set/not set), never the value.
 
 **External font loading:**
 - Risk: Google Fonts are loaded via `<link>` tags in `app.html`, which makes network requests to `fonts.googleapis.com` and `fonts.gstatic.com` on every page load. This leaks user IP and browsing context to Google.
@@ -149,7 +149,7 @@
 **In-memory-only state:**
 - Current capacity: Limited by browser/WebView memory. Current mock data is ~10KB. Real usage with thousands of conversations and tens of thousands of messages would consume significant memory.
 - Limit: Without pagination or virtualization, the conversation list and message list will become sluggish at ~500+ conversations and ~1000+ messages per conversation.
-- Scaling path: Implement SQLite persistence via the Rust backend with lazy loading. Only load conversation metadata for the sidebar; load messages on demand when a conversation is opened. Add virtual scrolling for both lists.
+- Scaling path: **Future Tauri concern (reference: `gtk_ref/`)** — Implement SQLite persistence via the Tauri backend with lazy loading. Only load conversation metadata for the sidebar; load messages on demand when a conversation is opened. The `gtk_ref/` archival code shows the SQLite schema and query patterns to reference. Add virtual scrolling for both lists.
 
 **Single active conversation model:**
 - Current capacity: One conversation loaded at a time (`active_conversation_id` + `messages[]`).
@@ -159,7 +159,7 @@
 **No search indexing:**
 - Current capacity: Search is done via `.filter()` with `.includes()` over in-memory arrays.
 - Limit: Linear scan over all conversations/characters. Becomes noticeably slow at ~10K+ items.
-- Scaling path: Implement full-text search via SQLite FTS5 on the backend. The front-end sends search queries to the backend and receives ranked results.
+- Scaling path: **Future Tauri concern (reference: `gtk_ref/`)** — Implement full-text search via SQLite FTS5 when the Tauri backend is built. The `gtk_ref/` archival code references the SQLite schema to build on. The front-end will send search queries to the backend and receive ranked results.
 
 ## Dependencies at Risk
 
