@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 1 — Native Desktop Shell ✅ COMPLETE
+**Current focus:** Phase 2 — Persistent Data
 
 ## Current Position
 
-Phase: 1 of 11 (Native Desktop Shell)
-Plan: 4 of 4 in current phase
-Status: Complete
-Last activity: 2026-05-10 — Phase 1 execution complete (all 4 plans, 2 waves)
+Phase: 2 of 11 (Persistent Data)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-11 — Phase 1 verified and transitioned
 
-Progress: [████░░░░░░] 9%
+Progress: [███░░░░░░░] 18%
 
 ## Performance Metrics
 
@@ -29,10 +29,6 @@ Progress: [████░░░░░░] 9%
 |-------|-------|-------|----------|
 | 1 | 4 | 75min | 19min |
 
-**Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 01-04
-- Trend: First phase, establishing baseline
-
 *Updated after each plan completion*
 
 ## Accumulated Context
@@ -45,6 +41,8 @@ Recent decisions affecting current work:
 - Vertical MVP mode selected for project structure
 - YOLO workflow mode (auto-approve)
 - Vault mode explicitly excluded
+- Bundle identifier changed from com.revelry.app to com.revelry.desktop (Phase 1 UAT fix)
+- AppHeader drag region deferred to future work item (Phase 1 UAT)
 
 ### Pending Todos
 
@@ -64,6 +62,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-native-desktop-shell/01-UI-SPEC.md
+Last session: 2026-05-11
+Stopped at: Phase 1 complete, ready to plan Phase 2
+Resume file: None

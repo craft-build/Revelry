@@ -42,7 +42,7 @@ Users can have immersive, streaming AI conversations with custom characters thro
 
 <!-- Current scope — porting and wiring to create the full Tauri app -->
 
-- [ ] Tauri desktop shell wrapping the SvelteKit SPA
+- ✓ Tauri desktop shell wrapping the SvelteKit SPA — Phase 1
 - [ ] Migrate Rust domain models from gtk_ref/ to src-tauri/
 - [ ] Migrate rig-core AI service to src-tauri/ with full provider support
 - [ ] Migrate SQLite persistence layer to src-tauri/
@@ -102,7 +102,8 @@ Users can have immersive, streaming AI conversations with custom characters thro
 |----------|-----------|---------|
 | SvelteKit over GTK4 for UI | Faster iteration, Tauri-compatible, web-native tooling | ✓ Good — UI scaffold is solid |
 | Bits.ui over styled component library | Headless = full styling control for Adwaita aesthetic | ✓ Good — matches design intent |
-| Tauri for desktop shell | Embeds the existing SPA, Rust backend for native logic | — Pending |
+| Tauri for desktop shell | Embeds the existing SPA, Rust backend for native logic | ✓ Good — Phase 1 verified, builds on macOS |
+| Bundle identifier com.revelry.desktop | Changed from com.revelry.app to avoid macOS .app suffix conflict | ✓ Good — clean build, no warnings |
 | rig-core for AI providers | Provider-agnostic, supports 15+ providers with streaming | — Pending |
 | Dark theme by default | Creative roleplay users work at night; respects content-first principle | ✓ Good |
 | Exclude vault mode | Was speculative, adds significant complexity without confirmed need | — Pending |
@@ -126,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-10 after initialization*
+*Last updated: 2026-05-11 after Phase 1*

@@ -12,7 +12,7 @@ Transform the existing SvelteKit frontend scaffold into a full cross-platform Ta
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Native Desktop Shell** - App runs as a Tauri window with full SvelteKit routing
+- [x] **Phase 1: Native Desktop Shell** - App runs as a Tauri window with full SvelteKit routing ✅ 2026-05-11
 - [ ] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data
 - [ ] **Phase 3: Provider Setup** - Users configure AI providers with API keys stored in OS keychain
 - [ ] **Phase 4: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
@@ -244,7 +244,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Native Desktop Shell | 4/4 | Complete | 2026-05-10 |
+| 1. Native Desktop Shell | 4/4 | Complete | 2026-05-11 |
 | 2. Persistent Data | 0/4 | Not started | - |
 | 3. Provider Setup | 0/4 | Not started | - |
 | 4. Live Conversations | 0/5 | Not started | - |
