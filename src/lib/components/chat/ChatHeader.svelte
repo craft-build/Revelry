@@ -13,7 +13,7 @@
 		{#if app.active_character}
 			<Avatar
 				name={app.active_character.name}
-				src={app.active_character.avatar_url}
+				src={app.active_character.avatar_path}
 				size="md"
 			/>
 			<div class="min-w-0">

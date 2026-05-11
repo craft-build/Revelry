@@ -5,29 +5,30 @@
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 2 — Persistent Data
+**Current focus:** Phase 3 — Provider Setup
 
 ## Current Position
 
-Phase: 2 of 11 (Persistent Data)
-Plan: 4 plans in 4 waves
-Status: Ready to execute
-Last activity: 2026-05-11 — Phase 2 planned
+Phase: 3 of 11 (Provider Setup) — Ready to plan
+Plan: 0/4 plans complete
+Status: Ready to plan
+Last activity: 2026-05-11 — Phase 2 verified, transitioned to Phase 3
 
-Progress: [████░░░░░░] 27%
+Progress: [████░░░░░░] 18%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 8
 - Average duration: ~20 min
-- Total execution time: ~1.25 hours
+- Total execution time: ~2.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | 75min | 19min |
+| 2 | 4 | ~80min | 20min |
 
 *Updated after each plan completion*
 
@@ -50,7 +51,7 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+- ⚠️ [Phase 2/4] No character or persona creation UI — 6 UAT tests blocked (conversation-dependent flows). Editors planned for Phase 7 but Phase 4 (Live Conversations) is hard-blocked without seed data. Recommend adding sample/seed data or minimal creation capability before Phase 4.
 
 ## Deferred Items
 
@@ -63,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-11
-Stopped at: Phase 2 planned (4 plans, ready to execute)
-Resume file: .planning/phases/02-persistent-data/02-01-PLAN.md
+Stopped at: Phase 2 verified and transitioned — ready to plan Phase 3
+Resume file: None

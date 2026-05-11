@@ -13,7 +13,7 @@
 			return app.conversations.filter(
 				(c) =>
 					c.title.toLowerCase().includes(q) ||
-					c.last_message_preview?.toLowerCase().includes(q)
+					c.last_message_preview.toLowerCase().includes(q)
 			);
 		})()
 	);
@@ -69,7 +69,7 @@
 						>
 							<Avatar
 								name={char?.name ?? '?'}
-								src={char?.avatar_url}
+								src={char?.avatar_path}
 								size="sm"
 								class="mt-0.5"
 							/>
@@ -88,7 +88,7 @@
 									</span>
 								</div>
 								<p class="mt-0.5 line-clamp-2 text-[11px] leading-tight text-(--color-muted)">
-									{conv.last_message_preview ?? '—'}
+									{conv.last_message_preview || '—'}
 								</p>
 							</div>
 						</a>

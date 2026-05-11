@@ -43,9 +43,9 @@ Users can have immersive, streaming AI conversations with custom characters thro
 <!-- Current scope — porting and wiring to create the full Tauri app -->
 
 - ✓ Tauri desktop shell wrapping the SvelteKit SPA — Phase 1
-- [ ] Migrate Rust domain models from gtk_ref/ to src-tauri/
+- ✓ Migrate Rust domain models from gtk_ref/ to src-tauri/ — Phase 2
 - [ ] Migrate rig-core AI service to src-tauri/ with full provider support
-- [ ] Migrate SQLite persistence layer to src-tauri/
+- ✓ Migrate SQLite persistence layer to src-tauri/ — Phase 2
 - [ ] Migrate OS keyring secrets integration to src-tauri/
 - [ ] Migrate prompt engine to src-tauri/
 - [ ] Migrate token counting (tiktoken-rs) to src-tauri/
@@ -53,9 +53,9 @@ Users can have immersive, streaming AI conversations with custom characters thro
 - [ ] Migrate card I/O service to src-tauri/
 - [ ] Migrate lorebook service to src-tauri/
 - [ ] Migrate regex scripting service to src-tauri/
-- [ ] Wire SvelteKit frontend to Tauri backend via invoke() commands
+- ✓ Wire SvelteKit frontend to Tauri backend via invoke() commands — Phase 2
 - [ ] Replace mock streaming with real AI provider streaming via Tauri IPC
-- [ ] Replace mock data with real SQLite persistence via Tauri IPC
+- ✓ Replace mock data with real SQLite persistence via Tauri IPC — Phase 2
 - [ ] Replace token estimate heuristic with real tiktoken-rs counts via Tauri IPC
 - [ ] Replace naive markdown rendering with pulldown-cmark output via Tauri IPC
 - [ ] Character and persona editors (multi-step wizards from spec §7.4)
@@ -104,6 +104,9 @@ Users can have immersive, streaming AI conversations with custom characters thro
 | Bits.ui over styled component library | Headless = full styling control for Adwaita aesthetic | ✓ Good — matches design intent |
 | Tauri for desktop shell | Embeds the existing SPA, Rust backend for native logic | ✓ Good — Phase 1 verified, builds on macOS |
 | Bundle identifier com.revelry.desktop | Changed from com.revelry.app to avoid macOS .app suffix conflict | ✓ Good — clean build, no warnings |
+| DateTime<Utc> with .to_rfc3339() | Better IPC portability than NaiveDateTime | ✓ Good — Phase 2 |
+| Single collapsed migration | No data to preserve, cleaner than 9 sequential migrations | ✓ Good — Phase 2 |
+| MessageRole Assistant (not Character) | Aligned with rig-core convention | ✓ Good — Phase 2 |
 | rig-core for AI providers | Provider-agnostic, supports 15+ providers with streaming | — Pending |
 | Dark theme by default | Creative roleplay users work at night; respects content-first principle | ✓ Good |
 | Exclude vault mode | Was speculative, adds significant complexity without confirmed need | — Pending |
@@ -127,4 +130,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 after Phase 1*
+*Last updated: 2026-05-11 after Phase 2*

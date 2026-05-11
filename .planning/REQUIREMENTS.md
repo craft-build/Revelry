@@ -15,13 +15,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Database
 
-- [ ] **DB-01**: App initializes SQLite database in platform-appropriate data directory on first launch
-- [ ] **DB-02**: App runs schema migrations automatically on startup
-- [ ] **DB-03**: All database operations execute off the main thread to prevent UI freezes
+- [x] **DB-01**: App initializes SQLite database in platform-appropriate data directory on first launch
+- [x] **DB-02**: App runs schema migrations automatically on startup
+- [x] **DB-03**: All database operations execute off the main thread to prevent UI freezes
 
 ### Characters
 
-- [ ] **CHAR-01**: User can view a library of characters with search and filtering
+- [x] **CHAR-01**: User can view a library of characters with search and filtering
 - [ ] **CHAR-02**: User can create a new character with name, description, personality, scenario, greeting message, and example dialogues
 - [ ] **CHAR-03**: User can edit an existing character's fields
 - [ ] **CHAR-04**: User can delete a character
@@ -31,19 +31,19 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Personas
 
-- [ ] **PERS-01**: User can view a library of personas with search and filtering
+- [x] **PERS-01**: User can view a library of personas with search and filtering
 - [ ] **PERS-02**: User can create a new persona with name, description, and avatar
 - [ ] **PERS-03**: User can edit an existing persona's fields
 - [ ] **PERS-04**: User can delete a persona
-- [ ] **PERS-05**: User can switch the active persona for a conversation via the persona switcher
+- [x] **PERS-05**: User can switch the active persona for a conversation via the persona switcher
 
 ### Conversations
 
-- [ ] **CONV-01**: User can create a new conversation with a character
-- [ ] **CONV-02**: User can view a list of conversations with character info, last message preview, and relative timestamps
-- [ ] **CONV-03**: User can search conversations by text
-- [ ] **CONV-04**: User can delete a conversation
-- [ ] **CONV-05**: User can view conversation messages with auto-scroll
+- [x] **CONV-01**: User can create a new conversation with a character
+- [x] **CONV-02**: User can view a list of conversations with character info, last message preview, and relative timestamps
+- [x] **CONV-03**: User can search conversations by text
+- [x] **CONV-04**: User can delete a conversation
+- [x] **CONV-05**: User can view conversation messages with auto-scroll
 - [ ] **CONV-06**: User can fork a conversation from any message to create a parallel branch
 - [ ] **CONV-07**: User can navigate between conversation branches
 - [ ] **CONV-08**: User can search across all conversations and messages with full-text search
@@ -145,26 +145,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHELL-01 | Phase 1 | Done |
 | SHELL-02 | Phase 1 | Done |
 | SHELL-03 | Phase 1 | Done |
-| DB-01 | Phase 2 | Pending |
-| DB-02 | Phase 2 | Pending |
-| DB-03 | Phase 2 | Pending |
-| CHAR-01 | Phase 2 | Pending |
+| DB-01 | Phase 2 | Done |
+| DB-02 | Phase 2 | Done |
+| DB-03 | Phase 2 | Done |
+| CHAR-01 | Phase 2 | Done |
 | CHAR-02 | Phase 7 | Pending |
 | CHAR-03 | Phase 7 | Pending |
 | CHAR-04 | Phase 7 | Pending |
 | CHAR-05 | Phase 7 | Pending |
 | CHAR-06 | Phase 6 | Pending |
 | CHAR-07 | Phase 6 | Pending |
-| PERS-01 | Phase 2 | Pending |
+| PERS-01 | Phase 2 | Done |
 | PERS-02 | Phase 7 | Pending |
 | PERS-03 | Phase 7 | Pending |
 | PERS-04 | Phase 7 | Pending |
-| PERS-05 | Phase 2 | Pending |
-| CONV-01 | Phase 2 | Pending |
-| CONV-02 | Phase 2 | Pending |
-| CONV-03 | Phase 2 | Pending |
-| CONV-04 | Phase 2 | Pending |
-| CONV-05 | Phase 2 | Pending |
+| PERS-05 | Phase 2 | Done |
+| CONV-01 | Phase 2 | Done |
+| CONV-02 | Phase 2 | Done |
+| CONV-03 | Phase 2 | Done |
+| CONV-04 | Phase 2 | Done |
+| CONV-05 | Phase 2 | Done |
 | CONV-06 | Phase 8 | Pending |
 | CONV-07 | Phase 8 | Pending |
 | CONV-08 | Phase 8 | Pending |

@@ -19,7 +19,7 @@
 	>
 		<Avatar
 			name={app.active_persona?.name ?? 'No persona'}
-			src={app.active_persona?.avatar_url}
+			src={app.active_persona?.avatar_path}
 			size="xs"
 		/>
 		<span class="font-display tracking-tight">
@@ -49,13 +49,11 @@
 							active ? 'bg-(--color-surface)' : 'hover:bg-(--color-surface-hover)'
 						)}
 					>
-						<Avatar name={persona.name} src={persona.avatar_url} size="sm" />
+						<Avatar name={persona.name} src={persona.avatar_path} size="sm" />
 						<div class="min-w-0 flex-1">
 							<div class="flex items-baseline gap-1.5">
 								<span class="truncate text-sm font-medium">{persona.name}</span>
-								{#if persona.is_default}
-									<span class="text-[10px] text-(--color-subtle)">(default)</span>
-								{/if}
+
 							</div>
 							{#if persona.role_description}
 								<p class="truncate text-[11px] text-(--color-muted)">

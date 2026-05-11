@@ -42,7 +42,7 @@
 					href="/chat/conv_01"
 					class="group flex flex-col gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-left transition-all hover:-translate-y-0.5 hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated)"
 				>
-					<Avatar name={char.name} src={char.avatar_url} size="md" />
+					<Avatar name={char.name} src={char.avatar_path} size="md" />
 					<div class="space-y-1">
 						<h3
 							class="truncate font-display text-base font-semibold leading-tight tracking-tight"

@@ -40,7 +40,7 @@
 	<div class="shrink-0 pt-1">
 		<Avatar
 			name={isUser ? (persona?.name ?? 'You') : (character?.name ?? '?')}
-			src={isUser ? persona?.avatar_url : character?.avatar_url}
+			src={isUser ? persona?.avatar_path : character?.avatar_path}
 			size="sm"
 		/>
 	</div>

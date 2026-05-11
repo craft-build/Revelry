@@ -13,7 +13,7 @@ Transform the existing SvelteKit frontend scaffold into a full cross-platform Ta
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Native Desktop Shell** - App runs as a Tauri window with full SvelteKit routing ✅ 2026-05-11
-- [ ] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data
+- [x] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data ✅ 2026-05-11
 - [ ] **Phase 3: Provider Setup** - Users configure AI providers with API keys stored in OS keychain
 - [ ] **Phase 4: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
 - [ ] **Phase 5: Smart Prompts** - Budget-aware prompt assembly and real token counting
@@ -69,16 +69,16 @@ Plans:
 Plans:
 
 **Wave 1** *(autonomous — domain models + schema + DbWorker)*
-- [ ] 02-01: Port domain models from gtk_ref/ and define SQLite schema
+- [x] 02-01: Port domain models from gtk_ref/ and define SQLite schema
 
 **Wave 2** *(autonomous — CRUD functions + row mappers, blocked on Wave 1)*
-- [ ] 02-02: Implement DbService with background-thread worker and migrations *(blocked on 02-01)*
+- [x] 02-02: Implement DbService with background-thread worker and migrations *(blocked on 02-01)*
 
 **Wave 3** *(autonomous — Tauri IPC commands, blocked on Wave 2)*
-- [ ] 02-03: Create Tauri commands for character, persona, and conversation CRUD *(blocked on 02-02)*
+- [x] 02-03: Create Tauri commands for character, persona, and conversation CRUD *(blocked on 02-02)*
 
 **Wave 4** *(autonomous — frontend wiring, blocked on Wave 3)*
-- [ ] 02-04: Replace mock data in SvelteKit frontend with invoke() calls *(blocked on 02-03)*
+- [x] 02-04: Replace mock data in SvelteKit frontend with invoke() calls *(blocked on 02-03)*
 
 **Cross-cutting constraints:**
 - DbCommand enum: 02-01 defines the enum, 02-02 adds match arms, 02-03 uses them in Tauri commands — must stay in sync
@@ -258,7 +258,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Native Desktop Shell | 4/4 | Complete | 2026-05-11 |
-| 2. Persistent Data | 0/4 | Planned | - |
+| 2. Persistent Data | 4/4 | Complete | 2026-05-11 |
 | 3. Provider Setup | 0/4 | Not started | - |
 | 4. Live Conversations | 0/5 | Not started | - |
 | 5. Smart Prompts | 0/4 | Not started | - |

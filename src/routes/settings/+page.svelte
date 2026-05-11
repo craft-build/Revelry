@@ -146,14 +146,19 @@
 					Prompt presets
 				</h2>
 				<div class="flex flex-col gap-2">
-					{#each app.prompt_presets as preset (preset.id)}
+					{#each app.presets as preset (preset.id)}
 						<div
 							class="flex items-center justify-between gap-3 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface) px-4 py-3"
 						>
 							<div>
-								<div class="font-medium">{preset.name}</div>
+								<div class="font-medium">
+									{preset.name}
+									{#if preset.is_builtin}
+										<span class="ml-1 text-[10px] font-normal uppercase tracking-wider text-(--color-subtle)">built-in</span>
+									{/if}
+								</div>
 								<div class="text-[11px] text-(--color-subtle)">
-									temp {preset.temperature} · top_p {preset.top_p} · {preset.max_tokens} tok
+									temp {preset.temperature} · top_p {preset.top_p} · {preset.max_tokens} tok{preset.stop_sequences.length ? ` · stops: ${preset.stop_sequences.length}` : ''}
 								</div>
 							</div>
 							<Button variant="ghost" size="sm">Edit</Button>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { app } from '$lib/stores/app.svelte';
-	import { getMessages } from '$lib/data/mock';
+	import { getMessages } from '$lib/data/api';
 	import ChatHeader from '$lib/components/chat/ChatHeader.svelte';
 	import MessageBubble from '$lib/components/chat/MessageBubble.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
@@ -16,10 +16,13 @@
 	let scrollEl: HTMLDivElement | undefined = $state();
 
 	// Hydrate the active conversation when the route id changes.
-	// In production this would dispatch a LoadConversation message that
-	// queries the SQLite db for messages along the active branch.
 	$effect(() => {
-		app.openConversation(data.id, getMessages(data.id));
+		getMessages(data.id).then((msgs) => {
+			app.openConversation(data.id, msgs);
+		}).catch((err) => {
+			console.error('Failed to load messages:', err);
+			app.openConversation(data.id, []);
+		});
 	});
 
 	// Auto-scroll to bottom when messages change
@@ -33,21 +36,23 @@
 	});
 
 	/**
-	 * Mock send handler — in the real app this dispatches a SendMessage
+	 * Placeholder send handler — in the real app this dispatches a SendMessage
 	 * message that the chat-engine module turns into a rig streaming
 	 * completion. Here we fake the streaming so the UI is testable.
 	 */
 	function handleSend(text: string) {
 		if (!app.active_conversation_id) return;
 
+		const now = new Date().toISOString();
+		const nextSortOrder = (app.messages.at(-1)?.sort_order ?? -1) + 1;
+
 		const userMsg: Message = {
 			id: `msg_${Date.now()}_u`,
 			conversation_id: app.active_conversation_id,
-			parent_id: app.messages.at(-1)?.id ?? null,
-			branch_index: 0,
 			role: 'user',
 			content: text,
-			created_at: new Date().toISOString()
+			sort_order: nextSortOrder,
+			timestamp: now
 		};
 		app.appendMessage(userMsg);
 
@@ -56,13 +61,12 @@
 		const aiMsg: Message = {
 			id: aiId,
 			conversation_id: app.active_conversation_id,
-			parent_id: userMsg.id,
-			branch_index: 0,
-			role: 'character',
+			role: 'assistant',
 			content: '',
+			sort_order: nextSortOrder + 1,
+			timestamp: now,
 			is_streaming: true,
-			metadata: { model: 'claude-opus-4-7' },
-			created_at: new Date().toISOString()
+			metadata: { model: 'claude-opus-4-7' }
 		};
 		app.appendMessage(aiMsg);
 		app.is_generating = true;

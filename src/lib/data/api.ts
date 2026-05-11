@@ -1,0 +1,105 @@
+/**
+ * Typed API layer — wraps Tauri v2 invoke() calls for all 16 backend commands.
+ *
+ * Command names use snake_case matching Rust function names.
+ * Arguments use camelCase (Tauri v2 auto-converts to snake_case for Rust).
+ */
+
+import { invoke } from '@tauri-apps/api/core';
+import type {
+	CharacterCard,
+	Conversation,
+	Message,
+	UserPersona,
+	GenerationPreset
+} from '$lib/types';
+
+// ── Characters ────────────────────────────────────────────────────────────────
+
+export async function getCharacters(): Promise<CharacterCard[]> {
+	return invoke<CharacterCard[]>('get_characters');
+}
+
+export async function saveCharacter(
+	character: CharacterCard
+): Promise<CharacterCard> {
+	return invoke<CharacterCard>('save_character', { character });
+}
+
+export async function deleteCharacter(id: string): Promise<void> {
+	return invoke<void>('delete_character', { id });
+}
+
+export async function searchCharacters(query: string): Promise<CharacterCard[]> {
+	return invoke<CharacterCard[]>('search_characters', { query });
+}
+
+// ── Personas ──────────────────────────────────────────────────────────────────
+
+export async function getPersonas(): Promise<UserPersona[]> {
+	return invoke<UserPersona[]>('get_personas');
+}
+
+export async function savePersona(persona: UserPersona): Promise<UserPersona> {
+	return invoke<UserPersona>('save_persona', { persona });
+}
+
+export async function deletePersona(id: string): Promise<void> {
+	return invoke<void>('delete_persona', { id });
+}
+
+export async function searchPersonas(query: string): Promise<UserPersona[]> {
+	return invoke<UserPersona[]>('search_personas', { query });
+}
+
+// ── Conversations ─────────────────────────────────────────────────────────────
+
+export async function getConversations(): Promise<Conversation[]> {
+	return invoke<Conversation[]>('get_conversations');
+}
+
+export async function startConversation(
+	characterId: string
+): Promise<Conversation> {
+	return invoke<Conversation>('start_conversation', { characterId });
+}
+
+export async function deleteConversation(id: string): Promise<void> {
+	return invoke<void>('delete_conversation', { id });
+}
+
+export async function searchConversations(
+	query: string
+): Promise<Conversation[]> {
+	return invoke<Conversation[]>('search_conversations', { query });
+}
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+
+export async function getMessages(
+	conversationId: string
+): Promise<Message[]> {
+	return invoke<Message[]>('get_messages', { conversationId });
+}
+
+export async function saveMessage(message: Message): Promise<void> {
+	return invoke<void>('save_message', { message });
+}
+
+// ── Conversation persona ──────────────────────────────────────────────────────
+
+export async function updateConversationPersona(
+	conversationId: string,
+	personaId: string | null
+): Promise<void> {
+	return invoke<void>('update_conversation_persona', {
+		conversationId,
+		personaId
+	});
+}
+
+// ── Presets ────────────────────────────────────────────────────────────────────
+
+export async function getPresets(): Promise<GenerationPreset[]> {
+	return invoke<GenerationPreset[]>('get_presets');
+}
