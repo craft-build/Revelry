@@ -1,7 +1,8 @@
 ---
 phase: 2
 slug: persistent-data
-status: draft
+status: approved
+reviewed_at: 2026-05-11
 shadcn_initialized: false
 preset: none
 created: 2026-05-11
