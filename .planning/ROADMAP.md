@@ -64,13 +64,26 @@ Plans:
   2. User can view characters and personas loaded from the database (not mock data)
   3. User can create and view conversations that persist across app restarts
   4. Database operations never freeze the UI
-**Plans**: TBD
+**Plans**: 4 plans in 4 waves
 
 Plans:
+
+**Wave 1** *(autonomous — domain models + schema + DbWorker)*
 - [ ] 02-01: Port domain models from gtk_ref/ and define SQLite schema
-- [ ] 02-02: Implement DbService with background-thread worker and migrations
-- [ ] 02-03: Create Tauri commands for character, persona, and conversation CRUD
-- [ ] 02-04: Replace mock data in SvelteKit frontend with invoke() calls
+
+**Wave 2** *(autonomous — CRUD functions + row mappers, blocked on Wave 1)*
+- [ ] 02-02: Implement DbService with background-thread worker and migrations *(blocked on 02-01)*
+
+**Wave 3** *(autonomous — Tauri IPC commands, blocked on Wave 2)*
+- [ ] 02-03: Create Tauri commands for character, persona, and conversation CRUD *(blocked on 02-02)*
+
+**Wave 4** *(autonomous — frontend wiring, blocked on Wave 3)*
+- [ ] 02-04: Replace mock data in SvelteKit frontend with invoke() calls *(blocked on 02-03)*
+
+**Cross-cutting constraints:**
+- DbCommand enum: 02-01 defines the enum, 02-02 adds match arms, 02-03 uses them in Tauri commands — must stay in sync
+- Tauri v2 command naming: Rust function names are snake_case, invoke() must use matching snake_case strings (no camelCase conversion)
+- Type alignment: Rust serde output must match TypeScript types — 02-04 Task 1 aligns, all subsequent type changes must maintain consistency
 **UI hint**: yes
 
 ### Phase 3: Provider Setup
@@ -245,7 +258,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Native Desktop Shell | 4/4 | Complete | 2026-05-11 |
-| 2. Persistent Data | 0/4 | Not started | - |
+| 2. Persistent Data | 0/4 | Planned | - |
 | 3. Provider Setup | 0/4 | Not started | - |
 | 4. Live Conversations | 0/5 | Not started | - |
 | 5. Smart Prompts | 0/4 | Not started | - |
