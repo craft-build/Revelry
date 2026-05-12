@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CharacterCard } from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
+	import { untrack } from 'svelte';
 	import {
 		Dialog,
 		Button,
@@ -28,6 +29,7 @@
 	}: Props = $props();
 
 	// ── Form state ────────────────────────────────────────────────────────
+	let pending_id = $state<string | null>(null);
 	let current_step = $state(0);
 	let form_name = $state('');
 	let form_avatar_path = $state<string | undefined>(undefined);
@@ -39,6 +41,7 @@
 	let form_system_prompt = $state('');
 	let form_post_history_instructions = $state('');
 	let form_creator_notes = $state('');
+	let form_creator = $state('');
 	let is_saving = $state(false);
 	let name_error = $state('');
 
@@ -70,9 +73,15 @@
 	let is_last_step = $derived(current_step === steps.length - 1);
 
 	// ── Initialize form from character ────────────────────────────────────
+	// Only re-initialize when the dialog *opens* (open transitions to true),
+	// not when the character prop mutates mid-dialog (e.g. after a save).
+	let was_open = $state(false);
+
 	$effect(() => {
-		if (open) {
+		const just_opened = open && !was_open;
+		if (just_opened) {
 			if (mode === 'edit' && character) {
+				pending_id = character.id;
 				form_name = character.name;
 				form_avatar_path = character.avatar_path;
 				form_description = character.description;
@@ -83,7 +92,9 @@
 				form_system_prompt = character.system_prompt;
 				form_post_history_instructions = character.post_history_instructions;
 				form_creator_notes = character.creator_notes;
+				form_creator = character.creator;
 			} else {
+				pending_id = crypto.randomUUID();
 				form_name = '';
 				form_avatar_path = undefined;
 				form_description = '';
@@ -94,10 +105,12 @@
 				form_system_prompt = '';
 				form_post_history_instructions = '';
 				form_creator_notes = '';
+				form_creator = '';
 			}
 			current_step = 0;
 			name_error = '';
 		}
+		was_open = open;
 	});
 
 	function handleOpenChange(value: boolean) {
@@ -148,10 +161,11 @@
 					mes_example: form_mes_example,
 					system_prompt: form_system_prompt,
 					post_history_instructions: form_post_history_instructions,
-					creator_notes: form_creator_notes
+					creator_notes: form_creator_notes,
+					creator: form_creator
 				});
 			} else {
-				const created = await app.createCharacter(form_name);
+				const created = await app.createCharacter(form_name, pending_id!);
 				if (created) {
 					await app.updateCharacter({
 						...created,
@@ -163,7 +177,8 @@
 						mes_example: form_mes_example,
 						system_prompt: form_system_prompt,
 						post_history_instructions: form_post_history_instructions,
-						creator_notes: form_creator_notes
+						creator_notes: form_creator_notes,
+						creator: form_creator
 					});
 				}
 			}
@@ -177,9 +192,8 @@
 
 	async function handleAvatarSelect(sourcePath: string) {
 		try {
-			const id = mode === 'edit' && character ? character.id : crypto.randomUUID();
-			const relativePath = await app.uploadAvatar(id, sourcePath);
-			form_avatar_path = relativePath;
+			const avatarPath = await app.uploadAvatar(pending_id!, sourcePath);
+			form_avatar_path = avatarPath;
 		} catch (err) {
 			console.error('Failed to upload avatar:', err);
 		}
@@ -210,6 +224,11 @@
 						<p class="text-xs text-(--color-destructive)">{name_error}</p>
 					{/if}
 				</div>
+			</div>
+
+			<div class="space-y-1">
+				<label class="text-sm font-medium text-(--color-foreground)">Creator</label>
+				<Input bind:value={form_creator} placeholder="Who made this character" />
 			</div>
 
 			<div class="space-y-1">

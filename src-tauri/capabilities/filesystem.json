@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "filesystem",
-  "description": "Filesystem access permissions — stub for future phases",
+  "description": "Filesystem access for avatar serving via asset protocol",
   "windows": ["main"],
   "permissions": [
-    "fs:default"
+    "fs:default",
+    "fs:scope-appdata-recursive"
   ]
 }

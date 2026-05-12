@@ -223,9 +223,9 @@ class AppState {
 
   // ── Character CRUD ──────────────────────────────────────────────────────
 
-  async createCharacter(name: string): Promise<CharacterCard> {
+  async createCharacter(name: string, id?: string): Promise<CharacterCard> {
     const character: CharacterCard = {
-      id: crypto.randomUUID(),
+      id: id ?? crypto.randomUUID(),
       name,
       description: "",
       personality: "",
@@ -237,7 +237,7 @@ class AppState {
       post_history_instructions: "",
       alternate_greetings: [],
       tags: [],
-      creator: "Unknown",
+      creator: "",
       character_version: "2.0",
       avatar_path: undefined,
       extensions: undefined,
@@ -282,9 +282,13 @@ class AppState {
 
   // ── Persona CRUD ────────────────────────────────────────────────────────
 
-  async createPersona(name: string, personality: string): Promise<UserPersona> {
+  async createPersona(
+    name: string,
+    personality: string,
+    id?: string,
+  ): Promise<UserPersona> {
     const persona: UserPersona = {
-      id: crypto.randomUUID(),
+      id: id ?? crypto.randomUUID(),
       name,
       avatar_path: undefined,
       appearance: "",

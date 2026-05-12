@@ -11,6 +11,13 @@
   },
   "app": {
     "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["$APPDATA/**"],
+          "deny": []
+        }
+      },
       "csp": {
         "default-src": "'self'",
         "connect-src": "ipc: http://ipc.localhost",
@@ -32,7 +39,6 @@
         "title": "Revelry",
         "width": 1200,
         "height": 800,
-        "devtools": false,
         "resizable": true
       }
     ]

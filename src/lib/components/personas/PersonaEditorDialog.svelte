@@ -27,6 +27,7 @@
 	}: Props = $props();
 
 	// ── Form state ────────────────────────────────────────────────────────
+	let pending_id = $state<string | null>(null);
 	let form_name = $state('');
 	let form_avatar_path = $state<string | undefined>(undefined);
 	let form_appearance = $state('');
@@ -60,9 +61,15 @@
 	let is_dirty = $derived(snapshot() !== initial_snapshot);
 
 	// ── Initialize form from persona ────────────────────────────────────────
+	// Only re-initialize when the dialog *opens* (open transitions to true),
+	// not when the persona prop mutates mid-dialog (e.g. after a save).
+	let was_open = $state(false);
+
 	$effect(() => {
-		if (open) {
+		const just_opened = open && !was_open;
+		if (just_opened) {
 			if (mode === 'edit' && persona) {
+				pending_id = persona.id;
 				form_name = persona.name;
 				form_avatar_path = persona.avatar_path;
 				form_appearance = persona.appearance;
@@ -73,6 +80,7 @@
 				form_speech_style = persona.speech_style;
 				form_tags = persona.tags.join(', ');
 			} else {
+				pending_id = crypto.randomUUID();
 				form_name = '';
 				form_avatar_path = undefined;
 				form_appearance = '';
@@ -85,9 +93,12 @@
 			}
 			name_error = '';
 			backend_error = '';
-			// Capture initial snapshot after populating
+			// Capture initial snapshot after populating.
+			// Reading form fields here doesn't re-trigger the effect
+			// because the effect only runs on open transitions.
 			initial_snapshot = snapshot();
 		}
+		was_open = open;
 	});
 
 	function handleOpenChange(value: boolean) {
@@ -137,7 +148,7 @@
 					tags: parseTags(form_tags)
 				});
 			} else {
-				await app.createPersona(form_name, form_personality);
+				await app.createPersona(form_name, form_personality, pending_id!);
 				// After creation, update with all the other fields
 				const created = app.personas[0];
 				if (created) {
@@ -165,9 +176,8 @@
 
 	async function handleAvatarSelect(sourcePath: string) {
 		try {
-			const id = mode === 'edit' && persona ? persona.id : crypto.randomUUID();
-			const relativePath = await app.uploadAvatar(id, sourcePath);
-			form_avatar_path = relativePath;
+			const avatarPath = await app.uploadAvatar(pending_id!, sourcePath);
+			form_avatar_path = avatarPath;
 		} catch (err) {
 			console.error('Failed to upload avatar:', err);
 		}

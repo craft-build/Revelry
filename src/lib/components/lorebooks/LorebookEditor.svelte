@@ -80,8 +80,13 @@
 	}
 
 	// ── Load entries when dialog opens ────────────────────────────────────
+	// Only re-initialize when the dialog *opens* (open transitions to true),
+	// not when the lorebook prop mutates mid-dialog.
+	let was_open = $state(false);
+
 	$effect(() => {
-		if (open) {
+		const just_opened = open && !was_open;
+		if (just_opened) {
 			form_name = '';
 			form_description = '';
 			name_error = '';
@@ -107,6 +112,7 @@
 				loadEntries(lorebook.id);
 			}
 		}
+		was_open = open;
 	});
 
 	async function loadEntries(lorebookId: string) {
@@ -140,16 +146,13 @@
 		}
 	}
 
-	// ── Lorebook save ─────────────────────────────────────────────────────
-	async function handleSaveLorebook(): Promise<string | null> {
+	// ── Lorebook save (internal — returns ID, does NOT close dialog) ────
+	async function saveLorebookGetId(): Promise<string | null> {
 		if (!form_name.trim()) {
 			name_error = 'Name is required.';
 			return null;
 		}
 		name_error = '';
-
-		is_saving = true;
-		backend_error = '';
 
 		try {
 			let saved: Lorebook;
@@ -173,8 +176,20 @@
 			backend_error =
 				err instanceof Error ? err.message : 'Failed to save lorebook.';
 			return null;
-		} finally {
-			is_saving = false;
+		}
+	}
+
+	// ── Lorebook save (from Save button — closes dialog on success) ──────
+	async function handleSaveLorebook() {
+		is_saving = true;
+		backend_error = '';
+
+		const id = await saveLorebookGetId();
+
+		is_saving = false;
+
+		if (id !== null) {
+			handleOpenChange(false);
 		}
 	}
 
@@ -207,7 +222,7 @@
 				lorebookId = lorebook.id;
 			} else {
 				// Create lorebook on-the-fly if needed
-				const id = await handleSaveLorebook();
+				const id = await saveLorebookGetId();
 				if (!id) return;
 				lorebookId = id;
 				// Switch to edit mode now that the lorebook exists
@@ -258,7 +273,7 @@
 		if (mode === 'edit' && lorebook) {
 			lorebookId = lorebook.id;
 		} else {
-			const id = await handleSaveLorebook();
+			const id = await saveLorebookGetId();
 			if (!id) return;
 			lorebookId = id;
 			mode = 'edit';

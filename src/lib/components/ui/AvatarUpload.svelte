@@ -5,7 +5,7 @@
 	import { cn } from '$lib/utils';
 
 	interface Props {
-		/** Current avatar image source (relative path or URL) */
+		/** Current avatar image source (absolute filesystem path from backend) */
 		src?: string;
 		/** Display name for initials fallback */
 		name: string;
