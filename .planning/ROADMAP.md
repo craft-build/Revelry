@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Native Desktop Shell** - App runs as a Tauri window with full SvelteKit routing ✅ 2026-05-11
 - [x] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data ✅ 2026-05-11
-- [ ] **Phase 3: Editors** - Create and edit characters, personas, and lorebooks
+- [x] **Phase 3: Editors** - Create and edit characters, personas, and lorebooks ✅ 2026-05-12
 - [ ] **Phase 4: Provider Setup** - Users configure AI providers with API keys stored in OS keychain
 - [ ] **Phase 5: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
 - [ ] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting
@@ -102,14 +102,14 @@ Plans:
 Plans:
 
 **Wave 1** *(autonomous — backend + UI primitives + character editor)*
-- [ ] 03-01: Backend foundation (lorebook domain + migration + Tauri commands) + UI primitives (Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload) + Character Editor wizard + DeleteConfirmationDialog + wiring
+- [x] 03-01: Backend foundation (lorebook domain + migration + Tauri commands) + UI primitives (Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload) + Character Editor wizard + DeleteConfirmationDialog + wiring
 
 **Wave 2** *(autonomous — persona + lorebook editors, blocked on Wave 1)*
-- [ ] 03-02: Persona Editor dialog + PersonaCard kebab menu + persona avatar_path wiring *(blocked on 03-01)*
-- [ ] 03-03: Lorebook Editor with keyword testing + LorebookCard + Lorebooks tab *(blocked on 03-01)*
+- [x] 03-02: Persona Editor dialog + PersonaCard kebab menu + persona avatar_path wiring *(blocked on 03-01)*
+- [x] 03-03: Lorebook Editor with keyword testing + LorebookCard + Lorebooks tab *(blocked on 03-01)*
 
 **Wave 3** *(autonomous — integration + polish, blocked on Waves 1 and 2)*
-- [ ] 03-04: Avatar URL resolution + end-to-end integration + polish *(blocked on 03-01, 03-02, 03-03)*
+- [x] 03-04: Avatar URL resolution + end-to-end integration + polish *(blocked on 03-01, 03-02, 03-03)*
 
 **Cross-cutting constraints:**
 - AppState CRUD API: 03-01 defines all actions (createCharacter, updateCharacter, deleteCharacter, createPersona, updatePersona, deletePersona, createLorebook, updateLorebook, deleteLorebook, uploadAvatar, lorebooks state) — 03-02 and 03-03 only consume, not redefine
@@ -274,7 +274,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Native Desktop Shell | 4/4 | Complete | 2026-05-11 |
 | 2. Persistent Data | 4/4 | Complete | 2026-05-11 |
-| 3. Editors | 0/4 | Ready to execute | - |
+| 3. Editors | 4/4 | Complete | 2026-05-12 |
 | 4. Provider Setup | 0/4 | Not started | - |
 | 5. Live Conversations | 0/5 | Not started | - |
 | 6. Smart Prompts | 0/4 | Not started | - |

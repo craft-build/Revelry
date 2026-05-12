@@ -22,19 +22,19 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Characters
 
 - [x] **CHAR-01**: User can view a library of characters with search and filtering
-- [ ] **CHAR-02**: User can create a new character with name, description, personality, scenario, greeting message, and example dialogues
-- [ ] **CHAR-03**: User can edit an existing character's fields
-- [ ] **CHAR-04**: User can delete a character
-- [ ] **CHAR-05**: User can assign an avatar to a character (upload image or default initials)
+- [x] **CHAR-02**: User can create a new character with name, description, personality, scenario, greeting message, and example dialogues
+- [x] **CHAR-03**: User can edit an existing character's fields
+- [x] **CHAR-04**: User can delete a character
+- [x] **CHAR-05**: User can assign an avatar to a character (upload image or default initials)
 - [ ] **CHAR-06**: User can import a character card from a TavernAI V2 PNG file
 - [ ] **CHAR-07**: User can export a character card as a TavernAI V2 PNG file
 
 ### Personas
 
 - [x] **PERS-01**: User can view a library of personas with search and filtering
-- [ ] **PERS-02**: User can create a new persona with name, description, and avatar
-- [ ] **PERS-03**: User can edit an existing persona's fields
-- [ ] **PERS-04**: User can delete a persona
+- [x] **PERS-02**: User can create a new persona with name, description, and avatar
+- [x] **PERS-03**: User can edit an existing persona's fields
+- [x] **PERS-04**: User can delete a persona
 - [x] **PERS-05**: User can switch the active persona for a conversation via the persona switcher
 
 ### Conversations
@@ -149,16 +149,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DB-02 | Phase 2 | Done |
 | DB-03 | Phase 2 | Done |
 | CHAR-01 | Phase 2 | Done |
-| CHAR-02 | Phase 3 | Pending |
-| CHAR-03 | Phase 3 | Pending |
-| CHAR-04 | Phase 3 | Pending |
-| CHAR-05 | Phase 3 | Pending |
+| CHAR-02 | Phase 3 | Done |
+| CHAR-03 | Phase 3 | Done |
+| CHAR-04 | Phase 3 | Done |
+| CHAR-05 | Phase 3 | Done |
 | CHAR-06 | Phase 7 | Pending |
 | CHAR-07 | Phase 7 | Pending |
 | PERS-01 | Phase 2 | Done |
-| PERS-02 | Phase 3 | Pending |
-| PERS-03 | Phase 3 | Pending |
-| PERS-04 | Phase 3 | Pending |
+| PERS-02 | Phase 3 | Done |
+| PERS-03 | Phase 3 | Done |
+| PERS-04 | Phase 3 | Done |
 | PERS-05 | Phase 2 | Done |
 | CONV-01 | Phase 2 | Done |
 | CONV-02 | Phase 2 | Done |
@@ -190,7 +190,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LORB-03 | Phase 9 | Pending |
 | LORB-04 | Phase 9 | Pending |
 | LORB-05 | Phase 9 | Pending |
-| LORB-06 | Phase 3 | Pending |
+| LORB-06 | Phase 3 | Done |
 | REGX-01 | Phase 9 | Pending |
 | REGX-02 | Phase 9 | Pending |
 | REGX-03 | Phase 9 | Pending |

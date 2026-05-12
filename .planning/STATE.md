@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 3 — Editors
+**Current focus:** Phase 4 — Provider Setup
 
 ## Current Position
 
-Phase: 3 of 11 (Editors) — Planned, ready to execute
+Phase: 4 of 11 (Provider Setup) — Ready to plan
 Plan: 0/4 plans complete
-Status: Ready to execute
-Last activity: 2026-05-12 — Phase 3 planning complete via plan-phase workflow
+Status: Phase 3 complete, ready to plan Phase 4
+Last activity: 2026-05-12 — Phase 3 execution complete
 
-Progress: [█████░░░░░] 22%
+Progress: [██████░░░░] 27%
 
 ## Performance Metrics
 
@@ -29,6 +29,7 @@ Progress: [█████░░░░░] 22%
 |-------|-------|-------|----------|
 | 1 | 4 | 75min | 19min |
 | 2 | 4 | ~80min | 20min |
+| 3 | 4 | ~90min | 22min |
 
 *Updated after each plan completion*
 
@@ -51,7 +52,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- ⚠️ [Phase 2/4] No character or persona creation UI — 6 UAT tests blocked (conversation-dependent flows). **Phase 3 will resolve this.**
+- ~~⚠️ [Phase 2/4] No character or persona creation UI — 6 UAT tests blocked~~ **RESOLVED by Phase 3** — Character, persona, and lorebook editors are now built and functional.
 
 ## Deferred Items
 
@@ -64,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-12
-Stopped at: Phase 3 context gathered — ready for planning
-Resume file: .planning/phases/03-editors/03-CONTEXT.md
+Stopped at: Phase 3 execution complete
+Resume file: .planning/phases/04-provider-setup/ (to be created)
