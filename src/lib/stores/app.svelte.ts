@@ -81,6 +81,27 @@ class AppState {
     );
   }
 
+  get filtered_lorebooks(): Lorebook[] {
+    const q = this.character_search_query.trim().toLowerCase();
+    if (!q) return this.lorebooks;
+    return this.lorebooks.filter(
+      (l) =>
+        l.name.toLowerCase().includes(q) ||
+        l.description.toLowerCase().includes(q),
+    );
+  }
+
+  get filtered_personas(): UserPersona[] {
+    const q = this.character_search_query.trim().toLowerCase();
+    if (!q) return this.personas;
+    return this.personas.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.personality.toLowerCase().includes(q) ||
+        p.tags?.some((t) => t.toLowerCase().includes(q)),
+    );
+  }
+
   // ── Actions ────────────────────────────────────────────────────────────
   async hydrate() {
     this.is_loading = true;

@@ -238,11 +238,22 @@
 
 				<!-- Characters tab -->
 				<Tabs.Content value="characters">
-					{#if app.filtered_characters.length === 0}
+					{#if app.characters.length === 0}
+						<div
+							class="flex flex-col items-center justify-center gap-3 rounded-(--radius-lg) border border-dashed border-(--color-border) py-20 text-center"
+						>
+							<p class="text-sm text-(--color-muted)">No characters yet.</p>
+							<Button variant="secondary" size="sm" onclick={openCreateEditor}>
+								<Plus class="size-3.5" />
+								New character
+							</Button>
+						</div>
+					{:else if app.filtered_characters.length === 0}
 						<div
 							class="flex flex-col items-center justify-center gap-3 rounded-(--radius-lg) border border-dashed border-(--color-border) py-20 text-center"
 						>
 							<p class="text-sm text-(--color-muted)">No characters match.</p>
+							<p class="text-xs text-(--color-subtle)">Try a different search term.</p>
 						</div>
 					{:else}
 						<div
@@ -262,12 +273,23 @@
 							class="flex flex-col items-center justify-center gap-3 rounded-(--radius-lg) border border-dashed border-(--color-border) py-20 text-center"
 						>
 							<p class="text-sm text-(--color-muted)">No personas yet.</p>
+							<Button variant="secondary" size="sm" onclick={openPersonaCreateEditor}>
+								<Plus class="size-3.5" />
+								New persona
+							</Button>
+						</div>
+					{:else if app.filtered_personas.length === 0}
+						<div
+							class="flex flex-col items-center justify-center gap-3 rounded-(--radius-lg) border border-dashed border-(--color-border) py-20 text-center"
+						>
+							<p class="text-sm text-(--color-muted)">No personas match.</p>
+							<p class="text-xs text-(--color-subtle)">Try a different search term.</p>
 						</div>
 					{:else}
 						<div
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
-							{#each app.personas as persona (persona.id)}
+							{#each app.filtered_personas as persona (persona.id)}
 								<PersonaCard {persona} onedit={openPersonaEditEditor} ondelete={openPersonaDeleteDialog} />
 							{/each}
 						</div>
@@ -287,13 +309,21 @@
 								New lorebook
 							</Button>
 						</div>
+					{:else if app.filtered_lorebooks.length === 0}
+						<div
+							class="flex flex-col items-center justify-center gap-3 rounded-(--radius-lg) border border-dashed border-(--color-border) py-20 text-center"
+						>
+							<BookOpen class="size-8 text-(--color-subtle)" />
+							<p class="text-sm text-(--color-muted)">No lorebooks match.</p>
+							<p class="text-xs text-(--color-subtle)">Try a different search term.</p>
+						</div>
 					{:else}
 						<div
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
-							{#each app.lorebooks as lorebook (lorebook.id)}
+							{#each app.filtered_lorebooks as lorebook (lorebook.id)}
 								<LorebookCard {lorebook} onedit={openLorebookEditEditor} ondelete={openLorebookDeleteDialog} />
-							{/each}
+						{/each}
 						</div>
 					{/if}
 				</Tabs.Content>
