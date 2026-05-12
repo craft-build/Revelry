@@ -1,14 +1,15 @@
 <script lang="ts">
 	import type { UserPersona } from '$lib/types';
-	import { Avatar, Tag } from '$lib/components/ui';
-	import { Pencil, Copy } from '@lucide/svelte';
+	import { Avatar, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
+	import { Pencil, Trash2, Copy } from '@lucide/svelte';
 
 	interface Props {
 		persona: UserPersona;
 		onedit?: (id: string) => void;
+		ondelete?: (id: string) => void;
 	}
 
-	let { persona, onedit }: Props = $props();
+	let { persona, onedit, ondelete }: Props = $props();
 </script>
 
 <article
@@ -39,14 +40,17 @@
 	{/if}
 
 	<div class="mt-auto flex items-center gap-2 pt-2">
-		<button
-			type="button"
-			onclick={() => onedit?.(persona.id)}
-			class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-(--radius-md) border border-(--color-border) px-3 text-xs font-medium hover:bg-(--color-surface-hover)"
-		>
-			<Pencil class="size-3.5" />
-			Edit
-		</button>
+		<KebabMenu>
+			<KebabMenuItem onclick={() => onedit?.(persona.id)}>
+				<Pencil class="size-3.5" />
+				Edit
+			</KebabMenuItem>
+			<KebabMenuSeparator />
+			<KebabMenuItem destructive onclick={() => ondelete?.(persona.id)}>
+				<Trash2 class="size-3.5" />
+				Delete
+			</KebabMenuItem>
+		</KebabMenu>
 		<button
 			type="button"
 			class="inline-flex size-8 items-center justify-center rounded-(--radius-md) border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"

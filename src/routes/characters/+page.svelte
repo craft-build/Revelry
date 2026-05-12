@@ -6,9 +6,10 @@
 	import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 	import PersonaCard from '$lib/components/personas/PersonaCard.svelte';
 	import { CharacterEditorDialog, DeleteConfirmationDialog } from '$lib/components/characters';
+	import { PersonaEditorDialog } from '$lib/components/personas';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import type { CharacterCard as CharacterCardType } from '$lib/types';
+	import type { CharacterCard as CharacterCardType, UserPersona } from '$lib/types';
 
 	// Tab state synced to query string so the persona switcher's
 	// "Manage personas" link can deep-link.
@@ -35,7 +36,13 @@
 	let delete_open = $state(false);
 	let deleting_id = $state<string | null>(null);
 	let deleting_name = $state('');
+	let deleting_entity_type = $state<'character' | 'persona'>('character');
 	let is_deleting = $state(false);
+
+	// ── Persona editor state ────────────────────────────────────────────
+	let persona_editor_open = $state(false);
+	let persona_editor_mode = $state<'create' | 'edit'>('create');
+	let editing_persona = $state<UserPersona | undefined>(undefined);
 
 	function openCreateEditor() {
 		editor_mode = 'create';
@@ -57,6 +64,32 @@
 		if (char) {
 			deleting_id = id;
 			deleting_name = char.name;
+			deleting_entity_type = 'character';
+			delete_open = true;
+		}
+	}
+
+	function openPersonaCreateEditor() {
+		persona_editor_mode = 'create';
+		editing_persona = undefined;
+		persona_editor_open = true;
+	}
+
+	function openPersonaEditEditor(id: string) {
+		const persona = app.personas.find((p) => p.id === id);
+		if (persona) {
+			persona_editor_mode = 'edit';
+			editing_persona = persona;
+			persona_editor_open = true;
+		}
+	}
+
+	function openPersonaDeleteDialog(id: string) {
+		const persona = app.personas.find((p) => p.id === id);
+		if (persona) {
+			deleting_id = id;
+			deleting_name = persona.name;
+			deleting_entity_type = 'persona';
 			delete_open = true;
 		}
 	}
@@ -65,11 +98,15 @@
 		if (!deleting_id) return;
 		is_deleting = true;
 		try {
-			await app.deleteCharacter(deleting_id);
+			if (deleting_entity_type === 'persona') {
+				await app.deletePersona(deleting_id);
+			} else {
+				await app.deleteCharacter(deleting_id);
+			}
 			delete_open = false;
 			deleting_id = null;
 		} catch (err) {
-			console.error('Failed to delete character:', err);
+			console.error(`Failed to delete ${deleting_entity_type}:`, err);
 		} finally {
 			is_deleting = false;
 		}
@@ -97,7 +134,7 @@
 					<Upload class="size-3.5" />
 					Import card
 				</Button>
-				<Button variant="primary" size="sm" onclick={openCreateEditor}>
+				<Button variant="primary" size="sm" onclick={() => tab === 'personas' ? openPersonaCreateEditor() : openCreateEditor()}>
 					<Plus class="size-3.5" />
 					New {tab === 'personas' ? 'persona' : 'character'}
 				</Button>
@@ -189,7 +226,7 @@
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
 							{#each app.personas as persona (persona.id)}
-								<PersonaCard {persona} />
+								<PersonaCard {persona} onedit={openPersonaEditEditor} ondelete={openPersonaDeleteDialog} />
 							{/each}
 						</div>
 					{/if}
@@ -206,12 +243,19 @@
 	character={editing_character}
 />
 
+<!-- Persona editor dialog -->
+<PersonaEditorDialog
+	bind:open={persona_editor_open}
+	mode={persona_editor_mode}
+	persona={editing_persona}
+/>
+
 <!-- Delete confirmation dialog -->
 <DeleteConfirmationDialog
 	bind:open={delete_open}
-	title="Delete character"
+	title={deleting_entity_type === 'persona' ? 'Delete persona' : 'Delete character'}
 	description={`Are you sure you want to delete "${deleting_name}"? This action cannot be undone.`}
-	confirm_label="Delete character"
+	confirm_label={deleting_entity_type === 'persona' ? 'Delete persona' : 'Delete character'}
 	onconfirm={handleDelete}
 	loading={is_deleting}
 />
