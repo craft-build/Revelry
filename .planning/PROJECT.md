@@ -46,6 +46,10 @@ Users can have immersive, streaming AI conversations with custom characters thro
 - ✓ Migrate Rust domain models from gtk_ref/ to src-tauri/ — Phase 2
 - [ ] Migrate rig-core AI service to src-tauri/ with full provider support
 - ✓ Migrate SQLite persistence layer to src-tauri/ — Phase 2
+- ✓ Character and persona editors — Phase 3
+- ✓ Lorebook editor with keyword testing — Phase 3
+- ✓ Avatar upload and display via Tauri asset protocol — Phase 3
+- ✓ Migrate Rust domain models from gtk_ref/ to src-tauri/ — Phase 2
 - [ ] Migrate OS keyring secrets integration to src-tauri/
 - [ ] Migrate prompt engine to src-tauri/
 - [ ] Migrate token counting (tiktoken-rs) to src-tauri/
@@ -108,6 +112,7 @@ Users can have immersive, streaming AI conversations with custom characters thro
 | Single collapsed migration | No data to preserve, cleaner than 9 sequential migrations | ✓ Good — Phase 2 |
 | MessageRole Assistant (not Character) | Aligned with rig-core convention | ✓ Good — Phase 2 |
 | rig-core for AI providers | Provider-agnostic, supports 15+ providers with streaming | — Pending |
+| Avatar via Tauri asset protocol | Native file picker + absolute path + convertFileSrc() | ✓ Good — Phase 3 |
 | Dark theme by default | Creative roleplay users work at night; respects content-first principle | ✓ Good |
 | Exclude vault mode | Was speculative, adds significant complexity without confirmed need | — Pending |
 | Preserve full gtk_ref feature set | No subsetting — complete the project as designed | — Pending |
@@ -130,4 +135,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 after Phase 2*
+*Last updated: 2026-05-12 after Phase 3*
