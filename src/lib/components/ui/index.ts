@@ -1,5 +1,13 @@
-export { default as Avatar } from './Avatar.svelte';
-export { default as Button, buttonVariants } from './Button.svelte';
-export { default as Input } from './Input.svelte';
-export { default as Tag } from './Tag.svelte';
-export { default as Tooltip } from './Tooltip.svelte';
+export { default as Avatar } from "./Avatar.svelte";
+export { default as AvatarUpload } from "./AvatarUpload.svelte";
+export { default as Button, buttonVariants } from "./Button.svelte";
+export { default as Dialog } from "./Dialog.svelte";
+export { default as Input } from "./Input.svelte";
+export { default as KebabMenu } from "./KebabMenu.svelte";
+export { default as KebabMenuItem } from "./KebabMenuItem.svelte";
+export { default as KebabMenuSeparator } from "./KebabMenuSeparator.svelte";
+export { default as Select } from "./Select.svelte";
+export { default as StepperHeader } from "./StepperHeader.svelte";
+export { default as Tag } from "./Tag.svelte";
+export { default as Textarea } from "./Textarea.svelte";
+export { default as Tooltip } from "./Tooltip.svelte";
