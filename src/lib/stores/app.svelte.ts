@@ -5,13 +5,22 @@ import type {
   UserPersona,
   Provider,
   GenerationPreset,
+  Lorebook,
 } from "$lib/types";
 import {
-  getCharacters,
-  getPersonas,
-  getConversations,
-  getPresets,
-  updateConversationPersona,
+  getCharacters as apiGetCharacters,
+  saveCharacter as apiSaveCharacter,
+  deleteCharacter as apiDeleteCharacter,
+  getPersonas as apiGetPersonas,
+  savePersona as apiSavePersona,
+  deletePersona as apiDeletePersona,
+  getConversations as apiGetConversations,
+  getPresets as apiGetPresets,
+  updateConversationPersona as apiUpdateConversationPersona,
+  getLorebooks as apiGetLorebooks,
+  saveLorebook as apiSaveLorebook,
+  deleteLorebook as apiDeleteLorebook,
+  uploadAvatar as apiUploadAvatar,
 } from "$lib/data/api";
 
 /**
@@ -25,6 +34,7 @@ class AppState {
   // ── Library ────────────────────────────────────────────────────────────
   characters = $state<CharacterCard[]>([]);
   personas = $state<UserPersona[]>([]);
+  lorebooks = $state<Lorebook[]>([]);
   conversations = $state<Conversation[]>([]);
   providers = $state<Provider[]>([]);
   presets = $state<GenerationPreset[]>([]);
@@ -78,13 +88,14 @@ class AppState {
 
     try {
       const results = await Promise.allSettled([
-        getCharacters(),
-        getPersonas(),
-        getConversations(),
-        getPresets(),
+        apiGetCharacters(),
+        apiGetPersonas(),
+        apiGetLorebooks(),
+        apiGetConversations(),
+        apiGetPresets(),
       ]);
 
-      const [characters, personas, conversations, presets] = results;
+      const [characters, personas, lorebooks, conversations, presets] = results;
 
       if (characters.status === "fulfilled") {
         this.characters = characters.value;
@@ -96,6 +107,12 @@ class AppState {
         this.personas = personas.value;
       } else {
         console.error("Failed to load personas:", personas.reason);
+      }
+
+      if (lorebooks.status === "fulfilled") {
+        this.lorebooks = lorebooks.value;
+      } else {
+        console.error("Failed to load lorebooks:", lorebooks.reason);
       }
 
       if (conversations.status === "fulfilled") {
@@ -112,7 +129,7 @@ class AppState {
 
       // If any critical data failed, set error state
       const criticalFailures = results
-        .slice(0, 3) // characters, personas, conversations are critical
+        .slice(0, 4) // characters, personas, lorebooks, conversations are critical
         .filter((r) => r.status === "rejected");
 
       if (criticalFailures.length > 0) {
@@ -167,7 +184,10 @@ class AppState {
     );
     // Persist to backend
     try {
-      await updateConversationPersona(this.active_conversation_id, persona_id);
+      await apiUpdateConversationPersona(
+        this.active_conversation_id,
+        persona_id,
+      );
     } catch (err) {
       console.error("Failed to persist persona switch:", err);
       // Revert on failure
@@ -177,6 +197,127 @@ class AppState {
           : c,
       );
     }
+  }
+
+  // ── Character CRUD ──────────────────────────────────────────────────────
+
+  async createCharacter(name: string): Promise<CharacterCard> {
+    const character: CharacterCard = {
+      id: crypto.randomUUID(),
+      name,
+      description: "",
+      personality: "",
+      scenario: "",
+      first_mes: "",
+      mes_example: "",
+      creator_notes: "",
+      system_prompt: "",
+      post_history_instructions: "",
+      alternate_greetings: [],
+      tags: [],
+      creator: "Unknown",
+      character_version: "2.0",
+      avatar_path: undefined,
+      extensions: undefined,
+      character_book: undefined,
+      lorebook_scan_depth: 2,
+      lorebook_recursive_depth: 2,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const saved = await apiSaveCharacter(character);
+    this.characters = [saved, ...this.characters];
+    return saved;
+  }
+
+  async updateCharacter(character: CharacterCard): Promise<CharacterCard> {
+    const saved = await apiSaveCharacter({
+      ...character,
+      updated_at: new Date().toISOString(),
+    });
+    this.characters = this.characters.map((c) =>
+      c.id === saved.id ? saved : c,
+    );
+    return saved;
+  }
+
+  async deleteCharacter(id: string): Promise<void> {
+    await apiDeleteCharacter(id);
+    this.characters = this.characters.filter((c) => c.id !== id);
+    if (this.active_character?.id === id) {
+      this.closeConversation();
+    }
+  }
+
+  // ── Persona CRUD ────────────────────────────────────────────────────────
+
+  async createPersona(name: string, personality: string): Promise<UserPersona> {
+    const persona: UserPersona = {
+      id: crypto.randomUUID(),
+      name,
+      avatar_path: undefined,
+      appearance: "",
+      personality,
+      background: "",
+      role_description: "",
+      relationships: "",
+      speech_style: "",
+      tags: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const saved = await apiSavePersona(persona);
+    this.personas = [saved, ...this.personas];
+    return saved;
+  }
+
+  async updatePersona(persona: UserPersona): Promise<UserPersona> {
+    const saved = await apiSavePersona({
+      ...persona,
+      updated_at: new Date().toISOString(),
+    });
+    this.personas = this.personas.map((p) => (p.id === saved.id ? saved : p));
+    return saved;
+  }
+
+  async deletePersona(id: string): Promise<void> {
+    await apiDeletePersona(id);
+    this.personas = this.personas.filter((p) => p.id !== id);
+  }
+
+  // ── Lorebook CRUD ───────────────────────────────────────────────────────
+
+  async createLorebook(name: string): Promise<Lorebook> {
+    const lorebook: Lorebook = {
+      id: crypto.randomUUID(),
+      name,
+      description: "",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const saved = await apiSaveLorebook(lorebook);
+    this.lorebooks = [saved, ...this.lorebooks];
+    return saved;
+  }
+
+  async updateLorebook(lorebook: Lorebook): Promise<Lorebook> {
+    const saved = await apiSaveLorebook({
+      ...lorebook,
+      updated_at: new Date().toISOString(),
+    });
+    this.lorebooks = this.lorebooks.map((l) => (l.id === saved.id ? saved : l));
+    return saved;
+  }
+
+  async deleteLorebook(id: string): Promise<void> {
+    await apiDeleteLorebook(id);
+    this.lorebooks = this.lorebooks.filter((l) => l.id !== id);
+  }
+
+  // ── Avatar upload ──────────────────────────────────────────────────────
+
+  async uploadAvatar(id: string, sourcePath: string): Promise<string> {
+    return apiUploadAvatar(id, sourcePath);
   }
 }
 
