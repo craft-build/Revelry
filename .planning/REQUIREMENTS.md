@@ -149,16 +149,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DB-02 | Phase 2 | Done |
 | DB-03 | Phase 2 | Done |
 | CHAR-01 | Phase 2 | Done |
-| CHAR-02 | Phase 7 | Pending |
-| CHAR-03 | Phase 7 | Pending |
-| CHAR-04 | Phase 7 | Pending |
-| CHAR-05 | Phase 7 | Pending |
-| CHAR-06 | Phase 6 | Pending |
-| CHAR-07 | Phase 6 | Pending |
+| CHAR-02 | Phase 3 | Pending |
+| CHAR-03 | Phase 3 | Pending |
+| CHAR-04 | Phase 3 | Pending |
+| CHAR-05 | Phase 3 | Pending |
+| CHAR-06 | Phase 7 | Pending |
+| CHAR-07 | Phase 7 | Pending |
 | PERS-01 | Phase 2 | Done |
-| PERS-02 | Phase 7 | Pending |
-| PERS-03 | Phase 7 | Pending |
-| PERS-04 | Phase 7 | Pending |
+| PERS-02 | Phase 3 | Pending |
+| PERS-03 | Phase 3 | Pending |
+| PERS-04 | Phase 3 | Pending |
 | PERS-05 | Phase 2 | Done |
 | CONV-01 | Phase 2 | Done |
 | CONV-02 | Phase 2 | Done |
@@ -168,29 +168,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-06 | Phase 8 | Pending |
 | CONV-07 | Phase 8 | Pending |
 | CONV-08 | Phase 8 | Pending |
-| CHAT-01 | Phase 4 | Pending |
-| CHAT-02 | Phase 4 | Pending |
-| CHAT-03 | Phase 4 | Pending |
-| CHAT-04 | Phase 4 | Pending |
+| CHAT-01 | Phase 5 | Pending |
+| CHAT-02 | Phase 5 | Pending |
+| CHAT-03 | Phase 5 | Pending |
+| CHAT-04 | Phase 5 | Pending |
 | CHAT-05 | Phase 1 | Done |
-| CHAT-06 | Phase 6 | Pending |
-| PRMP-01 | Phase 5 | Pending |
-| PRMP-02 | Phase 5 | Pending |
-| PRMP-03 | Phase 5 | Pending |
+| CHAT-06 | Phase 7 | Pending |
+| PRMP-01 | Phase 6 | Pending |
+| PRMP-02 | Phase 6 | Pending |
+| PRMP-03 | Phase 6 | Pending |
 | PRMP-04 | Phase 9 | Pending |
 | PRMP-05 | Phase 9 | Pending |
-| PROV-01 | Phase 3 | Pending |
-| PROV-02 | Phase 3 | Pending |
-| PROV-03 | Phase 3 | Pending |
-| PROV-04 | Phase 3 | Pending |
-| PROV-05 | Phase 3 | Pending |
-| PROV-06 | Phase 3 | Pending |
+| PROV-01 | Phase 4 | Pending |
+| PROV-02 | Phase 4 | Pending |
+| PROV-03 | Phase 4 | Pending |
+| PROV-04 | Phase 4 | Pending |
+| PROV-05 | Phase 4 | Pending |
+| PROV-06 | Phase 4 | Pending |
 | LORB-01 | Phase 9 | Pending |
 | LORB-02 | Phase 9 | Pending |
 | LORB-03 | Phase 9 | Pending |
 | LORB-04 | Phase 9 | Pending |
 | LORB-05 | Phase 9 | Pending |
-| LORB-06 | Phase 9 | Pending |
+| LORB-06 | Phase 3 | Pending |
 | REGX-01 | Phase 9 | Pending |
 | REGX-02 | Phase 9 | Pending |
 | REGX-03 | Phase 9 | Pending |
@@ -211,4 +211,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-10*
-*Last updated: 2026-05-10 after initial definition*
+*Last updated: 2026-05-12 after Phase 3 planning — traceability alignment*

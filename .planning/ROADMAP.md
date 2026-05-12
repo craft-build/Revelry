@@ -14,11 +14,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Native Desktop Shell** - App runs as a Tauri window with full SvelteKit routing ✅ 2026-05-11
 - [x] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data ✅ 2026-05-11
-- [ ] **Phase 3: Provider Setup** - Users configure AI providers with API keys stored in OS keychain
-- [ ] **Phase 4: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
-- [ ] **Phase 5: Smart Prompts** - Budget-aware prompt assembly and real token counting
-- [ ] **Phase 6: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export
-- [ ] **Phase 7: Editors** - Create and edit characters, personas, and lorebooks
+- [ ] **Phase 3: Editors** - Create and edit characters, personas, and lorebooks
+- [ ] **Phase 4: Provider Setup** - Users configure AI providers with API keys stored in OS keychain
+- [ ] **Phase 5: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
+- [ ] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting
+- [ ] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
 - [ ] **Phase 9: Power Features** - Lorebook context injection and regex scripting
 - [ ] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements
@@ -86,10 +86,44 @@ Plans:
 - Type alignment: Rust serde output must match TypeScript types — 02-04 Task 1 aligns, all subsequent type changes must maintain consistency
 **UI hint**: yes
 
-### Phase 3: Provider Setup
-**Goal**: Users can configure AI providers with API keys securely stored in the OS keychain
+
+### Phase 3: Editors
+**Goal**: Users can create and edit characters, personas, and lorebooks through guided editor UIs
 **Mode:** mvp
 **Depends on**: Phase 2
+**Requirements**: CHAR-02, CHAR-03, CHAR-04, CHAR-05, PERS-02, PERS-03, PERS-04, LORB-06
+**Success Criteria** (what must be TRUE):
+  1. User can create a new character with all fields (name, description, personality, scenario, greeting, dialogues) and avatar
+  2. User can edit and delete existing characters
+  3. User can create, edit, and delete personas
+  4. User can test lorebook keyword activation in the editor
+**Plans**: 4 plans in 3 waves
+
+Plans:
+
+**Wave 1** *(autonomous — backend + UI primitives + character editor)*
+- [ ] 03-01: Backend foundation (lorebook domain + migration + Tauri commands) + UI primitives (Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload) + Character Editor wizard + DeleteConfirmationDialog + wiring
+
+**Wave 2** *(autonomous — persona + lorebook editors, blocked on Wave 1)*
+- [ ] 03-02: Persona Editor dialog + PersonaCard kebab menu + persona avatar_path wiring *(blocked on 03-01)*
+- [ ] 03-03: Lorebook Editor with keyword testing + LorebookCard + Lorebooks tab *(blocked on 03-01)*
+
+**Wave 3** *(autonomous — integration + polish, blocked on Waves 1 and 2)*
+- [ ] 03-04: Avatar URL resolution + end-to-end integration + polish *(blocked on 03-01, 03-02, 03-03)*
+
+**Cross-cutting constraints:**
+- AppState CRUD API: 03-01 defines all actions (createCharacter, updateCharacter, deleteCharacter, createPersona, updatePersona, deletePersona, createLorebook, updateLorebook, deleteLorebook, uploadAvatar, lorebooks state) — 03-02 and 03-03 only consume, not redefine
+- Shared UI primitives: Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload, DeleteConfirmationDialog all created in 03-01 — 03-02 and 03-03 must import from `src/lib/components/ui/`
+- Schema migration: 03-01 adds migration #2 (lorebooks, lorebook_entries refactor, character_lorebooks junction, persona avatar_path) — all subsequent plans assume this schema exists
+- Type alignment: Rust serde output must match TypeScript types — 03-01 adds Lorebook, LorebookEntry, KeywordTestResult types; all subsequent plans must maintain consistency
+- `deletingEntity` type: 03-01 defines as `'character' | 'persona'`, 03-03 extends to include `'lorebook'` — must stay in sync across plans
+**UI hint**: yes
+
+
+### Phase 4: Provider Setup
+**Goal**: Users can configure AI providers with API keys securely stored in the OS keychain
+**Mode:** mvp
+**Depends on**: Phase 3
 **Requirements**: PROV-01, PROV-02, PROV-03, PROV-04, PROV-05, PROV-06
 **Success Criteria** (what must be TRUE):
   1. User can add, edit, and delete AI providers in the settings page
@@ -100,16 +134,16 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 03-01: Implement KeyringStore with OS-native keychain integration
-- [ ] 03-02: Port provider domain model and DB persistence
-- [ ] 03-03: Create Tauri commands for provider CRUD
-- [ ] 03-04: Wire settings page to real provider backend with keyring
+- [ ] 04-01: Implement KeyringStore with OS-native keychain integration
+- [ ] 04-02: Port provider domain model and DB persistence
+- [ ] 04-03: Create Tauri commands for provider CRUD
+- [ ] 04-04: Wire settings page to real provider backend with keyring
 **UI hint**: yes
 
-### Phase 4: Live Conversations
+### Phase 5: Live Conversations
 **Goal**: Users have real streaming AI conversations through characters, replacing mock responses
 **Mode:** mvp
-**Depends on**: Phase 3
+**Depends on**: Phase 4
 **Requirements**: CHAT-01, CHAT-02, CHAT-03, CHAT-04
 **Success Criteria** (what must be TRUE):
   1. User can send a message and receive a streaming token-by-token AI response
@@ -119,17 +153,17 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 04-01: Port AiService from gtk_ref/ with rig-core streaming
-- [ ] 04-02: Implement Tauri Channel-based streaming (Rust → SvelteKit)
-- [ ] 04-03: Replace mock streaming with real AI invoke in chat view
-- [ ] 04-04: Implement stop generation and regenerate commands
-- [ ] 04-05: Implement edit/resend functionality
+- [ ] 05-01: Port AiService from gtk_ref/ with rig-core streaming
+- [ ] 05-02: Implement Tauri Channel-based streaming (Rust → SvelteKit)
+- [ ] 05-03: Replace mock streaming with real AI invoke in chat view
+- [ ] 05-04: Implement stop generation and regenerate commands
+- [ ] 05-05: Implement edit/resend functionality
 **UI hint**: yes
 
-### Phase 5: Smart Prompts
+### Phase 6: Smart Prompts
 **Goal**: AI conversations use budget-aware prompt assembly with real token counting so responses are contextually appropriate
 **Mode:** mvp
-**Depends on**: Phase 4
+**Depends on**: Phase 5
 **Requirements**: PRMP-01, PRMP-02, PRMP-03
 **Success Criteria** (what must be TRUE):
   1. System prompt is assembled from character card, active persona, and conversation history
@@ -138,15 +172,15 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 05-01: Port PromptEngine from gtk_ref/ with budget-aware assembly
-- [ ] 05-02: Integrate tiktoken-rs for real token counting
-- [ ] 05-03: Wire token count display to real data in message input
-- [ ] 05-04: Integrate prompt engine into the streaming chat flow
+- [ ] 06-01: Port PromptEngine from gtk_ref/ with budget-aware assembly
+- [ ] 06-02: Integrate tiktoken-rs for real token counting
+- [ ] 06-03: Wire token count display to real data in message input
+- [ ] 06-04: Integrate prompt engine into the streaming chat flow
 
-### Phase 6: Rich Output & Cards
+### Phase 7: Rich Output & Cards
 **Goal**: AI responses render as rich markdown, and users can import/export character cards
 **Mode:** mvp
-**Depends on**: Phase 5
+**Depends on**: Phase 6
 **Requirements**: CHAT-06, CHAR-06, CHAR-07
 **Success Criteria** (what must be TRUE):
   1. AI responses display with formatted markdown (bold, italic, code blocks, lists, headers)
@@ -155,29 +189,10 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 06-01: Port MarkdownService from gtk_ref/ (pulldown-cmark)
-- [ ] 06-02: Replace naive rendering with real markdown in MessageBubble
-- [ ] 06-03: Port CardIO service from gtk_ref/ (PNG tEXt chunk read/write)
-- [ ] 06-04: Wire card import/export to character library UI
-**UI hint**: yes
-
-### Phase 7: Editors
-**Goal**: Users can create and edit characters, personas, and lorebooks through guided editor UIs
-**Mode:** mvp
-**Depends on**: Phase 6
-**Requirements**: CHAR-02, CHAR-03, CHAR-04, CHAR-05, PERS-02, PERS-03, PERS-04, LORB-06
-**Success Criteria** (what must be TRUE):
-  1. User can create a new character with all fields (name, description, personality, scenario, greeting, dialogues) and avatar
-  2. User can edit and delete existing characters
-  3. User can create, edit, and delete personas
-  4. User can test lorebook keyword activation in the editor
-**Plans**: TBD
-
-Plans:
-- [ ] 07-01: Build character editor wizard (Bits.ui Dialog, multi-step form)
-- [ ] 07-02: Build persona editor (Bits.ui Dialog)
-- [ ] 07-03: Build lorebook editor with keyword testing
-- [ ] 07-04: Wire editors to Tauri CRUD commands
+- [ ] 07-01: Port MarkdownService from gtk_ref/ (pulldown-cmark)
+- [ ] 07-02: Replace naive rendering with real markdown in MessageBubble
+- [ ] 07-03: Port CardIO service from gtk_ref/ (PNG tEXt chunk read/write)
+- [ ] 07-04: Wire card import/export to character library UI
 **UI hint**: yes
 
 ### Phase 8: Advanced Conversations
@@ -259,11 +274,11 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Native Desktop Shell | 4/4 | Complete | 2026-05-11 |
 | 2. Persistent Data | 4/4 | Complete | 2026-05-11 |
-| 3. Provider Setup | 0/4 | Not started | - |
-| 4. Live Conversations | 0/5 | Not started | - |
-| 5. Smart Prompts | 0/4 | Not started | - |
-| 6. Rich Output & Cards | 0/4 | Not started | - |
-| 7. Editors | 0/4 | Not started | - |
+| 3. Editors | 0/4 | Ready to execute | - |
+| 4. Provider Setup | 0/4 | Not started | - |
+| 5. Live Conversations | 0/5 | Not started | - |
+| 6. Smart Prompts | 0/4 | Not started | - |
+| 7. Rich Output & Cards | 0/4 | Not started | - |
 | 8. Advanced Conversations | 0/4 | Not started | - |
 | 9. Power Features | 0/5 | Not started | - |
 | 10. Theme & Polish | 0/2 | Not started | - |
