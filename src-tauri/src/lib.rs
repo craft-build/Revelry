@@ -43,6 +43,18 @@ pub fn run() {
             commands::conversations::save_message,
             commands::conversations::update_conversation_persona,
             commands::presets::get_presets,
+            commands::lorebooks::get_lorebooks,
+            commands::lorebooks::get_lorebook,
+            commands::lorebooks::save_lorebook,
+            commands::lorebooks::delete_lorebook,
+            commands::lorebooks::get_lorebook_entries,
+            commands::lorebooks::save_lorebook_entry,
+            commands::lorebooks::delete_lorebook_entry,
+            commands::lorebooks::assign_lorebook_to_character,
+            commands::lorebooks::remove_lorebook_from_character,
+            commands::avatars::upload_avatar,
+            commands::avatars::delete_avatar,
+            commands::keywords::test_lorebook_keywords,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -10,6 +10,7 @@ pub mod regex_scripts;
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message};
 use crate::domain::generation::GenerationPreset;
+use crate::domain::lorebook::{Lorebook, LorebookEntry};
 use crate::domain::persona::Persona;
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -89,6 +90,50 @@ pub enum DbCommand {
     // Preset operations
     LoadPresets {
         reply: oneshot::Sender<anyhow::Result<Vec<GenerationPreset>>>,
+    },
+
+    // Lorebook operations
+    LoadLorebooks {
+        reply: oneshot::Sender<anyhow::Result<Vec<Lorebook>>>,
+    },
+    LoadLorebook {
+        id: String,
+        reply: oneshot::Sender<anyhow::Result<Option<Lorebook>>>,
+    },
+    SaveLorebook {
+        lorebook: Lorebook,
+        reply: oneshot::Sender<anyhow::Result<Lorebook>>,
+    },
+    DeleteLorebook {
+        id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // Lorebook entry operations
+    LoadLorebookEntries {
+        lorebook_id: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<LorebookEntry>>>,
+    },
+    SaveLorebookEntry {
+        entry: LorebookEntry,
+        reply: oneshot::Sender<anyhow::Result<LorebookEntry>>,
+    },
+    DeleteLorebookEntry {
+        id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // Character-lorebook junction
+    AssignLorebookToCharacter {
+        character_id: String,
+        lorebook_id: String,
+        sort_order: i32,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    RemoveLorebookFromCharacter {
+        character_id: String,
+        lorebook_id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
     },
 }
 
@@ -253,6 +298,78 @@ impl DbWorker {
             }
             DbCommand::LoadPresets { reply } => {
                 let result = generation::load_presets(conn);
+                let _ = reply.send(result);
+            }
+
+            // Lorebook operations
+            DbCommand::LoadLorebooks { reply } => {
+                let result = lorebook::load_lorebooks(conn);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadLorebook { id, reply } => {
+                let result = lorebook::load_lorebook(conn, &id);
+                let _ = reply.send(result);
+            }
+            DbCommand::SaveLorebook { lorebook, reply } => {
+                let result = if lorebook::load_lorebook(conn, &lorebook.id)
+                    .unwrap_or(None)
+                    .is_some()
+                {
+                    lorebook::update_lorebook(conn, &lorebook).map(|_| lorebook.clone())
+                } else {
+                    lorebook::insert_lorebook(conn, &lorebook).map(|_| lorebook.clone())
+                };
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteLorebook { id, reply } => {
+                let result = lorebook::delete_lorebook(conn, &id);
+                let _ = reply.send(result);
+            }
+
+            // Lorebook entry operations
+            DbCommand::LoadLorebookEntries { lorebook_id, reply } => {
+                let result = lorebook::load_lorebook_entries(conn, &lorebook_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::SaveLorebookEntry { entry, reply } => {
+                let result = if lorebook::load_lorebook_entries(conn, &entry.lorebook_id)
+                    .unwrap_or_default()
+                    .iter()
+                    .any(|e| e.id == entry.id)
+                {
+                    lorebook::update_lorebook_entry(conn, &entry).map(|_| entry.clone())
+                } else {
+                    lorebook::insert_lorebook_entry(conn, &entry).map(|_| entry.clone())
+                };
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteLorebookEntry { id, reply } => {
+                let result = lorebook::delete_lorebook_entry(conn, &id);
+                let _ = reply.send(result);
+            }
+
+            // Character-lorebook junction
+            DbCommand::AssignLorebookToCharacter {
+                character_id,
+                lorebook_id,
+                sort_order,
+                reply,
+            } => {
+                let result = lorebook::assign_lorebook_to_character(
+                    conn,
+                    &character_id,
+                    &lorebook_id,
+                    sort_order,
+                );
+                let _ = reply.send(result);
+            }
+            DbCommand::RemoveLorebookFromCharacter {
+                character_id,
+                lorebook_id,
+                reply,
+            } => {
+                let result =
+                    lorebook::remove_lorebook_from_character(conn, &character_id, &lorebook_id);
                 let _ = reply.send(result);
             }
         }
