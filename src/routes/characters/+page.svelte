@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { Tabs } from 'bits-ui';
-	import { Plus, Search, Upload, Filter } from '@lucide/svelte';
+	import { Plus, Search, Upload, Filter, BookOpen } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
 	import { Input, Button, Tooltip } from '$lib/components/ui';
 	import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 	import PersonaCard from '$lib/components/personas/PersonaCard.svelte';
+	import { LorebookCard, LorebookEditor } from '$lib/components/lorebooks';
 	import { CharacterEditorDialog, DeleteConfirmationDialog } from '$lib/components/characters';
 	import { PersonaEditorDialog } from '$lib/components/personas';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import type { CharacterCard as CharacterCardType, UserPersona } from '$lib/types';
+	import type { CharacterCard as CharacterCardType, UserPersona, Lorebook } from '$lib/types';
 
 	// Tab state synced to query string so the persona switcher's
 	// "Manage personas" link can deep-link.
@@ -36,7 +37,7 @@
 	let delete_open = $state(false);
 	let deleting_id = $state<string | null>(null);
 	let deleting_name = $state('');
-	let deleting_entity_type = $state<'character' | 'persona'>('character');
+	let deleting_entity_type = $state<'character' | 'persona' | 'lorebook'>('character');
 	let is_deleting = $state(false);
 
 	// ── Persona editor state ────────────────────────────────────────────
@@ -94,12 +95,44 @@
 		}
 	}
 
+	// ── Lorebook editor state ─────────────────────────────────────────────
+	let lorebook_editor_open = $state(false);
+	let lorebook_editor_mode = $state<'create' | 'edit'>('create');
+	let editing_lorebook = $state<Lorebook | undefined>(undefined);
+
+	function openLorebookCreateEditor() {
+		lorebook_editor_mode = 'create';
+		editing_lorebook = undefined;
+		lorebook_editor_open = true;
+	}
+
+	function openLorebookEditEditor(id: string) {
+		const lorebook = app.lorebooks.find((l) => l.id === id);
+		if (lorebook) {
+			lorebook_editor_mode = 'edit';
+			editing_lorebook = lorebook;
+			lorebook_editor_open = true;
+		}
+	}
+
+	function openLorebookDeleteDialog(id: string) {
+		const lorebook = app.lorebooks.find((l) => l.id === id);
+		if (lorebook) {
+			deleting_id = id;
+			deleting_name = lorebook.name;
+			deleting_entity_type = 'lorebook';
+			delete_open = true;
+		}
+	}
+
 	async function handleDelete() {
 		if (!deleting_id) return;
 		is_deleting = true;
 		try {
 			if (deleting_entity_type === 'persona') {
 				await app.deletePersona(deleting_id);
+			} else if (deleting_entity_type === 'lorebook') {
+				await app.deleteLorebook(deleting_id);
 			} else {
 				await app.deleteCharacter(deleting_id);
 			}
@@ -134,9 +167,9 @@
 					<Upload class="size-3.5" />
 					Import card
 				</Button>
-				<Button variant="primary" size="sm" onclick={() => tab === 'personas' ? openPersonaCreateEditor() : openCreateEditor()}>
+				<Button variant="primary" size="sm" onclick={() => tab === 'personas' ? openPersonaCreateEditor() : tab === 'lorebooks' ? openLorebookCreateEditor() : openCreateEditor()}>
 					<Plus class="size-3.5" />
-					New {tab === 'personas' ? 'persona' : 'character'}
+					New {tab === 'personas' ? 'persona' : tab === 'lorebooks' ? 'lorebook' : 'character'}
 				</Button>
 			</div>
 		</div>
@@ -167,6 +200,15 @@
 							My personas
 							<span class="text-[11px] text-(--color-subtle)">
 								{app.personas.length}
+							</span>
+						</Tabs.Trigger>
+						<Tabs.Trigger
+							value="lorebooks"
+							class="inline-flex h-8 items-center gap-2 rounded-(--radius-sm) px-4 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm"
+						>
+							Lorebooks
+							<span class="text-[11px] text-(--color-subtle)">
+								{app.lorebooks.length}
 							</span>
 						</Tabs.Trigger>
 					</Tabs.List>
@@ -231,6 +273,30 @@
 						</div>
 					{/if}
 				</Tabs.Content>
+
+				<!-- Lorebooks tab -->
+				<Tabs.Content value="lorebooks">
+					{#if app.lorebooks.length === 0}
+						<div
+							class="flex flex-col items-center justify-center gap-3 rounded-(--radius-lg) border border-dashed border-(--color-border) py-20 text-center"
+						>
+							<BookOpen class="size-8 text-(--color-subtle)" />
+							<p class="text-sm text-(--color-muted)">No lorebooks yet.</p>
+							<Button variant="secondary" size="sm" onclick={openLorebookCreateEditor}>
+								<Plus class="size-3.5" />
+								New lorebook
+							</Button>
+						</div>
+					{:else}
+						<div
+							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+						>
+							{#each app.lorebooks as lorebook (lorebook.id)}
+								<LorebookCard {lorebook} onedit={openLorebookEditEditor} ondelete={openLorebookDeleteDialog} />
+							{/each}
+						</div>
+					{/if}
+				</Tabs.Content>
 			</Tabs.Root>
 		</div>
 	</div>
@@ -250,12 +316,19 @@
 	persona={editing_persona}
 />
 
+<!-- Lorebook editor dialog -->
+<LorebookEditor
+	bind:open={lorebook_editor_open}
+	mode={lorebook_editor_mode}
+	lorebook={editing_lorebook}
+/>
+
 <!-- Delete confirmation dialog -->
 <DeleteConfirmationDialog
 	bind:open={delete_open}
-	title={deleting_entity_type === 'persona' ? 'Delete persona' : 'Delete character'}
+	title={deleting_entity_type === 'persona' ? 'Delete persona' : deleting_entity_type === 'lorebook' ? 'Delete lorebook' : 'Delete character'}
 	description={`Are you sure you want to delete "${deleting_name}"? This action cannot be undone.`}
-	confirm_label={deleting_entity_type === 'persona' ? 'Delete persona' : 'Delete character'}
+	confirm_label={deleting_entity_type === 'persona' ? 'Delete persona' : deleting_entity_type === 'lorebook' ? 'Delete lorebook' : 'Delete character'}
 	onconfirm={handleDelete}
 	loading={is_deleting}
 />
