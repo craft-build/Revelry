@@ -7,6 +7,7 @@
 Features users expect from any AI roleplay app. Without these, users will leave.
 
 ### Streaming AI Chat
+
 - Token-by-token streaming from AI provider — users expect real-time typewriter output, not waiting for full response
 - Stop generation mid-stream — ability to abort a response
 - Regenerate last response — re-roll with same or different provider
@@ -16,6 +17,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 **Dependencies:** rig-core integration, Tauri IPC channels
 
 ### Character Cards
+
 - Character creation with name, description, personality, scenario, greeting message, example dialogues
 - Character avatars (upload or default initials)
 - Character card import/export in TavernAI V2 spec (PNG-embedded JSON metadata) — the de facto standard for sharing characters across platforms
@@ -25,6 +27,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 **Dependencies:** SQLite persistence, card I/O service
 
 ### Personas
+
 - Persona creation with name, description, avatar — defines "who the user is" in the conversation
 - Active persona per conversation — switch persona mid-conversation
 - Persona library management (create, edit, delete, search)
@@ -33,6 +36,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 **Dependencies:** Character cards, conversation system
 
 ### Conversation Management
+
 - Create new conversations with a character
 - Conversation history persistence — all messages saved to SQLite
 - Conversation list with search, timestamps, character info
@@ -42,6 +46,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 **Dependencies:** Character cards, personas, SQLite
 
 ### Prompt Engineering
+
 - System prompt assembly from character card, persona, lorebook entries, and conversation history
 - Context window budget management — fit as much relevant context as possible within token limits
 - Token counting display — show users their context utilization
@@ -50,6 +55,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 **Dependencies:** tiktoken-rs, character/persona models, lorebook
 
 ### Provider Configuration
+
 - Add/edit/delete AI providers (OpenAI, Anthropic, custom OpenAI-compatible, etc.)
 - API key storage in OS keychain (never on disk)
 - Provider-specific model selection
@@ -59,6 +65,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 **Dependencies:** keyring crate, rig-core
 
 ### Markdown Rendering
+
 - AI responses rendered as formatted markdown (bold, italic, code blocks, lists, headers)
 - Not raw text or naive rendering — users expect rich formatting
 
@@ -70,6 +77,7 @@ Features users expect from any AI roleplay app. Without these, users will leave.
 Features that give competitive advantage. Not required for launch but expected in mature products.
 
 ### Lorebook (World Info)
+
 - Key-value entries that inject context into prompts when keywords are detected in conversation
 - Activation strategies: constant, keyword-triggered, conditional
 - Recursive insertion — lorebook entries can reference each other
@@ -80,6 +88,7 @@ Features that give competitive advantage. Not required for launch but expected i
 **Dependencies:** Prompt engine, token counting
 
 ### Conversation Branching
+
 - Fork conversation from any message — create parallel timelines
 - Navigate between branches — switch parent/child messages
 - Branch visualization — show where branches diverge
@@ -88,6 +97,7 @@ Features that give competitive advantage. Not required for launch but expected i
 **Dependencies:** SQLite schema with parent/child message relationships
 
 ### Regex Scripting
+
 - User-defined regex patterns applied to AI output — find/replace, formatting fixes, trigger warnings
 - Multiple scripts with enable/disable toggles
 - Ordered application — scripts run in sequence
@@ -96,6 +106,7 @@ Features that give competitive advantage. Not required for launch but expected i
 **Dependencies:** Regex crate, script persistence
 
 ### Full-Text Search
+
 - Search across all conversations and messages
 - FTS5 in SQLite for fast full-text queries
 - Search results with context snippets
@@ -104,6 +115,7 @@ Features that give competitive advantage. Not required for launch but expected i
 **Dependencies:** SQLite FTS5, conversation/message data
 
 ### Theme Toggle
+
 - Dark/light theme switching
 - Respect system preference with manual override
 
@@ -111,6 +123,7 @@ Features that give competitive advantage. Not required for launch but expected i
 **Dependencies:** None
 
 ### Character/Persona Editors
+
 - Multi-step wizard for creating and editing characters (replaces current card-only view)
 - Form validation, preview, field grouping
 - Bits.ui Dialog for modal shell
@@ -119,6 +132,7 @@ Features that give competitive advantage. Not required for launch but expected i
 **Dependencies:** Bits.ui Dialog, character domain model
 
 ### Lorebook Editor
+
 - CRUD UI for lorebook entries
 - Keyword testing — enter sample text to see which entries activate
 - Budget and ordering controls

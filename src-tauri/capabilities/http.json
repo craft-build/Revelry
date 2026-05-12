@@ -3,7 +3,5 @@
   "identifier": "http",
   "description": "HTTP client permissions — stub for future phases",
   "windows": ["main"],
-  "permissions": [
-    "http:default"
-  ]
+  "permissions": ["http:default"]
 }

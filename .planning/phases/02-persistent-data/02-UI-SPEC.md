@@ -18,14 +18,14 @@ created: 2026-05-11
 
 **Inherited from Phase 1.** No changes to tooling, tokens, or component library.
 
-| Property | Value |
-|----------|-------|
-| Tool | none (no shadcn — project uses Bits.ui + Tailwind v4 directly) |
-| Component library | Bits.ui ^2.18 (headless Svelte primitives) |
-| Icon library | @lucide/svelte ^1.14 |
-| Font | Geist (sans), Fraunces (serif/display), Geist Mono (mono) |
-| Styling | Tailwind CSS v4 with custom OKLCH theme tokens in `src/app.css` |
-| Variant system | tailwind-variants ^3.2 (`tv()`) |
+| Property          | Value                                                           |
+| ----------------- | --------------------------------------------------------------- |
+| Tool              | none (no shadcn — project uses Bits.ui + Tailwind v4 directly)  |
+| Component library | Bits.ui ^2.18 (headless Svelte primitives)                      |
+| Icon library      | @lucide/svelte ^1.14                                            |
+| Font              | Geist (sans), Fraunces (serif/display), Geist Mono (mono)       |
+| Styling           | Tailwind CSS v4 with custom OKLCH theme tokens in `src/app.css` |
+| Variant system    | tailwind-variants ^3.2 (`tv()`)                                 |
 
 **Reference:** `.planning/phases/01-native-desktop-shell/01-UI-SPEC.md` § Design System, § Spacing Scale, § Typography, § Color, § Radii, § Component Inventory — all unchanged.
 
@@ -45,12 +45,12 @@ Exceptions: none.
 
 **Inherited from Phase 1.** No changes.
 
-| Role | Size | Weight | Line Height | Font Family |
-|------|------|--------|-------------|-------------|
-| Body | 15px | 400 (regular) | 1.625 (relaxed) | Geist (sans) |
-| Label / small | 12px (xs) | 500 (medium) | 1.25 | Geist (sans) |
-| Heading | 14px (sm) | 600 (semibold) | 1.2 | Fraunces (serif/display) |
-| Context / micro | 10px | 400 (regular) | 1.0 | Geist (sans) |
+| Role            | Size      | Weight         | Line Height     | Font Family              |
+| --------------- | --------- | -------------- | --------------- | ------------------------ |
+| Body            | 15px      | 400 (regular)  | 1.625 (relaxed) | Geist (sans)             |
+| Label / small   | 12px (xs) | 500 (medium)   | 1.25            | Geist (sans)             |
+| Heading         | 14px (sm) | 600 (semibold) | 1.2             | Fraunces (serif/display) |
+| Context / micro | 10px      | 400 (regular)  | 1.0             | Geist (sans)             |
 
 ---
 
@@ -60,16 +60,16 @@ Exceptions: none.
 
 Phase 2 introduces **semantic usage** of existing tokens for new states:
 
-| State | Token Used | Usage |
-|-------|------------|-------|
-| Loading skeleton | `--color-surface-elevated` | Skeleton pulse animation background |
-| Loading skeleton shimmer | `--color-surface-hover` | Shimmer highlight sweep |
-| Empty state icon | `--color-subtle` | Large center icon in empty states |
-| Empty state heading | `--color-foreground` | Primary text in empty state |
-| Empty state body | `--color-muted` | Secondary text in empty state |
-| Error state icon | `--color-destructive` | Alert icon in error states |
-| Error state heading | `--color-foreground` | Primary text in error state |
-| Error state body | `--color-muted` | Secondary text / recovery instructions |
+| State                    | Token Used                 | Usage                                  |
+| ------------------------ | -------------------------- | -------------------------------------- |
+| Loading skeleton         | `--color-surface-elevated` | Skeleton pulse animation background    |
+| Loading skeleton shimmer | `--color-surface-hover`    | Shimmer highlight sweep                |
+| Empty state icon         | `--color-subtle`           | Large center icon in empty states      |
+| Empty state heading      | `--color-foreground`       | Primary text in empty state            |
+| Empty state body         | `--color-muted`            | Secondary text in empty state          |
+| Error state icon         | `--color-destructive`      | Alert icon in error states             |
+| Error state heading      | `--color-foreground`       | Primary text in error state            |
+| Error state body         | `--color-muted`            | Secondary text / recovery instructions |
 
 No new color tokens are added. The destructive and warning tokens from Phase 1 (reserved but unused) are now activated for error states.
 
@@ -87,14 +87,14 @@ No new color tokens are added. The destructive and warning tokens from Phase 1 (
 
 ### Components Modified in Phase 2
 
-| Component | Change Type | What Changes |
-|-----------|-------------|--------------|
-| `ConversationSidebar` | Add loading state | Show skeleton conversation items during initial data fetch |
-| `ConversationSidebar` | Empty state update | "No conversations yet." stays; becomes the real empty-DB state instead of just the mock-absent state |
-| `+layout.svelte` | Add loading gate | Full-app loading indicator during initial `invoke()` hydration |
-| `+page.svelte` (home) | Add loading/empty states | Suggested characters section shows skeletons while loading, shows empty state when DB has no characters |
+| Component                 | Change Type              | What Changes                                                                                                          |
+| ------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `ConversationSidebar`     | Add loading state        | Show skeleton conversation items during initial data fetch                                                            |
+| `ConversationSidebar`     | Empty state update       | "No conversations yet." stays; becomes the real empty-DB state instead of just the mock-absent state                  |
+| `+layout.svelte`          | Add loading gate         | Full-app loading indicator during initial `invoke()` hydration                                                        |
+| `+page.svelte` (home)     | Add loading/empty states | Suggested characters section shows skeletons while loading, shows empty state when DB has no characters               |
 | `characters/+page.svelte` | Add loading/empty states | Character grid shows skeletons while loading; empty state differentiates "no characters exist" from "no search match" |
-| `characters/+page.svelte` | Persona tab empty state | "No personas yet." becomes real empty-DB state |
+| `characters/+page.svelte` | Persona tab empty state  | "No personas yet." becomes real empty-DB state                                                                        |
 
 ---
 
@@ -124,21 +124,23 @@ App Launch
 
 **Pattern:** Pulse animation on placeholder shapes matching the real content layout. Not shimmer (complex), not spinner (content-agnostic). The skeleton should **occupy the same space** as the real content to prevent layout shift.
 
-| Skeleton Element | Shape | Dimensions | Animation |
-|------------------|-------|------------|-----------|
-| Conversation item (sidebar) | Rounded rect | `w-full h-14` | `animate-pulse` on `--color-surface-elevated` bg |
-| Character card | Rounded rect | `w-full aspect-[3/4]` | `animate-pulse` on `--color-surface-elevated` bg |
-| Persona card | Rounded rect | `w-full aspect-[3/4]` | `animate-pulse` on `--color-surface-elevated` bg |
-| Message bubble | Rounded rect | `w-3/4 h-12` (character), `w-2/3 h-10` (user) | `animate-pulse` on `--color-surface-elevated` bg |
-| Chat header | Rounded rect | `w-48 h-4` | `animate-pulse` on `--color-surface-elevated` bg |
+| Skeleton Element            | Shape        | Dimensions                                    | Animation                                        |
+| --------------------------- | ------------ | --------------------------------------------- | ------------------------------------------------ |
+| Conversation item (sidebar) | Rounded rect | `w-full h-14`                                 | `animate-pulse` on `--color-surface-elevated` bg |
+| Character card              | Rounded rect | `w-full aspect-[3/4]`                         | `animate-pulse` on `--color-surface-elevated` bg |
+| Persona card                | Rounded rect | `w-full aspect-[3/4]`                         | `animate-pulse` on `--color-surface-elevated` bg |
+| Message bubble              | Rounded rect | `w-3/4 h-12` (character), `w-2/3 h-10` (user) | `animate-pulse` on `--color-surface-elevated` bg |
+| Chat header                 | Rounded rect | `w-48 h-4`                                    | `animate-pulse` on `--color-surface-elevated` bg |
 
 **Skeleton count:**
+
 - Sidebar: 5 skeleton conversation items (matches typical list density)
 - Character grid: 8 skeleton cards (matches 4-col grid at xl)
 - Persona grid: 8 skeleton cards
 - Messages: 4 skeleton bubbles (alternating user/character)
 
 **Skeleton styling:**
+
 ```
 bg-(--color-surface-elevated) rounded-(--radius-lg) animate-pulse
 ```
@@ -148,6 +150,7 @@ No new CSS utilities needed — `animate-pulse` is a Tailwind v4 built-in.
 ### Loading State Duration Target
 
 With local SQLite, initial data fetch should complete in **< 200ms** for a typical database. The skeleton state is primarily for:
+
 1. First launch (schema creation + migrations)
 2. Very large databases (thousands of conversations)
 3. Disk I/O latency on slow drives
@@ -184,15 +187,15 @@ All empty states follow the same visual structure:
 
 ### Empty State Specifications
 
-| View | Condition | Icon | Heading | Body | CTA |
-|------|-----------|------|---------|------|-----|
-| Conversation sidebar | No conversations in DB | `MessageSquareDashed` | "No conversations yet." | "Start a new chat with any character." | — (use "New chat" button already in sidebar header) |
-| Conversation sidebar | Search with no matches | `MessageSquareDashed` | "No conversations match." | "Try a different search term." | — |
-| Home page | No characters in DB | `Sparkles` | "Bring a character to life." | "Import a character card or create one from scratch in your library." | → "Browse library" link to `/characters` |
-| Characters tab | No characters in DB | `Users` | "No characters yet." | "Import a character card or create one from scratch to get started." | "Import card" (primary), "New character" (secondary) |
-| Characters tab | Search with no matches | `Search` | "No characters match." | "Try a different search term." | — |
-| Personas tab | No personas in DB | `UserCircle` | "No personas yet." | "Create a persona to define how you appear in conversations." | "New persona" (primary) |
-| Chat view | Empty conversation (no messages) | — | — | Character greeting message | — (first_mes from character card) |
+| View                 | Condition                        | Icon                  | Heading                      | Body                                                                  | CTA                                                  |
+| -------------------- | -------------------------------- | --------------------- | ---------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------- |
+| Conversation sidebar | No conversations in DB           | `MessageSquareDashed` | "No conversations yet."      | "Start a new chat with any character."                                | — (use "New chat" button already in sidebar header)  |
+| Conversation sidebar | Search with no matches           | `MessageSquareDashed` | "No conversations match."    | "Try a different search term."                                        | —                                                    |
+| Home page            | No characters in DB              | `Sparkles`            | "Bring a character to life." | "Import a character card or create one from scratch in your library." | → "Browse library" link to `/characters`             |
+| Characters tab       | No characters in DB              | `Users`               | "No characters yet."         | "Import a character card or create one from scratch to get started."  | "Import card" (primary), "New character" (secondary) |
+| Characters tab       | Search with no matches           | `Search`              | "No characters match."       | "Try a different search term."                                        | —                                                    |
+| Personas tab         | No personas in DB                | `UserCircle`          | "No personas yet."           | "Create a persona to define how you appear in conversations."         | "New persona" (primary)                              |
+| Chat view            | Empty conversation (no messages) | —                     | —                            | Character greeting message                                            | — (first_mes from character card)                    |
 
 **Important distinction:** The home page `+page.svelte` currently hardcodes suggested characters from `app.characters.slice(0, 3)`. When the DB is empty, this section should be replaced with the "Bring a character to life." empty state (which already exists in the markup but is currently unreachable because mock data always provides characters).
 
@@ -230,6 +233,7 @@ Phase 2 introduces database initialization, which can fail. Error states are new
 ```
 
 **Styling:**
+
 - Background: `--color-background` (full app background, not a dialog overlay)
 - Error icon: `--color-destructive`
 - Heading: `text-base font-display font-semibold --color-foreground`
@@ -238,6 +242,7 @@ Phase 2 introduces database initialization, which can fail. Error states are new
 - Buttons: `Retry` = `variant="primary"`, `Show logs` = `variant="secondary"`
 
 **Actions:**
+
 - **Retry:** Re-attempts database initialization (calls the same Tauri command). If successful, removes the overlay and loads data. If still failing, updates error message (no change to visual structure).
 - **Show logs:** Opens the Tauri log file or console. Implementation detail — for Phase 2, this could open DevTools console or `open` the log file path.
 
@@ -266,13 +271,13 @@ If a single `invoke()` call fails (e.g., `get_characters` returns an error but `
 
 ### Error State Specifications
 
-| View | Condition | Icon | Heading | Body | CTA |
-|------|-----------|------|---------|------|-----|
-| Full app overlay | DB init failure | `AlertTriangle` | "Couldn't open the database." | "Revelry stores your conversations and characters locally. Something went wrong reading the database file." | Retry (primary), Show logs (secondary) |
-| Character grid | `get_characters` failed | `AlertTriangle` | "Couldn't load characters." | "Try again in a moment." | Retry (secondary) |
-| Persona grid | `get_personas` failed | `AlertTriangle` | "Couldn't load personas." | "Try again in a moment." | Retry (secondary) |
-| Conversation sidebar | `get_conversations` failed | `AlertTriangle` | "Couldn't load conversations." | "Try again in a moment." | Retry (secondary) |
-| Chat messages | `get_messages` failed | `AlertTriangle` | "Couldn't load messages." | "Try again in a moment." | Retry (secondary) |
+| View                 | Condition                  | Icon            | Heading                        | Body                                                                                                        | CTA                                    |
+| -------------------- | -------------------------- | --------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Full app overlay     | DB init failure            | `AlertTriangle` | "Couldn't open the database."  | "Revelry stores your conversations and characters locally. Something went wrong reading the database file." | Retry (primary), Show logs (secondary) |
+| Character grid       | `get_characters` failed    | `AlertTriangle` | "Couldn't load characters."    | "Try again in a moment."                                                                                    | Retry (secondary)                      |
+| Persona grid         | `get_personas` failed      | `AlertTriangle` | "Couldn't load personas."      | "Try again in a moment."                                                                                    | Retry (secondary)                      |
+| Conversation sidebar | `get_conversations` failed | `AlertTriangle` | "Couldn't load conversations." | "Try again in a moment."                                                                                    | Retry (secondary)                      |
+| Chat messages        | `get_messages` failed      | `AlertTriangle` | "Couldn't load messages."      | "Try again in a moment."                                                                                    | Retry (secondary)                      |
 
 ---
 
@@ -280,38 +285,38 @@ If a single `invoke()` call fails (e.g., `get_characters` returns an error but `
 
 ### New Patterns in Phase 2
 
-| Pattern | Trigger | Behavior |
-|---------|---------|----------|
-| **Initial data load** | App startup (`onMount`) | `is_loading = true` → `invoke()` parallel fetches → `hydrate()` → `is_loading = false`. UI shows skeletons during load. |
-| **Skeleton transition** | `is_loading` changes | Skeletons fade out (150ms) as real content fades in. No abrupt layout shift. |
-| **Empty library first-run** | User launches app for first time | All data views show empty states. Sidebar shows "No conversations yet." Home shows "Bring a character to life." Library shows "No characters yet." / "No personas yet." |
-| **DB error overlay** | DB init `invoke()` returns error | Full-screen error overlay. App chrome visible but non-functional. User must Retry or quit. |
-| **Partial load failure** | One `invoke()` fails among several | Failed section shows inline error with Retry button. Other sections display normally. |
-| **Retry** | User clicks Retry button | Re-invokes the failed Tauri command. On success, replaces error with data. On failure, keeps error (no visual change). |
-| **Delete conversation** | User clicks delete on conversation | Confirmation dialog → `invoke('delete_conversation')` → remove from local state → sidebar updates. Destructive action, see copywriting contract. |
+| Pattern                     | Trigger                            | Behavior                                                                                                                                                                |
+| --------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Initial data load**       | App startup (`onMount`)            | `is_loading = true` → `invoke()` parallel fetches → `hydrate()` → `is_loading = false`. UI shows skeletons during load.                                                 |
+| **Skeleton transition**     | `is_loading` changes               | Skeletons fade out (150ms) as real content fades in. No abrupt layout shift.                                                                                            |
+| **Empty library first-run** | User launches app for first time   | All data views show empty states. Sidebar shows "No conversations yet." Home shows "Bring a character to life." Library shows "No characters yet." / "No personas yet." |
+| **DB error overlay**        | DB init `invoke()` returns error   | Full-screen error overlay. App chrome visible but non-functional. User must Retry or quit.                                                                              |
+| **Partial load failure**    | One `invoke()` fails among several | Failed section shows inline error with Retry button. Other sections display normally.                                                                                   |
+| **Retry**                   | User clicks Retry button           | Re-invokes the failed Tauri command. On success, replaces error with data. On failure, keeps error (no visual change).                                                  |
+| **Delete conversation**     | User clicks delete on conversation | Confirmation dialog → `invoke('delete_conversation')` → remove from local state → sidebar updates. Destructive action, see copywriting contract.                        |
 
 ### Existing Patterns (Modified)
 
-| Pattern | Phase 1 Behavior | Phase 2 Change |
-|---------|-------------------|----------------|
-| **Hydrate** | `app.hydrate(mockData)` in `onMount` | `app.hydrate(invokeResults)` — data comes from `invoke()` calls, not imports |
-| **Sidebar empty** | "No conversations yet." (always had mock data, so rarely visible) | Same copy, now the **real** initial state for first-run users |
-| **Character grid empty** | "No characters match." (search-only) | Now also shows when DB is empty — differentiated copy |
-| **Suggested characters (home)** | `app.characters.slice(0, 3)` — always 3 items | Same pattern, but may be 0 items → shows empty state instead |
-| **Message list** | Loaded from mock `getMessages()` | Loaded from `invoke('get_messages', { conversation_id })` |
+| Pattern                         | Phase 1 Behavior                                                  | Phase 2 Change                                                               |
+| ------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Hydrate**                     | `app.hydrate(mockData)` in `onMount`                              | `app.hydrate(invokeResults)` — data comes from `invoke()` calls, not imports |
+| **Sidebar empty**               | "No conversations yet." (always had mock data, so rarely visible) | Same copy, now the **real** initial state for first-run users                |
+| **Character grid empty**        | "No characters match." (search-only)                              | Now also shows when DB is empty — differentiated copy                        |
+| **Suggested characters (home)** | `app.characters.slice(0, 3)` — always 3 items                     | Same pattern, but may be 0 items → shows empty state instead                 |
+| **Message list**                | Loaded from mock `getMessages()`                                  | Loaded from `invoke('get_messages', { conversation_id })`                    |
 
 ### Deferred Interactions (Not in Phase 2)
 
-| Pattern | Deferred To | Reason |
-|---------|-------------|--------|
-| Create character (CHAR-02) | Phase 7 | Editors are a separate phase |
-| Edit character (CHAR-03) | Phase 7 | Editors are a separate phase |
-| Delete character (CHAR-04) | Phase 7 | Editors are a separate phase |
-| Create persona (PERS-02) | Phase 7 | Editors are a separate phase |
-| Edit persona (PERS-03) | Phase 7 | Editors are a separate phase |
-| Import character card (CHAR-06) | Phase 6 | Card IO is a separate phase |
-| FTS5 search (CONV-08) | Phase 8 | Full-text search UI is Phase 8 |
-| Branching (CONV-06, 07) | Phase 8 | Tree structure is Phase 8 |
+| Pattern                         | Deferred To | Reason                         |
+| ------------------------------- | ----------- | ------------------------------ |
+| Create character (CHAR-02)      | Phase 7     | Editors are a separate phase   |
+| Edit character (CHAR-03)        | Phase 7     | Editors are a separate phase   |
+| Delete character (CHAR-04)      | Phase 7     | Editors are a separate phase   |
+| Create persona (PERS-02)        | Phase 7     | Editors are a separate phase   |
+| Edit persona (PERS-03)          | Phase 7     | Editors are a separate phase   |
+| Import character card (CHAR-06) | Phase 6     | Card IO is a separate phase    |
+| FTS5 search (CONV-08)           | Phase 8     | Full-text search UI is Phase 8 |
+| Branching (CONV-06, 07)         | Phase 8     | Tree structure is Phase 8      |
 
 **Important:** The "New character", "Import card", "New persona", and "Edit" buttons on library cards **exist visually** in Phase 1 but are non-functional. In Phase 2 they remain non-functional. They should be visually present (not hidden) but may show a brief tooltip or disabled state. Do NOT remove them — they'll be wired in later phases.
 
@@ -323,36 +328,36 @@ Phase 2 introduces copy for empty states and error states that didn't exist with
 
 ### Empty States
 
-| Element | Copy | Context |
-|---------|------|---------|
-| Sidebar — no conversations | "No conversations yet." | First-run; user hasn't started any chats |
-| Sidebar — no search matches | "No conversations match." | Search filter returned zero results |
-| Home — no characters | "Bring a character to life." | Hero heading (already exists, becomes reachable) |
-| Home — no characters body | "Import a character card or create one from scratch in your library." | Replaces current "Pick a character to begin a conversation, or import a CharacterCardV2 from your library." — more actionable for empty DB |
-| Library — no characters heading | "No characters yet." | Character tab empty state |
-| Library — no characters body | "Import a character card or create one from scratch to get started." | Guides user to first action |
-| Library — no characters search | "No characters match." | Search filter returned zero results |
-| Library — no personas heading | "No personas yet." | Persona tab empty state |
-| Library — no personas body | "Create a persona to define how you appear in conversations." | Guides user to first action |
-| Chat — empty conversation | *(Character's `first_mes` rendered as a message bubble)* | Not a true "empty state" — the character's greeting message is the first content |
+| Element                         | Copy                                                                  | Context                                                                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sidebar — no conversations      | "No conversations yet."                                               | First-run; user hasn't started any chats                                                                                                   |
+| Sidebar — no search matches     | "No conversations match."                                             | Search filter returned zero results                                                                                                        |
+| Home — no characters            | "Bring a character to life."                                          | Hero heading (already exists, becomes reachable)                                                                                           |
+| Home — no characters body       | "Import a character card or create one from scratch in your library." | Replaces current "Pick a character to begin a conversation, or import a CharacterCardV2 from your library." — more actionable for empty DB |
+| Library — no characters heading | "No characters yet."                                                  | Character tab empty state                                                                                                                  |
+| Library — no characters body    | "Import a character card or create one from scratch to get started."  | Guides user to first action                                                                                                                |
+| Library — no characters search  | "No characters match."                                                | Search filter returned zero results                                                                                                        |
+| Library — no personas heading   | "No personas yet."                                                    | Persona tab empty state                                                                                                                    |
+| Library — no personas body      | "Create a persona to define how you appear in conversations."         | Guides user to first action                                                                                                                |
+| Chat — empty conversation       | _(Character's `first_mes` rendered as a message bubble)_              | Not a true "empty state" — the character's greeting message is the first content                                                           |
 
 ### Error States
 
-| Element | Copy | Context |
-|---------|------|---------|
-| DB init failure heading | "Couldn't open the database." | Full-screen error overlay |
-| DB init failure body | "Revelry stores your conversations and characters locally. Something went wrong reading the database file." | Explains what happened |
-| DB init failure path | "Database path: {platform_path}" | Shows the actual file path for debugging |
-| DB init failure retry | "Retry" | Re-attempts initialization |
-| DB init failure logs | "Show logs" | Opens log output |
-| Load failure heading | "Couldn't load {entity}." | Inline error (entity = characters / personas / conversations / messages) |
-| Load failure body | "Try again in a moment." | Generic retry suggestion |
-| Load failure retry | "Retry" | Re-invokes the failed command |
+| Element                 | Copy                                                                                                        | Context                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| DB init failure heading | "Couldn't open the database."                                                                               | Full-screen error overlay                                                |
+| DB init failure body    | "Revelry stores your conversations and characters locally. Something went wrong reading the database file." | Explains what happened                                                   |
+| DB init failure path    | "Database path: {platform_path}"                                                                            | Shows the actual file path for debugging                                 |
+| DB init failure retry   | "Retry"                                                                                                     | Re-attempts initialization                                               |
+| DB init failure logs    | "Show logs"                                                                                                 | Opens log output                                                         |
+| Load failure heading    | "Couldn't load {entity}."                                                                                   | Inline error (entity = characters / personas / conversations / messages) |
+| Load failure body       | "Try again in a moment."                                                                                    | Generic retry suggestion                                                 |
+| Load failure retry      | "Retry"                                                                                                     | Re-invokes the failed command                                            |
 
 ### Destructive Actions
 
-| Action | Confirmation | Copy |
-|--------|-------------|------|
+| Action              | Confirmation        | Copy                                                                                                                                                                                               |
+| ------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Delete conversation | Confirmation dialog | Heading: "Delete conversation?" · Body: "This will permanently remove this conversation and all its messages. This cannot be undone." · Confirm: "Delete" (destructive variant) · Cancel: "Cancel" |
 
 **Delete conversation** is the only destructive action with a real backend in Phase 2. Message delete buttons and character/persona delete buttons exist in the UI but remain non-functional (deferred to Phase 7).
@@ -371,10 +376,10 @@ The skeleton loading pattern uses Tailwind v4's built-in `animate-pulse` — no 
 
 **No changes.** No shadcn, no third-party registries. All components remain custom-built using Bits.ui + Tailwind v4.
 
-| Registry | Blocks Used | Safety Gate |
-|----------|-------------|-------------|
-| shadcn official | none | not applicable |
-| Third-party | none | not applicable |
+| Registry        | Blocks Used | Safety Gate    |
+| --------------- | ----------- | -------------- |
+| shadcn official | none        | not applicable |
+| Third-party     | none        | not applicable |
 
 ---
 
@@ -409,6 +414,7 @@ Phase 2:  Tauri invoke() ←──→ Rust DbService ──→ SQLite
 ```
 
 The `AppState` class structure is preserved — only the data source changes. This means:
+
 - All derived getters (`active_conversation`, `active_character`, `filtered_characters`, etc.) work unchanged
 - All component subscriptions (`app.characters`, `app.conversations`, etc.) work unchanged
 - Only `hydrate()` and `onMount` logic in `+layout.svelte` are rewritten

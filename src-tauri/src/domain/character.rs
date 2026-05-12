@@ -70,11 +70,11 @@ fn default_character_version() -> String {
 }
 
 fn default_extensions() -> serde_json::Value {
-    serde_json::Value::Null
+    serde_json::json!({})
 }
 
 fn default_character_book() -> serde_json::Value {
-    serde_json::Value::Null
+    serde_json::json!({})
 }
 
 fn default_lorebook_scan_depth() -> i32 {
@@ -105,9 +105,9 @@ impl CharacterCardV2 {
             creator: "Unknown".to_string(),
             character_version: "2.0".to_string(),
             avatar_path: None,
-            extensions: serde_json::Value::Null,
+            extensions: serde_json::json!({}),
             creator_notes: String::new(),
-            character_book: serde_json::Value::Null,
+            character_book: serde_json::json!({}),
             default_persona_id: None,
             default_preset_id: None,
             lorebook_scan_depth: 2,
@@ -145,9 +145,9 @@ mod tests {
         // Optional fields should default correctly
         assert_eq!(character.creator, "Unknown");
         assert!(character.avatar_path.is_none());
-        assert_eq!(character.extensions, serde_json::Value::Null);
+        assert_eq!(character.extensions, serde_json::json!({}));
         assert!(character.creator_notes.is_empty());
-        assert_eq!(character.character_book, serde_json::Value::Null);
+        assert_eq!(character.character_book, serde_json::json!({}));
     }
 
     #[test]
@@ -184,9 +184,9 @@ mod tests {
         assert_eq!(character.creator, "Unknown");
         assert_eq!(character.character_version, "2.0");
         assert!(character.avatar_path.is_none());
-        assert_eq!(character.extensions, serde_json::Value::Null);
+        assert_eq!(character.extensions, serde_json::json!({}));
         assert!(character.creator_notes.is_empty());
-        assert_eq!(character.character_book, serde_json::Value::Null);
+        assert_eq!(character.character_book, serde_json::json!({}));
     }
 
     #[test]

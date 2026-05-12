@@ -15,15 +15,15 @@ This exercises the full stack: Tauri shell → webview → SvelteKit routing →
 
 ## Framework
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Desktop shell | Tauri v2 | ^2 (latest stable) |
-| Frontend framework | SvelteKit | ^2.59 |
-| Component framework | Svelte 5 | ^5.55 |
-| Build tool | Vite | ^8.0 |
-| CSS framework | Tailwind CSS | ^4.3 |
-| Package manager | Bun | latest |
-| Backend language | Rust | 2021 edition |
+| Layer               | Technology   | Version            |
+| ------------------- | ------------ | ------------------ |
+| Desktop shell       | Tauri v2     | ^2 (latest stable) |
+| Frontend framework  | SvelteKit    | ^2.59              |
+| Component framework | Svelte 5     | ^5.55              |
+| Build tool          | Vite         | ^8.0               |
+| CSS framework       | Tailwind CSS | ^4.3               |
+| Package manager     | Bun          | latest             |
+| Backend language    | Rust         | 2021 edition       |
 
 ---
 
@@ -45,14 +45,14 @@ The app runs entirely on the local machine. No authentication, no network calls,
 
 ## Deployment Target
 
-| Property | Value |
-|----------|-------|
-| Target | Local desktop app |
-| Platforms | macOS (primary dev), Linux, Windows |
-| Distribution | `bun tauri build` produces platform installer |
-| Dev command | `bun tauri dev` |
-| Build command | `bun tauri build` |
-| Preview command | `bun run tauri:preview` |
+| Property        | Value                                         |
+| --------------- | --------------------------------------------- |
+| Target          | Local desktop app                             |
+| Platforms       | macOS (primary dev), Linux, Windows           |
+| Distribution    | `bun tauri build` produces platform installer |
+| Dev command     | `bun tauri dev`                               |
+| Build command   | `bun tauri build`                             |
+| Preview command | `bun run tauri:preview`                       |
 
 ---
 
@@ -115,37 +115,37 @@ User runs `bun tauri dev`
 
 ## Key Configuration Points
 
-| File | Field | Value | Why |
-|------|-------|-------|-----|
-| `vite.config.ts` | `server.port` | `1420` | Tauri convention; must match devUrl |
-| `vite.config.ts` | `server.strictPort` | `true` | Prevents silent port shift breaking Tauri |
-| `tauri.conf.json` | `build.devUrl` | `http://localhost:1420` | Must match Vite port |
-| `tauri.conf.json` | `build.frontendDist` | `../build` | Relative to src-tauri/; adapter-static output |
-| `tauri.conf.json` | `build.beforeDevCommand` | `bun run dev` | Starts Vite before Tauri |
-| `tauri.conf.json` | `build.beforeBuildCommand` | `bun run build` | Builds SvelteKit before Rust bundling |
-| `tauri.conf.json` | `app.windows[0].title` | `Revelry` | App identity |
-| `tauri.conf.json` | `app.windows[0].width` | `1200` | Desktop-class layout width |
-| `tauri.conf.json` | `app.windows[0].height` | `800` | Desktop-class layout height |
-| `tauri.conf.json` | `app.windows[0].devtools` | `false` | Production security |
-| `tauri.conf.json` | `app.security.csp` | (strict) | No unsafe-eval in production |
-| `tauri.conf.json` | `app.security.devCsp` | (permissive) | Allows HMR in dev |
-| `svelte.config.js` | `adapter` | `adapter-static({ fallback: 'index.html' })` | Tauri target is static files |
-| `src/routes/+layout.ts` | `prerender` | `true` | Required by adapter-static |
-| `src/routes/+layout.ts` | `ssr` | `false` | SPA mode; no server |
+| File                    | Field                      | Value                                        | Why                                           |
+| ----------------------- | -------------------------- | -------------------------------------------- | --------------------------------------------- |
+| `vite.config.ts`        | `server.port`              | `1420`                                       | Tauri convention; must match devUrl           |
+| `vite.config.ts`        | `server.strictPort`        | `true`                                       | Prevents silent port shift breaking Tauri     |
+| `tauri.conf.json`       | `build.devUrl`             | `http://localhost:1420`                      | Must match Vite port                          |
+| `tauri.conf.json`       | `build.frontendDist`       | `../build`                                   | Relative to src-tauri/; adapter-static output |
+| `tauri.conf.json`       | `build.beforeDevCommand`   | `bun run dev`                                | Starts Vite before Tauri                      |
+| `tauri.conf.json`       | `build.beforeBuildCommand` | `bun run build`                              | Builds SvelteKit before Rust bundling         |
+| `tauri.conf.json`       | `app.windows[0].title`     | `Revelry`                                    | App identity                                  |
+| `tauri.conf.json`       | `app.windows[0].width`     | `1200`                                       | Desktop-class layout width                    |
+| `tauri.conf.json`       | `app.windows[0].height`    | `800`                                        | Desktop-class layout height                   |
+| `tauri.conf.json`       | `app.windows[0].devtools`  | `false`                                      | Production security                           |
+| `tauri.conf.json`       | `app.security.csp`         | (strict)                                     | No unsafe-eval in production                  |
+| `tauri.conf.json`       | `app.security.devCsp`      | (permissive)                                 | Allows HMR in dev                             |
+| `svelte.config.js`      | `adapter`                  | `adapter-static({ fallback: 'index.html' })` | Tauri target is static files                  |
+| `src/routes/+layout.ts` | `prerender`                | `true`                                       | Required by adapter-static                    |
+| `src/routes/+layout.ts` | `ssr`                      | `false`                                      | SPA mode; no server                           |
 
 ---
 
 ## What's NOT in the Skeleton
 
-| Feature | Deferred To | Reason |
-|---------|-------------|--------|
-| SQLite database | Phase 2 | No data persistence needed for shell verification |
-| IPC commands | Phase 2 | No backend logic in shell phase |
-| AI streaming | Phase 4 | No real AI calls; mock streaming works |
-| OS keychain | Phase 3 | No API keys in shell phase |
-| Custom app icons | Phase 11 | Default tauri init icons sufficient |
-| Autoupdate | v2 | Deferred per STATE.md |
-| System tray | v2 | Deferred per STATE.md |
+| Feature          | Deferred To | Reason                                            |
+| ---------------- | ----------- | ------------------------------------------------- |
+| SQLite database  | Phase 2     | No data persistence needed for shell verification |
+| IPC commands     | Phase 2     | No backend logic in shell phase                   |
+| AI streaming     | Phase 4     | No real AI calls; mock streaming works            |
+| OS keychain      | Phase 3     | No API keys in shell phase                        |
+| Custom app icons | Phase 11    | Default tauri init icons sufficient               |
+| Autoupdate       | v2          | Deferred per STATE.md                             |
+| System tray      | v2          | Deferred per STATE.md                             |
 
 ---
 
@@ -169,4 +169,4 @@ User runs `bun tauri dev`
 
 ---
 
-*Walking skeleton defined for Phase 1 — Native Desktop Shell.*
+_Walking skeleton defined for Phase 1 — Native Desktop Shell._

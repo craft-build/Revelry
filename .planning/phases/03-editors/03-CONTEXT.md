@@ -9,6 +9,7 @@
 Users can create and edit characters, personas, and lorebooks through guided editor UIs. This phase delivers UI editors (wrapped in modal dialogs) that connect to the existing Tauri CRUD commands from Phase 2, plus backend changes needed for standalone lorebooks and avatar file handling.
 
 In scope:
+
 - Character creation/editing via a multi-step wizard in a modal dialog
 - Persona creation/editing via a form dialog
 - Avatar image upload via native file picker + Tauri asset protocol
@@ -24,11 +25,13 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 ## Implementation Decisions
 
 ### Editor Container Pattern
+
 - **D-01:** **Modal dialog** (`max-w-2xl` / ~640px) — Bits.ui Dialog-based. Opens over the library page. Centered on screen with vertical scrollable content inside.
 - **D-02:** **Separate dialogs** — `CharacterEditorDialog` and `PersonaEditorDialog` as distinct components. Each form is self-contained and tuned to its own field layout. No shared shell abstraction.
 - **D-03:** **Delete lives on card kebab menu** — Each `CharacterCard` and `PersonaCard` gets a three-dot/kebab menu with "Edit" and "Delete" options. Selecting Delete opens a confirmation dialog. Not inside the editor dialog.
 
 ### Character Editor Flow
+
 - **D-04:** **4-step wizard** for character create and edit. Steps are thematic groupings of the CharacterCardV2 fields:
   - Step 1: **Identity** — Name, description, avatar, tags, creator, version, creator_notes
   - Step 2: **Personality & Scenario** — Personality, scenario
@@ -39,16 +42,19 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - **D-07:** **Step-level validation**: Validate required fields on the current step before allowing "Next". Validate all required fields before allowing "Save" (i.e., user reached Step 4).
 
 ### Persona Editor Flow
+
 - **D-08:** **Single-form dialog** (not a wizard) — Personas have ~8 fields and are conceptually simpler. All fields visible in one scrollable dialog. Fields: name, avatar_path, appearance, personality, background, role_description, relationships, speech_style, tags.
 - **D-09:** **Required fields for save**: Name only. Everything else optional.
 
 ### Avatar Handling
+
 - **D-10:** **Tauri asset protocol** — Image files stored in the app's platform data directory and served via Tauri's `asset://` protocol. `avatar_path` stores the relative filename (e.g., `avatars/{uuid}.png`), resolved by the backend into an `asset://` URL for the frontend.
 - **D-11:** **Native OS file picker** — Click the avatar area → `tauri-file-dialog` or Tauri dialog API opens a native picker. Tauri backend copies the selected file to `app_data_dir/avatars/{uuid}.{ext}` and returns the filename. No drag-and-drop for now.
 - **D-12:** **Auto-cleanup on replace/delete** — When a character/persona is saved with a new avatar, delete the old image file. When the entity is deleted, delete its avatar file. If clone/duplicate is added later, revisit reference counting; for now, avatar files are treated as 1:1 with their entity.
 - **D-13:** **Avatar display** — Reuse existing `Avatar` component. Backend resolves `avatar_path` to `asset://` URL before sending to frontend, OR frontend asks backend for avatar URLs via a Tauri command (`get_avatar_url`). To be decided during planning.
 
 ### Lorebook Editor Scope
+
 - **D-14:** **Standalone lorebooks** — Lorebooks are named, standalone resources with a list of entries. They exist independently of characters and can be assigned to multiple characters.
 - **D-15:** **Schema change** — The Phase 2 `lorebook_entries` table had `character_id` as a foreign key. Refactor to:
   - `lorebooks` table: id, name, description, created_at, updated_at
@@ -59,6 +65,7 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - **D-18:** **Lorebook editor entry form fields**: keys (comma-separated), secondary_keys, content (textarea), position (select: before_char/after_char/at_depth), depth (number), activation_state (select: always/character_only/user_only).
 
 ### Claude's Discretion
+
 - Exact positioning of the "Test Keywords" panel within the lorebook editor (side panel vs. bottom accordion vs. tab) — I will pick what's most ergonomic.
 - Exact step header navigation UI (dots vs. numbered tabs vs. stepper bar) — I will pick based on Bits.ui primitives available.
 - How the avatar upload button looks (upload icon, overlay, or replaceable image) — I will pick based on Tailwind patterns.
@@ -69,20 +76,24 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 </decisions>
 
 <canonical_refs>
+
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Project Planning
+
 - `.planning/ROADMAP.md` — Phase 3 definition, plans list (03-01 through 03-04), success criteria
 - `.planning/REQUIREMENTS.md` — CHAR-02, CHAR-03, CHAR-04, CHAR-05, PERS-02, PERS-03, PERS-04, LORB-06 requirements
 - `.planning/PROJECT.md` — Project context, constraints, tech stack decisions, key decisions table
 
 ### Phase 2 Decisions (carry-forward)
+
 - `.planning/phases/02-persistent-data/02-CONTEXT.md` — D-08 through D-19 (Tauri command design, type alignment, DB threading model)
 - `.planning/STATE.md` — Blocker note: "No character or persona creation UI — 6 UAT tests blocked." Phase 3 resolves this.
 
 ### Existing Frontend (current state — will be modified)
+
 - `src/lib/types/index.ts` — TypeScript type definitions (CharacterCard, UserPersona, LorebookEntry, LorebookPosition, LorebookActivation)
 - `src/lib/stores/app.svelte.ts` — AppState (will need actions: `createCharacter`, `updateCharacter`, `deleteCharacter`, `createPersona`, `updatePersona`, `deletePersona`, `createLorebook`, `updateLorebook`, `deleteLorebook`, `assignLorebookToCharacter`)
 - `src/lib/data/api.ts` — Existing `save_character`, `save_persona`, `delete_character`, `delete_persona`, etc. (may need new commands for lorebooks and avatar URL resolution)
@@ -92,12 +103,14 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - `src/lib/components/ui/` — Existing UI primitives: Avatar, Button, Input, Tag, Tooltip. Will be extended with Dialog primitives (Bits.ui Dialog already imported in PersonaSwitcher; check if a generic `Dialog` wrapper exists).
 
 ### Existing Backend (Tauri — will be extended)
+
 - `src-tauri/src/lib.rs` — Tauri command registration (will add new commands for lorebook CRUD, avatar upload, avatar URL resolution)
 - `src-tauri/src/commands/` — Existing CRUD command handlers (will add lorebook commands)
 - `src-tauri/src/db/` — Existing DB layer (will add lorebook tables and migration)
 - `src-tauri/src/domain/` — Existing Rust domain models (will add Lorebook and LorebookEntry models)
 
 ### Archival Reference (gtk_ref — patterns to follow)
+
 - `gtk_ref/src/ui/character_editor.rs` — GTK4 character editor layout patterns (field groupings, wizard-like flow)
 - `gtk_ref/src/ui/persona_editor.rs` — GTK4 persona editor layout patterns
 - `gtk_ref/src/ui/lorebook_editor.rs` — GTK4 lorebook editor layout patterns (keyword test panel)
@@ -107,6 +120,7 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - `gtk_ref/src/db/migrations.rs` — Schema definitions (reference for lorebook table migration)
 
 ### Architecture Documentation
+
 - `.planning/codebase/ARCHITECTURE.md` — System overview, layers, data flow
 - `.planning/codebase/STRUCTURE.md` — Directory layout, where to add new components
 - `.planning/codebase/CONVENTIONS.md` — Naming, code style, component patterns
@@ -114,9 +128,11 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 </canonical_refs>
 
 <code_context>
+
 ## Existing Code Insights
 
 ### Reusable Assets
+
 - **Bits.ui Dialog** — Already used in PersonaSwitcher (`bits-ui/Dialog` or similar primitive). The same primitive will wrap the character/persona/lorebook editors. Will need a generic `Dialog` wrapper component if one doesn't exist.
 - **`Avatar` component** — Accepts `src` (string) and `name` (string, for initials fallback). Used in CharacterCard, PersonaCard, MessageBubble. Will display uploaded avatars once URL resolution is wired.
 - **`Button`, `Input`, `Tag` components** — Already styled, variant-based, ready for form use inside the editor dialogs.
@@ -125,6 +141,7 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - **`api.ts` typed wrappers** — `save_character`, `save_persona`, `delete_character`, `delete_persona` already exist. Extend with lorebook and avatar commands.
 
 ### Established Patterns
+
 - **Svelte 5 runes** — `$state`, `$derived`, `$effect` for local component state. The wizard steps will use `$state` for current step and form field values.
 - **Variant-based components** — `Button` and `Avatar` use `tailwind-variants` `tv()`. Editor buttons follow the same pattern.
 - **Tauri IPC via invoke()** — Commands registered in `lib.rs`, called from `api.ts`. Frontend types must match Rust serde output (D-08 from Phase 2).
@@ -132,6 +149,7 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - **TypeScript strict mode + svelte-check** — All new components must type-check.
 
 ### Integration Points
+
 - **`src/routes/characters/+page.svelte`** — Wire "New character" / "New persona" buttons to open editor dialogs with `mode: 'create'`. Pass character/persona data to edit dialogs.
 - **`CharacterCard.onedit`** — Wire to open character editor with `mode: 'edit'` and pre-populated data.
 - **`PersonaCard.onedit`** — Wire to open persona editor with pre-populated data.
@@ -141,6 +159,7 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 - **Settings route (future)** — Lorebook list view for management likely lives in `/settings` or a new `/lorebooks` route. To be decided during planning.
 
 ### Constraints
+
 - No new npm dependencies unless strictly necessary — all UI primitives should come from Bits.ui or existing Tailwind utilities.
 - Dialog z-index must be above `AppHeader` (which may have a drag region in future). Use Bits.ui Dialog's built-in portal layering.
 - Avatar upload must happen through a Tauri command — webview cannot directly access the filesystem.
@@ -152,6 +171,7 @@ NOT in scope: AI provider integration (Phase 4), streaming chat (Phase 5), promp
 ## Specific Ideas
 
 No specific external references. Key shape:
+
 - Character editor wizard: 4 steps, linear create / free-jump edit, identity → personality → prompt → greeting
 - Persona editor: single dialog, all fields visible, name required only
 - Lorebook editor: standalone resource, many-to-many with characters, keyword test panel inline
@@ -172,5 +192,5 @@ No specific external references. Key shape:
 
 ---
 
-*Phase: 03-Editors*
-*Context gathered: 2026-05-12*
+_Phase: 03-Editors_
+_Context gathered: 2026-05-12_

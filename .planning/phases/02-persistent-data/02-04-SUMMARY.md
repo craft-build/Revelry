@@ -4,32 +4,35 @@
 **Status:** ✅ COMPLETE
 
 ## Objective
+
 Replace all mock data with real Tauri `invoke()` calls, align TypeScript types with Rust serde output, add loading/error states, and delete `mock.ts`.
 
 ## Tasks Completed
 
 ### Task 1: Aligned TypeScript types with Rust serde output
+
 **File:** `src/lib/types/index.ts`
 
-| Change | Before | After |
-|--------|--------|-------|
-| MessageRole | `'user' \| 'character' \| 'system'` | `'user' \| 'assistant' \| 'system'` |
-| Message.parent_id / branch_index | Present (tree model) | Removed |
-| Message.sort_order / timestamp | Absent | Added |
-| Message.created_at | Present | Removed (→ timestamp) |
-| Conversation.user_persona_id | Present | Removed (→ creator_persona_id) |
-| Conversation.active_branch_tip / message_count | Present | Removed |
-| Conversation.provider_id / generation_preset_id / creator_persona_id | Absent | Added |
-| Conversation.last_message_preview | Optional | Required |
-| CharacterCard.avatar_url | Present | avatar_path |
-| CharacterCard.extensions | CharacterExtensions type | `Record<string, unknown>` |
-| CharacterCard fields | Mostly optional | Required strings with serde defaults |
-| UserPersona.avatar_url | Present | avatar_path (optional, UI-only) |
-| UserPersona.is_default | Present | Removed |
-| PromptPreset | Interface | GenerationPreset (with backward-compat alias) |
-| GenerationPreset.is_builtin / stop_sequences / timestamps | Absent | Added |
+| Change                                                               | Before                              | After                                         |
+| -------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------- |
+| MessageRole                                                          | `'user' \| 'character' \| 'system'` | `'user' \| 'assistant' \| 'system'`           |
+| Message.parent_id / branch_index                                     | Present (tree model)                | Removed                                       |
+| Message.sort_order / timestamp                                       | Absent                              | Added                                         |
+| Message.created_at                                                   | Present                             | Removed (→ timestamp)                         |
+| Conversation.user_persona_id                                         | Present                             | Removed (→ creator_persona_id)                |
+| Conversation.active_branch_tip / message_count                       | Present                             | Removed                                       |
+| Conversation.provider_id / generation_preset_id / creator_persona_id | Absent                              | Added                                         |
+| Conversation.last_message_preview                                    | Optional                            | Required                                      |
+| CharacterCard.avatar_url                                             | Present                             | avatar_path                                   |
+| CharacterCard.extensions                                             | CharacterExtensions type            | `Record<string, unknown>`                     |
+| CharacterCard fields                                                 | Mostly optional                     | Required strings with serde defaults          |
+| UserPersona.avatar_url                                               | Present                             | avatar_path (optional, UI-only)               |
+| UserPersona.is_default                                               | Present                             | Removed                                       |
+| PromptPreset                                                         | Interface                           | GenerationPreset (with backward-compat alias) |
+| GenerationPreset.is_builtin / stop_sequences / timestamps            | Absent                              | Added                                         |
 
 ### Task 2: Created typed API layer
+
 **File:** `src/lib/data/api.ts` (new)
 
 - 16 typed `invoke()` wrappers for all Tauri commands
@@ -38,6 +41,7 @@ Replace all mock data with real Tauri `invoke()` calls, align TypeScript types w
 - Proper TypeScript generics for return types
 
 ### Task 3: Updated AppState and +layout.svelte
+
 **File:** `src/lib/stores/app.svelte.ts`
 
 - `prompt_presets` → `presets` (GenerationPreset[])
@@ -58,17 +62,17 @@ Replace all mock data with real Tauri `invoke()` calls, align TypeScript types w
 
 ### Task 4: Updated all components for type changes
 
-| Component | Change |
-|-----------|--------|
-| MessageBubble.svelte | `avatar_url` → `avatar_path` |
-| ChatHeader.svelte | `avatar_url` → `avatar_path` |
-| PersonaSwitcher.svelte | `avatar_url` → `avatar_path`, removed `is_default` check |
-| ConversationSidebar.svelte | `avatar_url` → `avatar_path`, `last_message_preview` optional chaining removed |
-| CharacterCard.svelte | `avatar_url` → `avatar_path` |
-| PersonaCard.svelte | `avatar_url` → `avatar_path`, removed `is_default` block and `Star` import |
-| +page.svelte (home) | `avatar_url` → `avatar_path` |
-| chat/[id]/+page.svelte | Mock import → API import, `'character'` → `'assistant'`, message construction uses `sort_order`/`timestamp` |
-| settings/+page.svelte | `prompt_presets` → `presets`, added `is_builtin` and `stop_sequences` display |
+| Component                  | Change                                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| MessageBubble.svelte       | `avatar_url` → `avatar_path`                                                                                |
+| ChatHeader.svelte          | `avatar_url` → `avatar_path`                                                                                |
+| PersonaSwitcher.svelte     | `avatar_url` → `avatar_path`, removed `is_default` check                                                    |
+| ConversationSidebar.svelte | `avatar_url` → `avatar_path`, `last_message_preview` optional chaining removed                              |
+| CharacterCard.svelte       | `avatar_url` → `avatar_path`                                                                                |
+| PersonaCard.svelte         | `avatar_url` → `avatar_path`, removed `is_default` block and `Star` import                                  |
+| +page.svelte (home)        | `avatar_url` → `avatar_path`                                                                                |
+| chat/[id]/+page.svelte     | Mock import → API import, `'character'` → `'assistant'`, message construction uses `sort_order`/`timestamp` |
+| settings/+page.svelte      | `prompt_presets` → `presets`, added `is_builtin` and `stop_sequences` display                               |
 
 ### Task 5: Deleted mock.ts and verified end-to-end
 
@@ -80,15 +84,15 @@ Replace all mock data with real Tauri `invoke()` calls, align TypeScript types w
 
 ## Verification Results
 
-| Check | Result |
-|-------|--------|
-| `npm run check` | ✅ 0 errors (1 pre-existing warning) |
-| `npm run build` | ✅ Success |
-| `cargo build` | ✅ Success (4 pre-existing dead_code warnings) |
-| No mock data references | ✅ Verified via grep |
-| No avatar_url references | ✅ All avatar_path |
-| No 'character' role | ✅ All 'assistant' |
-| No user_persona_id | ✅ All creator_persona_id |
+| Check                    | Result                                         |
+| ------------------------ | ---------------------------------------------- |
+| `npm run check`          | ✅ 0 errors (1 pre-existing warning)           |
+| `npm run build`          | ✅ Success                                     |
+| `cargo build`            | ✅ Success (4 pre-existing dead_code warnings) |
+| No mock data references  | ✅ Verified via grep                           |
+| No avatar_url references | ✅ All avatar_path                             |
+| No 'character' role      | ✅ All 'assistant'                             |
+| No user_persona_id       | ✅ All creator_persona_id                      |
 
 ## Files Modified
 

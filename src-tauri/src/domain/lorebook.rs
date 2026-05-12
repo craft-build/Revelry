@@ -130,7 +130,7 @@ pub struct LorebookEntry {
 }
 
 fn default_extensions() -> serde_json::Value {
-    serde_json::Value::Null
+    serde_json::json!({})
 }
 
 impl LorebookEntry {
@@ -147,7 +147,7 @@ impl LorebookEntry {
             position: LorebookPosition::AfterChar,
             depth: 4,
             activation_state: LorebookActivation::Always,
-            extensions: serde_json::Value::Null,
+            extensions: serde_json::json!({}),
             created_at: now,
             updated_at: now,
         }
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(entry.position, LorebookPosition::AfterChar);
         assert_eq!(entry.depth, 4);
         assert_eq!(entry.activation_state, LorebookActivation::Always);
-        assert_eq!(entry.extensions, serde_json::Value::Null);
+        assert_eq!(entry.extensions, serde_json::json!({}));
     }
 
     #[test]

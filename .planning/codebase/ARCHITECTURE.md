@@ -1,4 +1,5 @@
 <!-- refreshed: 2026-05-10 -->
+
 # Architecture
 
 **Analysis Date:** 2026-05-10
@@ -50,28 +51,28 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 
 ## Component Responsibilities
 
-| Component | Responsibility | File |
-|-----------|----------------|------|
-| AppState | Single reactive state tree for Svelte UI; CRUD actions, derived views | `src/lib/stores/app.svelte.ts` |
-| Types | TypeScript mirrors of the SQLite schema from spec §12.1 | `src/lib/types/index.ts` |
-| Mock Data | Hard-coded sample characters/personas/conversations for UI dev | `src/lib/data/mock.ts` |
-| Utils | `cn()` class merge, `estimateTokens()`, `formatRelativeTime()`, `avatarInitials()` | `src/lib/utils/index.ts` |
-| AppHeader | Top bar: app identity, view switcher, sidebar toggle | `src/lib/components/layout/AppHeader.svelte` |
-| ConversationSidebar | Left panel: conversation list, search, new chat | `src/lib/components/layout/ConversationSidebar.svelte` |
-| ChatHeader | Active conversation header: character info, persona switcher, model badge | `src/lib/components/chat/ChatHeader.svelte` |
-| MessageBubble | Single message rendering with inline markdown, avatars, hover actions | `src/lib/components/chat/MessageBubble.svelte` |
-| MessageInput | Auto-grow textarea, token estimation, context bar, send/cancel | `src/lib/components/chat/MessageInput.svelte` |
-| PersonaSwitcher | Popover for switching active persona in conversation | `src/lib/components/chat/PersonaSwitcher.svelte` |
-| CharacterCard | Grid card for character library | `src/lib/components/characters/CharacterCard.svelte` |
-| PersonaCard | Grid card for persona library | `src/lib/components/personas/PersonaCard.svelte` |
-| UI Primitives | Headless Bits.ui wrappers: Avatar, Button, Input, Tag, Tooltip | `src/lib/components/ui/` |
-| AppModel (Rust) ⬡ | Root Relm4 component: view routing, DB worker, chat panel | `gtk_ref/src/app.rs` |
-| DbService ⬡ | Background-thread rusqlite worker with input/output message protocol | `gtk_ref/src/db/mod.rs` |
-| AiService ⬡ | rig-core streaming client; provider-agnostic chat completion | `gtk_ref/src/service/ai.rs` |
-| PromptEngine ⬡ | Prompt assembly with budget-aware persona tiering and lorebook injection | `gtk_ref/src/service/prompt.rs` |
-| KeyringStore ⬡ | OS-native API key storage (macOS Keychain, GNOME Keyring, Windows Credential Manager) | `gtk_ref/src/secrets/mod.rs` |
-| Migrations ⬡ | rusqlite_migration schema versioning | `gtk_ref/src/db/migrations.rs` |
-| DB Row Mappers ⬡ | `row_to_*` conversion functions for all domain types | `gtk_ref/src/db/models.rs` |
+| Component           | Responsibility                                                                        | File                                                   |
+| ------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| AppState            | Single reactive state tree for Svelte UI; CRUD actions, derived views                 | `src/lib/stores/app.svelte.ts`                         |
+| Types               | TypeScript mirrors of the SQLite schema from spec §12.1                               | `src/lib/types/index.ts`                               |
+| Mock Data           | Hard-coded sample characters/personas/conversations for UI dev                        | `src/lib/data/mock.ts`                                 |
+| Utils               | `cn()` class merge, `estimateTokens()`, `formatRelativeTime()`, `avatarInitials()`    | `src/lib/utils/index.ts`                               |
+| AppHeader           | Top bar: app identity, view switcher, sidebar toggle                                  | `src/lib/components/layout/AppHeader.svelte`           |
+| ConversationSidebar | Left panel: conversation list, search, new chat                                       | `src/lib/components/layout/ConversationSidebar.svelte` |
+| ChatHeader          | Active conversation header: character info, persona switcher, model badge             | `src/lib/components/chat/ChatHeader.svelte`            |
+| MessageBubble       | Single message rendering with inline markdown, avatars, hover actions                 | `src/lib/components/chat/MessageBubble.svelte`         |
+| MessageInput        | Auto-grow textarea, token estimation, context bar, send/cancel                        | `src/lib/components/chat/MessageInput.svelte`          |
+| PersonaSwitcher     | Popover for switching active persona in conversation                                  | `src/lib/components/chat/PersonaSwitcher.svelte`       |
+| CharacterCard       | Grid card for character library                                                       | `src/lib/components/characters/CharacterCard.svelte`   |
+| PersonaCard         | Grid card for persona library                                                         | `src/lib/components/personas/PersonaCard.svelte`       |
+| UI Primitives       | Headless Bits.ui wrappers: Avatar, Button, Input, Tag, Tooltip                        | `src/lib/components/ui/`                               |
+| AppModel (Rust) ⬡   | Root Relm4 component: view routing, DB worker, chat panel                             | `gtk_ref/src/app.rs`                                   |
+| DbService ⬡         | Background-thread rusqlite worker with input/output message protocol                  | `gtk_ref/src/db/mod.rs`                                |
+| AiService ⬡         | rig-core streaming client; provider-agnostic chat completion                          | `gtk_ref/src/service/ai.rs`                            |
+| PromptEngine ⬡      | Prompt assembly with budget-aware persona tiering and lorebook injection              | `gtk_ref/src/service/prompt.rs`                        |
+| KeyringStore ⬡      | OS-native API key storage (macOS Keychain, GNOME Keyring, Windows Credential Manager) | `gtk_ref/src/secrets/mod.rs`                           |
+| Migrations ⬡        | rusqlite_migration schema versioning                                                  | `gtk_ref/src/db/migrations.rs`                         |
+| DB Row Mappers ⬡    | `row_to_*` conversion functions for all domain types                                  | `gtk_ref/src/db/models.rs`                             |
 
 > ⬡ = **Archival reference** (`gtk_ref/`). These Rust components are not part of the active codebase. Their patterns (domain models, service abstractions, DB worker protocol, keyring integration) will inform the future Tauri Rust backend.
 
@@ -80,6 +81,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 **Overall:** Elm Architecture (Model–Update–View) — Svelte 5 runes in the active codebase; Relm4 in the archival reference
 
 **Key Characteristics:**
+
 - Svelte 5 runes (`$state`, `$derived`, `$effect`) as Elm-architecture equivalent — single `AppState` class with reactive fields replacing Relm4's Model/Update/View split (active)
 - Headless component pattern: Bits.ui provides behavior (focus, ARIA, keyboard), app provides all styling via Tailwind CSS custom properties
 - Variant component pattern: `tailwind-variants` (`tv()`) in `<script module>` for type-safe variant styling, re-exported alongside default component
@@ -90,6 +92,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 ## Layers
 
 **Presentation / UI Layer:**
+
 - Purpose: Render views, handle user interactions, display state
 - Location: `src/routes/`, `src/lib/components/`
 - Contains: SvelteKit page routes, Svelte 5 components, Bits.ui wrappers
@@ -97,6 +100,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 - Used by: User (direct interaction)
 
 **State Management Layer:**
+
 - Purpose: Single source of truth for application state; derived computations; action dispatching
 - Location: `src/lib/stores/app.svelte.ts`
 - Contains: `AppState` class with `$state` fields, `$derived` getters, action methods
@@ -104,6 +108,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 - Used by: All UI components and routes
 
 **Data / Type Layer:**
+
 - Purpose: Type definitions mirroring the design spec's SQLite schema; mock data seeding
 - Location: `src/lib/types/index.ts`, `src/lib/data/mock.ts`
 - Contains: TypeScript interfaces (`CharacterCard`, `Message`, `Conversation`, `Provider`, etc.), mock datasets
@@ -111,6 +116,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 - Used by: `AppState`, all components
 
 **Utility Layer:**
+
 - Purpose: Shared helpers for styling, formatting, token estimation
 - Location: `src/lib/utils/index.ts`
 - Contains: `cn()`, `estimateTokens()`, `formatRelativeTime()`, `avatarInitials()`
@@ -122,6 +128,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 > The following Rust layers are from the archival `gtk_ref/` proof-of-concept. They are **not part of the active codebase**. Their patterns (domain modeling, service abstractions, DB worker protocol, keyring integration) are preserved here as reference for the future Tauri Rust backend.
 
 **Rust Domain Layer (gtk_ref/) — ⬡ Archival:**
+
 - Purpose: Business entities, validation, domain logic
 - Location: `gtk_ref/src/domain/`
 - Contains: `CharacterCardV2`, `Conversation`, `Message`, `Persona`, `ProviderConfig`, `GenerationPreset`, `LorebookEntry`, `RegexScript`
@@ -130,6 +137,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 - **Pattern for Tauri:** Domain structs and `serde` derive patterns should be reused directly in the Tauri Rust backend.
 
 **Rust Service Layer (gtk_ref/) — ⬡ Archival:**
+
 - Purpose: AI inference, prompt assembly, token counting, markdown rendering, regex processing, card I/O
 - Location: `gtk_ref/src/service/`
 - Contains: `AiService` (rig-core streaming), `PromptEngine` (budget-aware prompt assembly), `TokenCountService`, `MarkdownService`, `RegexService`, `CardIoService`, `LorebookService`
@@ -138,6 +146,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 - **Pattern for Tauri:** `AiService` streaming abstraction and `PromptEngine` budget-aware assembly are the primary patterns to port. Replace Relm4 command dispatch with Tauri `invoke()` commands.
 
 **Rust Database Layer (gtk_ref/) — ⬡ Archival:**
+
 - Purpose: Persistent storage via SQLite with schema migrations; background thread worker
 - Location: `gtk_ref/src/db/`
 - Contains: `DbService` (worker), `migrations`, `models` (row mappers), CRUD modules per entity
@@ -146,6 +155,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 - **Pattern for Tauri:** The `DbService` background-thread worker pattern (`DbInput`/`DbOutput` enums) should be adapted for Tauri's async command system. Schema migrations can be reused as-is.
 
 **Rust Secrets Layer (gtk_ref/) — ⬡ Archival:**
+
 - Purpose: API key storage in OS-native keychain — never written to disk
 - Location: `gtk_ref/src/secrets/mod.rs`
 - Contains: `KeyringStore` (save/load/delete operations)
@@ -189,40 +199,47 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 5. All subscribed components re-render (ChatHeader, MessageBubble avatars)
 
 **State Management:**
+
 - SvelteKit: Single `AppState` class with Svelte 5 runes. All state is `$state` (reactive). Derived values are `$derived` getters. No stores, no contexts, no prop chains beyond parent→child. One `app` singleton exported from `src/lib/stores/app.svelte.ts`.
 - Rust/Relm4 (⬡ archival): Elm Architecture with `AppModel` struct. `AppMsg` enum for updates. `tracker` crate for fine-grained widget re-rendering. DB operations via `DbService` worker on background thread with `DbInput`/`DbOutput` message protocol. — This pattern will inform the Tauri backend's state management.
 
 ## Key Abstractions
 
 **AppState (Svelte 5 Rune Store):**
+
 - Purpose: Single source of truth for entire UI — library data, active conversation, UI toggles, derived views
 - Examples: `src/lib/stores/app.svelte.ts`
 - Pattern: Centralized reactive state object. Components import `app` and read reactive fields directly. Actions are methods on the class that mutate `$state` fields.
 
 **Provider-Agnostic AI Service ⬡ Archival:**
+
 - Purpose: Stream AI completions through any supported provider (20+ types) without provider-specific code in UI
 - Examples: `gtk_ref/src/service/ai.rs`
 - Pattern: `AiService` wraps rig-core provider clients. `GenerationParams` normalized across providers. `StreamChunk` enum (`Token`/`Complete`/`Error`) abstracts streaming protocol.
 - **Pattern for Tauri:** This abstraction should be ported directly as a Tauri command. The `StreamChunk` enum and `GenerationParams` normalization are backend-agnostic.
 
 **Prompt Assembly with Budget ⬡ Archival:**
+
 - Purpose: Build context window within token limits, with persona tiering (full→trimmed→minimal→essential) and lorebook activation
 - Examples: `gtk_ref/src/service/prompt.rs`
 - Pattern: `PromptEngine::assemble_with_budget()` takes character, persona, history, lorebook, and token budget. Returns `AssembledPrompt` with preamble, chat history, context utilization metrics.
 - **Pattern for Tauri:** This is the core prompt engineering logic. Port as a Tauri command that returns the assembled prompt to the frontend for debugging/transparency.
 
 **DB Worker (Background Thread) ⬡ Archival:**
+
 - Purpose: Execute SQLite operations off the main thread to prevent UI blocking
 - Examples: `gtk_ref/src/db/mod.rs`
 - Pattern: Relm4 `Worker` trait. `DbInput` enum → `DbOutput` enum. `DbService::update()` matches input, executes SQL, sends output back to main thread.
 - **Pattern for Tauri:** The `DbInput`/`DbOutput` message protocol should be adapted as Tauri async commands. The background-thread isolation principle remains critical.
 
 **Headless UI Primitives:**
+
 - Purpose: Accessible component behavior (focus, keyboard, ARIA) without imposing visual style
 - Examples: `src/lib/components/ui/Avatar.svelte`, `src/lib/components/ui/Button.svelte`
 - Pattern: Bits.ui primitive wrapped in Svelte component. Styling via Tailwind CSS custom properties from `src/app.css` theme tokens. Variant API via `tailwind-variants` (`tv()`).
 
 **CharacterCardV2 Domain Model:**
+
 - Purpose: Canonical character format compatible with SillyTavern V2 spec
 - Examples: `src/lib/types/index.ts` (TS), `gtk_ref/src/domain/character.rs` (Rust)
 - Pattern: Flat data structure with `serde(default)` for partial deserialization. `extensions` field as `Record<string, unknown>` for forward compatibility.
@@ -230,27 +247,32 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 ## Entry Points
 
 **SvelteKit Dev Server:**
+
 - Location: `vite.config.ts` → `vite dev` (port 5173)
 - Triggers: `npm run dev`
 - Responsibilities: Serves SPA at `localhost:5173`, hot module replacement, loads mock data into `AppState`
 
 **SvelteKit Root Layout:**
+
 - Location: `src/routes/+layout.svelte`
 - Triggers: App initialization (first page load)
 - Responsibilities: Hydrates `AppState` from mock data, registers F9 keyboard listener, renders `AppHeader` + `ConversationSidebar` + child route
 
 **SvelteKit Route Pages:**
+
 - Location: `src/routes/+page.svelte` (welcome), `src/routes/chat/[id]/+page.svelte` (chat), `src/routes/characters/+page.svelte` (library), `src/routes/settings/+page.svelte` (settings)
 - Triggers: URL navigation via SvelteKit router
 - Responsibilities: Each page renders its view, subscribes to `AppState`
 
 **Rust Application Entry ⬡ Archival:**
+
 - Location: `gtk_ref/src/main.rs`
 - Triggers: `cargo run`
 - Responsibilities: Initializes tracing, GTK icons, creates `RelmApp`, runs `AppModel`
 - **Pattern for Tauri:** The `main.rs` initialization sequence (DB setup, provider loading, secret store init) maps to the Tauri `Builder` setup in `src-tauri/src/main.rs`.
 
 **Rust AppModel Init ⬡ Archival:**
+
 - Location: `gtk_ref/src/app.rs` (`SimpleComponent::init`)
 - Triggers: Relm4 application startup
 - Responsibilities: Creates GTK window, initializes DB worker, loads providers/characters/conversations from SQLite, sets up component controllers
@@ -287,6 +309,7 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 **Strategy:** Layered — application-level errors via `anyhow`, domain-level errors via `thiserror`, UI-level graceful degradation
 
 **Patterns:**
+
 - Rust backend (⬡ archival, `gtk_ref/`): `anyhow::Result` for application code, `thiserror::Error` derive for domain types. `DbOutput::Error` variant for DB operation failures. `StreamChunk::Error` for AI streaming failures. These patterns should be reused in the Tauri Rust backend.
 - SvelteKit UI: Currently minimal — mock data always succeeds. Production will need IPC error handling from Tauri `invoke()` rejections.
 - Validation: `serde(default)` on all `CharacterCardV2` fields for resilient partial deserialization. Row mapper functions convert SQL type errors explicitly.
@@ -299,4 +322,4 @@ Revelry is a SvelteKit + Svelte 5 SPA (`src/`) — the **active codebase** — d
 
 ---
 
-*Architecture analysis: 2026-05-10*
+_Architecture analysis: 2026-05-10_

@@ -15,22 +15,26 @@ has changed.
 ## Desktop Development
 
 ### Prerequisites
+
 - [Bun](https://bun.sh/) runtime
 - [Rust](https://rustup.rs/) toolchain (stable)
 - [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform
 
 ### Development
+
 ```bash
 bun install          # Install JS dependencies
 bun tauri dev        # Start Tauri dev server (Rust + Vite HMR)
 ```
 
 ### Production Build
+
 ```bash
 bun tauri build      # Build production binary
 ```
 
 ### Other Commands
+
 ```bash
 bun run dev          # Vite dev server only (browser)
 bun run build        # SvelteKit static build only
@@ -50,19 +54,19 @@ bun run format       # prettier write
 The original spec's GTK4/libadwaita widgets all have direct counterparts in this
 build (mirroring Appendix B of the design doc):
 
-| Spec widget                                     | Web equivalent here                               |
-| ----------------------------------------------- | ------------------------------------------------- |
-| `AdwApplicationWindow`                          | `src/routes/+layout.svelte`                       |
-| `AdwHeaderBar` + `AdwViewSwitcher`              | `src/lib/components/layout/AppHeader.svelte`      |
-| `AdwOverlaySplitView` (sidebar pattern)         | `ConversationSidebar.svelte` + `+layout.svelte`   |
-| `GtkListView` w/ message rows                   | `MessageBubble.svelte` rendered in a flex column  |
-| `AdwAvatar`                                     | Bits.ui `Avatar` (`src/lib/components/ui/Avatar`) |
-| `GtkPopover` (persona switcher)                 | Bits.ui `Popover` (`PersonaSwitcher.svelte`)      |
-| `AdwPreferencesWindow`                          | `src/routes/settings/+page.svelte`                |
-| `GtkFlowBox` (character grid)                   | CSS grid in `characters/+page.svelte`             |
-| `GtkTextView` + `AdwClamp` (input)              | `MessageInput.svelte` (auto-grow textarea)        |
-| `AdwToastOverlay`                               | _(stub — wire via Bits.ui Toast in Phase 2)_      |
-| `GtkSearchEntry`                                | `Input` with `Search` icon                        |
+| Spec widget                             | Web equivalent here                               |
+| --------------------------------------- | ------------------------------------------------- |
+| `AdwApplicationWindow`                  | `src/routes/+layout.svelte`                       |
+| `AdwHeaderBar` + `AdwViewSwitcher`      | `src/lib/components/layout/AppHeader.svelte`      |
+| `AdwOverlaySplitView` (sidebar pattern) | `ConversationSidebar.svelte` + `+layout.svelte`   |
+| `GtkListView` w/ message rows           | `MessageBubble.svelte` rendered in a flex column  |
+| `AdwAvatar`                             | Bits.ui `Avatar` (`src/lib/components/ui/Avatar`) |
+| `GtkPopover` (persona switcher)         | Bits.ui `Popover` (`PersonaSwitcher.svelte`)      |
+| `AdwPreferencesWindow`                  | `src/routes/settings/+page.svelte`                |
+| `GtkFlowBox` (character grid)           | CSS grid in `characters/+page.svelte`             |
+| `GtkTextView` + `AdwClamp` (input)      | `MessageInput.svelte` (auto-grow textarea)        |
+| `AdwToastOverlay`                       | _(stub — wire via Bits.ui Toast in Phase 2)_      |
+| `GtkSearchEntry`                        | `Input` with `Search` icon                        |
 
 The data model in `src/lib/types/index.ts` is a one-to-one TypeScript
 translation of the SQLite schema in §12.1 of the spec — so the same shapes flow

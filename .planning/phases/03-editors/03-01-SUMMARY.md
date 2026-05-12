@@ -7,20 +7,23 @@ status: complete
 # Plan 03-01: Backend Foundation + UI Primitives + Character Editor
 
 ## Outcome
+
 All 7 tasks executed and committed atomically. The Rust backend now has standalone lorebook domain models, migration, CRUD, and Tauri commands. The frontend has new UI primitives (Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload), a 4-step CharacterEditorDialog, a reusable DeleteConfirmationDialog, and the library page is fully wired with edit/delete via kebab menus.
 
 ## Tasks Completed
-| # | Task | Status |
-|---|------|--------|
-| 1 | Lorebook domain models + migration | ✓ |
-| 2 | Tauri commands + DbCommand variants | ✓ |
-| 3 | Update TypeScript types and api.ts | ✓ |
-| 4 | Add CRUD actions to AppState | ✓ |
-| 5 | Build UI primitives | ✓ |
-| 6 | Build CharacterEditorDialog and DeleteConfirmationDialog | ✓ |
-| 7 | Wire editor + delete into library page + kebab menu | ✓ |
+
+| #   | Task                                                     | Status |
+| --- | -------------------------------------------------------- | ------ |
+| 1   | Lorebook domain models + migration                       | ✓      |
+| 2   | Tauri commands + DbCommand variants                      | ✓      |
+| 3   | Update TypeScript types and api.ts                       | ✓      |
+| 4   | Add CRUD actions to AppState                             | ✓      |
+| 5   | Build UI primitives                                      | ✓      |
+| 6   | Build CharacterEditorDialog and DeleteConfirmationDialog | ✓      |
+| 7   | Wire editor + delete into library page + kebab menu      | ✓      |
 
 ## Key Files Created
+
 - `src-tauri/src/domain/lorebook.rs` — Lorebook, LorebookEntry, LorebookPosition, LorebookActivation domain models with Display/FromStr/Default
 - `src-tauri/src/commands/lorebooks.rs` — Tauri command handlers for lorebook + entry + junction CRUD
 - `src-tauri/src/commands/avatars.rs` — upload_avatar and delete_avatar Tauri commands
@@ -38,6 +41,7 @@ All 7 tasks executed and committed atomically. The Rust backend now has standalo
 - `src/lib/components/characters/index.ts` — Character component exports
 
 ## Key Files Modified
+
 - `src-tauri/src/domain/mod.rs` — Added lorebook module and exports
 - `src-tauri/src/domain/persona.rs` — Added avatar_path field
 - `src-tauri/src/db/migrations.rs` — Added Phase 3 migration #2 (lorebooks, lorebook_entries, character_lorebooks, avatar_path)
@@ -55,10 +59,12 @@ All 7 tasks executed and committed atomically. The Rust backend now has standalo
 - `src/routes/characters/+page.svelte` — Wired editor dialog, delete dialog, new character button
 
 ## Deviations
+
 - KebabMenuItem and KebabMenuSeparator were created as separate components rather than module exports from KebabMenu, for cleaner Bits.ui DropdownMenu composition
 - The SaveLorebookEntry DbCommand handler loads entries to check existence rather than using a dedicated load-by-id function (minor optimization opportunity)
 
 ## Self-Check
+
 - [x] All tasks executed
 - [x] Each task committed individually (7 commits)
 - [x] SUMMARY.md created

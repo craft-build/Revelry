@@ -42,6 +42,7 @@ completed: 2026-05-10
 - **Tasks:** 5 (all verification, no code changes)
 
 ## Accomplishments
+
 - Confirmed `bun tauri dev` launches native window titled "Revelry"
 - All 4 SvelteKit routes render correctly in the Tauri webview
 - F9 keyboard shortcut toggles sidebar
@@ -54,21 +55,27 @@ completed: 2026-05-10
 No code changes required — verification-only plan.
 
 ## Files Created/Modified
+
 None — no code changes needed
 
 ## Decisions Made
+
 - No code changes — existing implementation works correctly in Tauri webview
 - CSS `app-region: drag` / `no-drag` properties are recognized by WKWebView on macOS
 
 ## Deviations from Plan
+
 None — all verification items passed
 
 ## Issues Encountered
+
 None
 
 ## Next Phase Readfulness
+
 - Dev mode fully verified — ready for production build verification (Plan 01-04)
 
 ---
-*Phase: 01-native-desktop-shell*
-*Completed: 2026-05-10*
+
+_Phase: 01-native-desktop-shell_
+_Completed: 2026-05-10_

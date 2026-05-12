@@ -15,19 +15,51 @@ provides:
 affects: [02-persistent-data, 03-provider-setup, all subsequent phases]
 
 tech-stack:
-  added: ["@tauri-apps/cli@2.11.1", "@tauri-apps/api@2.11.0", "@sveltejs/adapter-static@3.0.10",
-          "@tauri-apps/plugin-fs@2.5.1", "@tauri-apps/plugin-dialog@2.7.1",
-          "@tauri-apps/plugin-shell@2.3.5", "@tauri-apps/plugin-http@2.5.9",
-          "@tauri-apps/plugin-store@2.4.3",
-          "tauri@2", "tauri-plugin-fs@2", "tauri-plugin-dialog@2",
-          "tauri-plugin-shell@2", "tauri-plugin-http@2", "tauri-plugin-store@2",
-          "tauri-build@2", "serde@1", "serde_json@1"]
-  patterns: [Tauri v2 plugin registration, adapter-static SPA with fallback, dual CSP config]
+  added:
+    [
+      "@tauri-apps/cli@2.11.1",
+      "@tauri-apps/api@2.11.0",
+      "@sveltejs/adapter-static@3.0.10",
+      "@tauri-apps/plugin-fs@2.5.1",
+      "@tauri-apps/plugin-dialog@2.7.1",
+      "@tauri-apps/plugin-shell@2.3.5",
+      "@tauri-apps/plugin-http@2.5.9",
+      "@tauri-apps/plugin-store@2.4.3",
+      "tauri@2",
+      "tauri-plugin-fs@2",
+      "tauri-plugin-dialog@2",
+      "tauri-plugin-shell@2",
+      "tauri-plugin-http@2",
+      "tauri-plugin-store@2",
+      "tauri-build@2",
+      "serde@1",
+      "serde_json@1",
+    ]
+  patterns:
+    [
+      Tauri v2 plugin registration,
+      adapter-static SPA with fallback,
+      dual CSP config,
+    ]
 
 key-files:
-  created: ["src-tauri/Cargo.toml", "src-tauri/tauri.conf.json", "src-tauri/src/lib.rs",
-            "src-tauri/src/main.rs", "src-tauri/build.rs", "src-tauri/capabilities/default.json"]
-  modified: ["package.json", "svelte.config.js", "vite.config.ts", "src/routes/+layout.ts", ".gitignore"]
+  created:
+    [
+      "src-tauri/Cargo.toml",
+      "src-tauri/tauri.conf.json",
+      "src-tauri/src/lib.rs",
+      "src-tauri/src/main.rs",
+      "src-tauri/build.rs",
+      "src-tauri/capabilities/default.json",
+    ]
+  modified:
+    [
+      "package.json",
+      "svelte.config.js",
+      "vite.config.ts",
+      "src/routes/+layout.ts",
+      ".gitignore",
+    ]
 
 key-decisions:
   - "adapter-static with fallback: 'index.html' for SPA routing"
@@ -57,6 +89,7 @@ completed: 2026-05-10
 - **Files modified:** ~15
 
 ## Accomplishments
+
 - Full Tauri v2 scaffold (src-tauri/) with Rust backend and SvelteKit frontend
 - SvelteKit switched from adapter-auto to adapter-static with `fallback: 'index.html'`
 - Vite dev server port aligned to 1420 with strictPort for Tauri devUrl
@@ -80,7 +113,8 @@ completed: 2026-05-10
 12. **Fix: Prerender SPA build + store plugin API** - `0258561` (fix)
 
 ## Files Created/Modified
-- `package.json` — Added Tauri deps, plugin packages, and tauri:* scripts; removed adapter-auto
+
+- `package.json` — Added Tauri deps, plugin packages, and tauri:\* scripts; removed adapter-auto
 - `svelte.config.js` — Switched to adapter-static with fallback; added prerender.handleUnseenRoutes
 - `vite.config.ts` — Port 1420, strictPort: true
 - `src/routes/+layout.ts` — Added `prerender = true`
@@ -93,6 +127,7 @@ completed: 2026-05-10
 - `.gitignore` — Added src-tauri/target/, src-tauri/gen/, build/
 
 ## Decisions Made
+
 - Used `handleUnseenRoutes: "ignore"` in svelte.config.js (not a layout export) because SvelteKit's prerender config lives in kit config, not route modules
 - Used `tauri_plugin_store::Builder::default().build()` instead of `init()` — the store plugin v2 API uses Builder pattern
 
@@ -101,6 +136,7 @@ completed: 2026-05-10
 ### Auto-fixed Issues
 
 **1. Prerender build failure for dynamic route /chat/[id]**
+
 - **Found during:** Task 12 (verification — `bun run build`)
 - **Issue:** `prerender = true` at root layout caused SvelteKit to fail on dynamic routes not discoverable by crawling
 - **Fix:** Added `kit.prerender.handleUnseenRoutes: "ignore"` to svelte.config.js; reverted invalid `handleUnseenRoutes` export from +layout.ts
@@ -108,6 +144,7 @@ completed: 2026-05-10
 - **Verification:** `bun run build` succeeds, build/index.html exists
 
 **2. tauri_plugin_store::init() not found**
+
 - **Found during:** Task 12 (verification — `cargo check`)
 - **Issue:** Store plugin v2 API doesn't expose top-level `init()`, uses Builder pattern
 - **Fix:** Changed to `tauri_plugin_store::Builder::default().build()`
@@ -115,9 +152,10 @@ completed: 2026-05-10
 - **Verification:** `cargo check` passes
 
 **3. default.json capabilities had plugin permissions mixed in**
+
 - **Found during:** Review of staged changes
 - **Issue:** tauri init scaffold put all permissions in default.json; plan 01-02 requires per-feature files
-- **Fix:** Updated default.json to only have 7 core:*:default permissions
+- **Fix:** Updated default.json to only have 7 core:\*:default permissions
 - **Files modified:** src-tauri/capabilities/default.json
 - **Verification:** cargo check passes
 
@@ -127,13 +165,16 @@ completed: 2026-05-10
 **Impact on plan:** All fixes necessary for build correctness. No scope creep.
 
 ## Issues Encountered
+
 - SvelteKit v2 prerender doesn't support `handleUnseenRoutes` as a layout export — must be in svelte.config.js `kit.prerender` config
 - tauri-plugin-store v2.4.x uses `Builder::default().build()` instead of `init()`
 
 ## Next Phase Readiness
+
 - Tauri shell fully operational — `bun tauri dev` launches native window with SvelteKit SPA
 - Ready for Plan 01-02 (capabilities) and Wave 2 (verification plans 01-03, 01-04)
 
 ---
-*Phase: 01-native-desktop-shell*
-*Completed: 2026-05-10*
+
+_Phase: 01-native-desktop-shell_
+_Completed: 2026-05-10_

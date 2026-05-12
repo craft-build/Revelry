@@ -112,103 +112,108 @@ Requirements for initial release. Each maps to roadmap phases.
 Deferred to future release. Tracked but not in current roadmap.
 
 ### Autoupdate
+
 - **AUTO-01**: App checks for updates and notifies user
 - **AUTO-02**: App can update itself (or prompt user to download update)
 
 ### System Tray
+
 - **TRAY-01**: App can minimize to system tray
 - **TRAY-02**: App shows status in system tray icon
 
 ### Import/Export
+
 - **BKUP-01**: User can export all app data (conversations, characters, personas, settings) as a backup file
 - **BKUP-02**: User can import a backup file to restore app data
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Vault mode (encryption) | Was speculative in original spec; not a real requirement |
-| Cloud sync / multi-device | Conflicts with local-first privacy proposition; enormous complexity |
-| Mobile app | Desktop-only; Tauri targets desktop; mobile is different UX paradigm |
-| Web-hosted deployment | Tauri native distribution only; no server-side rendering |
-| Built-in character marketplace | Requires moderation, hosting, payments, legal compliance |
-| Voice / TTS / STT | Different domain; out of scope for text-focused roleplay |
-| Image generation | Different API integration, cost model, and UI patterns |
-| OAuth / social login | Single-user local app; no server auth needed |
+| Feature                        | Reason                                                               |
+| ------------------------------ | -------------------------------------------------------------------- |
+| Vault mode (encryption)        | Was speculative in original spec; not a real requirement             |
+| Cloud sync / multi-device      | Conflicts with local-first privacy proposition; enormous complexity  |
+| Mobile app                     | Desktop-only; Tauri targets desktop; mobile is different UX paradigm |
+| Web-hosted deployment          | Tauri native distribution only; no server-side rendering             |
+| Built-in character marketplace | Requires moderation, hosting, payments, legal compliance             |
+| Voice / TTS / STT              | Different domain; out of scope for text-focused roleplay             |
+| Image generation               | Different API integration, cost model, and UI patterns               |
+| OAuth / social login           | Single-user local app; no server auth needed                         |
 
 ## Traceability
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SHELL-01 | Phase 1 | Done |
-| SHELL-02 | Phase 1 | Done |
-| SHELL-03 | Phase 1 | Done |
-| DB-01 | Phase 2 | Done |
-| DB-02 | Phase 2 | Done |
-| DB-03 | Phase 2 | Done |
-| CHAR-01 | Phase 2 | Done |
-| CHAR-02 | Phase 3 | Done |
-| CHAR-03 | Phase 3 | Done |
-| CHAR-04 | Phase 3 | Done |
-| CHAR-05 | Phase 3 | Done |
-| CHAR-06 | Phase 7 | Pending |
-| CHAR-07 | Phase 7 | Pending |
-| PERS-01 | Phase 2 | Done |
-| PERS-02 | Phase 3 | Done |
-| PERS-03 | Phase 3 | Done |
-| PERS-04 | Phase 3 | Done |
-| PERS-05 | Phase 2 | Done |
-| CONV-01 | Phase 2 | Done |
-| CONV-02 | Phase 2 | Done |
-| CONV-03 | Phase 2 | Done |
-| CONV-04 | Phase 2 | Done |
-| CONV-05 | Phase 2 | Done |
-| CONV-06 | Phase 8 | Pending |
-| CONV-07 | Phase 8 | Pending |
-| CONV-08 | Phase 8 | Pending |
-| CHAT-01 | Phase 5 | Pending |
-| CHAT-02 | Phase 5 | Pending |
-| CHAT-03 | Phase 5 | Pending |
-| CHAT-04 | Phase 5 | Pending |
-| CHAT-05 | Phase 1 | Done |
-| CHAT-06 | Phase 7 | Pending |
-| PRMP-01 | Phase 6 | Pending |
-| PRMP-02 | Phase 6 | Pending |
-| PRMP-03 | Phase 6 | Pending |
-| PRMP-04 | Phase 9 | Pending |
-| PRMP-05 | Phase 9 | Pending |
-| PROV-01 | Phase 4 | Pending |
-| PROV-02 | Phase 4 | Pending |
-| PROV-03 | Phase 4 | Pending |
-| PROV-04 | Phase 4 | Pending |
-| PROV-05 | Phase 4 | Pending |
-| PROV-06 | Phase 4 | Pending |
-| LORB-01 | Phase 9 | Pending |
-| LORB-02 | Phase 9 | Pending |
-| LORB-03 | Phase 9 | Pending |
-| LORB-04 | Phase 9 | Pending |
-| LORB-05 | Phase 9 | Pending |
-| LORB-06 | Phase 3 | Done |
-| REGX-01 | Phase 9 | Pending |
-| REGX-02 | Phase 9 | Pending |
-| REGX-03 | Phase 9 | Pending |
-| REGX-04 | Phase 9 | Pending |
-| REGX-05 | Phase 9 | Pending |
-| SETT-01 | Phase 10 | Pending |
-| SETT-02 | Phase 10 | Pending |
-| SETT-03 | Phase 1 | Done |
-| DOC-01 | Phase 11 | Pending |
-| DIST-01 | Phase 11 | Pending |
-| DIST-02 | Phase 11 | Pending |
-| DIST-03 | Phase 11 | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| SHELL-01    | Phase 1  | Done    |
+| SHELL-02    | Phase 1  | Done    |
+| SHELL-03    | Phase 1  | Done    |
+| DB-01       | Phase 2  | Done    |
+| DB-02       | Phase 2  | Done    |
+| DB-03       | Phase 2  | Done    |
+| CHAR-01     | Phase 2  | Done    |
+| CHAR-02     | Phase 3  | Done    |
+| CHAR-03     | Phase 3  | Done    |
+| CHAR-04     | Phase 3  | Done    |
+| CHAR-05     | Phase 3  | Done    |
+| CHAR-06     | Phase 7  | Pending |
+| CHAR-07     | Phase 7  | Pending |
+| PERS-01     | Phase 2  | Done    |
+| PERS-02     | Phase 3  | Done    |
+| PERS-03     | Phase 3  | Done    |
+| PERS-04     | Phase 3  | Done    |
+| PERS-05     | Phase 2  | Done    |
+| CONV-01     | Phase 2  | Done    |
+| CONV-02     | Phase 2  | Done    |
+| CONV-03     | Phase 2  | Done    |
+| CONV-04     | Phase 2  | Done    |
+| CONV-05     | Phase 2  | Done    |
+| CONV-06     | Phase 8  | Pending |
+| CONV-07     | Phase 8  | Pending |
+| CONV-08     | Phase 8  | Pending |
+| CHAT-01     | Phase 5  | Pending |
+| CHAT-02     | Phase 5  | Pending |
+| CHAT-03     | Phase 5  | Pending |
+| CHAT-04     | Phase 5  | Pending |
+| CHAT-05     | Phase 1  | Done    |
+| CHAT-06     | Phase 7  | Pending |
+| PRMP-01     | Phase 6  | Pending |
+| PRMP-02     | Phase 6  | Pending |
+| PRMP-03     | Phase 6  | Pending |
+| PRMP-04     | Phase 9  | Pending |
+| PRMP-05     | Phase 9  | Pending |
+| PROV-01     | Phase 4  | Pending |
+| PROV-02     | Phase 4  | Pending |
+| PROV-03     | Phase 4  | Pending |
+| PROV-04     | Phase 4  | Pending |
+| PROV-05     | Phase 4  | Pending |
+| PROV-06     | Phase 4  | Pending |
+| LORB-01     | Phase 9  | Pending |
+| LORB-02     | Phase 9  | Pending |
+| LORB-03     | Phase 9  | Pending |
+| LORB-04     | Phase 9  | Pending |
+| LORB-05     | Phase 9  | Pending |
+| LORB-06     | Phase 3  | Done    |
+| REGX-01     | Phase 9  | Pending |
+| REGX-02     | Phase 9  | Pending |
+| REGX-03     | Phase 9  | Pending |
+| REGX-04     | Phase 9  | Pending |
+| REGX-05     | Phase 9  | Pending |
+| SETT-01     | Phase 10 | Pending |
+| SETT-02     | Phase 10 | Pending |
+| SETT-03     | Phase 1  | Done    |
+| DOC-01      | Phase 11 | Pending |
+| DIST-01     | Phase 11 | Pending |
+| DIST-02     | Phase 11 | Pending |
+| DIST-03     | Phase 11 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 60 total
 - Mapped to phases: 60
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-05-10*
-*Last updated: 2026-05-12 after Phase 3 planning — traceability alignment*
+
+_Requirements defined: 2026-05-10_
+_Last updated: 2026-05-12 after Phase 3 planning — traceability alignment_

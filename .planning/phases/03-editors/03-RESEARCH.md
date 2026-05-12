@@ -20,6 +20,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Why it matters:** Three editor dialogs, one delete confirmation dialog, and one kebab menu all depend on Bits.ui primitives. The planner needs to know the exact API surface available.
 
 **What I found:**
+
 - **No Dialog component exists yet** in `src/lib/components/ui/`. PersonaSwitcher uses `bits-ui/Popover`, not Dialog. The UI-SPEC requires a generic `Dialog` wrapper.
 - **No DropdownMenu component exists yet** in `src/lib/components/ui/`. The kebab menu needs Bits.ui `DropdownMenu`.
 - **bits-ui ^2.18** is installed (`package.json`). This version ships:
@@ -40,6 +41,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Gap:** The planner must decide whether to create a generic `Dialog` wrapper component (`src/lib/components/ui/Dialog.svelte`) that all three editor dialogs reuse, or have each editor embed Bits.ui Dialog directly. The UI-SPEC inventory lists a "Dialog" primitive, so a wrapper is expected.
 
 **References:**
+
 - `src/lib/components/chat/PersonaSwitcher.svelte` — existing Bits.ui Popover usage pattern
 - `package.json` → `bits-ui: ^2.18`
 - UI-SPEC § Component Inventory → "Dialog" and "KebabMenu" rows
@@ -51,6 +53,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Why it matters:** The 4-step wizard is the most complex new UI component. It has two modes (create: linear, edit: free-jump), step-level validation, and conditional navigation. The planner must define the state machine clearly.
 
 **What I found:**
+
 - **UI-SPEC defines the interaction patterns:**
   - Create mode: linear progression, "Next" validates current step before advancing, "Back" preserves data
   - Edit mode: free-jump, clicking any step header navigates directly
@@ -72,12 +75,14 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
   - Step 3: none required
 
 **Key planning decisions:**
+
 1. How to model wizard state: `$state` object with `currentStep`, `mode`, `formData`, `errors`, `isSaving`
 2. Whether each step is a separate Svelte component or conditional blocks within the dialog
 3. How form data flows between steps (single reactive object vs. step-local state)
 4. How to implement free-jump in edit mode (enable/disable step header clicks based on visited steps? Or always allow?)
 
 **References:**
+
 - `gtk_ref/src/ui/character_editor.rs` — archival reference (L22-898, 1151 total)
 - `src-tauri/src/domain/character.rs` — `CharacterCardV2::new()` constructor, all fields, serde defaults
 - UI-SPEC § Interaction Patterns — wizard behavior table
@@ -91,6 +96,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Why it matters:** Avatar upload requires a Tauri backend command, file system interaction, and URL resolution — a cross-cutting concern that touches frontend, backend, and the Tauri runtime.
 
 **What I found:**
+
 - **Tauri plugins already registered** in `src-tauri/src/lib.rs`:
   - `tauri_plugin_fs::init()` — filesystem access
   - `tauri_plugin_dialog::init()` — native file dialogs
@@ -102,6 +108,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 - **Avatar path field:** Both `CharacterCardV2.avatar_path: Option<String>` and `Persona.avatar_path` (not currently on the Rust struct, but the TS type `UserPersona` has it). **Gap:** The Rust `Persona` struct does NOT have `avatar_path` — this must be added.
 
 **Key planning decisions:**
+
 1. **Avatar storage path:** CONTEXT D-10 says `app_data_dir/avatars/{uuid}.{ext}`. The app data dir is `dirs::data_dir()/com.revelry.desktop/` (matching the DB path pattern from `lib.rs`).
 2. **Avatar URL resolution strategy (from CONTEXT D-13, undecided):**
    - Option A: Backend resolves `avatar_path` to `asset://` URL before returning entity data (modify row mappers)
@@ -111,6 +118,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 4. **Avatar cleanup:** CONTEXT D-12 — delete old file on replace, delete on entity delete. Needs a file-delete helper in the backend.
 
 **References:**
+
 - `src-tauri/src/lib.rs` — plugin registration (L15-18)
 - `src-tauri/tauri.conf.json` — CSP with asset: protocol (L14-20)
 - `src/lib/components/ui/Avatar.svelte` — existing avatar component
@@ -124,6 +132,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Why it matters:** This is the most architecturally significant backend change in Phase 3. The current `lorebook_entries` table has `character_id` as FK. CONTEXT D-14/D-15 refactors to standalone lorebooks with a many-to-many relationship.
 
 **What I found:**
+
 - **Current schema** (`src-tauri/src/db/migrations.rs` L107-121):
   ```sql
   CREATE TABLE lorebook_entries (
@@ -154,11 +163,13 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 - **Archival reference domain model** (`gtk_ref/src/domain/lorebook.rs`): Uses `InsertionPosition` enum (BeforeChar/AfterChar), `depth_from_bottom: i32`, `enabled: bool`, `token_budget: Option<i64>`. The Phase 3 version adds `activation_state` (always/character_only/user_only) per CONTEXT D-18.
 
 **Key planning decisions:**
+
 1. **Migration approach:** Since `lorebook_entries` has no data, can we DROP the old table and create the new schema from scratch? Or should we preserve the table and ALTER it? Dropping is simpler but changes the migration history. **Recommendation:** Add a new migration that drops and recreates since there's no data to preserve. This is consistent with Phase 2's "single collapsed migration" approach.
 2. **Field naming alignment:** CONTEXT D-18 uses `keys` (not `keywords`), `secondary_keys` (not `secondary_terms`), `position` (not `insertion_position`), `depth` (not `depth_from_bottom`). The planner must decide whether to align DB column names with CONTEXT or keep backward compatibility with existing column names. Since there's no data, alignment is cleaner.
 3. **Rust domain models needed:** `Lorebook` (new) and `LorebookEntry` (new, replacing gtk_ref version). Must be added to `src-tauri/src/domain/` and registered in `mod.rs`.
 
 **References:**
+
 - `src-tauri/src/db/migrations.rs` — current schema (L107-121)
 - `src-tauri/src/db/lorebook.rs` — empty stub (1 line comment)
 - `src-tauri/src/domain/mod.rs` — must add `lorebook` module
@@ -173,6 +184,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Why it matters:** CONTEXT D-17 and requirement LORB-06 require an inline keyword test panel. This needs a backend command that simulates keyword activation.
 
 **What I found:**
+
 - **Archival reference** (`gtk_ref/src/service/lorebook.rs` L27-157):
   - `activate_lorebook_entries()` — full keyword matching with scan depth, recursive activation, token budget
   - `keyword_matches()` — OR logic, case-insensitive, any keyword match activates entry
@@ -188,11 +200,13 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
   - **Recommendation:** Option A is better — the matching logic belongs in Rust (it will be reused by the prompt engine), and the backend can return structured results with matched keys highlighted.
 
 **Key planning decisions:**
+
 1. **Command signature:** `test_lorebook_keywords(entries: Vec<LorebookEntry>, sample_text: string) -> Vec<KeywordTestResult>` where `KeywordTestResult { entry_id, entry_name, matched_keys, is_activated }`
 2. **Debouncing:** UI-SPEC says "Debounced (300ms) call to `test_lorebook_keywords`". This is a frontend concern — Svelte 5 `$effect` with a debounce timer.
 3. **Keyword highlighting:** Frontend must highlight matched keywords in the test results. This is a presentational concern — the backend returns matched keys, the frontend renders them with accent styling.
 
 **References:**
+
 - `gtk_ref/src/service/lorebook.rs` — `activate_lorebook_entries()` (L27-157), `keyword_matches()` (L219-225)
 - `gtk_ref/src/ui/lorebook_editor.rs` — archival GTK lorebook editor (L1-230+)
 - UI-SPEC § Interaction Patterns — "Test Keywords panel toggle" and "Keyword test input"
@@ -205,6 +219,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
 **Why it matters:** Every editor dialog needs to open from the library page, and every save/delete needs to update both the backend AND the local reactive state. The planner must define the action API clearly.
 
 **What I found:**
+
 - **Current AppState** (`src/lib/stores/app.svelte.ts`): Has `hydrate()`, `openConversation()`, `appendMessage()`, `updateStreamingMessage()`, `switchPersona()`, `toggleSidebar()`. No CRUD actions for characters, personas, or lorebooks. No dialog state management.
 - **Current api.ts** (`src/lib/data/api.ts`): Has `saveCharacter()`, `deleteCharacter()`, `savePersona()`, `deletePersona()`. No lorebook commands. No avatar commands.
 - **Optimistic update pattern** (from `switchPersona()`): Updates local state first, then persists to backend, reverts on failure. This is the established pattern and should be followed for all CRUD actions.
@@ -214,6 +229,7 @@ This research identifies 8 knowledge areas the planner must address, 6 key risks
   - **Recommendation:** Option B is cleaner — dialog open/close is a local UI concern, not global state. Only the CRUD results need to update AppState.
 
 **New AppState actions needed:**
+
 ```typescript
 // Character
 createCharacter(data: Partial<CharacterCard>): Promise<void>
@@ -232,6 +248,7 @@ deleteLorebook(id: string): Promise<void>
 ```
 
 **New api.ts commands needed:**
+
 ```typescript
 // Lorebook CRUD
 getLorebooks(): Promise<Lorebook[]>
@@ -250,12 +267,14 @@ getAvatarUrl(avatarPath: string): Promise<string>  // returns asset:// URL (if O
 ```
 
 **Key planning decisions:**
+
 1. Whether CRUD actions are on AppState or called directly from editor components
 2. Optimistic vs. wait-for-backend update strategy for each operation
 3. Whether `hydrate()` needs to also load lorebooks (yes, for the Lorebooks tab)
 4. How delete cascades (character delete → also delete avatar file + conversation cleanup)
 
 **References:**
+
 - `src/lib/stores/app.svelte.ts` — current AppState structure
 - `src/lib/data/api.ts` — current API layer
 - CONTEXT D-02 (separate dialogs), D-03 (delete on kebab menu)
@@ -267,6 +286,7 @@ getAvatarUrl(avatarPath: string): Promise<string>  // returns asset:// URL (if O
 **Why it matters:** Every frontend action requires a corresponding Tauri command. The planner must enumerate all new commands, their signatures, and their integration with the DbWorker.
 
 **What I found:**
+
 - **Current command registration** (`src-tauri/src/lib.rs` L25-42): 16 commands registered via `invoke_handler`. Pattern: `commands::module::command_name`.
 - **Current command module structure:** `characters.rs`, `personas.rs`, `conversations.rs`, `presets.rs` — each with `get_*`, `save_*`, `delete_*`, `search_*` functions.
 - **DbWorker pattern** (`src-tauri/src/db/mod.rs`): Commands send `DbCommand` variants via `mpsc::Sender`, await results via `oneshot::Receiver`. Each new DB operation needs:
@@ -278,29 +298,31 @@ getAvatarUrl(avatarPath: string): Promise<string>  // returns asset:// URL (if O
 
 **New Tauri commands needed:**
 
-| Command | Module | DbCommand Variant | Notes |
-|---------|--------|-------------------|-------|
-| `get_lorebooks` | commands/lorebooks.rs | LoadLorebooks | New module |
-| `save_lorebook` | commands/lorebooks.rs | SaveLorebook | Upsert pattern |
-| `delete_lorebook` | commands/lorebooks.rs | DeleteLorebook | Cascade to entries |
-| `get_lorebook_entries` | commands/lorebooks.rs | LoadLorebookEntries | By lorebook_id |
-| `save_lorebook_entry` | commands/lorebooks.rs | SaveLorebookEntry | Upsert pattern |
-| `delete_lorebook_entry` | commands/lorebooks.rs | DeleteLorebookEntry | |
-| `upload_avatar` | commands/avatars.rs | (file I/O, not DB) | New module, no DbCommand |
-| `get_avatar_url` | commands/avatars.rs | (pure computation) | Only if Option B from K-03 |
-| `test_lorebook_keywords` | commands/lorebooks.rs | (pure computation) | Keyword matching, no DB |
-| `assign_lorebook_to_character` | commands/lorebooks.rs | AssignLorebookToCharacter | Junction table insert |
-| `remove_lorebook_from_character` | commands/lorebooks.rs | RemoveLorebookFromCharacter | Junction table delete |
+| Command                          | Module                | DbCommand Variant           | Notes                      |
+| -------------------------------- | --------------------- | --------------------------- | -------------------------- |
+| `get_lorebooks`                  | commands/lorebooks.rs | LoadLorebooks               | New module                 |
+| `save_lorebook`                  | commands/lorebooks.rs | SaveLorebook                | Upsert pattern             |
+| `delete_lorebook`                | commands/lorebooks.rs | DeleteLorebook              | Cascade to entries         |
+| `get_lorebook_entries`           | commands/lorebooks.rs | LoadLorebookEntries         | By lorebook_id             |
+| `save_lorebook_entry`            | commands/lorebooks.rs | SaveLorebookEntry           | Upsert pattern             |
+| `delete_lorebook_entry`          | commands/lorebooks.rs | DeleteLorebookEntry         |                            |
+| `upload_avatar`                  | commands/avatars.rs   | (file I/O, not DB)          | New module, no DbCommand   |
+| `get_avatar_url`                 | commands/avatars.rs   | (pure computation)          | Only if Option B from K-03 |
+| `test_lorebook_keywords`         | commands/lorebooks.rs | (pure computation)          | Keyword matching, no DB    |
+| `assign_lorebook_to_character`   | commands/lorebooks.rs | AssignLorebookToCharacter   | Junction table insert      |
+| `remove_lorebook_from_character` | commands/lorebooks.rs | RemoveLorebookFromCharacter | Junction table delete      |
 
 **Note:** `upload_avatar` and `get_avatar_url` are NOT database operations — they're file I/O and URL construction. They should be plain Tauri commands, NOT routed through DbWorker. `test_lorebook_keywords` is pure computation (keyword matching logic), also NOT a DB operation.
 
 **Key planning decisions:**
+
 1. How `upload_avatar` accesses the app data directory (Tauri app handle vs. `dirs::data_dir()`)
 2. Whether avatar commands go in their own module (`commands/avatars.rs`) or are added to an existing module
 3. Error handling for avatar upload failures (invalid image format, disk full, permission denied)
 4. Whether `test_lorebook_keywords` should reuse `keyword_matches()` from gtk_ref or implement fresh
 
 **References:**
+
 - `src-tauri/src/lib.rs` — command registration (L25-42)
 - `src-tauri/src/commands/mod.rs` — current module structure
 - `src-tauri/src/db/mod.rs` — DbCommand enum and DbWorker (L1-230)
@@ -313,6 +335,7 @@ getAvatarUrl(avatarPath: string): Promise<string>  // returns asset:// URL (if O
 **Why it matters:** CharacterCard and PersonaCard need kebab menus. The library page needs editor dialog integration. These are modifications to existing working components — the planner must know exactly what changes.
 
 **What I found:**
+
 - **CharacterCard** (`src/lib/components/characters/CharacterCard.svelte`):
   - Currently has: `onchat` and `onedit` callback props
   - "Start chat" button (primary accent) + "Edit" pencil button
@@ -330,11 +353,13 @@ getAvatarUrl(avatarPath: string): Promise<string>  // returns asset:// URL (if O
 - **AppState hydration:** Currently loads characters, personas, conversations, presets. Must also load lorebooks for the Lorebooks tab.
 
 **Key planning decisions:**
+
 1. Whether the kebab menu is a separate `KebabMenu` UI primitive (per UI-SPEC inventory) or inline in each card component
 2. How the library page passes editor callbacks to cards (direct props vs. event delegation)
 3. Lorebooks tab empty state vs. populated state layout
 
 **References:**
+
 - `src/lib/components/characters/CharacterCard.svelte` — current card implementation
 - `src/lib/components/personas/PersonaCard.svelte` — current card implementation
 - `src/routes/characters/+page.svelte` — current library page
@@ -378,7 +403,7 @@ getAvatarUrl(avatarPath: string): Promise<string>  // returns asset:// URL (if O
 
 **Severity:** Low
 **Description:** The keyword test panel debounces at 300ms. For large lorebooks (100+ entries), the matching computation + Tauri IPC round-trip might feel slow.
-**Mitigation:** The Tauri IPC is local (no network), and keyword matching is O(n*m) where n=entries, m=keywords. For reasonable lorebooks (<500 entries, <10 keywords each), this is trivially fast. If performance becomes an issue, the debounce interval can be increased or matching can be done client-side.
+**Mitigation:** The Tauri IPC is local (no network), and keyword matching is O(n\*m) where n=entries, m=keywords. For reasonable lorebooks (<500 entries, <10 keywords each), this is trivially fast. If performance becomes an issue, the debounce interval can be increased or matching can be done client-side.
 
 ---
 
@@ -435,6 +460,7 @@ Understanding what must be built before what:
 ```
 
 **Build order for new UI primitives (must come first):**
+
 1. `Dialog` wrapper (generic)
 2. `Textarea` (form input)
 3. `Select` (styled dropdown)
@@ -442,16 +468,9 @@ Understanding what must be built before what:
 5. `StepperHeader` (wizard navigation)
 6. `AvatarUpload` (avatar interaction)
 
-**Then domain editors:**
-7. `DeleteConfirmationDialog`
-8. `CharacterEditorDialog`
-9. `PersonaEditorDialog`
-10. `LorebookEditor`
+**Then domain editors:** 7. `DeleteConfirmationDialog` 8. `CharacterEditorDialog` 9. `PersonaEditorDialog` 10. `LorebookEditor`
 
-**Then modifications:**
-11. `CharacterCard` (add kebab menu)
-12. `PersonaCard` (add kebab menu)
-13. `characters/+page.svelte` (wire everything)
+**Then modifications:** 11. `CharacterCard` (add kebab menu) 12. `PersonaCard` (add kebab menu) 13. `characters/+page.svelte` (wire everything)
 
 **Backend can be built in parallel with the UI layer.**
 
@@ -461,12 +480,12 @@ Understanding what must be built before what:
 
 Based on the ROADMAP plan list and the dependency analysis:
 
-| Plan | Scope | Key Deliverables | Depends On |
-|------|-------|------------------|------------|
-| 03-01 | Backend + UI Primitives + Character Editor | Schema migration, domain models, DbCommand variants, CRUD functions, Tauri commands for lorebooks+avatars, `Dialog`, `Textarea`, `Select`, `KebabMenu`, `StepperHeader`, `AvatarUpload`, `CharacterEditorDialog`, `DeleteConfirmationDialog`, AppState character CRUD actions | Phase 2 |
-| 03-02 | Persona Editor | `PersonaEditorDialog`, AppState persona CRUD actions, persona `avatar_path` field | 03-01 (shares Dialog, AvatarUpload, DeleteConfirmationDialog) |
-| 03-03 | Lorebook Editor | `Lorebook` type, `LorebookEditor`, keyword test panel, AppState lorebook CRUD actions, `test_lorebook_keywords` command | 03-01 (shares Dialog, Textarea, Select) |
-| 03-04 | Wiring & Integration | Wire "New" buttons, add kebab menus to cards, add Lorebooks tab, wire callbacks, hydration of lorebooks, avatar URL resolution | 03-01, 03-02, 03-03 |
+| Plan  | Scope                                      | Key Deliverables                                                                                                                                                                                                                                                              | Depends On                                                    |
+| ----- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 03-01 | Backend + UI Primitives + Character Editor | Schema migration, domain models, DbCommand variants, CRUD functions, Tauri commands for lorebooks+avatars, `Dialog`, `Textarea`, `Select`, `KebabMenu`, `StepperHeader`, `AvatarUpload`, `CharacterEditorDialog`, `DeleteConfirmationDialog`, AppState character CRUD actions | Phase 2                                                       |
+| 03-02 | Persona Editor                             | `PersonaEditorDialog`, AppState persona CRUD actions, persona `avatar_path` field                                                                                                                                                                                             | 03-01 (shares Dialog, AvatarUpload, DeleteConfirmationDialog) |
+| 03-03 | Lorebook Editor                            | `Lorebook` type, `LorebookEditor`, keyword test panel, AppState lorebook CRUD actions, `test_lorebook_keywords` command                                                                                                                                                       | 03-01 (shares Dialog, Textarea, Select)                       |
+| 03-04 | Wiring & Integration                       | Wire "New" buttons, add kebab menus to cards, add Lorebooks tab, wire callbacks, hydration of lorebooks, avatar URL resolution                                                                                                                                                | 03-01, 03-02, 03-03                                           |
 
 **Alternative:** Plans 03-01 could be split further — backend in 03-01a, UI primitives in 03-01b, character editor in 03-01c. But the ROADMAP already defines 4 plans, so the grouping above keeps within budget.
 
@@ -477,6 +496,7 @@ Based on the ROADMAP plan list and the dependency analysis:
 ### Avatar File Dialog API
 
 The Tauri v2 dialog plugin (`tauri-plugin-dialog`) provides:
+
 ```rust
 // Rust side
 use tauri_plugin_dialog::DialogExt;
@@ -485,10 +505,10 @@ let file_path = app.dialog().file().filter("Images", &["png", "jpg", "jpeg", "we
 
 ```typescript
 // TypeScript side
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from "@tauri-apps/plugin-dialog";
 const filePath = await open({
   multiple: false,
-  filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
+  filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
 });
 ```
 
@@ -497,9 +517,10 @@ The planner should decide whether the file picker is opened from the frontend (v
 ### Asset Protocol URL Construction
 
 Tauri v2 `convertFileSrc()` from `@tauri-apps/api/core`:
+
 ```typescript
-import { convertFileSrc } from '@tauri-apps/api/core';
-const assetUrl = convertFileSrc('/path/to/file.png');
+import { convertFileSrc } from "@tauri-apps/api/core";
+const assetUrl = convertFileSrc("/path/to/file.png");
 // Returns: http://asset.localhost/localhost/path/to/file.png
 ```
 
@@ -508,6 +529,7 @@ The `<img>` tag can then use this URL. The CSP already allows `asset: http://ass
 ### Tauri Command for File Copy (Avatar Upload)
 
 The `upload_avatar` command needs to:
+
 1. Receive the source file path (from the frontend file picker)
 2. Generate a UUID for the filename
 3. Determine the file extension from the source path
@@ -537,4 +559,4 @@ Before writing execution plans, ensure you can answer:
 
 ---
 
-*Research completed: 2026-05-12*
+_Research completed: 2026-05-12_

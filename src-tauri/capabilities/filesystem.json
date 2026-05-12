@@ -3,8 +3,5 @@
   "identifier": "filesystem",
   "description": "Filesystem access for avatar serving via asset protocol",
   "windows": ["main"],
-  "permissions": [
-    "fs:default",
-    "fs:scope-appdata-recursive"
-  ]
+  "permissions": ["fs:default", "fs:scope-appdata-recursive"]
 }

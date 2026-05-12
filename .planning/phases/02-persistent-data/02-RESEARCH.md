@@ -45,18 +45,19 @@ None — discussion stayed within phase scope.
 
 ### Rust Crates (add to `src-tauri/Cargo.toml`)
 
-| Crate | Version | Purpose | Source |
-|-------|---------|---------|--------|
-| `rusqlite` | `0.39` | SQLite bindings | `[VERIFIED: cargo search]` — matches gtk_ref version |
-| `rusqlite_migration` | `2.5` | Schema migration runner | `[VERIFIED: cargo search]` — matches gtk_ref version |
-| `chrono` | `0.4` (features: `serde`) | Timestamp handling, ISO 8601 serialization | `[VERIFIED: cargo search]` — matches gtk_ref version |
-| `uuid` | `1.x` (features: `v4`) | UUID generation for primary keys | `[VERIFIED: cargo search]` — matches gtk_ref version |
-| `dirs` | `6.0` | Platform-specific data directory resolution | `[VERIFIED: cargo search]` — matches gtk_ref version |
-| `anyhow` | `1.0` | Application error handling | `[ASSUMED]` — standard Rust error crate |
-| `thiserror` | `2.0` | Domain error types | `[ASSUMED]` — standard Rust error derive crate |
-| `tracing` | `0.1` | Structured logging | `[ASSUMED]` — standard Rust tracing crate |
+| Crate                | Version                   | Purpose                                     | Source                                               |
+| -------------------- | ------------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| `rusqlite`           | `0.39`                    | SQLite bindings                             | `[VERIFIED: cargo search]` — matches gtk_ref version |
+| `rusqlite_migration` | `2.5`                     | Schema migration runner                     | `[VERIFIED: cargo search]` — matches gtk_ref version |
+| `chrono`             | `0.4` (features: `serde`) | Timestamp handling, ISO 8601 serialization  | `[VERIFIED: cargo search]` — matches gtk_ref version |
+| `uuid`               | `1.x` (features: `v4`)    | UUID generation for primary keys            | `[VERIFIED: cargo search]` — matches gtk_ref version |
+| `dirs`               | `6.0`                     | Platform-specific data directory resolution | `[VERIFIED: cargo search]` — matches gtk_ref version |
+| `anyhow`             | `1.0`                     | Application error handling                  | `[ASSUMED]` — standard Rust error crate              |
+| `thiserror`          | `2.0`                     | Domain error types                          | `[ASSUMED]` — standard Rust error derive crate       |
+| `tracing`            | `0.1`                     | Structured logging                          | `[ASSUMED]` — standard Rust tracing crate            |
 
 **rusqlite features to enable:**
+
 - `bundled` — bundles SQLite so users don't need it installed. Essential for cross-platform distribution. `[VERIFIED: cargo search]`
 - `functions` — needed if we use custom SQL functions (not critical for Phase 2, but gtk_ref enables it) `[ASSUMED]`
 - `window` — needed for window functions (not critical for Phase 2) `[ASSUMED]`
@@ -65,8 +66,8 @@ None — discussion stayed within phase scope.
 
 ### TypeScript / Frontend
 
-| Package | Purpose | Source |
-|---------|---------|--------|
+| Package           | Purpose                  | Source                                                     |
+| ----------------- | ------------------------ | ---------------------------------------------------------- |
 | `@tauri-apps/api` | `invoke()` for Tauri IPC | `[VERIFIED: codebase grep]` — already installed in Phase 1 |
 
 No new npm dependencies needed for Phase 2.
@@ -106,7 +107,7 @@ pub struct DbWorker {
 impl DbWorker {
     pub fn start(db_path: PathBuf) -> Result<Self, String> {
         let (sender, receiver) = mpsc::channel::<DbCommand>();
-        
+
         std::thread::spawn(move || {
             let mut conn = Connection::open(&db_path)
                 .unwrap_or_else(|e| panic!("DB open failed: {}", e));
@@ -114,7 +115,7 @@ impl DbWorker {
                 .unwrap_or_else(|e| panic!("Migrations failed: {}", e));
             generation::seed_builtin_presets(&conn)
                 .unwrap_or_else(|e| panic!("Preset seed failed: {}", e));
-            
+
             while let Ok(cmd) = receiver.recv() {
                 match cmd {
                     DbCommand::LoadCharacters { reply } => {
@@ -126,10 +127,10 @@ impl DbWorker {
                 }
             }
         });
-        
+
         Ok(DbWorker { sender })
     }
-    
+
     pub async fn send<T: Send + 'static>(
         &self,
         cmd_factory: impl FnOnce(oneshot::Sender<Result<T, String>>) -> DbCommand,
@@ -159,7 +160,7 @@ pub fn run() {
         .expect("Could not determine data directory")
         .join("com.revelry.desktop")
         .join("revelry.db");
-    
+
     let db_worker = DbWorker::start(db_path)
         .expect("Failed to start database worker");
 
@@ -196,6 +197,7 @@ pub fn run() {
 ### 3. Tauri Command Handlers (D-15, D-16)
 
 **Pattern:** Each command is an async function that:
+
 1. Gets `DbWorker` from Tauri state
 2. Creates a oneshot channel
 3. Sends a `DbCommand` variant with the oneshot sender
@@ -227,20 +229,21 @@ async fn save_character(
 
 **Migration sequence for Phase 2:**
 
-| # | Source | Description |
-|---|--------|-------------|
-| 1 | gtk_ref M1 | providers table + WAL/busy_timeout/foreign_keys pragmas |
-| 2 | gtk_ref M2 | app_settings table |
-| 3 | gtk_ref M3 | characters table + FTS5 + triggers |
-| 4 | gtk_ref M4 | creator_notes + character_book columns on characters |
-| 5 | gtk_ref M5 | conversations, message_branches, messages tables + indexes |
-| 6 | gtk_ref M6 | model_name on providers |
-| 7 | gtk_ref M7 | personas table + default_persona_id on characters |
-| 8 | gtk_ref M8 | context_window_size on providers, lorebook_entries table, lorebook fields on characters |
-| 9 | gtk_ref M9 | generation_presets + regex_scripts tables + default_preset_id on characters + generation_preset_id on conversations |
+| #      | Source          | Description                                                                                                                                                                                                                                        |
+| ------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1      | gtk_ref M1      | providers table + WAL/busy_timeout/foreign_keys pragmas                                                                                                                                                                                            |
+| 2      | gtk_ref M2      | app_settings table                                                                                                                                                                                                                                 |
+| 3      | gtk_ref M3      | characters table + FTS5 + triggers                                                                                                                                                                                                                 |
+| 4      | gtk_ref M4      | creator_notes + character_book columns on characters                                                                                                                                                                                               |
+| 5      | gtk_ref M5      | conversations, message_branches, messages tables + indexes                                                                                                                                                                                         |
+| 6      | gtk_ref M6      | model_name on providers                                                                                                                                                                                                                            |
+| 7      | gtk_ref M7      | personas table + default_persona_id on characters                                                                                                                                                                                                  |
+| 8      | gtk_ref M8      | context_window_size on providers, lorebook_entries table, lorebook fields on characters                                                                                                                                                            |
+| 9      | gtk_ref M9      | generation_presets + regex_scripts tables + default_preset_id on characters + generation_preset_id on conversations                                                                                                                                |
 | **10** | **Phase 2 NEW** | **Add `title` + `last_message_preview` to conversations (D-02, D-13). Drop `branch_id` from messages and `message_branches` table (D-03). Drop `provider_id` NOT NULL constraint on conversations (allow null until providers exist in Phase 3).** |
 
 **Migration 10 specifics (D-02, D-03, D-13):**
+
 ```sql
 -- Add denormalized sidebar fields to conversations
 ALTER TABLE conversations ADD COLUMN title TEXT NOT NULL DEFAULT '';
@@ -264,7 +267,7 @@ ALTER TABLE conversations ADD COLUMN last_message_preview TEXT NOT NULL DEFAULT 
 
 **Critical decision for migration 5 (conversations table):** The gtk_ref schema has `provider_id TEXT NOT NULL REFERENCES providers(id) ON DELETE SET NULL`. This is contradictory (NOT NULL + ON DELETE SET NULL). In Phase 2, there are no providers (Phase 3). **The planner must adjust migration 5 to make `provider_id` nullable** (`TEXT REFERENCES providers(id) ON DELETE SET NULL`) so conversations can be created without a provider. `[VERIFIED: codebase review of gtk_ref/src/db/migrations.rs L95-117]`
 
-**Alternative approach for Migration 10:** Rather than complex ALTER TABLE gymnastics, since Phase 2 is the *first real use* of this database (no production data exists yet), the planner should consider folding all 10 migrations into a cleaner set that reflects the Phase 2 schema from the start. The `rusqlite_migration` crate uses `user_version` to track applied migrations, and since no user has run any migrations yet, a clean rewrite is safe. `[ASSUMED — requires planner confirmation]`
+**Alternative approach for Migration 10:** Rather than complex ALTER TABLE gymnastics, since Phase 2 is the _first real use_ of this database (no production data exists yet), the planner should consider folding all 10 migrations into a cleaner set that reflects the Phase 2 schema from the start. The `rusqlite_migration` crate uses `user_version` to track applied migrations, and since no user has run any migrations yet, a clean rewrite is safe. `[ASSUMED — requires planner confirmation]`
 
 ### 5. Domain Model Port (D-08, D-09, D-10)
 
@@ -273,6 +276,7 @@ ALTER TABLE conversations ADD COLUMN last_message_preview TEXT NOT NULL DEFAULT 
 **Change: `NaiveDateTime` → `chrono::DateTime<Utc>` (D-09)**
 
 gtk_ref uses `NaiveDateTime` and serializes as `"%Y-%m-%d %H:%M:%S%.f"`. For Tauri IPC:
+
 - Replace with `DateTime<Utc>` (timezone-aware)
 - Serialize as ISO 8601: `"2026-05-11T14:30:00Z"`
 - Frontend TypeScript uses `string` for timestamps — no change needed
@@ -328,19 +332,20 @@ pub struct Message {
 
 **Type alignment: Rust ↔ TypeScript mapping (D-08)**
 
-| Rust field | Rust type | SQLite type | TypeScript type | Notes |
-|------------|-----------|-------------|-----------------|-------|
-| `id` | `String` | `TEXT PK` | `string` | UUID v4 text |
-| `created_at` | `DateTime<Utc>` | `TEXT` | `string` | ISO 8601 |
-| `tags` | `Vec<String>` | `TEXT` (JSON) | `string[]` | serde_json |
-| `extensions` | `serde_json::Value` | `TEXT` (JSON) | `Record<string, unknown>` | serde_json |
-| `alternate_greetings` | `Vec<String>` | `TEXT` (JSON) | `string[]` | serde_json |
-| `role` | `MessageRole` (enum) | `TEXT` | `MessageRole` (type) | lowercase string |
-| `is_builtin` | `bool` | `INTEGER` | — | 0/1 |
-| `title` | `String` | `TEXT` | `string` | NEW |
-| `last_message_preview` | `String` | `TEXT` | `string` | NEW |
+| Rust field             | Rust type            | SQLite type   | TypeScript type           | Notes            |
+| ---------------------- | -------------------- | ------------- | ------------------------- | ---------------- |
+| `id`                   | `String`             | `TEXT PK`     | `string`                  | UUID v4 text     |
+| `created_at`           | `DateTime<Utc>`      | `TEXT`        | `string`                  | ISO 8601         |
+| `tags`                 | `Vec<String>`        | `TEXT` (JSON) | `string[]`                | serde_json       |
+| `extensions`           | `serde_json::Value`  | `TEXT` (JSON) | `Record<string, unknown>` | serde_json       |
+| `alternate_greetings`  | `Vec<String>`        | `TEXT` (JSON) | `string[]`                | serde_json       |
+| `role`                 | `MessageRole` (enum) | `TEXT`        | `MessageRole` (type)      | lowercase string |
+| `is_builtin`           | `bool`               | `INTEGER`     | —                         | 0/1              |
+| `title`                | `String`             | `TEXT`        | `string`                  | NEW              |
+| `last_message_preview` | `String`             | `TEXT`        | `string`                  | NEW              |
 
 **Frontend type `MessageRole` mismatch:** Frontend uses `'character'` while Rust/db uses `'assistant'`. This must be reconciled. Two options:
+
 1. Change the Rust `MessageRole::Assistant` to serialize as `"character"` — matches the frontend, deviates from AI API convention
 2. Change the frontend `MessageRole` to use `'assistant'` — matches Rust and AI APIs, requires updating all frontend message rendering
 
@@ -348,7 +353,7 @@ pub struct Message {
 
 ### 6. Row Mapper Pattern
 
-**Pattern:** Port gtk_ref's `row_to_*` functions from `models.rs`. Adapt timestamp parsing from `NaiveDateTime` format string to `DateTime<Utc>`. `[CITED: gtk_ref/src/db/models.rs]`
+**Pattern:** Port gtk*ref's `row_to*\*`functions from`models.rs`. Adapt timestamp parsing from `NaiveDateTime`format string to`DateTime<Utc>`. `[CITED: gtk_ref/src/db/models.rs]`
 
 ```rust
 // Before (gtk_ref):
@@ -370,29 +375,36 @@ let created_at: DateTime<Utc> = created_at_str.parse()
 ```typescript
 // +layout.svelte — Phase 2
 onMount(async () => {
-    app.is_loading = true;
-    
-    try {
-        // Parallel fetch — all independent
-        const [characters, personas, conversations, presets] = await Promise.all([
-            invoke<CharacterCard[]>('get_characters'),
-            invoke<UserPersona[]>('get_personas'),
-            invoke<Conversation[]>('get_conversations'),
-            invoke<PromptPreset[]>('get_presets'),
-        ]);
-        
-        app.hydrate({ characters, personas, conversations, providers: [], prompt_presets: presets });
-    } catch (e) {
-        app.init_error = String(e);
-    } finally {
-        app.is_loading = false;
-    }
+  app.is_loading = true;
+
+  try {
+    // Parallel fetch — all independent
+    const [characters, personas, conversations, presets] = await Promise.all([
+      invoke<CharacterCard[]>("get_characters"),
+      invoke<UserPersona[]>("get_personas"),
+      invoke<Conversation[]>("get_conversations"),
+      invoke<PromptPreset[]>("get_presets"),
+    ]);
+
+    app.hydrate({
+      characters,
+      personas,
+      conversations,
+      providers: [],
+      prompt_presets: presets,
+    });
+  } catch (e) {
+    app.init_error = String(e);
+  } finally {
+    app.is_loading = false;
+  }
 });
 ```
 
 **Key detail:** `providers` array is empty in Phase 2 (providers are Phase 3). The `hydrate()` signature needs adjustment to make `providers` optional or accept an empty array. `[CITED: src/lib/stores/app.svelte.ts]`
 
 **`AppState` additions (D-18):**
+
 ```typescript
 is_loading = $state<boolean>(true);
 init_error = $state<string | null>(null);
@@ -408,7 +420,7 @@ pub fn start_conversation(conn: &Connection, character: &CharacterCardV2) -> Res
     let mut conversation = Conversation::new(character.id.clone());
     conversation.title = format!("Chat with {}", character.name);  // D-13
     conversation.last_message_preview = character.first_mes.clone();  // D-13
-    
+
     // Insert conversation...
     // Create initial assistant message from first_mes...
 }
@@ -418,7 +430,7 @@ pub fn start_conversation(conn: &Connection, character: &CharacterCardV2) -> Res
 // save_message — update denormalized fields
 pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
     // Insert message...
-    
+
     // Update conversation denormalized fields (D-13)
     let now = Utc::now();
     conn.prepare_cached(
@@ -429,7 +441,7 @@ pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
         msg.content.chars().take(100).collect::<String>(),
         &msg.conversation_id,
     ])?;
-    
+
     Ok(())
 }
 ```
@@ -438,17 +450,18 @@ pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
 
 **Pattern:** Use `dirs::data_dir()` for platform-appropriate path. `[CITED: dirs crate docs]`
 
-| Platform | Path |
-|----------|------|
-| macOS | `~/Library/Application Support/com.revelry.desktop/revelry.db` |
-| Linux | `~/.local/share/com.revelry.desktop/revelry.db` |
-| Windows | `C:\Users\{user}\AppData\Roaming\com.revelry.desktop\revelry.db` |
+| Platform | Path                                                             |
+| -------- | ---------------------------------------------------------------- |
+| macOS    | `~/Library/Application Support/com.revelry.desktop/revelry.db`   |
+| Linux    | `~/.local/share/com.revelry.desktop/revelry.db`                  |
+| Windows  | `C:\Users\{user}\AppData\Roaming\com.revelry.desktop\revelry.db` |
 
 **Directory creation:** Must create the parent directory if it doesn't exist before opening the database. `std::fs::create_dir_all()` before `Connection::open()`. `[ASSUMED]`
 
 ### 10. Empty Library Experience (D-11)
 
 Since no built-in characters/personas are shipped, the app's first-run experience is empty. The UI-SPEC defines empty state patterns for all views. The planner must ensure:
+
 - Empty state components are rendered when `app.characters.length === 0`, etc.
 - The "New character" / "Import card" CTAs exist (even if import isn't wired until Phase 6)
 - Generation presets ARE populated (D-12) — `get_presets` always returns at least 3 built-in presets
@@ -459,17 +472,17 @@ Since no built-in characters/personas are shipped, the app's first-run experienc
 
 ## Don't Hand-Roll
 
-| Problem | Use This Instead | Source |
-|---------|-----------------|--------|
-| SQLite connection management | `rusqlite::Connection` with `bundled` feature | `[VERIFIED: cargo search]` |
-| Schema versioning | `rusqlite_migration` crate — auto-runs on startup, uses `user_version` | `[VERIFIED: cargo search]` |
-| UUID generation | `uuid::Uuid::new_v4()` — not manual string generation | `[CITED: gtk_ref/src/domain/character.rs L184]` |
-| Platform data directory | `dirs::data_dir()` — not platform-specific `if` blocks | `[CITED: dirs crate docs]` |
-| JSON serialization of list/object fields | `serde_json::to_string()` / `serde_json::from_str()` — not manual string joining | `[CITED: gtk_ref/src/db/characters.rs L12-14]` |
-| FTS5 query sanitization | `sanitize_fts_query()` from gtk_ref — wraps in double quotes after escaping | `[CITED: gtk_ref/src/db/characters.rs L113-120]` |
-| Timestamp serialization | `chrono::DateTime<Utc>.to_rfc3339()` — not manual format strings | `[CITED: chrono docs]` |
-| DB worker channel pattern | `std::sync::mpsc` + `tokio::sync::oneshot` — not `Mutex<Connection>` | `[CITED: gtk_ref/src/db/mod.rs]` |
-| Tauri command error handling | `Result<T, String>` — not custom error types serialized manually | `[CITED: Tauri v2 docs]` |
+| Problem                                  | Use This Instead                                                                 | Source                                           |
+| ---------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| SQLite connection management             | `rusqlite::Connection` with `bundled` feature                                    | `[VERIFIED: cargo search]`                       |
+| Schema versioning                        | `rusqlite_migration` crate — auto-runs on startup, uses `user_version`           | `[VERIFIED: cargo search]`                       |
+| UUID generation                          | `uuid::Uuid::new_v4()` — not manual string generation                            | `[CITED: gtk_ref/src/domain/character.rs L184]`  |
+| Platform data directory                  | `dirs::data_dir()` — not platform-specific `if` blocks                           | `[CITED: dirs crate docs]`                       |
+| JSON serialization of list/object fields | `serde_json::to_string()` / `serde_json::from_str()` — not manual string joining | `[CITED: gtk_ref/src/db/characters.rs L12-14]`   |
+| FTS5 query sanitization                  | `sanitize_fts_query()` from gtk_ref — wraps in double quotes after escaping      | `[CITED: gtk_ref/src/db/characters.rs L113-120]` |
+| Timestamp serialization                  | `chrono::DateTime<Utc>.to_rfc3339()` — not manual format strings                 | `[CITED: chrono docs]`                           |
+| DB worker channel pattern                | `std::sync::mpsc` + `tokio::sync::oneshot` — not `Mutex<Connection>`             | `[CITED: gtk_ref/src/db/mod.rs]`                 |
+| Tauri command error handling             | `Result<T, String>` — not custom error types serialized manually                 | `[CITED: Tauri v2 docs]`                         |
 
 ---
 
@@ -509,16 +522,17 @@ If one of the parallel `invoke()` calls in `onMount` fails, `Promise.all` reject
 
 ```typescript
 const results = await Promise.allSettled([
-    invoke<CharacterCard[]>('get_characters'),
-    invoke<UserPersona[]>('get_personas'),
-    invoke<Conversation[]>('get_conversations'),
-    invoke<PromptPreset[]>('get_presets'),
+  invoke<CharacterCard[]>("get_characters"),
+  invoke<UserPersona[]>("get_personas"),
+  invoke<Conversation[]>("get_conversations"),
+  invoke<PromptPreset[]>("get_presets"),
 ]);
 ```
 
 ### 9. Migration 10 and Existing Data
 
 If we port all 9 gtk_ref migrations and add migration 10 for the Phase 2 schema changes, we need migration 10 to handle existing data gracefully:
+
 - `title` and `last_message_preview` on conversations should backfill from existing data
 - Since Phase 2 is the first real use, there IS no existing data — so `DEFAULT ''` is sufficient
 - But the planner should verify: are we running these migrations fresh or is there test data?
@@ -597,43 +611,52 @@ pub async fn get_characters(
 ```typescript
 // src/lib/data/api.ts — typed wrappers over invoke()
 
-import { invoke } from '@tauri-apps/api/core';
-import type { CharacterCard, UserPersona, Conversation, Message, PromptPreset } from '$lib/types';
+import { invoke } from "@tauri-apps/api/core";
+import type {
+  CharacterCard,
+  UserPersona,
+  Conversation,
+  Message,
+  PromptPreset,
+} from "$lib/types";
 
 export async function getCharacters(): Promise<CharacterCard[]> {
-    return invoke<CharacterCard[]>('get_characters');
+  return invoke<CharacterCard[]>("get_characters");
 }
 
 export async function getPersonas(): Promise<UserPersona[]> {
-    return invoke<UserPersona[]>('get_personas');
+  return invoke<UserPersona[]>("get_personas");
 }
 
 export async function getConversations(): Promise<Conversation[]> {
-    return invoke<Conversation[]>('get_conversations');
+  return invoke<Conversation[]>("get_conversations");
 }
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
-    return invoke<Message[]>('get_messages', { conversationId });
+  return invoke<Message[]>("get_messages", { conversationId });
 }
 
 export async function getPresets(): Promise<PromptPreset[]> {
-    return invoke<PromptPreset[]>('get_presets');
+  return invoke<PromptPreset[]>("get_presets");
 }
 
-export async function startConversation(characterId: string): Promise<Conversation> {
-    return invoke<Conversation>('start_conversation', { characterId });
+export async function startConversation(
+  characterId: string,
+): Promise<Conversation> {
+  return invoke<Conversation>("start_conversation", { characterId });
 }
 
-export async function saveMessage(message: Omit<Message, 'id'>): Promise<void> {
-    return invoke('save_message', { message });
+export async function saveMessage(message: Omit<Message, "id">): Promise<void> {
+  return invoke("save_message", { message });
 }
 
 export async function deleteConversation(id: string): Promise<void> {
-    return invoke('delete_conversation', { id });
+  return invoke("delete_conversation", { id });
 }
 ```
 
 **Creating a typed API layer** (`src/lib/data/api.ts`) instead of scattering `invoke()` calls throughout components has these benefits:
+
 - Single place to update if command signatures change
 - Type narrowing at the boundary
 - Easier to mock for testing
@@ -851,5 +874,5 @@ These are NOT locked decisions — the planner should resolve them:
 
 ---
 
-*Phase: 02-Persistent Data*
-*Research gathered: 2026-05-11*
+_Phase: 02-Persistent Data_
+_Research gathered: 2026-05-11_

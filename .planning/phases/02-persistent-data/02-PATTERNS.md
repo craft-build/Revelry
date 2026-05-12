@@ -9,75 +9,85 @@ This document maps each file to be created/modified in Phase 2 to its closest ex
 
 ## File Inventory
 
-| # | File | Role | Data Flow | Analog Source |
-|---|------|------|-----------|---------------|
-| 1 | `src-tauri/src/domain/mod.rs` | Module registry | — | `gtk_ref/src/domain/mod.rs` |
-| 2 | `src-tauri/src/domain/character.rs` | Domain model | Rust ↔ DB ↔ TS | `gtk_ref/src/domain/character.rs` |
-| 3 | `src-tauri/src/domain/conversation.rs` | Domain model | Rust ↔ DB ↔ TS | `gtk_ref/src/domain/conversation.rs` |
-| 4 | `src-tauri/src/domain/persona.rs` | Domain model | Rust ↔ DB ↔ TS | `gtk_ref/src/domain/persona.rs` |
-| 5 | `src-tauri/src/domain/generation.rs` | Domain model | Rust ↔ DB ↔ TS | `gtk_ref/src/domain/generation.rs` |
-| 6 | `src-tauri/src/db/mod.rs` | DB worker + command enum | Rust ↔ Tauri IPC | `gtk_ref/src/db/mod.rs` |
-| 7 | `src-tauri/src/db/migrations.rs` | Schema migrations | App startup → SQLite | `gtk_ref/src/db/migrations.rs` |
-| 8 | `src-tauri/src/db/models.rs` | Row mappers | SQLite → Rust domain | `gtk_ref/src/db/models.rs` |
-| 9 | `src-tauri/src/db/characters.rs` | Character CRUD | Rust domain ↔ SQLite | `gtk_ref/src/db/characters.rs` |
-| 10 | `src-tauri/src/db/personas.rs` | Persona CRUD | Rust domain ↔ SQLite | `gtk_ref/src/db/personas.rs` |
-| 11 | `src-tauri/src/db/conversations.rs` | Conversation/Message CRUD | Rust domain ↔ SQLite | `gtk_ref/src/db/conversations.rs` |
-| 12 | `src-tauri/src/db/generation.rs` | Preset CRUD + seeding | Rust domain ↔ SQLite | `gtk_ref/src/db/generation.rs` |
-| 13 | `src-tauri/src/commands/mod.rs` | Command registry | Tauri IPC → DB worker | — (new) |
-| 14 | `src-tauri/src/commands/characters.rs` | Tauri command handlers | TS invoke → Rust → DB | — (new, pattern from RESEARCH) |
-| 15 | `src-tauri/src/commands/conversations.rs` | Tauri command handlers | TS invoke → Rust → DB | — (new, pattern from RESEARCH) |
-| 16 | `src-tauri/src/commands/personas.rs` | Tauri command handlers | TS invoke → Rust → DB | — (new, pattern from RESEARCH) |
-| 17 | `src-tauri/src/commands/presets.rs` | Tauri command handlers | TS invoke → Rust → DB | — (new, pattern from RESEARCH) |
-| 18 | `src-tauri/Cargo.toml` | Dependency manifest | — | `src-tauri/Cargo.toml` (extend) |
-| 19 | `src-tauri/src/lib.rs` | App entry point | Startup → DB init + commands | `src-tauri/src/lib.rs` (extend) |
-| 20 | `src/lib/stores/app.svelte.ts` | Frontend state | invoke() → AppState | `src/lib/stores/app.svelte.ts` (modify) |
-| 21 | `src/lib/types/index.ts` | TypeScript types | Rust serde → TS interface | `src/lib/types/index.ts` (modify) |
-| 22 | `src/routes/+layout.svelte` | App shell | onMount → invoke → hydrate | `src/routes/+layout.svelte` (modify) |
-| 23 | `src/lib/data/mock.ts` | Remove after wiring | — | `src/lib/data/mock.ts` (delete) |
-| 24 | `src/lib/utils/index.ts` | Utilities | Possibly update estimateTokens | `src/lib/utils/index.ts` (review) |
+| #   | File                                      | Role                      | Data Flow                      | Analog Source                           |
+| --- | ----------------------------------------- | ------------------------- | ------------------------------ | --------------------------------------- |
+| 1   | `src-tauri/src/domain/mod.rs`             | Module registry           | —                              | `gtk_ref/src/domain/mod.rs`             |
+| 2   | `src-tauri/src/domain/character.rs`       | Domain model              | Rust ↔ DB ↔ TS                 | `gtk_ref/src/domain/character.rs`       |
+| 3   | `src-tauri/src/domain/conversation.rs`    | Domain model              | Rust ↔ DB ↔ TS                 | `gtk_ref/src/domain/conversation.rs`    |
+| 4   | `src-tauri/src/domain/persona.rs`         | Domain model              | Rust ↔ DB ↔ TS                 | `gtk_ref/src/domain/persona.rs`         |
+| 5   | `src-tauri/src/domain/generation.rs`      | Domain model              | Rust ↔ DB ↔ TS                 | `gtk_ref/src/domain/generation.rs`      |
+| 6   | `src-tauri/src/db/mod.rs`                 | DB worker + command enum  | Rust ↔ Tauri IPC               | `gtk_ref/src/db/mod.rs`                 |
+| 7   | `src-tauri/src/db/migrations.rs`          | Schema migrations         | App startup → SQLite           | `gtk_ref/src/db/migrations.rs`          |
+| 8   | `src-tauri/src/db/models.rs`              | Row mappers               | SQLite → Rust domain           | `gtk_ref/src/db/models.rs`              |
+| 9   | `src-tauri/src/db/characters.rs`          | Character CRUD            | Rust domain ↔ SQLite           | `gtk_ref/src/db/characters.rs`          |
+| 10  | `src-tauri/src/db/personas.rs`            | Persona CRUD              | Rust domain ↔ SQLite           | `gtk_ref/src/db/personas.rs`            |
+| 11  | `src-tauri/src/db/conversations.rs`       | Conversation/Message CRUD | Rust domain ↔ SQLite           | `gtk_ref/src/db/conversations.rs`       |
+| 12  | `src-tauri/src/db/generation.rs`          | Preset CRUD + seeding     | Rust domain ↔ SQLite           | `gtk_ref/src/db/generation.rs`          |
+| 13  | `src-tauri/src/commands/mod.rs`           | Command registry          | Tauri IPC → DB worker          | — (new)                                 |
+| 14  | `src-tauri/src/commands/characters.rs`    | Tauri command handlers    | TS invoke → Rust → DB          | — (new, pattern from RESEARCH)          |
+| 15  | `src-tauri/src/commands/conversations.rs` | Tauri command handlers    | TS invoke → Rust → DB          | — (new, pattern from RESEARCH)          |
+| 16  | `src-tauri/src/commands/personas.rs`      | Tauri command handlers    | TS invoke → Rust → DB          | — (new, pattern from RESEARCH)          |
+| 17  | `src-tauri/src/commands/presets.rs`       | Tauri command handlers    | TS invoke → Rust → DB          | — (new, pattern from RESEARCH)          |
+| 18  | `src-tauri/Cargo.toml`                    | Dependency manifest       | —                              | `src-tauri/Cargo.toml` (extend)         |
+| 19  | `src-tauri/src/lib.rs`                    | App entry point           | Startup → DB init + commands   | `src-tauri/src/lib.rs` (extend)         |
+| 20  | `src/lib/stores/app.svelte.ts`            | Frontend state            | invoke() → AppState            | `src/lib/stores/app.svelte.ts` (modify) |
+| 21  | `src/lib/types/index.ts`                  | TypeScript types          | Rust serde → TS interface      | `src/lib/types/index.ts` (modify)       |
+| 22  | `src/routes/+layout.svelte`               | App shell                 | onMount → invoke → hydrate     | `src/routes/+layout.svelte` (modify)    |
+| 23  | `src/lib/data/mock.ts`                    | Remove after wiring       | —                              | `src/lib/data/mock.ts` (delete)         |
+| 24  | `src/lib/utils/index.ts`                  | Utilities                 | Possibly update estimateTokens | `src/lib/utils/index.ts` (review)       |
 
 ---
 
 ## Role Classifications
 
 ### Domain Models (Files 1–5)
+
 **Role:** Pure data structs with serde serialization. Source of truth for the type contract between Rust and TypeScript. No business logic — just constructors, defaults, and serde derives.
 
 **Data Flow:**
+
 ```
 SQLite TEXT rows → models.rs row_to_*() → Domain struct → serde_json → Tauri IPC → TypeScript
 TypeScript → Tauri IPC → serde_json → Domain struct → CRUD functions → SQLite TEXT
 ```
 
 ### DB Layer (Files 6–12)
+
 **Role:** SQLite persistence. The background-thread worker owns the connection and processes commands sequentially. CRUD functions are pure functions taking `&Connection`. Row mappers translate between SQLite rows and domain structs.
 
 **Data Flow:**
+
 ```
 Tauri command → DbCommand enum → mpsc::Sender → worker thread → CRUD fn → Connection → SQLite
 SQLite → Row → models.rs mapper → Domain struct → oneshot::Sender → Tauri command → Frontend
 ```
 
 ### Command Handlers (Files 13–17)
+
 **Role:** Thin async wrappers that bridge Tauri IPC to the DB worker. Each handler creates a oneshot channel, sends a `DbCommand`, and awaits the result. No business logic.
 
 **Data Flow:**
+
 ```
 Frontend invoke('get_characters') → #[tauri::command] async fn → DbWorker::send() → DbCommand → oneshot result
 ```
 
 ### App Wiring (Files 18–19)
+
 **Role:** Startup initialization. `Cargo.toml` adds the dependency graph. `lib.rs` creates the DB worker, manages it as Tauri state, and registers all command handlers.
 
 **Data Flow:**
+
 ```
 App launch → lib.rs::run() → DbWorker::start(db_path) → app.manage(db_worker) → invoke_handler([...])
 ```
 
 ### Frontend Integration (Files 20–24)
+
 **Role:** Replace mock data with real IPC. Add loading state. Align TypeScript types with Rust serde output. Remove mock.ts.
 
 **Data Flow:**
+
 ```
 onMount → invoke('get_characters'), invoke('get_personas'), ... → Promise.allSettled → app.hydrate(data)
 ```
@@ -91,6 +101,7 @@ onMount → invoke('get_characters'), invoke('get_personas'), ... → Promise.al
 #### Analog: `gtk_ref/src/domain/character.rs`
 
 The gtk_ref `CharacterCardV2` struct is the direct porting target. Two key changes for the Tauri version:
+
 - Replace `NaiveDateTime` with `DateTime<Utc>` (D-09)
 - Keep all serde derives and `#[serde(default)]` annotations
 
@@ -193,6 +204,7 @@ impl CharacterCardV2 {
 ```
 
 **Changes for Tauri version:**
+
 - `chrono::NaiveDateTime` → `chrono::DateTime<Utc>` for all timestamp fields
 - Constructor uses `Utc::now()` instead of `Local::now().naive_local()`
 - Add `#[serde(with = "chrono::serde::ts_seconds")]` or rely on `DateTime<Utc>`'s default ISO 8601 serde
@@ -265,12 +277,14 @@ impl FromStr for MessageRole {
 ```
 
 **Changes for Tauri version:**
+
 - `Conversation`: Change `provider_id: String` → `Option<String>` (nullable until Phase 3)
 - `Conversation`: Add `title: String` and `last_message_preview: String` (D-13)
 - `Message`: Remove `branch_id` (D-03 — branching deferred to Phase 8)
 - All timestamps: `NaiveDateTime` → `DateTime<Utc>`
 
 **Phase 2 Conversation struct:**
+
 ```rust
 pub struct Conversation {
     pub id: String,
@@ -286,6 +300,7 @@ pub struct Conversation {
 ```
 
 **Phase 2 Message struct:**
+
 ```rust
 pub struct Message {
     pub id: String,
@@ -518,6 +533,7 @@ impl DbWorker {
 ```
 
 **Key differences from gtk_ref:**
+
 - `DbOutput` enum eliminated — reply type is encoded in the oneshot channel
 - `tokio::sync::oneshot` for replies (async-compatible with Tauri's tokio runtime)
 - `std::sync::mpsc` for commands (blocking recv on the worker thread)
@@ -677,6 +693,7 @@ CREATE TABLE regex_scripts ( ... ); -- verbatim from gtk_ref M9
 ```
 
 **Key differences from gtk_ref:**
+
 - `conversations.provider_id` is nullable (no `NOT NULL`) — allows conversations without providers in Phase 2
 - `conversations` has `title` and `last_message_preview` columns (D-13)
 - `messages` has no `branch_id` column (D-03)
@@ -807,6 +824,7 @@ pub fn start_conversation(
 ```
 
 **Changes for Tauri version:**
+
 - `provider_id: &str` → `provider_id: Option<&str>` (nullable)
 - Set `conversation.title = format!("Chat with {}", character.name)` (D-13)
 - Set `conversation.last_message_preview = character.first_mes.clone()` (D-13)
@@ -836,6 +854,7 @@ pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
 ```
 
 **Changes for Tauri version:**
+
 - Remove `branch_id` from INSERT (D-03)
 - Also update `last_message_preview` on the conversation (D-13):
   ```rust
@@ -859,6 +878,7 @@ pub fn load_messages(
 ```
 
 **Change:** Simplify to just `conversation_id` parameter (no branch_id). Query becomes:
+
 ```sql
 SELECT id, conversation_id, role, content, sort_order, timestamp
 FROM messages WHERE conversation_id = ?1 ORDER BY sort_order ASC
@@ -963,6 +983,7 @@ pub async fn search_characters(
 ```
 
 **Handler modules to create:**
+
 - `commands/characters.rs` — `get_characters`, `save_character`, `delete_character`, `search_characters`
 - `commands/personas.rs` — `get_personas`, `save_persona`, `delete_persona`
 - `commands/conversations.rs` — `get_conversations`, `start_conversation`, `delete_conversation`, `get_messages`, `save_message`
@@ -989,6 +1010,7 @@ serde_json = "1"
 ```
 
 **Additions needed:**
+
 ```toml
 rusqlite = { version = "0.31", features = ["bundled"] }
 rusqlite_migration = "1"
@@ -1099,17 +1121,18 @@ class AppState {
 ```
 
 **Changes:**
+
 1. Add `is_loading` and `init_error` states (D-18)
 2. `hydrate()` data source changes from mock to invoke (D-17)
 3. Keep the `hydrate()` method signature — it will be called with real data from `+layout.svelte`
 
 ```typescript
 class AppState {
-    // ... existing fields ...
-    is_loading = $state<boolean>(true);
-    init_error = $state<string | null>(null);
+  // ... existing fields ...
+  is_loading = $state<boolean>(true);
+  init_error = $state<string | null>(null);
 
-    // hydrate() method unchanged — data source changes in +layout.svelte
+  // hydrate() method unchanged — data source changes in +layout.svelte
 }
 ```
 
@@ -1126,8 +1149,9 @@ export type MessageRole = 'user' | 'character' | 'system';
 ```
 
 **Change to:**
+
 ```typescript
-export type MessageRole = 'user' | 'assistant' | 'system';
+export type MessageRole = "user" | "assistant" | "system";
 ```
 
 This aligns with Rust's `MessageRole::Assistant` which serializes as `"assistant"`. All frontend components that check `role === 'character'` must be updated to `role === 'assistant'`.
@@ -1150,18 +1174,19 @@ export interface Message {
 ```
 
 **Change to:**
+
 ```typescript
 export interface Message {
-    id: string;
-    conversation_id: string;
-    role: MessageRole;
-    content: string;
-    sort_order: number;
-    timestamp: string;
-    token_count?: number;
-    metadata?: MessageMetadata;
-    /** UI-only: true while tokens are still streaming in */
-    is_streaming?: boolean;
+  id: string;
+  conversation_id: string;
+  role: MessageRole;
+  content: string;
+  sort_order: number;
+  timestamp: string;
+  token_count?: number;
+  metadata?: MessageMetadata;
+  /** UI-only: true while tokens are still streaming in */
+  is_streaming?: boolean;
 }
 ```
 
@@ -1184,17 +1209,18 @@ export interface Conversation {
 ```
 
 **Change to:**
+
 ```typescript
 export interface Conversation {
-    id: string;
-    character_id: string;
-    provider_id?: string;
-    creator_persona_id?: string;
-    generation_preset_id?: string;
-    title: string;
-    last_message_preview: string;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  character_id: string;
+  provider_id?: string;
+  creator_persona_id?: string;
+  generation_preset_id?: string;
+  title: string;
+  last_message_preview: string;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -1227,19 +1253,20 @@ export interface PromptPreset {
 ```
 
 **Change to:**
+
 ```typescript
 export interface GenerationPreset {
-    id: string;
-    name: string;
-    is_builtin: boolean;
-    temperature: number;
-    top_p: number;
-    max_tokens: number;
-    frequency_penalty: number;
-    presence_penalty: number;
-    stop_sequences: string[];
-    created_at: string;
-    updated_at: string;
+  id: string;
+  name: string;
+  is_builtin: boolean;
+  temperature: number;
+  top_p: number;
+  max_tokens: number;
+  frequency_penalty: number;
+  presence_penalty: number;
+  stop_sequences: string[];
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -1266,6 +1293,7 @@ onMount(() => {
 ```
 
 **Change to:**
+
 ```svelte
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core';
@@ -1320,6 +1348,7 @@ onMount(() => {
 ```
 
 **Key patterns:**
+
 - `Promise.allSettled` instead of `Promise.all` (handles partial failure — Pitfall #8)
 - `invoke()` with type parameters for type-safe deserialization
 - Empty `providers` array (Phase 3)
@@ -1330,6 +1359,7 @@ onMount(() => {
 ### 11. Mock Data Removal: `src/lib/data/mock.ts`
 
 **Delete this file entirely** after all components have been rewired to use `invoke()`. Before deletion, verify:
+
 1. `+layout.svelte` no longer imports from `mock.ts`
 2. No component still references `mockCharacters`, `mockPersonas`, etc.
 3. The `getMessages()` stub function in `mock.ts` is replaced by `invoke('get_messages', { conversationId })`
@@ -1357,34 +1387,34 @@ No changes required in Phase 2. The comment says "The real app will swap this fo
 
 All timestamps in the system follow this contract:
 
-| Layer | Type | Serialization |
-|-------|------|---------------|
-| Rust domain | `chrono::DateTime<Utc>` | `#[serde]` → ISO 8601 `"2026-05-11T14:30:00Z"` |
-| Rust → SQLite | `String` via `.to_rfc3339()` | `"2026-05-11T14:30:00Z"` |
-| SQLite → Rust | `.parse::<DateTime<Utc>>()` | ISO 8601 parse |
-| Tauri IPC | JSON string | `"2026-05-11T14:30:00Z"` |
-| TypeScript | `string` | No parsing needed — pass through |
+| Layer         | Type                         | Serialization                                  |
+| ------------- | ---------------------------- | ---------------------------------------------- |
+| Rust domain   | `chrono::DateTime<Utc>`      | `#[serde]` → ISO 8601 `"2026-05-11T14:30:00Z"` |
+| Rust → SQLite | `String` via `.to_rfc3339()` | `"2026-05-11T14:30:00Z"`                       |
+| SQLite → Rust | `.parse::<DateTime<Utc>>()`  | ISO 8601 parse                                 |
+| Tauri IPC     | JSON string                  | `"2026-05-11T14:30:00Z"`                       |
+| TypeScript    | `string`                     | No parsing needed — pass through               |
 
 ### JSON Column Contract
 
 Lists and objects stored as JSON TEXT in SQLite:
 
-| Column | Rust Type | SQLite Storage | Serialization |
-|--------|-----------|----------------|---------------|
-| `tags` | `Vec<String>` | `TEXT` | `serde_json::to_string()` |
-| `alternate_greetings` | `Vec<String>` | `TEXT` | `serde_json::to_string()` |
-| `extensions` | `serde_json::Value` | `TEXT` | `serde_json::to_string()` |
-| `character_book` | `serde_json::Value` | `TEXT` | `serde_json::to_string()` |
-| `stop_sequences` | `Vec<String>` | `TEXT` | `serde_json::to_string()` |
+| Column                | Rust Type           | SQLite Storage | Serialization             |
+| --------------------- | ------------------- | -------------- | ------------------------- |
+| `tags`                | `Vec<String>`       | `TEXT`         | `serde_json::to_string()` |
+| `alternate_greetings` | `Vec<String>`       | `TEXT`         | `serde_json::to_string()` |
+| `extensions`          | `serde_json::Value` | `TEXT`         | `serde_json::to_string()` |
+| `character_book`      | `serde_json::Value` | `TEXT`         | `serde_json::to_string()` |
+| `stop_sequences`      | `Vec<String>`       | `TEXT`         | `serde_json::to_string()` |
 
 ### Error Handling Contract
 
-| Layer | Error Type | Conversion |
-|-------|-----------|------------|
-| CRUD functions | `anyhow::Result<T>` | `?` propagation |
+| Layer           | Error Type          | Conversion                      |
+| --------------- | ------------------- | ------------------------------- |
+| CRUD functions  | `anyhow::Result<T>` | `?` propagation                 |
 | DB worker match | `Result<T, String>` | `.map_err(\|e\| e.to_string())` |
-| Tauri commands | `Result<T, String>` | `?` propagation |
-| Frontend invoke | Rejected Promise | `.catch()` or `allSettled` |
+| Tauri commands  | `Result<T, String>` | `?` propagation                 |
+| Frontend invoke | Rejected Promise    | `.catch()` or `allSettled`      |
 
 ### Upsert Pattern
 
@@ -1429,4 +1459,4 @@ The pattern dependencies suggest this implementation order:
 
 ---
 
-*Phase: 02-Persistent Data — Pattern Mapping*
+_Phase: 02-Persistent Data — Pattern Mapping_

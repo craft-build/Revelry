@@ -5,13 +5,16 @@
 ## Test Framework
 
 **Runner:**
+
 - None configured. No test runner, test framework, or test scripts found in `package.json`.
 - Config: No test config file found (no `vitest.config.*`, `jest.config.*`, `playwright.config.*`)
 
 **Assertion Library:**
+
 - None installed or configured.
 
 **Run Commands:**
+
 ```bash
 # No test commands exist. Available verification commands:
 npm run check       # svelte-check + tsc type checking
@@ -22,14 +25,17 @@ npm run build       # vite build (compile-time verification)
 ## Test File Organization
 
 **Location:**
+
 - No test files exist in the repository.
 - No `__tests__` directories, `*.test.*` files, or `*.spec.*` files found.
 - No `tests/` or `test/` directory at any level.
 
 **Naming:**
+
 - N/A — no tests present.
 
 **Structure:**
+
 ```
 # No test directory structure exists
 ```
@@ -37,11 +43,13 @@ npm run build       # vite build (compile-time verification)
 ## Test Structure
 
 **Suite Organization:**
+
 ```typescript
 // No test suites found in the codebase
 ```
 
 **Patterns:**
+
 - No setup, teardown, or assertion patterns established.
 - The closest thing to "testing" is the mock streaming system in `src/routes/chat/[id]/+page.svelte` which simulates AI responses for manual UI verification.
 
@@ -50,6 +58,7 @@ npm run build       # vite build (compile-time verification)
 **Framework:** None configured.
 
 **Patterns:**
+
 ```typescript
 // No automated mocking patterns exist.
 // Manual mock data is used as a substitute for real backend data:
@@ -64,6 +73,7 @@ npm run build       # vite build (compile-time verification)
 ```
 
 **What to Mock:**
+
 - Based on the codebase architecture, the following would need mocking when tests are added:
   - Backend bridge (Tauri IPC `invoke()` calls) — currently stubbed in `src/routes/chat/[id]/+page.svelte` `handleSend()`
   - API providers (Anthropic, OpenAI, Ollama) — provider list in `src/lib/data/mock.ts`
@@ -72,6 +82,7 @@ npm run build       # vite build (compile-time verification)
   - Database queries — `getMessages()` in `src/lib/data/mock.ts` is a stub
 
 **What NOT to Mock:**
+
 - UI component rendering and state reactivity (these are what tests should verify)
 - `cn()` utility — it's a pure function (`clsx` + `twMerge`), safe to test directly
 - Type definitions in `src/lib/types/index.ts` — pure data shapes, no behavior to mock
@@ -79,6 +90,7 @@ npm run build       # vite build (compile-time verification)
 ## Fixtures and Factories
 
 **Test Data:**
+
 ```typescript
 // src/lib/data/mock.ts serves as the de facto fixture system:
 // - Hand-authored character cards with realistic roleplay content
@@ -92,6 +104,7 @@ const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
 ```
 
 **Location:**
+
 - `src/lib/data/mock.ts` — centralized mock/fixture data file
 - Inline mock streaming data in `src/routes/chat/[id]/+page.svelte` (`sample` variable in `handleSend()`)
 
@@ -100,6 +113,7 @@ const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
 **Requirements:** None enforced. No coverage tooling installed.
 
 **View Coverage:**
+
 ```bash
 # No coverage command available
 ```
@@ -107,23 +121,27 @@ const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
 ## Test Types
 
 **Unit Tests:**
+
 - Not present. Candidates when added:
   - `src/lib/utils/index.ts` — pure functions (`cn()`, `formatRelativeTime()`, `estimateTokens()`, `avatarInitials()`) are ideal unit test targets
   - `src/lib/stores/app.svelte.ts` — `AppState` class methods (`hydrate()`, `openConversation()`, `appendMessage()`, `updateStreamingMessage()`, `toggleSidebar()`, `switchPersona()`) and derived getters
   - `src/lib/data/mock.ts` — `getMessages()` function
 
 **Integration Tests:**
+
 - Not present. Candidates when added:
   - Component interaction flows (e.g., typing in `MessageInput` → message appears in list, clicking persona in `PersonaSwitcher` → active persona changes)
   - Route navigation (e.g., `/chat/[id]` loads conversation, `/characters?tab=personas` switches tab)
   - State hydration flow in `+layout.svelte` (`onMount` → `app.hydrate()`)
 
 **E2E Tests:**
+
 - Not used. No Playwright, Cypress, or similar framework configured.
 
 ## Common Patterns
 
 **Async Testing:**
+
 ```typescript
 // No async test patterns exist.
 // The codebase uses async in:
@@ -133,6 +151,7 @@ const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
 ```
 
 **Error Testing:**
+
 ```typescript
 // No error testing patterns exist.
 // The codebase uses guard clauses rather than thrown exceptions,
@@ -149,10 +168,11 @@ const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
 **Type Safety as Testing:** The project uses TypeScript strict mode (`"strict": true` in `tsconfig.json`) and `svelte-check` (`npm run check`) as the primary automated verification — catching type errors, unused variables, and Svelte template issues at compile time.
 
 **Recommended Additions:**
+
 - Vitest is the natural fit (already using Vite) — add `vitest` and `@testing-library/svelte` for component testing
 - Unit tests for pure utilities in `src/lib/utils/index.ts` are the lowest-effort starting point
 - The `AppState` class in `src/lib/stores/app.svelte.ts` is well-structured for isolated unit testing
 
 ---
 
-*Testing analysis: 2026-05-10*
+_Testing analysis: 2026-05-10_

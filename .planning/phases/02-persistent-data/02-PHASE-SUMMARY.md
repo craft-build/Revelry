@@ -16,11 +16,41 @@ provides:
   - Typed TypeScript API layer with invoke() wrappers
   - Frontend loading/error states with skeleton UI
   - TypeScript types aligned with Rust serde output
-affects: [03-provider-setup, 04-live-conversations, 05-smart-prompts, 06-rich-output, 07-editors, 08-advanced-conversations, 09-power-features]
+affects:
+  [
+    03-provider-setup,
+    04-live-conversations,
+    05-smart-prompts,
+    06-rich-output,
+    07-editors,
+    08-advanced-conversations,
+    09-power-features,
+  ]
 
 tech-stack:
-  added: [rusqlite 0.31 bundled, rusqlite-migration 1.0, chrono 0.4, uuid 1, thiserror 2, dirs 6, anyhow 1, tokio 1 sync, tracing 0.1]
-  patterns: [background-thread DB worker, mpsc channel DbCommand pattern, oneshot reply channels, Tauri State for DbWorker, snake_case Tauri v2 command names, DateTime<Utc> with rfc3339 serialization, FTS5 with sanitize_fts_query, Promise.allSettled for partial failure]
+  added:
+    [
+      rusqlite 0.31 bundled,
+      rusqlite-migration 1.0,
+      chrono 0.4,
+      uuid 1,
+      thiserror 2,
+      dirs 6,
+      anyhow 1,
+      tokio 1 sync,
+      tracing 0.1,
+    ]
+  patterns:
+    [
+      background-thread DB worker,
+      mpsc channel DbCommand pattern,
+      oneshot reply channels,
+      Tauri State for DbWorker,
+      snake_case Tauri v2 command names,
+      DateTime<Utc> with rfc3339 serialization,
+      FTS5 with sanitize_fts_query,
+      Promise.allSettled for partial failure,
+    ]
 
 key-files:
   created:
@@ -78,7 +108,20 @@ patterns-established:
   - "Type alignment: Rust serde output is source of truth, TypeScript types match exactly"
   - "Frontend API layer: typed invoke() wrappers in src/lib/data/api.ts, snake_case command names"
 
-requirements-completed: [DB-01, DB-02, DB-03, CHAR-01, PERS-01, PERS-05, CONV-01, CONV-02, CONV-03, CONV-04, CONV-05]
+requirements-completed:
+  [
+    DB-01,
+    DB-02,
+    DB-03,
+    CHAR-01,
+    PERS-01,
+    PERS-05,
+    CONV-01,
+    CONV-02,
+    CONV-03,
+    CONV-04,
+    CONV-05,
+  ]
 
 duration: ~80min
 completed: 2026-05-11
@@ -97,6 +140,7 @@ completed: 2026-05-11
 - **Files modified:** ~25 created/modified, 1 deleted
 
 ## Accomplishments
+
 - Complete SQLite persistence layer ported from gtk_ref with DateTime<Utc> timestamps
 - 16 Tauri IPC commands enabling full CRUD for characters, personas, conversations, messages, presets
 - Frontend wired to real backend — mock.ts deleted, all data flows through invoke()
@@ -106,23 +150,27 @@ completed: 2026-05-11
 ## Plan Summaries
 
 ### Plan 02-01: Domain models + schema + DbWorker
+
 - 5 domain models ported with DateTime<Utc>
 - Single collapsed migration producing Phase 2 schema
 - DbWorker with mpsc channel background-thread pattern
 - 42 tests passing
 
 ### Plan 02-02: CRUD functions + row mappers
+
 - 5 row mapper functions (character, persona, conversation, message, generation_preset)
 - Full CRUD for characters (FTS5 search), personas (LIKE search), conversations (with denormalization), messages, presets
 - 80 tests passing
 
 ### Plan 02-03: Tauri IPC commands
+
 - 16 command handlers in 4 module files
 - DbWorker initialization in lib.rs with dirs::data_dir() path resolution
 - App exits loudly on DB init failure
 - PRAGMAs moved out of migration (WAL can't run in transaction)
 
 ### Plan 02-04: Frontend wiring
+
 - TypeScript types aligned with Rust serde output
 - Typed API layer (api.ts) with 16 invoke() wrappers
 - AppState with is_loading/init_error, async switchPersona with optimistic update
@@ -130,6 +178,7 @@ completed: 2026-05-11
 - mock.ts deleted — no mock data remains
 
 ## Decisions Made
+
 - DateTime<Utc> with .to_rfc3339() instead of NaiveDateTime — better IPC portability
 - Single collapsed migration — no existing data to preserve
 - PRAGMAs moved to configure_connection() — WAL can't run inside rusqlite_migration transaction
@@ -142,6 +191,7 @@ completed: 2026-05-11
 ### Auto-fixed Issues
 
 **1. PRAGMA placement — WAL mode cannot run inside transaction**
+
 - **Found during:** Plan 02-03 (lib.rs wiring)
 - **Issue:** rusqlite_migration wraps migrations in a transaction; PRAGMA journal_mode=WAL fails inside a transaction
 - **Fix:** Moved PRAGMAs out of migration SQL into a `configure_connection()` function that runs before migrations
@@ -149,6 +199,7 @@ completed: 2026-05-11
 - **Verification:** cargo test --lib passes, WAL mode confirmed set
 
 **2. DbCommand fire-and-forget → request/response pattern**
+
 - **Found during:** Plan 02-03 (command handler implementation)
 - **Issue:** Original DbCommand variants lacked reply channels — command handlers had no way to receive results
 - **Fix:** Added `reply: oneshot::Sender<anyhow::Result<T>>` to every DbCommand variant
@@ -161,12 +212,15 @@ completed: 2026-05-11
 **Impact on plan:** Both necessary for correctness. No scope creep.
 
 ## Issues Encountered
+
 None beyond the auto-fixed deviations above.
 
 ## User Setup Required
+
 None — database is created automatically on first launch.
 
 ## Next Phase Readiness
+
 - SQLite persistence layer complete and tested
 - All 16 Tauri IPC commands available for Phase 3 (provider CRUD will follow same pattern)
 - Frontend API layer established — Phase 3 commands will add provider wrappers to api.ts
@@ -174,5 +228,6 @@ None — database is created automatically on first launch.
 - Phase 3 (Provider Setup) can proceed immediately
 
 ---
-*Phase: 02-persistent-data*
-*Completed: 2026-05-11*
+
+_Phase: 02-persistent-data_
+_Completed: 2026-05-11_

@@ -12,18 +12,24 @@
 	interface Props {
 		steps: Step[];
 		class?: string;
+		onstepclick?: (index: number) => void;
 	}
 
-	let { steps, class: className }: Props = $props();
+	let { steps, class: className, onstepclick }: Props = $props();
 </script>
 
 <nav class={cn('flex items-center gap-1', className)} aria-label="Progress steps">
 	{#each steps as step, i}
 		<div class="flex items-center gap-2">
 			<!-- Step indicator circle -->
-			<div
+			<button
+				type="button"
+				disabled={!onstepclick || step.state !== 'completed'}
+				onclick={onstepclick && step.state === 'completed' ? () => onstepclick(i) : undefined}
 				class={cn(
 					'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition-colors',
+					onstepclick && step.state === 'completed' && 'cursor-pointer hover:opacity-80',
+					(!onstepclick || step.state !== 'completed') && 'cursor-default',
 					step.state === 'completed' &&
 						'bg-(--color-accent) text-(--color-accent-fg)',
 					step.state === 'current' &&
@@ -38,9 +44,7 @@
 				{:else}
 					{i + 1}
 				{/if}
-			</div>
-
-			<!-- Step label -->
+			</button>
 			<span
 				class={cn(
 					'text-sm font-medium whitespace-nowrap',

@@ -7,6 +7,7 @@ Created 16 Tauri IPC command handlers that expose CRUD operations to the fronten
 ## Changes Made
 
 ### New Files
+
 - **`src-tauri/src/commands/mod.rs`** — Module declarations for all 4 command submodules
 - **`src-tauri/src/commands/characters.rs`** — 4 commands: `get_characters`, `save_character`, `delete_character`, `search_characters`
 - **`src-tauri/src/commands/personas.rs`** — 4 commands: `get_personas`, `save_persona`, `delete_persona`, `search_personas`
@@ -14,6 +15,7 @@ Created 16 Tauri IPC command handlers that expose CRUD operations to the fronten
 - **`src-tauri/src/commands/presets.rs`** — 1 command: `get_presets`
 
 ### Modified Files
+
 - **`src-tauri/src/db/mod.rs`** — Major refactor of DbCommand enum and DbWorker:
   - Added `reply: oneshot::Sender<anyhow::Result<T>>` to every `DbCommand` variant, converting from fire-and-forget to request/response pattern
   - Updated `handle_command()` to send results back through the reply channels instead of logging and discarding
@@ -41,24 +43,24 @@ Created 16 Tauri IPC command handlers that expose CRUD operations to the fronten
 
 ## Command Reference (for frontend)
 
-| Frontend invoke() | Rust function | Arguments | Returns |
-|---|---|---|---|
-| `get_characters` | `get_characters` | — | `Vec<CharacterCardV2>` |
-| `save_character` | `save_character` | `character: CharacterCardV2` | `CharacterCardV2` |
-| `delete_character` | `delete_character` | `id: String` | `void` |
-| `search_characters` | `search_characters` | `query: String` | `Vec<CharacterCardV2>` |
-| `get_personas` | `get_personas` | — | `Vec<Persona>` |
-| `save_persona` | `save_persona` | `persona: Persona` | `Persona` |
-| `delete_persona` | `delete_persona` | `id: String` | `void` |
-| `search_personas` | `search_personas` | `query: String` | `Vec<Persona>` |
-| `get_conversations` | `get_conversations` | — | `Vec<Conversation>` |
-| `start_conversation` | `start_conversation` | `characterId: String` | `Conversation` |
-| `delete_conversation` | `delete_conversation` | `id: String` | `void` |
-| `search_conversations` | `search_conversations` | `query: String` | `Vec<Conversation>` |
-| `get_messages` | `get_messages` | `conversationId: String` | `Vec<Message>` |
-| `save_message` | `save_message` | `message: Message` | `void` |
-| `update_conversation_persona` | `update_conversation_persona` | `conversationId: String`, `personaId: Option<String>` | `void` |
-| `get_presets` | `get_presets` | — | `Vec<GenerationPreset>` |
+| Frontend invoke()             | Rust function                 | Arguments                                             | Returns                 |
+| ----------------------------- | ----------------------------- | ----------------------------------------------------- | ----------------------- |
+| `get_characters`              | `get_characters`              | —                                                     | `Vec<CharacterCardV2>`  |
+| `save_character`              | `save_character`              | `character: CharacterCardV2`                          | `CharacterCardV2`       |
+| `delete_character`            | `delete_character`            | `id: String`                                          | `void`                  |
+| `search_characters`           | `search_characters`           | `query: String`                                       | `Vec<CharacterCardV2>`  |
+| `get_personas`                | `get_personas`                | —                                                     | `Vec<Persona>`          |
+| `save_persona`                | `save_persona`                | `persona: Persona`                                    | `Persona`               |
+| `delete_persona`              | `delete_persona`              | `id: String`                                          | `void`                  |
+| `search_personas`             | `search_personas`             | `query: String`                                       | `Vec<Persona>`          |
+| `get_conversations`           | `get_conversations`           | —                                                     | `Vec<Conversation>`     |
+| `start_conversation`          | `start_conversation`          | `characterId: String`                                 | `Conversation`          |
+| `delete_conversation`         | `delete_conversation`         | `id: String`                                          | `void`                  |
+| `search_conversations`        | `search_conversations`        | `query: String`                                       | `Vec<Conversation>`     |
+| `get_messages`                | `get_messages`                | `conversationId: String`                              | `Vec<Message>`          |
+| `save_message`                | `save_message`                | `message: Message`                                    | `void`                  |
+| `update_conversation_persona` | `update_conversation_persona` | `conversationId: String`, `personaId: Option<String>` | `void`                  |
+| `get_presets`                 | `get_presets`                 | —                                                     | `Vec<GenerationPreset>` |
 
 **Note:** Tauri v2 applies camelCase-to-snake_case conversion for command arguments. Frontend sends `{ characterId }` which maps to Rust's `character_id`.
 

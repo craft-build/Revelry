@@ -48,6 +48,7 @@ completed: 2026-05-10
 - **Files modified:** 6
 
 ## Accomplishments
+
 - Created window.json with 15 window management permissions including start-dragging
 - Created 5 plugin stub capability files (filesystem, dialog, shell, http, store)
 - default.json already correct from Plan 01-01 fixes
@@ -59,6 +60,7 @@ completed: 2026-05-10
 2. **Task 08: Verification** - cargo check passes (no separate commit needed)
 
 ## Files Created/Modified
+
 - `src-tauri/capabilities/window.json` — 15 window permissions (drag, resize, maximize, fullscreen, etc.)
 - `src-tauri/capabilities/filesystem.json` — Stub: fs:default
 - `src-tauri/capabilities/dialog.json` — Stub: dialog:default
@@ -67,18 +69,23 @@ completed: 2026-05-10
 - `src-tauri/capabilities/store.json` — Stub: store:default
 
 ## Decisions Made
+
 - Per-feature capability files for clean separation and per-phase auditing (per D-13)
 
 ## Deviations from Plan
+
 None — plan executed exactly as written
 
 ## Issues Encountered
+
 None
 
 ## Next Phase Readiness
+
 - All capability files in place — Wave 1 complete
 - Ready for Wave 2 manual verification (01-03, 01-04)
 
 ---
-*Phase: 01-native-desktop-shell*
-*Completed: 2026-05-10*
+
+_Phase: 01-native-desktop-shell_
+_Completed: 2026-05-10_

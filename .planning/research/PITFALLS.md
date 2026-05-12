@@ -122,16 +122,16 @@
 
 ## Phase-Specific Warnings
 
-| Phase | Key Risk | Prevention |
-|-------|----------|-------------|
-| Phase 1 (Tauri Shell) | SSR/adapter mismatch | Use `adapter-static` with `fallback: 'index.html'` |
-| Phase 2 (DB Layer) | Sync DB on main thread | `spawn_blocking` or background worker from day one |
-| Phase 3 (Keyring) | Linux keyring not available | Graceful fallback, clear error messages |
-| Phase 4 (AI Streaming) | Channel vs Event confusion | Use `Channel<T>` for streaming, `emit` for broadcasts |
-| Phase 5 (Prompt Engine) | Token count mismatch | Map model→encoding, test against known counts |
-| Phase 7 (Card I/O) | PNG metadata corruption | Test with real community character cards |
-| Phase 9 (Lorebook) | Recursive insertion loops | Max depth limit, budget check |
-| Phase 10 (Regex) | ReDoS, unsafe patterns | Validate on save, execution time limit |
+| Phase                   | Key Risk                    | Prevention                                            |
+| ----------------------- | --------------------------- | ----------------------------------------------------- |
+| Phase 1 (Tauri Shell)   | SSR/adapter mismatch        | Use `adapter-static` with `fallback: 'index.html'`    |
+| Phase 2 (DB Layer)      | Sync DB on main thread      | `spawn_blocking` or background worker from day one    |
+| Phase 3 (Keyring)       | Linux keyring not available | Graceful fallback, clear error messages               |
+| Phase 4 (AI Streaming)  | Channel vs Event confusion  | Use `Channel<T>` for streaming, `emit` for broadcasts |
+| Phase 5 (Prompt Engine) | Token count mismatch        | Map model→encoding, test against known counts         |
+| Phase 7 (Card I/O)      | PNG metadata corruption     | Test with real community character cards              |
+| Phase 9 (Lorebook)      | Recursive insertion loops   | Max depth limit, budget check                         |
+| Phase 10 (Regex)        | ReDoS, unsafe patterns      | Validate on save, execution time limit                |
 
 ## Sources
 

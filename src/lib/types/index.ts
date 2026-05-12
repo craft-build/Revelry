@@ -23,13 +23,13 @@ export interface CharacterCard {
   creator: string;
   character_version: string;
   avatar_path?: string;
-  extensions?: Record<string, unknown>;
+  extensions?: Record<string, unknown> | null;
   /** Per-character default persona ID for persona assignment hierarchy. */
   default_persona_id?: string;
   /** Per-character default preset ID for generation parameter hierarchy per D-03. */
   default_preset_id?: string;
   /** Lorebook / world info (JSON). */
-  character_book?: Record<string, unknown>;
+  character_book?: Record<string, unknown> | null;
   lorebook_scan_depth: number;
   lorebook_recursive_depth: number;
   created_at: string;
@@ -60,7 +60,7 @@ export interface LorebookEntry {
   position: LorebookPosition;
   depth: number;
   activation_state: LorebookActivation;
-  extensions?: Record<string, unknown>;
+  extensions?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }

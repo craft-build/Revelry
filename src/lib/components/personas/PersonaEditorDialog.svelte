@@ -9,6 +9,7 @@
 		AvatarUpload
 	} from '$lib/components/ui';
 	import { AlertCircle } from '@lucide/svelte';
+	import { DeleteConfirmationDialog } from '$lib/components/characters';
 
 	interface Props {
 		open?: boolean;
@@ -40,6 +41,7 @@
 	let is_saving = $state(false);
 	let name_error = $state('');
 	let backend_error = $state('');
+	let discard_open = $state(false);
 
 	// ── Dirty tracking ────────────────────────────────────────────────────
 	let initial_snapshot = $state('');
@@ -103,11 +105,17 @@
 
 	function handleOpenChange(value: boolean) {
 		if (!value && is_dirty) {
-			// Dirty form guard — for now just close.
-			// Could be enhanced with a confirmation dialog.
+			discard_open = true;
+			return;
 		}
 		open = value;
 		onopenchange?.(value);
+	}
+
+	function handleDiscardConfirm() {
+		discard_open = false;
+		open = false;
+		onopenchange?.(false);
 	}
 
 	function validateName(): boolean {
@@ -148,22 +156,18 @@
 					tags: parseTags(form_tags)
 				});
 			} else {
-				await app.createPersona(form_name, form_personality, pending_id!);
-				// After creation, update with all the other fields
-				const created = app.personas[0];
-				if (created) {
-					await app.updatePersona({
-						...created,
-						avatar_path: form_avatar_path,
-						appearance: form_appearance,
-						personality: form_personality,
-						background: form_background,
-						role_description: form_role_description,
-						relationships: form_relationships,
-						speech_style: form_speech_style,
-						tags: parseTags(form_tags)
-					});
-				}
+				await app.createPersona({
+					id: pending_id!,
+					name: form_name,
+					avatar_path: form_avatar_path,
+					appearance: form_appearance,
+					personality: form_personality,
+					background: form_background,
+					role_description: form_role_description,
+					relationships: form_relationships,
+					speech_style: form_speech_style,
+					tags: parseTags(form_tags)
+				});
 			}
 			handleOpenChange(false);
 		} catch (err) {
@@ -311,3 +315,11 @@
 		</div>
 	{/snippet}
 </Dialog>
+
+<DeleteConfirmationDialog
+	bind:open={discard_open}
+	title="Discard changes?"
+	description="You have unsaved changes. Are you sure you want to close?"
+	confirm_label="Discard"
+	onconfirm={handleDiscardConfirm}
+/>

@@ -3,7 +3,5 @@
   "identifier": "shell",
   "description": "Shell command permissions — stub for future phases",
   "windows": ["main"],
-  "permissions": [
-    "shell:default"
-  ]
+  "permissions": ["shell:default"]
 }

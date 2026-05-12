@@ -19,19 +19,20 @@ Progress: [██████░░░░] 27%
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 8
 - Average duration: ~20 min
 - Total execution time: ~2.5 hours
 
 **By Phase:**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1 | 4 | 75min | 19min |
-| 2 | 4 | ~80min | 20min |
-| 3 | 4 | ~90min | 22min |
+| Phase | Plans | Total  | Avg/Plan |
+| ----- | ----- | ------ | -------- |
+| 1     | 4     | 75min  | 19min    |
+| 2     | 4     | ~80min | 20min    |
+| 3     | 4     | ~90min | 22min    |
 
-*Updated after each plan completion*
+_Updated after each plan completion_
 
 ## Accumulated Context
 
@@ -56,11 +57,11 @@ None yet.
 
 ## Deferred Items
 
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| v2 | Autoupdate (AUTO-01, AUTO-02) | Deferred | 2026-05-10 |
-| v2 | System tray (TRAY-01, TRAY-02) | Deferred | 2026-05-10 |
-| v2 | Data backup/restore (BKUP-01, BKUP-02) | Deferred | 2026-05-10 |
+| Category | Item                                   | Status   | Deferred At |
+| -------- | -------------------------------------- | -------- | ----------- |
+| v2       | Autoupdate (AUTO-01, AUTO-02)          | Deferred | 2026-05-10  |
+| v2       | System tray (TRAY-01, TRAY-02)         | Deferred | 2026-05-10  |
+| v2       | Data backup/restore (BKUP-01, BKUP-02) | Deferred | 2026-05-10  |
 
 ## Session Continuity
 

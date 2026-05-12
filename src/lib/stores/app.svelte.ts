@@ -15,6 +15,8 @@ import {
   savePersona as apiSavePersona,
   deletePersona as apiDeletePersona,
   getConversations as apiGetConversations,
+  startConversation as apiStartConversation,
+  deleteConversation as apiDeleteConversation,
   getPresets as apiGetPresets,
   updateConversationPersona as apiUpdateConversationPersona,
   getLorebooks as apiGetLorebooks,
@@ -221,112 +223,178 @@ class AppState {
     }
   }
 
+  // ── Conversation actions ────────────────────────────────────────────────
+
+  async startConversation(characterId: string): Promise<Conversation> {
+    const conversation = await apiStartConversation(characterId);
+    this.conversations = [conversation, ...this.conversations];
+    return conversation;
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    try {
+      await apiDeleteConversation(id);
+      this.conversations = this.conversations.filter((c) => c.id !== id);
+      if (this.active_conversation_id === id) {
+        this.closeConversation();
+      }
+    } catch (err) {
+      console.error("Failed to delete conversation:", err);
+      throw err;
+    }
+  }
+
   // ── Character CRUD ──────────────────────────────────────────────────────
 
-  async createCharacter(name: string, id?: string): Promise<CharacterCard> {
+  async createCharacter(
+    data: Omit<CharacterCard, "id" | "created_at" | "updated_at"> & {
+      id?: string;
+    },
+  ): Promise<CharacterCard> {
     const character: CharacterCard = {
-      id: id ?? crypto.randomUUID(),
-      name,
-      description: "",
-      personality: "",
-      scenario: "",
-      first_mes: "",
-      mes_example: "",
-      creator_notes: "",
-      system_prompt: "",
-      post_history_instructions: "",
-      alternate_greetings: [],
-      tags: [],
-      creator: "",
-      character_version: "2.0",
-      avatar_path: undefined,
-      extensions: undefined,
-      character_book: undefined,
-      lorebook_scan_depth: 2,
-      lorebook_recursive_depth: 2,
+      id: data.id ?? crypto.randomUUID(),
+      name: data.name,
+      description: data.description ?? "",
+      personality: data.personality ?? "",
+      scenario: data.scenario ?? "",
+      first_mes: data.first_mes ?? "",
+      mes_example: data.mes_example ?? "",
+      creator_notes: data.creator_notes ?? "",
+      system_prompt: data.system_prompt ?? "",
+      post_history_instructions: data.post_history_instructions ?? "",
+      alternate_greetings: data.alternate_greetings ?? [],
+      tags: data.tags ?? [],
+      creator: data.creator ?? "",
+      character_version: data.character_version ?? "2.0",
+      avatar_path: data.avatar_path,
+      extensions: data.extensions,
+      character_book: data.character_book,
+      default_persona_id: data.default_persona_id,
+      default_preset_id: data.default_preset_id,
+      lorebook_scan_depth: data.lorebook_scan_depth ?? 2,
+      lorebook_recursive_depth: data.lorebook_recursive_depth ?? 2,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    const saved = await apiSaveCharacter(character);
-    this.characters = [saved, ...this.characters];
-    return saved;
+    try {
+      const saved = await apiSaveCharacter(character);
+      this.characters = [saved, ...this.characters];
+      return saved;
+    } catch (err) {
+      console.error("Failed to create character:", err);
+      throw err;
+    }
   }
 
   async updateCharacter(character: CharacterCard): Promise<CharacterCard> {
-    const saved = await apiSaveCharacter({
-      ...character,
-      updated_at: new Date().toISOString(),
-    });
-    this.characters = this.characters.map((c) =>
-      c.id === saved.id ? saved : c,
-    );
-    return saved;
+    const prev = this.characters.find((c) => c.id === character.id);
+    try {
+      const saved = await apiSaveCharacter({
+        ...character,
+        updated_at: new Date().toISOString(),
+      });
+      this.characters = this.characters.map((c) =>
+        c.id === saved.id ? saved : c,
+      );
+      return saved;
+    } catch (err) {
+      console.error("Failed to update character:", err);
+      // Revert on failure
+      if (prev) {
+        this.characters = this.characters.map((c) =>
+          c.id === prev.id ? prev : c,
+        );
+      }
+      throw err;
+    }
   }
 
   async deleteCharacter(id: string): Promise<void> {
-    // Clean up avatar file before deleting the record
     const character = this.characters.find((c) => c.id === id);
-    if (character?.avatar_path) {
-      try {
-        await apiDeleteAvatar(character.avatar_path);
-      } catch (err) {
-        console.warn("Failed to delete avatar file:", err);
+    try {
+      if (character?.avatar_path) {
+        try {
+          await apiDeleteAvatar(character.avatar_path);
+        } catch (err) {
+          console.warn("Failed to delete avatar file:", err);
+        }
       }
-    }
-    await apiDeleteCharacter(id);
-    this.characters = this.characters.filter((c) => c.id !== id);
-    if (this.active_character?.id === id) {
-      this.closeConversation();
+      await apiDeleteCharacter(id);
+      this.characters = this.characters.filter((c) => c.id !== id);
+      if (this.active_character?.id === id) {
+        this.closeConversation();
+      }
+    } catch (err) {
+      console.error("Failed to delete character:", err);
+      throw err;
     }
   }
 
   // ── Persona CRUD ────────────────────────────────────────────────────────
 
   async createPersona(
-    name: string,
-    personality: string,
-    id?: string,
+    data: Omit<UserPersona, "id" | "created_at" | "updated_at"> & {
+      id?: string;
+    },
   ): Promise<UserPersona> {
     const persona: UserPersona = {
-      id: id ?? crypto.randomUUID(),
-      name,
-      avatar_path: undefined,
-      appearance: "",
-      personality,
-      background: "",
-      role_description: "",
-      relationships: "",
-      speech_style: "",
-      tags: [],
+      id: data.id ?? crypto.randomUUID(),
+      name: data.name,
+      avatar_path: data.avatar_path,
+      appearance: data.appearance ?? "",
+      personality: data.personality ?? "",
+      background: data.background ?? "",
+      role_description: data.role_description ?? "",
+      relationships: data.relationships ?? "",
+      speech_style: data.speech_style ?? "",
+      tags: data.tags ?? [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    const saved = await apiSavePersona(persona);
-    this.personas = [saved, ...this.personas];
-    return saved;
+    try {
+      const saved = await apiSavePersona(persona);
+      this.personas = [saved, ...this.personas];
+      return saved;
+    } catch (err) {
+      console.error("Failed to create persona:", err);
+      throw err;
+    }
   }
 
   async updatePersona(persona: UserPersona): Promise<UserPersona> {
-    const saved = await apiSavePersona({
-      ...persona,
-      updated_at: new Date().toISOString(),
-    });
-    this.personas = this.personas.map((p) => (p.id === saved.id ? saved : p));
-    return saved;
+    const prev = this.personas.find((p) => p.id === persona.id);
+    try {
+      const saved = await apiSavePersona({
+        ...persona,
+        updated_at: new Date().toISOString(),
+      });
+      this.personas = this.personas.map((p) => (p.id === saved.id ? saved : p));
+      return saved;
+    } catch (err) {
+      console.error("Failed to update persona:", err);
+      if (prev) {
+        this.personas = this.personas.map((p) => (p.id === prev.id ? prev : p));
+      }
+      throw err;
+    }
   }
 
   async deletePersona(id: string): Promise<void> {
-    // Clean up avatar file before deleting the record
     const persona = this.personas.find((p) => p.id === id);
-    if (persona?.avatar_path) {
-      try {
-        await apiDeleteAvatar(persona.avatar_path);
-      } catch (err) {
-        console.warn("Failed to delete avatar file:", err);
+    try {
+      if (persona?.avatar_path) {
+        try {
+          await apiDeleteAvatar(persona.avatar_path);
+        } catch (err) {
+          console.warn("Failed to delete avatar file:", err);
+        }
       }
+      await apiDeletePersona(id);
+      this.personas = this.personas.filter((p) => p.id !== id);
+    } catch (err) {
+      console.error("Failed to delete persona:", err);
+      throw err;
     }
-    await apiDeletePersona(id);
-    this.personas = this.personas.filter((p) => p.id !== id);
   }
 
   // ── Lorebook CRUD ───────────────────────────────────────────────────────
@@ -339,29 +407,57 @@ class AppState {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    const saved = await apiSaveLorebook(lorebook);
-    this.lorebooks = [saved, ...this.lorebooks];
-    return saved;
+    try {
+      const saved = await apiSaveLorebook(lorebook);
+      this.lorebooks = [saved, ...this.lorebooks];
+      return saved;
+    } catch (err) {
+      console.error("Failed to create lorebook:", err);
+      throw err;
+    }
   }
 
   async updateLorebook(lorebook: Lorebook): Promise<Lorebook> {
-    const saved = await apiSaveLorebook({
-      ...lorebook,
-      updated_at: new Date().toISOString(),
-    });
-    this.lorebooks = this.lorebooks.map((l) => (l.id === saved.id ? saved : l));
-    return saved;
+    const prev = this.lorebooks.find((l) => l.id === lorebook.id);
+    try {
+      const saved = await apiSaveLorebook({
+        ...lorebook,
+        updated_at: new Date().toISOString(),
+      });
+      this.lorebooks = this.lorebooks.map((l) =>
+        l.id === saved.id ? saved : l,
+      );
+      return saved;
+    } catch (err) {
+      console.error("Failed to update lorebook:", err);
+      if (prev) {
+        this.lorebooks = this.lorebooks.map((l) =>
+          l.id === prev.id ? prev : l,
+        );
+      }
+      throw err;
+    }
   }
 
   async deleteLorebook(id: string): Promise<void> {
-    await apiDeleteLorebook(id);
-    this.lorebooks = this.lorebooks.filter((l) => l.id !== id);
+    try {
+      await apiDeleteLorebook(id);
+      this.lorebooks = this.lorebooks.filter((l) => l.id !== id);
+    } catch (err) {
+      console.error("Failed to delete lorebook:", err);
+      throw err;
+    }
   }
 
   // ── Avatar upload ──────────────────────────────────────────────────────
 
   async uploadAvatar(id: string, sourcePath: string): Promise<string> {
-    return apiUploadAvatar(id, sourcePath);
+    try {
+      return await apiUploadAvatar(id, sourcePath);
+    } catch (err) {
+      console.error("Failed to upload avatar:", err);
+      throw err;
+    }
   }
 }
 

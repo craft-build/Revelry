@@ -1,1 +1,1 @@
-// Regex script CRUD operations — implemented in plan 02-02.
+// Regex script CRUD — Phase 9 scope. Module stub.

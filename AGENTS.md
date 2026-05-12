@@ -17,17 +17,17 @@ The app is a single-page application (SSR disabled) built with SvelteKit 2 + Sve
 
 ## Tech Stack
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Framework | SvelteKit 2.x + Svelte 5 | Runes mode (`$state`, `$derived`, `$effect`, `$props`) |
-| Language | TypeScript | `strict: true` in `tsconfig.json` |
-| Styling | Tailwind CSS v4 | Via `@tailwindcss/vite` plugin, OKLCH color tokens |
-| Components | bits-ui 2.x | Headless primitives (Svelte equivalent of Radix/shadcn) |
-| Icons | @lucide/svelte | — |
-| Variants | tailwind-variants (`tv()`) | For component variant definitions (e.g., `buttonVariants`) |
-| Class merging | clsx + tailwind-merge | Via `cn()` utility in `$lib/utils` |
-| Bundler | Vite 8.x | — |
-| Package manager | Bun | `bun.lock` present |
+| Layer           | Technology                 | Notes                                                      |
+| --------------- | -------------------------- | ---------------------------------------------------------- |
+| Framework       | SvelteKit 2.x + Svelte 5   | Runes mode (`$state`, `$derived`, `$effect`, `$props`)     |
+| Language        | TypeScript                 | `strict: true` in `tsconfig.json`                          |
+| Styling         | Tailwind CSS v4            | Via `@tailwindcss/vite` plugin, OKLCH color tokens         |
+| Components      | bits-ui 2.x                | Headless primitives (Svelte equivalent of Radix/shadcn)    |
+| Icons           | @lucide/svelte             | —                                                          |
+| Variants        | tailwind-variants (`tv()`) | For component variant definitions (e.g., `buttonVariants`) |
+| Class merging   | clsx + tailwind-merge      | Via `cn()` utility in `$lib/utils`                         |
+| Bundler         | Vite 8.x                   | —                                                          |
+| Package manager | Bun                        | `bun.lock` present                                         |
 
 ---
 
@@ -83,13 +83,13 @@ All data types live in one file:
 
 ### Svelte 5 runes — mandatory
 
-| Do | Don't |
-|----|-------|
-| `$state()` for reactive state | `writable()`, `readable()` from `svelte/store` |
-| `$derived` / `get` for computed values | `derived()` from `svelte/store` |
-| `$effect()` for side effects | `$:` reactive statements |
-| `$props()` for component props | `export let` |
-| `children?: Snippet` + `{@render children?.()}` | `<slot />` |
+| Do                                              | Don't                                          |
+| ----------------------------------------------- | ---------------------------------------------- |
+| `$state()` for reactive state                   | `writable()`, `readable()` from `svelte/store` |
+| `$derived` / `get` for computed values          | `derived()` from `svelte/store`                |
+| `$effect()` for side effects                    | `$:` reactive statements                       |
+| `$props()` for component props                  | `export let`                                   |
+| `children?: Snippet` + `{@render children?.()}` | `<slot />`                                     |
 
 ### Component props pattern
 
@@ -202,16 +202,16 @@ src/
 
 Defined in `src/app.css` inside an `@theme { }` block. All tokens use **OKLCH** color space.
 
-| Token group | Examples |
-|-------------|---------|
-| Surfaces | `--color-background`, `--color-surface`, `--color-surface-elevated`, `--color-surface-hover`, `--color-surface-input` |
-| Foreground | `--color-foreground`, `--color-muted`, `--color-subtle` |
-| Borders | `--color-border`, `--color-border-strong` |
-| Accent | `--color-accent`, `--color-accent-fg`, `--color-accent-muted` |
-| Semantic | `--color-destructive`, `--color-warning`, `--color-success` |
-| Chat bubbles | `--color-bubble-user`, `--color-bubble-character` |
-| Typography | `--font-sans` (Geist), `--font-serif` (Fraunces), `--font-mono` (Geist Mono) |
-| Radii | `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl` |
+| Token group  | Examples                                                                                                              |
+| ------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Surfaces     | `--color-background`, `--color-surface`, `--color-surface-elevated`, `--color-surface-hover`, `--color-surface-input` |
+| Foreground   | `--color-foreground`, `--color-muted`, `--color-subtle`                                                               |
+| Borders      | `--color-border`, `--color-border-strong`                                                                             |
+| Accent       | `--color-accent`, `--color-accent-fg`, `--color-accent-muted`                                                         |
+| Semantic     | `--color-destructive`, `--color-warning`, `--color-success`                                                           |
+| Chat bubbles | `--color-bubble-user`, `--color-bubble-character`                                                                     |
+| Typography   | `--font-sans` (Geist), `--font-serif` (Fraunces), `--font-mono` (Geist Mono)                                          |
+| Radii        | `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`                                                            |
 
 ### Using theme tokens in Tailwind classes
 
@@ -226,13 +226,13 @@ rounded-(--radius-md)      → border-radius: var(--radius-md)
 
 ### Custom utility classes (defined in `@layer utilities`)
 
-| Class | Purpose |
-|-------|---------|
-| `.font-display` | Fraunces serif for character names; applies OpenType features `ss01`, `ss02`, `liga` |
-| `.surface-grain` | Subtle radial-gradient texture overlay (atmospheric, not noise) |
-| `.streaming-caret` | Animated `▍` caret on streaming AI responses |
-| `.drag-region` | `-webkit-app-region: drag` for Tauri window dragging |
-| `.no-drag` | `-webkit-app-region: no-drag` to exclude elements from drag region |
+| Class              | Purpose                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `.font-display`    | Fraunces serif for character names; applies OpenType features `ss01`, `ss02`, `liga` |
+| `.surface-grain`   | Subtle radial-gradient texture overlay (atmospheric, not noise)                      |
+| `.streaming-caret` | Animated `▍` caret on streaming AI responses                                         |
+| `.drag-region`     | `-webkit-app-region: drag` for Tauri window dragging                                 |
+| `.no-drag`         | `-webkit-app-region: no-drag` to exclude elements from drag region                   |
 
 ### Fonts
 
@@ -255,40 +255,40 @@ rounded-(--radius-md)      → border-radius: var(--radius-md)
 
 #### State fields (all reactive via `$state`)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `characters` | `CharacterCard[]` | All character cards |
-| `personas` | `UserPersona[]` | All user personas |
-| `conversations` | `Conversation[]` | All conversations |
-| `providers` | `Provider[]` | Configured LLM providers |
-| `prompt_presets` | `PromptPreset[]` | Saved prompt/generation presets |
-| `active_conversation_id` | `string | null` | Currently open conversation |
-| `messages` | `Message[]` | Messages for the active conversation |
-| `is_generating` | `boolean` | Whether AI is currently streaming a response |
-| `sidebar_open` | `boolean` | Sidebar visibility |
-| `character_search_query` | `string` | Search filter for character library |
+| Field                    | Type              | Description                                  |
+| ------------------------ | ----------------- | -------------------------------------------- | --------------------------- |
+| `characters`             | `CharacterCard[]` | All character cards                          |
+| `personas`               | `UserPersona[]`   | All user personas                            |
+| `conversations`          | `Conversation[]`  | All conversations                            |
+| `providers`              | `Provider[]`      | Configured LLM providers                     |
+| `prompt_presets`         | `PromptPreset[]`  | Saved prompt/generation presets              |
+| `active_conversation_id` | `string           | null`                                        | Currently open conversation |
+| `messages`               | `Message[]`       | Messages for the active conversation         |
+| `is_generating`          | `boolean`         | Whether AI is currently streaming a response |
+| `sidebar_open`           | `boolean`         | Sidebar visibility                           |
+| `character_search_query` | `string`          | Search filter for character library          |
 
 #### Derived getters
 
-| Getter | Returns | Logic |
-|--------|---------|-------|
-| `active_conversation` | `Conversation | undefined` | Finds by `active_conversation_id` |
-| `active_character` | `CharacterCard | undefined` | Character from active conversation |
-| `active_persona` | `UserPersona | undefined` | Persona from active conversation (falls back to `default_persona`) |
-| `default_persona` | `UserPersona | undefined` | First persona with `is_default: true` |
+| Getter                | Returns           | Logic                                                                              |
+| --------------------- | ----------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `active_conversation` | `Conversation     | undefined`                                                                         | Finds by `active_conversation_id`                                  |
+| `active_character`    | `CharacterCard    | undefined`                                                                         | Character from active conversation                                 |
+| `active_persona`      | `UserPersona      | undefined`                                                                         | Persona from active conversation (falls back to `default_persona`) |
+| `default_persona`     | `UserPersona      | undefined`                                                                         | First persona with `is_default: true`                              |
 | `filtered_characters` | `CharacterCard[]` | Characters filtered by `character_search_query` (searches name, description, tags) |
 
 #### Actions
 
-| Method | Description |
-|--------|-------------|
-| `hydrate(data)` | Initialize all state from data object (used at app startup with mock data) |
-| `openConversation(id, messages)` | Set active conversation and its messages |
-| `closeConversation()` | Clear active conversation and messages |
-| `appendMessage(message)` | Add a message to the active conversation |
+| Method                                       | Description                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| `hydrate(data)`                              | Initialize all state from data object (used at app startup with mock data)      |
+| `openConversation(id, messages)`             | Set active conversation and its messages                                        |
+| `closeConversation()`                        | Clear active conversation and messages                                          |
+| `appendMessage(message)`                     | Add a message to the active conversation                                        |
 | `updateStreamingMessage(id, content, done?)` | Update a streaming message's content; marks `is_generating = false` when `done` |
-| `toggleSidebar()` | Toggle sidebar visibility |
-| `switchPersona(persona_id)` | Change the persona on the active conversation |
+| `toggleSidebar()`                            | Toggle sidebar visibility                                                       |
+| `switchPersona(persona_id)`                  | Change the persona on the active conversation                                   |
 
 ---
 
@@ -298,37 +298,37 @@ All types are in `src/lib/types/index.ts`.
 
 ### Core types
 
-| Type | Purpose |
-|------|---------|
+| Type            | Purpose                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------- |
 | `CharacterCard` | AI character with personality, scenario, first message, etc. (includes `CharacterExtensions`) |
-| `LorebookEntry` | Context-injection entries with position, depth, and activation rules |
-| `UserPersona` | User's role/identity in roleplay (appearance, personality, speech style, etc.) |
-| `Message` | Chat message with role, content, token count, metadata, and `is_streaming` flag |
-| `Conversation` | Conversation record linked to a character and optional persona |
-| `Provider` | LLM provider configuration (type, base URL, model, generation params) |
-| `PromptPreset` | Saved generation parameter preset |
+| `LorebookEntry` | Context-injection entries with position, depth, and activation rules                          |
+| `UserPersona`   | User's role/identity in roleplay (appearance, personality, speech style, etc.)                |
+| `Message`       | Chat message with role, content, token count, metadata, and `is_streaming` flag               |
+| `Conversation`  | Conversation record linked to a character and optional persona                                |
+| `Provider`      | LLM provider configuration (type, base URL, model, generation params)                         |
+| `PromptPreset`  | Saved generation parameter preset                                                             |
 
 ### Union/enum types
 
-| Type | Values |
-|------|--------|
-| `MessageRole` | `'user' | 'character' | 'system'` |
-| `LorebookPosition` | `'before_char' | 'after_char' | 'at_depth'` |
-| `LorebookActivation` | `'always' | 'character_only' | 'user_only'` |
-| `ProviderType` | `'openai' | 'anthropic' | 'ollama' | 'gemini' | 'cohere' | 'mistral' | 'deepseek' | 'groq' | 'azure_openai' | 'openrouter' | 'together' | 'huggingface' | 'perplexity' | 'xai' | 'custom_openai_compatible'` |
-| `PrimaryView` | `'chat' | 'characters' | 'settings'` |
-| `CharactersTab` | `'characters' | 'personas'` |
+| Type                 | Values         |
+| -------------------- | -------------- | ---------------- | ------------ | -------- | -------- | --------- | ---------- | ------ | -------------- | ------------ | ---------- | ------------- | ------------ | ----- | --------------------------- |
+| `MessageRole`        | `'user'        | 'character'      | 'system'`    |
+| `LorebookPosition`   | `'before_char' | 'after_char'     | 'at_depth'`  |
+| `LorebookActivation` | `'always'      | 'character_only' | 'user_only'` |
+| `ProviderType`       | `'openai'      | 'anthropic'      | 'ollama'     | 'gemini' | 'cohere' | 'mistral' | 'deepseek' | 'groq' | 'azure_openai' | 'openrouter' | 'together' | 'huggingface' | 'perplexity' | 'xai' | 'custom_openai_compatible'` |
+| `PrimaryView`        | `'chat'        | 'characters'     | 'settings'`  |
+| `CharactersTab`      | `'characters'  | 'personas'`      |
 
 ---
 
 ## Routing
 
-| Route | File | Description |
-|-------|------|-------------|
-| `/` | `src/routes/+page.svelte` | Welcome page with suggested characters |
-| `/chat/[id]` | `src/routes/chat/[id]/+page.svelte` | Active conversation (chat view with mock streaming) |
+| Route         | File                                 | Description                                                                  |
+| ------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| `/`           | `src/routes/+page.svelte`            | Welcome page with suggested characters                                       |
+| `/chat/[id]`  | `src/routes/chat/[id]/+page.svelte`  | Active conversation (chat view with mock streaming)                          |
 | `/characters` | `src/routes/characters/+page.svelte` | Library with characters/personas tabs (`?tab=characters` or `?tab=personas`) |
-| `/settings` | `src/routes/settings/+page.svelte` | Preferences with section navigation |
+| `/settings`   | `src/routes/settings/+page.svelte`   | Preferences with section navigation                                          |
 
 ---
 

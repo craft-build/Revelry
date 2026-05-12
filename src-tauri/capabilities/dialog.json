@@ -3,7 +3,5 @@
   "identifier": "dialog",
   "description": "Native dialog permissions — stub for future phases",
   "windows": ["main"],
-  "permissions": [
-    "dialog:default"
-  ]
+  "permissions": ["dialog:default"]
 }

@@ -11,6 +11,7 @@ verified: 2026-05-12
 ### Success Criterion 1: User can create a new character with all fields (name, description, personality, scenario, greeting, dialogues) and avatar
 
 **✅ Met.** `CharacterEditorDialog.svelte` implements a 4-step wizard:
+
 - **Step 1 (Identity):** Avatar upload via `AvatarUpload` + Name (required, validated) + Description
 - **Step 2 (Personality):** Personality + Scenario
 - **Step 3 (Prompt):** System Prompt + Post-History Instructions + Creator Notes
@@ -21,12 +22,14 @@ Avatar upload uses `@tauri-apps/plugin-dialog` file picker → `app.uploadAvatar
 ### Success Criterion 2: User can edit and delete existing characters
 
 **✅ Met.**
+
 - **Edit:** `CharacterCard.svelte` has a `KebabMenu` with "Edit" item that calls `onedit`. The library page (`+page.svelte`) wires this to `openEditEditor(id)`, which finds the character and opens `CharacterEditorDialog` in edit mode with all fields pre-populated via `$effect`.
 - **Delete:** `CharacterCard.svelte` kebab menu has "Delete" item (destructive styled) that calls `ondelete`. The library page opens `DeleteConfirmationDialog` with dynamic title/description. On confirm, `app.deleteCharacter(id)` is called, which also cleans up the avatar file.
 
 ### Success Criterion 3: User can create, edit, and delete personas
 
 **✅ Met.**
+
 - **Create:** "New persona" button opens `PersonaEditorDialog` in create mode. Single-form dialog with all 9 `UserPersona` fields: avatar, name (required), appearance, personality, background, role_description, relationships, speech_style, tags (comma-separated). Save calls `app.createPersona()` then `app.updatePersona()`.
 - **Edit:** `PersonaCard.svelte` kebab menu "Edit" opens dialog in edit mode with all fields pre-populated.
 - **Delete:** `PersonaCard.svelte` kebab menu "Delete" (destructive) opens `DeleteConfirmationDialog`. On confirm, `app.deletePersona(id)` is called with avatar cleanup.
@@ -34,6 +37,7 @@ Avatar upload uses `@tauri-apps/plugin-dialog` file picker → `app.uploadAvatar
 ### Success Criterion 4: User can test lorebook keyword activation in the editor
 
 **✅ Met.** `LorebookEditor.svelte` has a collapsible "Test Keywords" panel at the bottom:
+
 - Sample text textarea for input
 - "Run test" button calls `apiTestLorebookKeywords()` per entry
 - Results panel shows each entry with ✓/✗ icons, matched keys highlighted in accent color badges
@@ -46,61 +50,61 @@ Avatar upload uses `@tauri-apps/plugin-dialog` file picker → `app.uploadAvatar
 
 ### Plan 03-01 Must-Haves
 
-| # | Must-Have | Status | Evidence |
-|---|-----------|--------|----------|
-| 1 | Character creation with all CharacterCardV2 fields via 4-step wizard | ✅ Met | `CharacterEditorDialog.svelte` — 4 steps (Identity, Personality, Prompt, Greeting) with all fields |
-| 2 | Character editing with pre-filled form and free-jump navigation | ✅ Met | Edit mode pre-fills from `character` prop; StepperHeader shows completed/current/upcoming; Back/Next navigation |
-| 3 | Character deletion with confirmation dialog | ✅ Met | `DeleteConfirmationDialog.svelte` — reusable, destructive button, loading state |
-| 4 | Avatar upload via native file picker | ✅ Met | `AvatarUpload.svelte` uses `@tauri-apps/plugin-dialog` open(); `uploadAvatar` Tauri command copies to app data dir |
-| 5 | Schema migration for standalone lorebooks | ✅ Met | Migration #2 in `migrations.rs` adds `lorebooks`, `lorebook_entries` (with `lorebook_id` FK), `character_lorebooks` junction, `personas.avatar_path` |
-| 6 | All new Tauri commands registered and callable from frontend | ✅ Met | `lib.rs` registers all 12 new commands; `api.ts` has typed wrappers for all |
-| 7 | UI primitives (Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload) | ✅ Met | All exist in `src/lib/components/ui/`; plus KebabMenuItem, KebabMenuSeparator |
-| 8 | AppState CRUD actions for characters, personas, and lorebooks | ✅ Met | `app.svelte.ts` has `createCharacter`, `updateCharacter`, `deleteCharacter`, `createPersona`, `updatePersona`, `deletePersona`, `createLorebook`, `updateLorebook`, `deleteLorebook`, `uploadAvatar` |
+| #   | Must-Have                                                                        | Status | Evidence                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Character creation with all CharacterCardV2 fields via 4-step wizard             | ✅ Met | `CharacterEditorDialog.svelte` — 4 steps (Identity, Personality, Prompt, Greeting) with all fields                                                                                                   |
+| 2   | Character editing with pre-filled form and free-jump navigation                  | ✅ Met | Edit mode pre-fills from `character` prop; StepperHeader shows completed/current/upcoming; Back/Next navigation                                                                                      |
+| 3   | Character deletion with confirmation dialog                                      | ✅ Met | `DeleteConfirmationDialog.svelte` — reusable, destructive button, loading state                                                                                                                      |
+| 4   | Avatar upload via native file picker                                             | ✅ Met | `AvatarUpload.svelte` uses `@tauri-apps/plugin-dialog` open(); `uploadAvatar` Tauri command copies to app data dir                                                                                   |
+| 5   | Schema migration for standalone lorebooks                                        | ✅ Met | Migration #2 in `migrations.rs` adds `lorebooks`, `lorebook_entries` (with `lorebook_id` FK), `character_lorebooks` junction, `personas.avatar_path`                                                 |
+| 6   | All new Tauri commands registered and callable from frontend                     | ✅ Met | `lib.rs` registers all 12 new commands; `api.ts` has typed wrappers for all                                                                                                                          |
+| 7   | UI primitives (Dialog, Textarea, Select, KebabMenu, StepperHeader, AvatarUpload) | ✅ Met | All exist in `src/lib/components/ui/`; plus KebabMenuItem, KebabMenuSeparator                                                                                                                        |
+| 8   | AppState CRUD actions for characters, personas, and lorebooks                    | ✅ Met | `app.svelte.ts` has `createCharacter`, `updateCharacter`, `deleteCharacter`, `createPersona`, `updatePersona`, `deletePersona`, `createLorebook`, `updateLorebook`, `deleteLorebook`, `uploadAvatar` |
 
 ### Plan 03-02 Must-Haves
 
-| # | Must-Have | Status | Evidence |
-|---|-----------|--------|----------|
-| 1 | Persona creation with all UserPersona fields (name required, rest optional) | ✅ Met | `PersonaEditorDialog.svelte` — all 9 fields, name validated, avatar upload |
-| 2 | Persona editing with pre-filled form | ✅ Met | Edit mode pre-fills from `persona` prop including tags join |
-| 3 | Persona deletion with confirmation dialog | ✅ Met | Shared `DeleteConfirmationDialog` with `deleting_entity_type='persona'` |
-| 4 | Avatar upload for personas | ✅ Met | Same `AvatarUpload` component + `app.uploadAvatar()` |
-| 5 | Kebab menu on PersonaCard with Edit and Delete options | ✅ Met | `PersonaCard.svelte` uses `KebabMenu` with Edit + Delete (destructive) |
+| #   | Must-Have                                                                   | Status | Evidence                                                                   |
+| --- | --------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------- |
+| 1   | Persona creation with all UserPersona fields (name required, rest optional) | ✅ Met | `PersonaEditorDialog.svelte` — all 9 fields, name validated, avatar upload |
+| 2   | Persona editing with pre-filled form                                        | ✅ Met | Edit mode pre-fills from `persona` prop including tags join                |
+| 3   | Persona deletion with confirmation dialog                                   | ✅ Met | Shared `DeleteConfirmationDialog` with `deleting_entity_type='persona'`    |
+| 4   | Avatar upload for personas                                                  | ✅ Met | Same `AvatarUpload` component + `app.uploadAvatar()`                       |
+| 5   | Kebab menu on PersonaCard with Edit and Delete options                      | ✅ Met | `PersonaCard.svelte` uses `KebabMenu` with Edit + Delete (destructive)     |
 
 ### Plan 03-03 Must-Haves
 
-| # | Must-Have | Status | Evidence |
-|---|-----------|--------|----------|
-| 1 | Lorebook creation and editing via dialog | ✅ Met | `LorebookEditor.svelte` — name + description, `app.createLorebook`/`app.updateLorebook` |
-| 2 | Lorebook entry CRUD (add, edit, delete entries within the lorebook editor) | ✅ Met | Two-column layout: entry list (add/delete) + entry form (edit/save); `apiSaveLorebookEntry`, `apiDeleteLorebookEntry` |
-| 3 | Keyword test panel showing which entries activate for given sample text | ✅ Met | Collapsible "Test Keywords" panel with sample text input, "Run test" button, results with ✓/✗ and matched key badges |
-| 4 | Lorebooks tab in library page with grid of LorebookCard components | ✅ Met | `+page.svelte` has 3-tab layout (Characters, Personas, Lorebooks) with grid |
-| 5 | Empty state for lorebooks tab | ✅ Met | Two empty states: no-data ("No lorebooks yet." + CTA) and search-empty ("No lorebooks match.") |
+| #   | Must-Have                                                                  | Status | Evidence                                                                                                              |
+| --- | -------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | Lorebook creation and editing via dialog                                   | ✅ Met | `LorebookEditor.svelte` — name + description, `app.createLorebook`/`app.updateLorebook`                               |
+| 2   | Lorebook entry CRUD (add, edit, delete entries within the lorebook editor) | ✅ Met | Two-column layout: entry list (add/delete) + entry form (edit/save); `apiSaveLorebookEntry`, `apiDeleteLorebookEntry` |
+| 3   | Keyword test panel showing which entries activate for given sample text    | ✅ Met | Collapsible "Test Keywords" panel with sample text input, "Run test" button, results with ✓/✗ and matched key badges  |
+| 4   | Lorebooks tab in library page with grid of LorebookCard components         | ✅ Met | `+page.svelte` has 3-tab layout (Characters, Personas, Lorebooks) with grid                                           |
+| 5   | Empty state for lorebooks tab                                              | ✅ Met | Two empty states: no-data ("No lorebooks yet." + CTA) and search-empty ("No lorebooks match.")                        |
 
 ### Plan 03-04 Must-Haves
 
-| # | Must-Have | Status | Evidence |
-|---|-----------|--------|----------|
-| 1 | Avatar images display correctly in CharacterCard, PersonaCard, and editor dialogs after upload | ✅ Met | `Avatar.svelte` uses `resolveAvatarUrl()` → `convertFileSrc()` with `onerror` fallback to initials |
-| 2 | All search/filter works on all three tabs | ✅ Met | `filtered_characters`, `filtered_personas`, `filtered_lorebooks` getters in `app.svelte.ts` |
-| 3 | End-to-end flow: create → edit → delete works for characters, personas, and lorebooks | ✅ Met | All three entity types have full CRUD wired in `+page.svelte` |
-| 4 | No TypeScript errors, no Rust test failures | ✅ Met | `svelte-check`: 0 errors; `cargo test --lib`: 102 passed, 0 failed |
-| 5 | Avatar cleanup on entity delete | ✅ Met | `deleteCharacter` and `deletePersona` both call `apiDeleteAvatar(avatar_path)` before record deletion |
+| #   | Must-Have                                                                                      | Status | Evidence                                                                                              |
+| --- | ---------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| 1   | Avatar images display correctly in CharacterCard, PersonaCard, and editor dialogs after upload | ✅ Met | `Avatar.svelte` uses `resolveAvatarUrl()` → `convertFileSrc()` with `onerror` fallback to initials    |
+| 2   | All search/filter works on all three tabs                                                      | ✅ Met | `filtered_characters`, `filtered_personas`, `filtered_lorebooks` getters in `app.svelte.ts`           |
+| 3   | End-to-end flow: create → edit → delete works for characters, personas, and lorebooks          | ✅ Met | All three entity types have full CRUD wired in `+page.svelte`                                         |
+| 4   | No TypeScript errors, no Rust test failures                                                    | ✅ Met | `svelte-check`: 0 errors; `cargo test --lib`: 102 passed, 0 failed                                    |
+| 5   | Avatar cleanup on entity delete                                                                | ✅ Met | `deleteCharacter` and `deletePersona` both call `apiDeleteAvatar(avatar_path)` before record deletion |
 
 ---
 
 ## Requirements Traceability
 
-| ID | Requirement | Status | Evidence |
-|----|------------|--------|----------|
+| ID      | Requirement                                 | Status | Evidence                                                                                                                                                                                   |
+| ------- | ------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | CHAR-02 | Create character with all fields and avatar | ✅ Met | `CharacterEditorDialog.svelte` — 4-step wizard with name, description, personality, scenario, first_mes, mes_example, system_prompt, post_history_instructions, creator_notes, avatar_path |
-| CHAR-03 | Edit existing character | ✅ Met | `CharacterEditorDialog.svelte` edit mode with pre-populated fields; `CharacterCard.svelte` kebab → "Edit" |
-| CHAR-04 | Delete character | ✅ Met | `CharacterCard.svelte` kebab → "Delete"; `DeleteConfirmationDialog.svelte`; `app.deleteCharacter()` with avatar cleanup |
-| CHAR-05 | Avatar display | ✅ Met | `Avatar.svelte` resolves via `convertFileSrc()`; `AvatarUpload.svelte` file picker → `upload_avatar` Tauri command returns absolute path; `resolveAvatarUrl()` in `utils/index.ts` |
-| PERS-02 | Create persona with all fields | ✅ Met | `PersonaEditorDialog.svelte` — single-form dialog with all 9 `UserPersona` fields + avatar |
-| PERS-03 | Edit persona | ✅ Met | `PersonaEditorDialog.svelte` edit mode with pre-populated fields; `PersonaCard.svelte` kebab → "Edit" |
-| PERS-04 | Delete persona | ✅ Met | `PersonaCard.svelte` kebab → "Delete"; `DeleteConfirmationDialog.svelte`; `app.deletePersona()` with avatar cleanup |
-| LORB-06 | Test lorebook keyword activation in editor | ✅ Met | `LorebookEditor.svelte` — collapsible "Test Keywords" panel with sample text, "Run test" button, `testLorebookKeywords` API, results with matched key badges |
+| CHAR-03 | Edit existing character                     | ✅ Met | `CharacterEditorDialog.svelte` edit mode with pre-populated fields; `CharacterCard.svelte` kebab → "Edit"                                                                                  |
+| CHAR-04 | Delete character                            | ✅ Met | `CharacterCard.svelte` kebab → "Delete"; `DeleteConfirmationDialog.svelte`; `app.deleteCharacter()` with avatar cleanup                                                                    |
+| CHAR-05 | Avatar display                              | ✅ Met | `Avatar.svelte` resolves via `convertFileSrc()`; `AvatarUpload.svelte` file picker → `upload_avatar` Tauri command returns absolute path; `resolveAvatarUrl()` in `utils/index.ts`         |
+| PERS-02 | Create persona with all fields              | ✅ Met | `PersonaEditorDialog.svelte` — single-form dialog with all 9 `UserPersona` fields + avatar                                                                                                 |
+| PERS-03 | Edit persona                                | ✅ Met | `PersonaEditorDialog.svelte` edit mode with pre-populated fields; `PersonaCard.svelte` kebab → "Edit"                                                                                      |
+| PERS-04 | Delete persona                              | ✅ Met | `PersonaCard.svelte` kebab → "Delete"; `DeleteConfirmationDialog.svelte`; `app.deletePersona()` with avatar cleanup                                                                        |
+| LORB-06 | Test lorebook keyword activation in editor  | ✅ Met | `LorebookEditor.svelte` — collapsible "Test Keywords" panel with sample text, "Run test" button, `testLorebookKeywords` API, results with matched key badges                               |
 
 ---
 

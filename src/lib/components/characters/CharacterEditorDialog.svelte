@@ -10,7 +10,8 @@
 		AvatarUpload,
 		StepperHeader
 	} from '$lib/components/ui';
-	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
+	import { DeleteConfirmationDialog } from '$lib/components/characters';
+	import { ChevronLeft, ChevronRight, AlertCircle } from '@lucide/svelte';
 
 	interface Props {
 		open?: boolean;
@@ -44,6 +45,9 @@
 	let form_creator = $state('');
 	let is_saving = $state(false);
 	let name_error = $state('');
+	let backend_error = $state('');
+	let discard_open = $state(false);
+	let initial_snapshot = $state('');
 
 	const steps = [
 		{ label: 'Identity', state: 'upcoming' as const },
@@ -71,6 +75,25 @@
 	});
 
 	let is_last_step = $derived(current_step === steps.length - 1);
+
+	// ── Dirty tracking ────────────────────────────────────────────────────
+	function snapshot(): string {
+		return JSON.stringify({
+			form_name,
+			form_avatar_path,
+			form_description,
+			form_personality,
+			form_scenario,
+			form_first_mes,
+			form_mes_example,
+			form_system_prompt,
+			form_post_history_instructions,
+			form_creator_notes,
+			form_creator
+		});
+	}
+
+	let is_dirty = $derived(snapshot() !== initial_snapshot);
 
 	// ── Initialize form from character ────────────────────────────────────
 	// Only re-initialize when the dialog *opens* (open transitions to true),
@@ -109,13 +132,25 @@
 			}
 			current_step = 0;
 			name_error = '';
+			backend_error = '';
+			initial_snapshot = snapshot();
 		}
 		was_open = open;
 	});
 
 	function handleOpenChange(value: boolean) {
+		if (!value && is_dirty) {
+			discard_open = true;
+			return;
+		}
 		open = value;
 		onopenchange?.(value);
+	}
+
+	function handleDiscardConfirm() {
+		discard_open = false;
+		open = false;
+		onopenchange?.(false);
 	}
 
 	function validateName() {
@@ -165,26 +200,30 @@
 					creator: form_creator
 				});
 			} else {
-				const created = await app.createCharacter(form_name, pending_id!);
-				if (created) {
-					await app.updateCharacter({
-						...created,
-						avatar_path: form_avatar_path,
-						description: form_description,
-						personality: form_personality,
-						scenario: form_scenario,
-						first_mes: form_first_mes,
-						mes_example: form_mes_example,
-						system_prompt: form_system_prompt,
-						post_history_instructions: form_post_history_instructions,
-						creator_notes: form_creator_notes,
-						creator: form_creator
-					});
-				}
+				await app.createCharacter({
+					id: pending_id!,
+					name: form_name,
+					avatar_path: form_avatar_path,
+					description: form_description,
+					personality: form_personality,
+					scenario: form_scenario,
+					first_mes: form_first_mes,
+					mes_example: form_mes_example,
+					system_prompt: form_system_prompt,
+					post_history_instructions: form_post_history_instructions,
+					creator_notes: form_creator_notes,
+					creator: form_creator,
+					character_version: '2.0',
+					tags: [],
+					alternate_greetings: [],
+					lorebook_scan_depth: 2,
+					lorebook_recursive_depth: 2,
+				});
 			}
 			handleOpenChange(false);
 		} catch (err) {
-			console.error('Failed to save character:', err);
+			backend_error =
+				err instanceof Error ? err.message : 'Failed to save character.';
 		} finally {
 			is_saving = false;
 		}
@@ -195,13 +234,21 @@
 			const avatarPath = await app.uploadAvatar(pending_id!, sourcePath);
 			form_avatar_path = avatarPath;
 		} catch (err) {
-			console.error('Failed to upload avatar:', err);
+			backend_error =
+				err instanceof Error ? err.message : 'Failed to upload avatar.';
 		}
 	}
 </script>
 
 <Dialog {open} onopenchange={handleOpenChange} class="max-w-2xl">
-	<StepperHeader steps={computed_steps} class="mb-6" />
+	<StepperHeader steps={computed_steps} class="mb-6" onstepclick={mode === 'edit' ? (i: number) => { current_step = i; } : undefined} />
+
+	{#if backend_error}
+		<div class="mb-4 flex items-center gap-2 rounded-(--radius-md) border border-(--color-destructive)/30 bg-(--color-destructive)/10 px-3 py-2 text-sm text-(--color-destructive)">
+			<AlertCircle class="size-4 shrink-0" />
+			{backend_error}
+		</div>
+	{/if}
 
 	<!-- Step 1: Identity -->
 	{#if current_step === 0}
@@ -313,3 +360,11 @@
 		</div>
 	{/snippet}
 </Dialog>
+
+<DeleteConfirmationDialog
+	bind:open={discard_open}
+	title="Discard changes?"
+	description="You have unsaved changes. Are you sure you want to close?"
+	confirm_label="Discard"
+	onconfirm={handleDiscardConfirm}
+/>

@@ -1,10 +1,17 @@
 <script lang="ts">
-	import { Plus, Search, MessageSquareDashed } from '@lucide/svelte';
+	import { Plus, Search, MessageSquareDashed, Trash2 } from '@lucide/svelte';
+	import { goto } from '$app/navigation';
 	import { app } from '$lib/stores/app.svelte';
-	import { Button, Input, Avatar } from '$lib/components/ui';
+	import { Button, Input, Avatar, KebabMenu, KebabMenuItem } from '$lib/components/ui';
+	import { DeleteConfirmationDialog } from '$lib/components/characters';
 	import { cn, formatRelativeTime } from '$lib/utils';
 
 	let search = $state('');
+
+	let deleting_id = $state<string | null>(null);
+	let deleting_name = $state('');
+	let delete_open = $state(false);
+	let delete_loading = $state(false);
 
 	let filtered = $derived(
 		(() => {
@@ -21,6 +28,20 @@
 	function characterFor(id: string) {
 		return app.characters.find((c) => c.id === id);
 	}
+
+	function handleDeleteConversation() {
+		if (!deleting_id) return;
+		delete_loading = true;
+		app.deleteConversation(deleting_id)
+			.then(() => {
+				delete_open = false;
+				deleting_id = null;
+			})
+			.catch(console.error)
+			.finally(() => {
+				delete_loading = false;
+			});
+	}
 </script>
 
 <aside
@@ -31,7 +52,7 @@
 >
 	<!-- New chat -->
 	<div class="flex shrink-0 items-center gap-2 px-3 py-3">
-		<Button variant="primary" size="sm" class="flex-1">
+		<Button variant="primary" size="sm" class="flex-1" onclick={() => goto('/')}>
 			<Plus class="size-3.5" />
 			New chat
 		</Button>
@@ -59,7 +80,7 @@
 				{#each filtered as conv (conv.id)}
 					{@const char = characterFor(conv.character_id)}
 					{@const active = conv.id === app.active_conversation_id}
-					<li>
+					<li class="group/conv relative">
 						<a
 							href={`/chat/${conv.id}`}
 							class={cn(
@@ -92,9 +113,31 @@
 								</p>
 							</div>
 						</a>
+						<div class="absolute right-1 top-1 opacity-0 transition-opacity group-hover/conv:opacity-100">
+							<KebabMenu>
+								<KebabMenuItem
+									onclick={() => {
+										deleting_id = conv.id;
+										deleting_name = conv.title;
+										delete_open = true;
+									}}
+								>
+									<Trash2 class="size-3.5" />
+									Delete
+								</KebabMenuItem>
+							</KebabMenu>
+						</div>
 					</li>
 				{/each}
 			</ul>
 		{/if}
 	</div>
+	<DeleteConfirmationDialog
+		bind:open={delete_open}
+		title="Delete conversation"
+		description={`Are you sure you want to delete "${deleting_name}"? This action cannot be undone.`}
+		confirm_label="Delete"
+		onconfirm={handleDeleteConversation}
+		loading={delete_loading}
+	/>
 </aside>

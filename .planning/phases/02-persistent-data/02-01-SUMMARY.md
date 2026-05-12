@@ -2,7 +2,18 @@
 phase: 02-persistent-data
 plan: 01
 subsystem: rust-domain-db
-tags: [rust, domain-models, sqlite, rusqlite, migrations, dbworker, chrono, uuid, fts5]
+tags:
+  [
+    rust,
+    domain-models,
+    sqlite,
+    rusqlite,
+    migrations,
+    dbworker,
+    chrono,
+    uuid,
+    fts5,
+  ]
 
 requires: [01-native-desktop-shell]
 provides:
@@ -13,19 +24,44 @@ provides:
 affects: [02-persistent-data, 03-provider-setup, 04-chat-ui, 08-branching]
 
 tech-stack:
-  added: ["rusqlite@0.31 (bundled)", "rusqlite_migration@1.0", "chrono@0.4 (serde)",
-          "uuid@1 (v4)", "thiserror@2", "dirs@6", "anyhow@1", "tokio@1 (sync)", "tracing@0.1"]
-  patterns: [DbWorker mpsc background thread, collapsed migration set, FTS5 with content sync triggers, DateTime<Utc> ISO 8601 serialization]
+  added:
+    [
+      "rusqlite@0.31 (bundled)",
+      "rusqlite_migration@1.0",
+      "chrono@0.4 (serde)",
+      "uuid@1 (v4)",
+      "thiserror@2",
+      "dirs@6",
+      "anyhow@1",
+      "tokio@1 (sync)",
+      "tracing@0.1",
+    ]
+  patterns:
+    [
+      DbWorker mpsc background thread,
+      collapsed migration set,
+      FTS5 with content sync triggers,
+      DateTime<Utc> ISO 8601 serialization,
+    ]
 
 key-files:
-  created: ["src-tauri/src/domain/mod.rs", "src-tauri/src/domain/character.rs",
-            "src-tauri/src/domain/conversation.rs", "src-tauri/src/domain/persona.rs",
-            "src-tauri/src/domain/generation.rs",
-            "src-tauri/src/db/mod.rs", "src-tauri/src/db/migrations.rs",
-            "src-tauri/src/db/generation.rs", "src-tauri/src/db/models.rs",
-            "src-tauri/src/db/characters.rs", "src-tauri/src/db/conversations.rs",
-            "src-tauri/src/db/personas.rs", "src-tauri/src/db/lorebook.rs",
-            "src-tauri/src/db/regex_scripts.rs"]
+  created:
+    [
+      "src-tauri/src/domain/mod.rs",
+      "src-tauri/src/domain/character.rs",
+      "src-tauri/src/domain/conversation.rs",
+      "src-tauri/src/domain/persona.rs",
+      "src-tauri/src/domain/generation.rs",
+      "src-tauri/src/db/mod.rs",
+      "src-tauri/src/db/migrations.rs",
+      "src-tauri/src/db/generation.rs",
+      "src-tauri/src/db/models.rs",
+      "src-tauri/src/db/characters.rs",
+      "src-tauri/src/db/conversations.rs",
+      "src-tauri/src/db/personas.rs",
+      "src-tauri/src/db/lorebook.rs",
+      "src-tauri/src/db/regex_scripts.rs",
+    ]
   modified: ["src-tauri/Cargo.toml", "src-tauri/src/lib.rs"]
 
 key-decisions:
@@ -62,6 +98,7 @@ completed: 2026-05-11
 - **Tests:** 42 passed, 0 failed
 
 ## Accomplishments
+
 - All 4 domain models ported with DateTime<Utc> replacing NaiveDateTime
 - CharacterCardV2 with full V2 spec fields including lorebook_scan_depth/recursive_depth
 - Conversation with nullable provider_id, new title/last_message_preview fields
@@ -86,6 +123,7 @@ completed: 2026-05-11
 6. **Task 6: Implement DbWorker** — Created db/mod.rs with DbCommand enum, background thread, CRUD stubs with todo!()
 
 ## Files Created/Modified
+
 - `src-tauri/Cargo.toml` — Added 9 new crate dependencies
 - `src-tauri/src/lib.rs` — Added `pub mod db; pub mod domain;`
 - `src-tauri/src/domain/mod.rs` — Module declarations for character, conversation, persona, generation
@@ -104,6 +142,7 @@ completed: 2026-05-11
 - `src-tauri/src/db/regex_scripts.rs` — Stub for plan 02-02
 
 ## Decisions Made
+
 - Used `DateTime<Utc>` with `.to_rfc3339()` for DB serialization instead of `NaiveDateTime` with custom format string — more standard and timezone-safe
 - Used single collapsed migration instead of 9 incremental ones — clean start since this is a new Tauri app, not a migration from gtk_ref
 - Used `std::sync::mpsc` instead of tokio channels for DbWorker — simpler, no async runtime dependency for DB layer
@@ -112,16 +151,20 @@ completed: 2026-05-11
 ## Deviations from Plan
 
 ### None
+
 All tasks executed as specified. No deviations or auto-fixes required.
 
 ## Issues Encountered
+
 - None — all compilations and tests passed on first attempt
 
 ## Next Phase Readiness
+
 - Domain models and DB schema ready for CRUD implementation in plan 02-02
 - DbWorker thread pattern established, ready for real command handling
 - Schema supports Phase 3 (providers FK), Phase 8 (branch_id can be added to messages), Phase 9 (lorebook_entries, regex_scripts tables exist)
 
 ---
-*Phase: 02-persistent-data*
-*Completed: 2026-05-11*
+
+_Phase: 02-persistent-data_
+_Completed: 2026-05-11_

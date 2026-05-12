@@ -111,16 +111,19 @@ Settings page → invoke('save_provider', { provider })
 ### Key Architectural Decisions
 
 **Tauri Commands vs Events:**
+
 - **Commands (`invoke()`)**: Request-response — data loading, CRUD operations, settings
 - **Channels (`Channel<T>`)**: Streaming — AI token streaming, long-running operations
 - **Events (`emit()`/`listen()`)**: Unsolicited notifications — theme change, database changed, background task completed
 
 **State Split:**
+
 - **Frontend (AppState in Svelte 5 runes)**: UI state — current view, active conversation, sidebar open, theme, form state
 - **Backend (tauri::State)**: Service instances — DbService, AiService, KeyringStore. NOT domain data (that's in SQLite)
 - **SQLite**: Source of truth for all persistent domain data
 
 **Service Layer Pattern (from gtk_ref/):**
+
 - Each service is a struct with methods (not static functions)
 - Services are instantiated in `main.rs` and managed via `tauri::State`
 - Services access each other through `tauri::State` references, not direct injection
@@ -153,13 +156,14 @@ async fn send_message(
 ```
 
 Frontend:
+
 ```typescript
 const onEvent = new Channel<StreamEvent>();
 onEvent.onmessage = (msg) => {
-  if (msg.event === 'token') appState.appendToken(msg.data.text);
-  if (msg.event === 'complete') appState.finalizeMessage(msg.data.messageId);
+  if (msg.event === "token") appState.appendToken(msg.data.text);
+  if (msg.event === "complete") appState.finalizeMessage(msg.data.messageId);
 };
-await invoke('send_message', { conversationId, content, onEvent });
+await invoke("send_message", { conversationId, content, onEvent });
 ```
 
 **Pattern 2: Background DB Worker**

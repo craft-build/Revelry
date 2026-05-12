@@ -42,6 +42,7 @@ completed: 2026-05-10
 - **Tasks:** 6 (1 code change + verification)
 
 ## Accomplishments
+
 - `bun run build` produces SvelteKit static output in `build/`
 - `bun tauri build` compiles Rust release binary and bundles into:
   - `src-tauri/target/release/bundle/macos/Revelry.app`
@@ -55,22 +56,28 @@ completed: 2026-05-10
 2. **Tasks 01-05, 07: Verification** — all passed (no code changes needed)
 
 ## Files Created/Modified
+
 - `README.md` — Added Desktop Development section with prerequisites, dev/build commands, and updated Tauri embedding docs
 
 ## Decisions Made
+
 - Bundle identifier `com.revelry.app` works despite Tauri warning about `.app` suffix conflicting with macOS bundle extension
 
 ## Deviations from Plan
+
 None — production build succeeded on first try after Wave 1 fixes
 
 ## Issues Encountered
+
 - Tauri warns about bundle identifier ending in `.app` — non-blocking, build still succeeds. Could change to `com.revelry.desktop` in a future cleanup.
 
 ## Next Phase Readiness
+
 - Phase 1 complete — all 4 plans done
 - App runs in both dev mode (`bun tauri dev`) and production (`bun tauri build`)
 - Ready for Phase 2 (Persistent Data)
 
 ---
-*Phase: 01-native-desktop-shell*
-*Completed: 2026-05-10*
+
+_Phase: 01-native-desktop-shell_
+_Completed: 2026-05-10_

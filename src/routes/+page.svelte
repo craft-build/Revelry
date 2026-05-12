@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Sparkles, ArrowRight } from '@lucide/svelte';
+	import { goto } from '$app/navigation';
 	import { app } from '$lib/stores/app.svelte';
 	import { Avatar } from '$lib/components/ui';
 
@@ -38,10 +39,14 @@
 		<!-- Suggested characters -->
 		<div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
 			{#each suggested as char (char.id)}
-				<a
-					href="/chat/conv_01"
-					class="group flex flex-col gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-left transition-all hover:-translate-y-0.5 hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated)"
-				>
+			<button
+				type="button"
+				onclick={async () => {
+					const conv = await app.startConversation(char.id);
+					goto('/chat/' + conv.id);
+				}}
+				class="group flex flex-col gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-left transition-all hover:-translate-y-0.5 hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated)"
+			>
 					<Avatar name={char.name} src={char.avatar_path} size="md" />
 					<div class="space-y-1">
 						<h3
@@ -59,7 +64,7 @@
 							class="size-3 transition-transform group-hover:translate-x-0.5"
 						/>
 					</div>
-				</a>
+				</button>
 			{/each}
 		</div>
 
