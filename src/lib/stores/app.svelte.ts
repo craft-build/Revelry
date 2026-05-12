@@ -21,6 +21,7 @@ import {
   saveLorebook as apiSaveLorebook,
   deleteLorebook as apiDeleteLorebook,
   uploadAvatar as apiUploadAvatar,
+  deleteAvatar as apiDeleteAvatar,
 } from "$lib/data/api";
 
 /**
@@ -263,6 +264,15 @@ class AppState {
   }
 
   async deleteCharacter(id: string): Promise<void> {
+    // Clean up avatar file before deleting the record
+    const character = this.characters.find((c) => c.id === id);
+    if (character?.avatar_path) {
+      try {
+        await apiDeleteAvatar(character.avatar_path);
+      } catch (err) {
+        console.warn("Failed to delete avatar file:", err);
+      }
+    }
     await apiDeleteCharacter(id);
     this.characters = this.characters.filter((c) => c.id !== id);
     if (this.active_character?.id === id) {
@@ -302,6 +312,15 @@ class AppState {
   }
 
   async deletePersona(id: string): Promise<void> {
+    // Clean up avatar file before deleting the record
+    const persona = this.personas.find((p) => p.id === id);
+    if (persona?.avatar_path) {
+      try {
+        await apiDeleteAvatar(persona.avatar_path);
+      } catch (err) {
+        console.warn("Failed to delete avatar file:", err);
+      }
+    }
     await apiDeletePersona(id);
     this.personas = this.personas.filter((p) => p.id !== id);
   }
