@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Avatar as AvatarPrimitive } from 'bits-ui';
-	import { cn, avatarInitials } from '$lib/utils';
+	import { cn, avatarInitials, resolveAvatarUrl } from '$lib/utils';
 
 	interface Props {
 		src?: string;
@@ -12,6 +12,18 @@
 	}
 
 	let { src, name, size = 'md', class: className, ring = false }: Props = $props();
+
+	// Track whether the image failed to load so we fall back to initials
+	let img_failed = $state(false);
+
+	// Resolve the raw avatar_path (absolute filesystem path) to a displayable asset:// URL
+	let resolved_src = $derived(resolveAvatarUrl(src));
+
+	// Reset failure state when src changes
+	$effect(() => {
+		void src;
+		img_failed = false;
+	});
 
 	const sizeClasses = {
 		xs: 'size-6 text-[10px]',
@@ -30,8 +42,13 @@
 		className
 	)}
 >
-	{#if src}
-		<AvatarPrimitive.Image {src} alt={name} class="aspect-square size-full object-cover" />
+	{#if resolved_src && !img_failed}
+		<AvatarPrimitive.Image
+			src={resolved_src}
+			alt={name}
+			class="aspect-square size-full object-cover"
+			onerror={() => (img_failed = true)}
+		/>
 	{/if}
 	<AvatarPrimitive.Fallback
 		class="flex size-full items-center justify-center font-display tracking-wider"

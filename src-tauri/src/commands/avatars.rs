@@ -5,7 +5,8 @@ use tauri::{AppHandle, Manager};
 const AVATAR_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp", "gif"];
 
 /// Uploads an avatar image to the app's data directory.
-/// Copies the source file to `{app_data}/avatars/{id}.{ext}` and returns the relative path.
+/// Copies the source file to `{app_data}/avatars/{id}.{ext}` and returns the absolute path.
+/// The absolute path is suitable for Tauri's `convertFileSrc()` on the frontend.
 #[tauri::command]
 pub async fn upload_avatar(
     app: AppHandle,
@@ -55,11 +56,15 @@ pub async fn upload_avatar(
 
     std::fs::copy(&source, &dest_path).map_err(|e| format!("Failed to copy avatar: {}", e))?;
 
-    // Return relative path for storage in DB
-    Ok(format!("avatars/{}", dest_filename))
+    // Return absolute path for storage in DB — Tauri's convertFileSrc() needs absolute paths
+    dest_path
+        .to_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Failed to convert avatar path to string".to_string())
 }
 
 /// Deletes an avatar file from the app's data directory.
+/// Accepts both absolute paths (from upload_avatar) and legacy relative paths.
 #[tauri::command]
 pub async fn delete_avatar(app: AppHandle, path: String) -> Result<(), String> {
     let app_data = app
@@ -67,7 +72,11 @@ pub async fn delete_avatar(app: AppHandle, path: String) -> Result<(), String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {}", e))?;
 
-    let full_path = app_data.join(&path);
+    let full_path = if PathBuf::from(&path).is_absolute() {
+        PathBuf::from(&path)
+    } else {
+        app_data.join(&path)
+    };
 
     // Security: ensure the path is within the app data directory
     if !full_path.starts_with(&app_data) {
