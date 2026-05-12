@@ -5,8 +5,10 @@
 	import { Input, Button, Tooltip } from '$lib/components/ui';
 	import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 	import PersonaCard from '$lib/components/personas/PersonaCard.svelte';
+	import { CharacterEditorDialog, DeleteConfirmationDialog } from '$lib/components/characters';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import type { CharacterCard as CharacterCardType } from '$lib/types';
 
 	// Tab state synced to query string so the persona switcher's
 	// "Manage personas" link can deep-link.
@@ -23,6 +25,55 @@
 	$effect(() => {
 		app.character_search_query = searchValue;
 	});
+
+	// ── Editor state ────────────────────────────────────────────────────
+	let editor_open = $state(false);
+	let editor_mode = $state<'create' | 'edit'>('create');
+	let editing_character = $state<CharacterCardType | undefined>(undefined);
+
+	// ── Delete state ───────────────────────────────────────────────────
+	let delete_open = $state(false);
+	let deleting_id = $state<string | null>(null);
+	let deleting_name = $state('');
+	let is_deleting = $state(false);
+
+	function openCreateEditor() {
+		editor_mode = 'create';
+		editing_character = undefined;
+		editor_open = true;
+	}
+
+	function openEditEditor(id: string) {
+		const char = app.characters.find((c) => c.id === id);
+		if (char) {
+			editor_mode = 'edit';
+			editing_character = char;
+			editor_open = true;
+		}
+	}
+
+	function openDeleteDialog(id: string) {
+		const char = app.characters.find((c) => c.id === id);
+		if (char) {
+			deleting_id = id;
+			deleting_name = char.name;
+			delete_open = true;
+		}
+	}
+
+	async function handleDelete() {
+		if (!deleting_id) return;
+		is_deleting = true;
+		try {
+			await app.deleteCharacter(deleting_id);
+			delete_open = false;
+			deleting_id = null;
+		} catch (err) {
+			console.error('Failed to delete character:', err);
+		} finally {
+			is_deleting = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -46,7 +97,7 @@
 					<Upload class="size-3.5" />
 					Import card
 				</Button>
-				<Button variant="primary" size="sm">
+				<Button variant="primary" size="sm" onclick={openCreateEditor}>
 					<Plus class="size-3.5" />
 					New {tab === 'personas' ? 'persona' : 'character'}
 				</Button>
@@ -119,7 +170,7 @@
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
 							{#each app.filtered_characters as character (character.id)}
-								<CharacterCard {character} />
+								<CharacterCard {character} onedit={openEditEditor} ondelete={openDeleteDialog} />
 							{/each}
 						</div>
 					{/if}
@@ -147,3 +198,20 @@
 		</div>
 	</div>
 </div>
+
+<!-- Character editor dialog -->
+<CharacterEditorDialog
+	bind:open={editor_open}
+	mode={editor_mode}
+	character={editing_character}
+/>
+
+<!-- Delete confirmation dialog -->
+<DeleteConfirmationDialog
+	bind:open={delete_open}
+	title="Delete character"
+	description={`Are you sure you want to delete "${deleting_name}"? This action cannot be undone.`}
+	confirm_label="Delete character"
+	onconfirm={handleDelete}
+	loading={is_deleting}
+/>

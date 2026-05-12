@@ -1,15 +1,16 @@
 <script lang="ts">
 	import type { CharacterCard } from '$lib/types';
-	import { Avatar, Tag } from '$lib/components/ui';
-	import { MessageSquare, Pencil } from '@lucide/svelte';
+	import { Avatar, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
+	import { MessageSquare, Pencil, Trash2 } from '@lucide/svelte';
 
 	interface Props {
 		character: CharacterCard;
 		onchat?: (id: string) => void;
 		onedit?: (id: string) => void;
+		ondelete?: (id: string) => void;
 	}
 
-	let { character, onchat, onedit }: Props = $props();
+	let { character, onchat, onedit, ondelete }: Props = $props();
 </script>
 
 <article
@@ -52,13 +53,16 @@
 			<MessageSquare class="size-3.5" />
 			Start chat
 		</button>
-		<button
-			type="button"
-			onclick={() => onedit?.(character.id)}
-			class="inline-flex size-8 items-center justify-center rounded-(--radius-md) border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-			aria-label="Edit character"
-		>
-			<Pencil class="size-3.5" />
-		</button>
+		<KebabMenu>
+			<KebabMenuItem onclick={() => onedit?.(character.id)}>
+				<Pencil class="size-3.5" />
+				Edit
+			</KebabMenuItem>
+			<KebabMenuSeparator />
+			<KebabMenuItem destructive onclick={() => ondelete?.(character.id)}>
+				<Trash2 class="size-3.5" />
+				Delete
+			</KebabMenuItem>
+		</KebabMenu>
 	</div>
 </article>
