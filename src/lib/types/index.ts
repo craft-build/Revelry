@@ -43,16 +43,31 @@ export interface CharacterCard {
 export type LorebookPosition = "before_char" | "after_char" | "at_depth";
 export type LorebookActivation = "always" | "character_only" | "user_only";
 
+export interface Lorebook {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LorebookEntry {
   id: string;
-  character_id: string;
+  lorebook_id: string;
   keys: string[];
   secondary_keys?: string[];
   content: string;
   position: LorebookPosition;
-  depth?: number;
+  depth: number;
   activation_state: LorebookActivation;
   extensions?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KeywordTestResult {
+  entry_id: string;
+  matched_keys: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -182,4 +197,4 @@ export type { GenerationPreset as PromptPreset };
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type PrimaryView = "chat" | "characters" | "settings";
-export type CharactersTab = "characters" | "personas";
+export type CharactersTab = "characters" | "personas" | "lorebooks";
