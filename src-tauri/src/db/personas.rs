@@ -10,8 +10,8 @@ pub fn insert_persona(conn: &Connection, persona: &Persona) -> Result<()> {
     let tags_str = serde_json::to_string(&persona.tags)?;
     conn.prepare_cached(
         "INSERT INTO personas (id, name, appearance, personality, background, role_description,
-         relationships, speech_style, tags, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+         relationships, speech_style, tags, avatar_path, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
     )?
     .execute(params![
         persona.id,
@@ -23,6 +23,7 @@ pub fn insert_persona(conn: &Connection, persona: &Persona) -> Result<()> {
         persona.relationships,
         persona.speech_style,
         tags_str,
+        persona.avatar_path,
         persona.created_at.to_rfc3339(),
         persona.updated_at.to_rfc3339(),
     ])?;
@@ -33,7 +34,7 @@ pub fn insert_persona(conn: &Connection, persona: &Persona) -> Result<()> {
 pub fn load_personas(conn: &Connection) -> Result<Vec<Persona>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, name, appearance, personality, background, role_description,
-         relationships, speech_style, tags, created_at, updated_at
+         relationships, speech_style, tags, avatar_path, created_at, updated_at
          FROM personas ORDER BY updated_at DESC",
     )?;
     let personas = stmt.query_map([], |row| row_to_persona(row))?;
@@ -48,7 +49,7 @@ pub fn load_personas(conn: &Connection) -> Result<Vec<Persona>> {
 pub fn load_persona(conn: &Connection, id: &str) -> Result<Option<Persona>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, name, appearance, personality, background, role_description,
-         relationships, speech_style, tags, created_at, updated_at
+         relationships, speech_style, tags, avatar_path, created_at, updated_at
          FROM personas WHERE id = ?1",
     )?;
     let mut personas = stmt.query_map(params![id], |row| row_to_persona(row))?;
@@ -64,7 +65,7 @@ pub fn update_persona(conn: &Connection, persona: &Persona) -> Result<()> {
     conn.prepare_cached(
         "UPDATE personas SET name = ?1, appearance = ?2, personality = ?3, background = ?4,
          role_description = ?5, relationships = ?6, speech_style = ?7, tags = ?8,
-         updated_at = ?9 WHERE id = ?10",
+         avatar_path = ?9, updated_at = ?10 WHERE id = ?11",
     )?
     .execute(params![
         persona.name,
@@ -75,6 +76,7 @@ pub fn update_persona(conn: &Connection, persona: &Persona) -> Result<()> {
         persona.relationships,
         persona.speech_style,
         tags_str,
+        persona.avatar_path,
         persona.updated_at.to_rfc3339(),
         persona.id,
     ])?;
@@ -94,7 +96,7 @@ pub fn search_personas(conn: &Connection, query: &str) -> Result<Vec<Persona>> {
     let pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
     let mut stmt = conn.prepare_cached(
         "SELECT id, name, appearance, personality, background, role_description,
-         relationships, speech_style, tags, created_at, updated_at
+         relationships, speech_style, tags, avatar_path, created_at, updated_at
          FROM personas
          WHERE name LIKE ?1 ESCAPE '\\' OR personality LIKE ?1 ESCAPE '\\'
          ORDER BY updated_at DESC",

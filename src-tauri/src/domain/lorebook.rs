@@ -1,0 +1,257 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
+use uuid::Uuid;
+
+/// Position where a lorebook entry is inserted relative to the character card.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum LorebookPosition {
+    BeforeChar,
+    AfterChar,
+    AtDepth,
+}
+
+impl Default for LorebookPosition {
+    fn default() -> Self {
+        LorebookPosition::AfterChar
+    }
+}
+
+impl fmt::Display for LorebookPosition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LorebookPosition::BeforeChar => write!(f, "before_char"),
+            LorebookPosition::AfterChar => write!(f, "after_char"),
+            LorebookPosition::AtDepth => write!(f, "at_depth"),
+        }
+    }
+}
+
+impl FromStr for LorebookPosition {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "before_char" => Ok(LorebookPosition::BeforeChar),
+            "after_char" => Ok(LorebookPosition::AfterChar),
+            "at_depth" => Ok(LorebookPosition::AtDepth),
+            _ => Err(format!("Invalid LorebookPosition: {}", s)),
+        }
+    }
+}
+
+/// Activation condition for a lorebook entry.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum LorebookActivation {
+    Always,
+    CharacterOnly,
+    UserOnly,
+}
+
+impl Default for LorebookActivation {
+    fn default() -> Self {
+        LorebookActivation::Always
+    }
+}
+
+impl fmt::Display for LorebookActivation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LorebookActivation::Always => write!(f, "always"),
+            LorebookActivation::CharacterOnly => write!(f, "character_only"),
+            LorebookActivation::UserOnly => write!(f, "user_only"),
+        }
+    }
+}
+
+impl FromStr for LorebookActivation {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "always" => Ok(LorebookActivation::Always),
+            "character_only" => Ok(LorebookActivation::CharacterOnly),
+            "user_only" => Ok(LorebookActivation::UserOnly),
+            _ => Err(format!("Invalid LorebookActivation: {}", s)),
+        }
+    }
+}
+
+/// A standalone lorebook (world info) that can be shared across characters.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Lorebook {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Lorebook {
+    /// Creates a new lorebook with a generated UUID v4 id, current timestamps,
+    /// and empty description.
+    pub fn new(name: String) -> Self {
+        let now = Utc::now();
+        Self {
+            id: Uuid::new_v4().to_string(),
+            name,
+            description: String::new(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+/// A single entry within a lorebook — a piece of world info activated by keywords.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct LorebookEntry {
+    pub id: String,
+    pub lorebook_id: String,
+    #[serde(default)]
+    pub keys: Vec<String>,
+    #[serde(default)]
+    pub secondary_keys: Vec<String>,
+    #[serde(default)]
+    pub content: String,
+    #[serde(default)]
+    pub position: LorebookPosition,
+    #[serde(default)]
+    pub depth: i32,
+    #[serde(default)]
+    pub activation_state: LorebookActivation,
+    #[serde(default = "default_extensions")]
+    pub extensions: serde_json::Value,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+fn default_extensions() -> serde_json::Value {
+    serde_json::Value::Null
+}
+
+impl LorebookEntry {
+    /// Creates a new lorebook entry with a generated UUID v4 id, current timestamps,
+    /// and all other fields at their defaults.
+    pub fn new(lorebook_id: String) -> Self {
+        let now = Utc::now();
+        Self {
+            id: Uuid::new_v4().to_string(),
+            lorebook_id,
+            keys: Vec::new(),
+            secondary_keys: Vec::new(),
+            content: String::new(),
+            position: LorebookPosition::AfterChar,
+            depth: 4,
+            activation_state: LorebookActivation::Always,
+            extensions: serde_json::Value::Null,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lorebook_new() {
+        let lorebook = Lorebook::new("Test Lorebook".to_string());
+        assert!(!lorebook.id.is_empty());
+        let parsed = Uuid::parse_str(&lorebook.id);
+        assert!(parsed.is_ok(), "id should be valid UUID v4");
+        assert_eq!(lorebook.name, "Test Lorebook");
+        assert!(lorebook.description.is_empty());
+    }
+
+    #[test]
+    fn test_lorebook_entry_new() {
+        let entry = LorebookEntry::new("lorebook-123".to_string());
+        assert!(!entry.id.is_empty());
+        let parsed = Uuid::parse_str(&entry.id);
+        assert!(parsed.is_ok(), "id should be valid UUID v4");
+        assert_eq!(entry.lorebook_id, "lorebook-123");
+        assert!(entry.keys.is_empty());
+        assert!(entry.secondary_keys.is_empty());
+        assert!(entry.content.is_empty());
+        assert_eq!(entry.position, LorebookPosition::AfterChar);
+        assert_eq!(entry.depth, 4);
+        assert_eq!(entry.activation_state, LorebookActivation::Always);
+        assert_eq!(entry.extensions, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn test_lorebook_position_display_from_str() {
+        assert_eq!(LorebookPosition::BeforeChar.to_string(), "before_char");
+        assert_eq!(LorebookPosition::AfterChar.to_string(), "after_char");
+        assert_eq!(LorebookPosition::AtDepth.to_string(), "at_depth");
+
+        assert_eq!(
+            "before_char".parse::<LorebookPosition>(),
+            Ok(LorebookPosition::BeforeChar)
+        );
+        assert_eq!(
+            "after_char".parse::<LorebookPosition>(),
+            Ok(LorebookPosition::AfterChar)
+        );
+        assert_eq!(
+            "at_depth".parse::<LorebookPosition>(),
+            Ok(LorebookPosition::AtDepth)
+        );
+        assert!("invalid".parse::<LorebookPosition>().is_err());
+    }
+
+    #[test]
+    fn test_lorebook_activation_display_from_str() {
+        assert_eq!(LorebookActivation::Always.to_string(), "always");
+        assert_eq!(
+            LorebookActivation::CharacterOnly.to_string(),
+            "character_only"
+        );
+        assert_eq!(LorebookActivation::UserOnly.to_string(), "user_only");
+
+        assert_eq!(
+            "always".parse::<LorebookActivation>(),
+            Ok(LorebookActivation::Always)
+        );
+        assert_eq!(
+            "character_only".parse::<LorebookActivation>(),
+            Ok(LorebookActivation::CharacterOnly)
+        );
+        assert_eq!(
+            "user_only".parse::<LorebookActivation>(),
+            Ok(LorebookActivation::UserOnly)
+        );
+        assert!("invalid".parse::<LorebookActivation>().is_err());
+    }
+
+    #[test]
+    fn test_lorebook_serde_roundtrip() {
+        let mut lorebook = Lorebook::new("Roundtrip".to_string());
+        lorebook.description = "A test lorebook".to_string();
+
+        let json = serde_json::to_string(&lorebook).expect("serialize failed");
+        let deserialized: Lorebook = serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(lorebook, deserialized);
+    }
+
+    #[test]
+    fn test_lorebook_entry_serde_roundtrip() {
+        let mut entry = LorebookEntry::new("lb-1".to_string());
+        entry.keys = vec!["magic".to_string(), "spell".to_string()];
+        entry.secondary_keys = vec!["wizard".to_string()];
+        entry.content = "Magic flows through everything.".to_string();
+        entry.position = LorebookPosition::AtDepth;
+        entry.depth = 2;
+        entry.activation_state = LorebookActivation::CharacterOnly;
+        entry.extensions = serde_json::json!({"custom": true});
+
+        let json = serde_json::to_string(&entry).expect("serialize failed");
+        let deserialized: LorebookEntry = serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(entry, deserialized);
+    }
+}

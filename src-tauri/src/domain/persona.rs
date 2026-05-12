@@ -22,6 +22,8 @@ pub struct Persona {
     pub speech_style: String,
     #[serde(default)]
     pub tags: Vec<String>,
+    #[serde(default)]
+    pub avatar_path: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -41,6 +43,7 @@ impl Persona {
             relationships: String::new(),
             speech_style: String::new(),
             tags: Vec::new(),
+            avatar_path: None,
             created_at: now,
             updated_at: now,
         }

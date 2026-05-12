@@ -189,6 +189,57 @@ pub fn get_migrations() -> Migrations<'static> {
              DROP TABLE IF EXISTS app_settings;
              DROP TABLE IF EXISTS providers;"
         ),
+
+        // Phase 3: standalone lorebooks + avatar_path on personas
+        M::up(
+            "
+            -- Add avatar_path column to personas
+            ALTER TABLE personas ADD COLUMN avatar_path TEXT;
+
+            -- Drop old lorebook_entries table (was per-character, now per-lorebook)
+            DROP INDEX IF EXISTS idx_lorebook_entries_character;
+            DROP TABLE IF EXISTS lorebook_entries;
+
+            -- Standalone lorebooks table
+            CREATE TABLE lorebooks (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            -- Lorebook entries (now belong to a lorebook, not a character)
+            CREATE TABLE lorebook_entries (
+                id TEXT PRIMARY KEY,
+                lorebook_id TEXT NOT NULL REFERENCES lorebooks(id) ON DELETE CASCADE,
+                keys TEXT NOT NULL DEFAULT '[]',
+                secondary_keys TEXT NOT NULL DEFAULT '[]',
+                content TEXT NOT NULL DEFAULT '',
+                position TEXT NOT NULL DEFAULT 'after_char',
+                depth INTEGER NOT NULL DEFAULT 4,
+                activation_state TEXT NOT NULL DEFAULT 'always',
+                extensions TEXT NOT NULL DEFAULT 'null',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX idx_lorebook_entries_lorebook ON lorebook_entries(lorebook_id);
+
+            -- Character-lorebook junction table (many-to-many)
+            CREATE TABLE character_lorebooks (
+                character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+                lorebook_id TEXT NOT NULL REFERENCES lorebooks(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (character_id, lorebook_id)
+            );
+            "
+        )
+        .down(
+            "DROP TABLE IF EXISTS character_lorebooks;
+             DROP INDEX IF EXISTS idx_lorebook_entries_lorebook;
+             DROP TABLE IF EXISTS lorebook_entries;
+             DROP TABLE IF EXISTS lorebooks;"
+        ),
     ])
 }
 
@@ -565,5 +616,123 @@ mod tests {
             .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
             .expect("Failed to query foreign_keys");
         assert_eq!(foreign_keys, 1, "foreign_keys should be enabled");
+    }
+
+    // ── Phase 3 migration tests ───────────────────────────────────────────
+
+    #[test]
+    fn test_lorebooks_table_exists() {
+        let conn = setup_test_db();
+        let result: i64 = conn
+            .query_row(
+                "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='lorebooks')",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query sqlite_master");
+        assert_eq!(
+            result, 1,
+            "lorebooks table should exist after Phase 3 migration"
+        );
+    }
+
+    #[test]
+    fn test_lorebook_entries_table_exists() {
+        let conn = setup_test_db();
+        let result: i64 = conn
+            .query_row(
+                "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='lorebook_entries')",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query sqlite_master");
+        assert_eq!(
+            result, 1,
+            "lorebook_entries table should exist after Phase 3 migration"
+        );
+    }
+
+    #[test]
+    fn test_character_lorebooks_table_exists() {
+        let conn = setup_test_db();
+        let result: i64 = conn
+            .query_row(
+                "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='character_lorebooks')",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query sqlite_master");
+        assert_eq!(
+            result, 1,
+            "character_lorebooks table should exist after Phase 3 migration"
+        );
+    }
+
+    #[test]
+    fn test_personas_has_avatar_path() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM personas")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "avatar_path"),
+            "personas table should have avatar_path column after Phase 3 migration"
+        );
+    }
+
+    #[test]
+    fn test_lorebook_entries_has_lorebook_id() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM lorebook_entries")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "lorebook_id"),
+            "lorebook_entries table should have lorebook_id column (not character_id)"
+        );
+        assert!(
+            !columns.iter().any(|c| c == "character_id"),
+            "lorebook_entries table should NOT have character_id column after Phase 3 migration"
+        );
+    }
+
+    #[test]
+    fn test_lorebook_entries_columns() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM lorebook_entries")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let expected = vec![
+            "id",
+            "lorebook_id",
+            "keys",
+            "secondary_keys",
+            "content",
+            "position",
+            "depth",
+            "activation_state",
+            "extensions",
+            "created_at",
+            "updated_at",
+        ];
+        for col in &expected {
+            assert!(
+                columns.iter().any(|c| c == col),
+                "lorebook_entries should have '{}' column",
+                col
+            );
+        }
     }
 }

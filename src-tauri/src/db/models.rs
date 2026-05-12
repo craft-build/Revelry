@@ -1,6 +1,7 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageRole};
 use crate::domain::generation::GenerationPreset;
+use crate::domain::lorebook::{Lorebook, LorebookActivation, LorebookEntry, LorebookPosition};
 use crate::domain::persona::Persona;
 use chrono::{DateTime, Utc};
 use rusqlite::Row;
@@ -99,6 +100,7 @@ pub fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
         relationships: row.get("relationships")?,
         speech_style: row.get("speech_style")?,
         tags,
+        avatar_path: row.get("avatar_path")?,
         created_at,
         updated_at,
     })
@@ -185,6 +187,87 @@ pub fn row_to_generation_preset(row: &Row) -> rusqlite::Result<GenerationPreset>
     })
 }
 
+/// Converts a database row into a Lorebook.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+pub fn row_to_lorebook(row: &Row) -> rusqlite::Result<Lorebook> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+    let created_at = parse_timestamp(&created_at_str)?;
+    let updated_at = parse_timestamp(&updated_at_str)?;
+
+    Ok(Lorebook {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        description: row.get("description")?,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Converts a database row into a LorebookEntry.
+/// JSON fields (keys, secondary_keys, extensions) are deserialized from TEXT.
+/// Position and activation_state are parsed from TEXT via FromStr.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+    let created_at = parse_timestamp(&created_at_str)?;
+    let updated_at = parse_timestamp(&updated_at_str)?;
+
+    let keys_str: String = row.get("keys")?;
+    let keys: Vec<String> = serde_json::from_str(&keys_str).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+    })?;
+
+    let secondary_keys_str: String = row.get("secondary_keys")?;
+    let secondary_keys: Vec<String> = serde_json::from_str(&secondary_keys_str).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+    })?;
+
+    let position_str: String = row.get("position")?;
+    let position = match LorebookPosition::from_str(&position_str) {
+        Ok(p) => p,
+        Err(e) => {
+            return Err(rusqlite::Error::FromSqlConversionFailure(
+                0,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+            ));
+        }
+    };
+
+    let activation_str: String = row.get("activation_state")?;
+    let activation_state = match LorebookActivation::from_str(&activation_str) {
+        Ok(a) => a,
+        Err(e) => {
+            return Err(rusqlite::Error::FromSqlConversionFailure(
+                0,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+            ));
+        }
+    };
+
+    let extensions_str: String = row.get("extensions")?;
+    let extensions: serde_json::Value = serde_json::from_str(&extensions_str).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+    })?;
+
+    Ok(LorebookEntry {
+        id: row.get("id")?,
+        lorebook_id: row.get("lorebook_id")?,
+        keys,
+        secondary_keys,
+        content: row.get("content")?,
+        position,
+        depth: row.get("depth")?,
+        activation_state,
+        extensions,
+        created_at,
+        updated_at,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -236,7 +319,7 @@ mod tests {
         let mut stmt = conn
             .prepare(
                 "SELECT id, name, appearance, personality, background, role_description,
-                 relationships, speech_style, tags, created_at, updated_at
+                 relationships, speech_style, tags, avatar_path, created_at, updated_at
                  FROM personas WHERE id = ?1",
             )
             .expect("prepare failed");
@@ -248,6 +331,7 @@ mod tests {
         assert_eq!(loaded.name, "Mapper Persona");
         assert_eq!(loaded.personality, "Friendly");
         assert!(loaded.tags.is_empty());
+        assert!(loaded.avatar_path.is_none());
     }
 
     #[test]
