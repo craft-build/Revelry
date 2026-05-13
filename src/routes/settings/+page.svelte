@@ -1,6 +1,9 @@
 <script lang="ts">
+	import type { Provider } from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
-	import { Button, Input, Tag } from '$lib/components/ui';
+	import { Button, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
+	import { ProviderEditorDialog, KeyringUnavailableBanner } from '$lib/components/providers';
+	import { DeleteConfirmationDialog } from '$lib/components/characters';
 	import {
 		Cpu,
 		SlidersHorizontal,
@@ -9,8 +12,8 @@
 		Database,
 		Info,
 		Plus,
-		Eye,
-		EyeOff
+		Check,
+		X
 	} from '@lucide/svelte';
 
 	const sections = [
@@ -23,7 +26,12 @@
 	];
 
 	let active = $state<string>('providers');
-	let revealKey = $state<Record<string, boolean>>({});
+	let editor_open = $state(false);
+	let editor_mode = $state<'create' | 'edit'>('create');
+	let editor_provider = $state<Provider | undefined>(undefined);
+	let delete_open = $state(false);
+	let delete_target = $state<string | null>(null);
+	let delete_loading = $state(false);
 </script>
 
 <svelte:head>
@@ -58,81 +66,132 @@
 				<header class="mb-6">
 					<h1 class="font-display text-2xl font-semibold tracking-tight">AI Providers</h1>
 					<p class="mt-1 text-sm text-(--color-muted)">
-						Configure providers via the rig framework. API keys are stored in your OS keychain
-						and never written to disk in plaintext.
+						Configure AI providers and API keys. Keys are stored in your OS keychain.
 					</p>
 				</header>
 
-				<div class="flex flex-col gap-3">
-					{#each app.providers as provider (provider.id)}
-						<div
-							class="rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface)"
-						>
-							<div class="flex items-center justify-between gap-3 border-b border-(--color-border) px-4 py-3">
-								<div>
-									<h3 class="font-display text-base font-semibold tracking-tight">
-										{provider.name}
-									</h3>
-									<div class="mt-0.5 flex items-center gap-2 text-[11px] text-(--color-subtle)">
-										<Tag>{provider.provider_type}</Tag>
-										<span class="font-mono">{provider.model_name}</span>
-									</div>
-								</div>
-								<Button variant="ghost" size="sm">Edit</Button>
-							</div>
+				{#if !app.keyring_available}
+					<KeyringUnavailableBanner class="mb-4" />
+				{/if}
 
-							<div class="flex flex-col gap-2.5 px-4 py-3">
-								<div class="grid grid-cols-3 gap-2 text-xs">
-									<div>
-										<div class="text-(--color-subtle)">Temperature</div>
-										<div class="font-mono">{provider.default_params?.temperature ?? '—'}</div>
-									</div>
-									<div>
-										<div class="text-(--color-subtle)">Top P</div>
-										<div class="font-mono">{provider.default_params?.top_p ?? '—'}</div>
-									</div>
-									<div>
-										<div class="text-(--color-subtle)">Max tokens</div>
-										<div class="font-mono">{provider.default_params?.max_tokens ?? '—'}</div>
-									</div>
-								</div>
-
-								<div class="flex items-center gap-2">
-									<Input
-										type={revealKey[provider.id] ? 'text' : 'password'}
-										value="sk-…example…not-stored"
-										readonly
-										class="h-8 flex-1 font-mono text-xs"
-									/>
-									<button
-										type="button"
-										onclick={() =>
-											(revealKey = {
-												...revealKey,
-												[provider.id]: !revealKey[provider.id]
-											})}
-										class="inline-flex size-8 items-center justify-center rounded-(--radius-md) border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-										aria-label="Toggle key visibility"
-									>
-										{#if revealKey[provider.id]}
-											<EyeOff class="size-3.5" />
-										{:else}
-											<Eye class="size-3.5" />
-										{/if}
-									</button>
-								</div>
-							</div>
+				{#if app.providers.length === 0}
+					<div class="flex flex-col items-center justify-center gap-4 py-12 text-center">
+						<div class="flex size-12 items-center justify-center rounded-full bg-(--color-surface-elevated) text-(--color-muted)">
+							<Cpu class="size-6" />
 						</div>
-					{/each}
+						<div>
+							<p class="font-medium text-(--color-foreground)">No providers yet.</p>
+							<p class="mt-1 text-sm text-(--color-muted)">
+								Add an AI provider to start chatting. API keys are stored securely in your
+								OS keychain.
+							</p>
+						</div>
+						<Button
+							variant="primary"
+							size="sm"
+							onclick={() => {
+								editor_mode = 'create';
+								editor_provider = undefined;
+								editor_open = true;
+							}}
+						>
+							<Plus class="size-4" />
+							Add provider
+						</Button>
+					</div>
+				{:else}
+					<div class="flex flex-col gap-3">
+						{#each app.providers as provider (provider.id)}
+							<div
+								class="rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface)"
+							>
+								<div class="flex items-center justify-between gap-3 border-b border-(--color-border) px-4 py-3">
+									<div>
+										<h3 class="font-display text-base font-semibold tracking-tight">
+											{provider.name}
+										</h3>
+										<div class="mt-0.5 flex items-center gap-2 text-[11px] text-(--color-subtle)">
+											<Tag>{provider.provider_type}</Tag>
+											{#if provider.models.length > 0}
+												<span class="font-mono">
+													{provider.models.slice(0, 3).map((m) => m.name).join(' · ')}
+													{#if provider.models.length > 3}
+														<span class="text-(--color-muted)"> +{provider.models.length - 3} more</span>
+													{/if}
+												</span>
+											{:else}
+												<span class="font-mono">{provider.model_name}</span>
+											{/if}
+										</div>
+									</div>
+									<div class="flex items-center gap-2">
+										{#if provider.has_api_key}
+											<span class="inline-flex items-center gap-1 text-xs text-(--color-success)">
+												<Check class="size-3" />
+												Key set
+											</span>
+										{:else}
+											<span class="inline-flex items-center gap-1 text-xs text-(--color-subtle)">
+												<X class="size-3" />
+												No key
+											</span>
+										{/if}
+										<KebabMenu>
+											<KebabMenuItem
+												onclick={() => {
+													editor_mode = 'edit';
+													editor_provider = provider;
+													editor_open = true;
+												}}
+											>
+												Edit
+											</KebabMenuItem>
+											<KebabMenuSeparator />
+											<KebabMenuItem
+												onclick={() => {
+													delete_target = provider.id;
+													delete_open = true;
+												}}
+											>
+												Delete
+											</KebabMenuItem>
+										</KebabMenu>
+									</div>
+								</div>
 
-					<button
-						type="button"
-						class="inline-flex items-center justify-center gap-2 rounded-(--radius-lg) border border-dashed border-(--color-border) px-4 py-4 text-sm text-(--color-muted) hover:border-(--color-border-strong) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-					>
-						<Plus class="size-4" />
-						Add provider
-					</button>
-				</div>
+								<div class="px-4 py-3">
+									<div class="grid grid-cols-3 gap-2 text-xs">
+										<div>
+											<div class="text-(--color-subtle)">Temperature</div>
+											<div class="font-mono">{provider.default_params?.temperature ?? '—'}</div>
+										</div>
+										<div>
+											<div class="text-(--color-subtle)">Top P</div>
+											<div class="font-mono">{provider.default_params?.top_p ?? '—'}</div>
+										</div>
+										<div>
+											<div class="text-(--color-subtle)">Max tokens</div>
+											<div class="font-mono">{provider.default_params?.max_tokens ?? '—'}</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						{/each}
+
+						<button
+							type="button"
+							onclick={() => {
+								editor_mode = 'create';
+								editor_provider = undefined;
+								editor_open = true;
+							}}
+							class="inline-flex items-center justify-center gap-2 rounded-(--radius-lg) border border-dashed border-(--color-border) px-4 py-4 text-sm text-(--color-muted) hover:border-(--color-border-strong) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
+						>
+							<Plus class="size-4" />
+							Add provider
+						</button>
+					</div>
+				{/if}
 			{:else if active === 'generation'}
 				<header class="mb-6">
 					<h1 class="font-display text-2xl font-semibold tracking-tight">Generation</h1>
@@ -230,3 +289,30 @@
 		</div>
 	</div>
 </div>
+
+<ProviderEditorDialog
+	bind:open={editor_open}
+	mode={editor_mode}
+	provider={editor_provider}
+/>
+
+<DeleteConfirmationDialog
+	bind:open={delete_open}
+	title={delete_target ? `Delete ${app.providers.find((p) => p.id === delete_target)?.name ?? 'provider'}?` : 'Delete provider?'}
+	description="This will permanently remove this provider, its models, and the stored API key. Conversations using this provider will lose their model reference. This cannot be undone."
+	confirm_label="Delete"
+	loading={delete_loading}
+	onconfirm={async () => {
+		if (delete_target) {
+			delete_loading = true;
+			try {
+				await app.deleteProvider(delete_target);
+			} catch (err) {
+				console.error('Failed to delete provider:', err);
+			} finally {
+				delete_loading = false;
+				delete_target = null;
+			}
+		}
+	}}
+/>
