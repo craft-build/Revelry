@@ -3,6 +3,7 @@ pub mod conversation;
 pub mod generation;
 pub mod lorebook;
 pub mod persona;
+pub mod provider;
 
 pub use character::CharacterCardV2;
 pub use conversation::{Conversation, Message};
@@ -11,3 +12,4 @@ pub use generation::GenerationPreset;
 #[allow(unused_imports)]
 pub use lorebook::{Lorebook, LorebookActivation, LorebookEntry, LorebookPosition};
 pub use persona::Persona;
+pub use provider::{GenerationParams, ProviderConfig, ProviderModelEntry, ProviderType};

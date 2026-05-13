@@ -12,6 +12,8 @@ pub struct Conversation {
     pub character_id: String,
     /// Nullable — no providers in Phase 2.
     pub provider_id: Option<String>,
+    /// Specific model within a provider. Paired with provider_id to identify the model.
+    pub model_name: Option<String>,
     pub creator_persona_id: Option<String>,
     /// Per-conversation preset override per D-03. Resolved via hierarchy:
     /// conversation → character → global → none (provider defaults).
@@ -33,6 +35,7 @@ impl Conversation {
             id: Uuid::new_v4().to_string(),
             character_id,
             provider_id: None,
+            model_name: None,
             creator_persona_id: None,
             generation_preset_id: None,
             title: String::new(),

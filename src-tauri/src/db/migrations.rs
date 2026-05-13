@@ -240,6 +240,27 @@ pub fn get_migrations() -> Migrations<'static> {
              DROP TABLE IF EXISTS lorebook_entries;
              DROP TABLE IF EXISTS lorebooks;"
         ),
+
+        // Phase 4: provider models + conversation model_name
+        M::up(
+            "
+            -- Add models JSON column to providers (1:N provider-models)
+            ALTER TABLE providers ADD COLUMN models TEXT NOT NULL DEFAULT '[]';
+
+            -- Add default_params JSON column to providers (generation params)
+            ALTER TABLE providers ADD COLUMN default_params TEXT;
+
+            -- Add model_name to conversations (provider_id + model_name pair)
+            ALTER TABLE conversations ADD COLUMN model_name TEXT;
+            "
+        )
+        .down(
+            "
+            ALTER TABLE conversations DROP COLUMN model_name;
+            ALTER TABLE providers DROP COLUMN default_params;
+            ALTER TABLE providers DROP COLUMN models;
+            "
+        ),
     ])
 }
 
@@ -734,5 +755,55 @@ mod tests {
                 col
             );
         }
+    }
+
+    // ── Phase 4 migration tests ───────────────────────────────────────────
+
+    #[test]
+    fn test_providers_has_models_column() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM providers")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "models"),
+            "providers table should have 'models' column after Phase 4 migration"
+        );
+    }
+
+    #[test]
+    fn test_providers_has_default_params_column() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM providers")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "default_params"),
+            "providers table should have 'default_params' column after Phase 4 migration"
+        );
+    }
+
+    #[test]
+    fn test_conversations_has_model_name() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM conversations")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "model_name"),
+            "conversations table should have 'model_name' column after Phase 4 migration"
+        );
     }
 }

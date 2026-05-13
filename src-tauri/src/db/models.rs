@@ -3,6 +3,7 @@ use crate::domain::conversation::{Conversation, Message, MessageRole};
 use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{Lorebook, LorebookActivation, LorebookEntry, LorebookPosition};
 use crate::domain::persona::Persona;
+use crate::domain::provider::{GenerationParams, ProviderConfig, ProviderModelEntry, ProviderType};
 use chrono::{DateTime, Utc};
 use rusqlite::Row;
 use std::str::FromStr;
@@ -119,6 +120,7 @@ pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
         id: row.get("id")?,
         character_id: row.get("character_id")?,
         provider_id: row.get("provider_id")?,
+        model_name: row.get("model_name")?,
         creator_persona_id: row.get("creator_persona_id")?,
         generation_preset_id: row.get("generation_preset_id")?,
         title: row.get("title")?,
@@ -154,6 +156,57 @@ pub fn row_to_message(row: &Row) -> rusqlite::Result<Message> {
         content: row.get("content")?,
         sort_order: row.get("sort_order")?,
         timestamp,
+    })
+}
+
+/// Converts a database row into a ProviderConfig.
+/// JSON fields (provider_type, models, default_params) are deserialized from TEXT.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+pub fn row_to_provider(row: &Row) -> rusqlite::Result<ProviderConfig> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+    let created_at = parse_timestamp(&created_at_str)?;
+    let updated_at = parse_timestamp(&updated_at_str)?;
+
+    // ProviderType from JSON TEXT column
+    let provider_type_str: String = row.get("provider_type")?;
+    let provider_type: ProviderType = serde_json::from_str(&provider_type_str).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+    })?;
+
+    // models JSON TEXT column
+    let models_str: String = row.get("models")?;
+    let models: Vec<ProviderModelEntry> = serde_json::from_str(&models_str).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+    })?;
+
+    // default_params JSON TEXT column (nullable)
+    let default_params: Option<GenerationParams> = {
+        let default_params_str: Option<String> = row.get("default_params")?;
+        match default_params_str {
+            Some(s) if s != "null" => serde_json::from_str(&s).map_err(|e| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    0,
+                    rusqlite::types::Type::Text,
+                    Box::new(e),
+                )
+            })?,
+            _ => None,
+        }
+    };
+
+    Ok(ProviderConfig {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        provider_type,
+        base_url: row.get("base_url")?,
+        model_name: row.get("model_name")?,
+        models,
+        context_window_size: row.get("context_window_size")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
+        default_params,
+        created_at,
+        updated_at,
     })
 }
 

@@ -19,14 +19,15 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
 
     // Insert the conversation
     conn.prepare_cached(
-        "INSERT INTO conversations (id, character_id, provider_id, creator_persona_id,
+        "INSERT INTO conversations (id, character_id, provider_id, model_name, creator_persona_id,
          generation_preset_id, title, last_message_preview, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
     )?
     .execute(params![
         &conversation.id,
         &conversation.character_id,
         &conversation.provider_id,
+        &conversation.model_name,
         &conversation.creator_persona_id,
         &conversation.generation_preset_id,
         &conversation.title,
@@ -52,7 +53,7 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
 /// Loads all conversations, ordered by updated_at descending (most recent first).
 pub fn load_conversations(conn: &Connection) -> Result<Vec<Conversation>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, character_id, provider_id, creator_persona_id, generation_preset_id,
+        "SELECT id, character_id, provider_id, model_name, creator_persona_id, generation_preset_id,
          title, last_message_preview, created_at, updated_at
          FROM conversations ORDER BY updated_at DESC",
     )?;
@@ -117,7 +118,7 @@ pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
 pub fn search_conversations(conn: &Connection, query: &str) -> Result<Vec<Conversation>> {
     let pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
     let mut stmt = conn.prepare_cached(
-        "SELECT id, character_id, provider_id, creator_persona_id, generation_preset_id,
+        "SELECT id, character_id, provider_id, model_name, creator_persona_id, generation_preset_id,
          title, last_message_preview, created_at, updated_at
          FROM conversations
          WHERE title LIKE ?1 ESCAPE '\\' OR last_message_preview LIKE ?1 ESCAPE '\\'
@@ -142,6 +143,22 @@ pub fn update_conversation_persona(
         "UPDATE conversations SET creator_persona_id = ?1, updated_at = ?2 WHERE id = ?3",
     )?
     .execute(params![persona_id, now.to_rfc3339(), conversation_id])?;
+    Ok(())
+}
+
+/// Updates the provider_id, model_name, and updated_at for a conversation.
+/// This is used by the ChatHeader provider/model selector (Plan 02 Task 3).
+pub fn update_conversation_provider(
+    conn: &Connection,
+    conversation_id: &str,
+    provider_id: Option<&str>,
+    model_name: Option<&str>,
+) -> Result<()> {
+    let now = Utc::now();
+    conn.prepare_cached(
+        "UPDATE conversations SET provider_id = ?1, model_name = ?2, updated_at = ?3 WHERE id = ?4",
+    )?
+    .execute(params![provider_id, model_name, now.to_rfc3339(), conversation_id])?;
     Ok(())
 }
 
