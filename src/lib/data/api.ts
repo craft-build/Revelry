@@ -12,6 +12,7 @@ import type {
   Message,
   UserPersona,
   Provider,
+  ProviderModelEntry,
   GenerationPreset,
   Lorebook,
   LorebookEntry,
@@ -193,4 +194,39 @@ export async function testLorebookKeywords(
     secondaryKeys,
     text,
   });
+}
+
+// ── Providers ───────────────────────────────────────────────────────────────
+
+export async function getProviders(): Promise<Provider[]> {
+  return invoke<Provider[]>("get_providers");
+}
+
+export async function saveProvider(provider: Provider): Promise<Provider> {
+  return invoke<Provider>("save_provider", { provider });
+}
+
+export async function deleteProvider(id: string): Promise<void> {
+  return invoke<void>("delete_provider", { id });
+}
+
+// ── Keyring ──────────────────────────────────────────────────────────────────
+
+export async function saveApiKey(
+  providerId: string,
+  apiKey: string,
+): Promise<void> {
+  return invoke<void>("save_api_key", { providerId, apiKey });
+}
+
+export async function hasApiKey(providerId: string): Promise<boolean> {
+  return invoke<boolean>("has_api_key", { providerId });
+}
+
+export async function deleteApiKey(providerId: string): Promise<void> {
+  return invoke<void>("delete_api_key", { providerId });
+}
+
+export async function checkKeyringAvailable(): Promise<boolean> {
+  return invoke<boolean>("check_keyring_available");
 }

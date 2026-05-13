@@ -75,7 +75,7 @@
 									</h3>
 									<div class="mt-0.5 flex items-center gap-2 text-[11px] text-(--color-subtle)">
 										<Tag>{provider.provider_type}</Tag>
-										<span class="font-mono">{provider.model}</span>
+										<span class="font-mono">{provider.model_name}</span>
 									</div>
 								</div>
 								<Button variant="ghost" size="sm">Edit</Button>

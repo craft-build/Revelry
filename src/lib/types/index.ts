@@ -123,6 +123,8 @@ export interface Conversation {
   character_id: string;
   /** Nullable — no providers in Phase 2. */
   provider_id?: string;
+  /** Specific model within provider. */
+  model_name?: string;
   creator_persona_id?: string;
   /** Per-conversation preset override per D-03. */
   generation_preset_id?: string;
@@ -155,14 +157,25 @@ export type ProviderType =
   | "xai"
   | "custom_openai_compatible";
 
+export interface ProviderModelEntry {
+  name: string;
+  context_window_size?: number | null;
+  enabled: boolean;
+}
+
 export interface Provider {
   id: string;
   name: string;
   provider_type: ProviderType;
   base_url?: string;
-  model: string;
+  model_name: string;
+  models: ProviderModelEntry[];
+  context_window_size?: number;
   default_params?: GenerationParams;
-  extensions?: Record<string, unknown>;
+  has_api_key: boolean;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GenerationParams {

@@ -11,6 +11,7 @@
 
 	onMount(() => {
 		app.hydrate();
+		app.checkKeyring();
 
 		// F9 toggles sidebar (per spec §4.1.5)
 		const onkey = (e: KeyboardEvent) => {

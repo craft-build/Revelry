@@ -6,6 +6,7 @@ import type {
   Provider,
   GenerationPreset,
   Lorebook,
+  ProviderModelEntry,
 } from "$lib/types";
 import {
   getCharacters as apiGetCharacters,
@@ -24,6 +25,12 @@ import {
   deleteLorebook as apiDeleteLorebook,
   uploadAvatar as apiUploadAvatar,
   deleteAvatar as apiDeleteAvatar,
+  getProviders as apiGetProviders,
+  saveProvider as apiSaveProvider,
+  deleteProvider as apiDeleteProvider,
+  saveApiKey as apiSaveApiKey,
+  hasApiKey as apiHasApiKey,
+  checkKeyringAvailable as apiCheckKeyringAvailable,
 } from "$lib/data/api";
 
 /**
@@ -54,6 +61,7 @@ class AppState {
   // ── UI state ───────────────────────────────────────────────────────────
   sidebar_open = $state<boolean>(true);
   character_search_query = $state<string>("");
+  keyring_available = $state<boolean>(true);
 
   // ── Derived ────────────────────────────────────────────────────────────
   get active_conversation(): Conversation | undefined {
@@ -117,9 +125,10 @@ class AppState {
         apiGetLorebooks(),
         apiGetConversations(),
         apiGetPresets(),
+        apiGetProviders(),
       ]);
 
-      const [characters, personas, lorebooks, conversations, presets] = results;
+      const [characters, personas, lorebooks, conversations, presets, providers] = results;
 
       if (characters.status === "fulfilled") {
         this.characters = characters.value;
@@ -149,6 +158,12 @@ class AppState {
         this.presets = presets.value;
       } else {
         console.error("Failed to load presets:", presets.reason);
+      }
+
+      if (providers.status === "fulfilled") {
+        this.providers = providers.value;
+      } else {
+        console.error("Failed to load providers:", providers.reason);
       }
 
       // If any critical data failed, set error state
@@ -457,6 +472,95 @@ class AppState {
     } catch (err) {
       console.error("Failed to upload avatar:", err);
       throw err;
+    }
+  }
+
+  // ── Provider CRUD ──────────────────────────────────────────────────────
+
+  async createProvider(
+    data: Omit<Provider, "id" | "created_at" | "updated_at" | "has_api_key"> & {
+      id?: string;
+      api_key?: string;
+    },
+  ): Promise<Provider> {
+    const provider: Provider = {
+      id: data.id ?? crypto.randomUUID(),
+      name: data.name,
+      provider_type: data.provider_type,
+      base_url: data.base_url,
+      model_name: data.model_name,
+      models: data.models ?? [],
+      context_window_size: data.context_window_size,
+      default_params: data.default_params,
+      has_api_key: false,
+      enabled: data.enabled ?? true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    try {
+      const saved = await apiSaveProvider(provider);
+      if (data.api_key) {
+        try {
+          await apiSaveApiKey(saved.id, data.api_key);
+          saved.has_api_key = true;
+        } catch (err) {
+          console.error("Failed to save API key to keyring:", err);
+        }
+      }
+      this.providers = [saved, ...this.providers];
+      return saved;
+    } catch (err) {
+      console.error("Failed to create provider:", err);
+      throw err;
+    }
+  }
+
+  async updateProvider(provider: Provider, apiKey?: string): Promise<Provider> {
+    const prev = this.providers.find((p) => p.id === provider.id);
+    try {
+      const saved = await apiSaveProvider({
+        ...provider,
+        updated_at: new Date().toISOString(),
+      });
+      if (apiKey !== undefined) {
+        try {
+          await apiSaveApiKey(saved.id, apiKey);
+          saved.has_api_key = true;
+        } catch (err) {
+          console.error("Failed to update API key:", err);
+        }
+      }
+      this.providers = this.providers.map((p) =>
+        p.id === saved.id ? saved : p,
+      );
+      return saved;
+    } catch (err) {
+      console.error("Failed to update provider:", err);
+      if (prev) {
+        this.providers = this.providers.map((p) =>
+          p.id === prev.id ? prev : p,
+        );
+      }
+      throw err;
+    }
+  }
+
+  async deleteProvider(id: string): Promise<void> {
+    try {
+      await apiDeleteProvider(id);
+      this.providers = this.providers.filter((p) => p.id !== id);
+    } catch (err) {
+      console.error("Failed to delete provider:", err);
+      throw err;
+    }
+  }
+
+  async checkKeyring(): Promise<void> {
+    try {
+      this.keyring_available = await apiCheckKeyringAvailable();
+    } catch (err) {
+      this.keyring_available = false;
+      console.error("Failed to check keyring availability:", err);
     }
   }
 }
