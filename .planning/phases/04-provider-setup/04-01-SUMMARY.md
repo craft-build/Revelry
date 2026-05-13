@@ -2,7 +2,16 @@
 phase: 04-provider-setup
 plan: 01
 subsystem: backend
-tags: [keyring, keyring-core, provider, tauri-commands, sqlite, spawn-blocking, serde]
+tags:
+  [
+    keyring,
+    keyring-core,
+    provider,
+    tauri-commands,
+    sqlite,
+    spawn-blocking,
+    serde,
+  ]
 
 # Dependency graph
 requires:
@@ -22,11 +31,34 @@ affects: [04-02-provider-ui, 05-inference-streaming]
 # Tech tracking
 tech-stack:
   added: [keyring 4.0, keyring-core 1.0]
-  patterns: [spawn_blocking for sync keyring ops, explicit serde rename per variant, batch has_api_key check, best-effort keyring cleanup on delete]
+  patterns:
+    [
+      spawn_blocking for sync keyring ops,
+      explicit serde rename per variant,
+      batch has_api_key check,
+      best-effort keyring cleanup on delete,
+    ]
 
 key-files:
-  created: [src-tauri/src/secrets/mod.rs, src-tauri/src/domain/provider.rs, src-tauri/src/db/providers.rs, src-tauri/src/commands/providers.rs]
-  modified: [src-tauri/Cargo.toml, src-tauri/src/lib.rs, src-tauri/src/domain/mod.rs, src-tauri/src/domain/conversation.rs, src-tauri/src/db/mod.rs, src-tauri/src/db/models.rs, src-tauri/src/db/migrations.rs, src-tauri/src/db/conversations.rs, src-tauri/src/commands/mod.rs]
+  created:
+    [
+      src-tauri/src/secrets/mod.rs,
+      src-tauri/src/domain/provider.rs,
+      src-tauri/src/db/providers.rs,
+      src-tauri/src/commands/providers.rs,
+    ]
+  modified:
+    [
+      src-tauri/Cargo.toml,
+      src-tauri/src/lib.rs,
+      src-tauri/src/domain/mod.rs,
+      src-tauri/src/domain/conversation.rs,
+      src-tauri/src/db/mod.rs,
+      src-tauri/src/db/models.rs,
+      src-tauri/src/db/migrations.rs,
+      src-tauri/src/db/conversations.rs,
+      src-tauri/src/commands/mod.rs,
+    ]
 
 key-decisions:
   - "Used explicit #[serde(rename)] per variant instead of rename_all = snake_case because serde splits OpenAI into open_a_i not openai"
@@ -61,6 +93,7 @@ completed: 2026-05-13
 - **Files modified:** 13
 
 ## Accomplishments
+
 - KeyringStore module using keyring v4 API with save/load/delete/is_available, all wrapped in spawn_blocking
 - Provider domain model with snake_case serde (explicit renames), 1:N ProviderModelEntry, GenerationParams
 - Migration #3 adding models JSON column, default_params column, and conversation model_name
@@ -76,6 +109,7 @@ Each task was committed atomically:
 3. **Task 3: Provider CRUD, Tauri commands, and module registration** - `f77512f` (feat)
 
 ## Files Created/Modified
+
 - `src-tauri/Cargo.toml` - Added keyring 4.0, keyring-core 1.0, rt-multi-thread tokio feature
 - `src-tauri/src/secrets/mod.rs` - KeyringStore with save_key, load_key, delete_key, is_available
 - `src-tauri/src/lib.rs` - mod secrets, keyring init, release_store, 8 new commands registered
@@ -91,6 +125,7 @@ Each task was committed atomically:
 - `src-tauri/src/commands/mod.rs` - Added pub mod providers
 
 ## Decisions Made
+
 - Used explicit `#[serde(rename = "...")]` per ProviderType variant instead of `rename_all = "snake_case"` because serde's automatic conversion splits "OpenAI" into "open_a_i" instead of the desired "openai"
 - Keyring v4 requires `use_native_store(true)` initialization before any `Entry::new()` call and `release_store()` cleanup on shutdown
 - KeyringStore tests call `ensure_keyring_init()` to set up the native store before each test (keyring v4 requirement)
@@ -102,6 +137,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Replaced rename_all = "snake_case" with explicit serde renames**
+
 - **Found during:** Task 2 (ProviderType implementation)
 - **Issue:** `#[serde(rename_all = "snake_case")]` converts `OpenAI` → `"open_a_i"` instead of the expected `"openai"`. This is because serde's snake_case algorithm splits on capital boundaries, treating "AI" as a separate word.
 - **Fix:** Replaced with explicit `#[serde(rename = "openai")]` on each enum variant, ensuring correct TypeScript-compatible snake_case values.
@@ -110,6 +146,7 @@ Each task was committed atomically:
 - **Committed in:** 338702b (Task 2 commit)
 
 **2. [Rule 1 - Bug] Added keyring store initialization in KeyringStore tests**
+
 - **Found during:** Task 1 (KeyringStore tests)
 - **Issue:** KeyringStore tests failed with "No default store has been set" because keyring v4 requires `use_native_store()` before `Entry::new()`, but tests run outside the Tauri app context where lib.rs initializes it.
 - **Fix:** Added `ensure_keyring_init()` helper that calls `keyring::use_native_store(true)` at the start of each test.
@@ -123,12 +160,15 @@ Each task was committed atomically:
 **Impact on plan:** Both auto-fixes necessary for correctness. The serde rename deviation improves type alignment with TypeScript. The test init fix is required by keyring v4 architecture.
 
 ## Issues Encountered
+
 - Pre-existing `test_row_to_character` failure (extensions Object {} vs Null) — out of scope, deferred
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Provider backend pipeline complete: keychain → domain model → database → Tauri commands
 - Ready for Plan 02 (frontend: ProviderEditorDialog, settings page wiring, AppState provider CRUD actions)
 - 8 Tauri commands available for frontend invoke() calls
@@ -136,5 +176,6 @@ None - no external service configuration required.
 ## Self-Check: PASSED
 
 ---
-*Phase: 04-provider-setup*
-*Completed: 2026-05-13*
+
+_Phase: 04-provider-setup_
+_Completed: 2026-05-13_

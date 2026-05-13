@@ -188,9 +188,10 @@
 
 		is_saving = false;
 
-		if (id !== null) {
-			handleOpenChange(false);
-		}
+	if (id !== null) {
+		open = false;
+		onopenchange?.(false);
+	}
 	}
 
 	// ── Entry save ────────────────────────────────────────────────────────

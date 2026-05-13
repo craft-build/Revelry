@@ -152,3 +152,20 @@ pub async fn remove_lorebook_from_character(
         .map_err(|e| format!("DB worker dropped: {}", e))?
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn get_character_lorebooks(
+    db: State<'_, DbWorker>,
+    character_id: String,
+) -> Result<Vec<Lorebook>, String> {
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::LoadCharacterLorebooks {
+        character_id,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())
+}

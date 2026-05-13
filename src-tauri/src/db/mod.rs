@@ -143,6 +143,10 @@ pub enum DbCommand {
         lorebook_id: String,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
+    LoadCharacterLorebooks {
+        character_id: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<Lorebook>>>,
+    },
 
     // Provider operations
     LoadProviders {
@@ -405,6 +409,13 @@ impl DbWorker {
             } => {
                 let result =
                     lorebook::remove_lorebook_from_character(conn, &character_id, &lorebook_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadCharacterLorebooks {
+                character_id,
+                reply,
+            } => {
+                let result = lorebook::load_lorebooks_for_character(conn, &character_id);
                 let _ = reply.send(result);
             }
 

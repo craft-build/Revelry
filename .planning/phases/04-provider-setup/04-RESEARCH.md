@@ -15,9 +15,11 @@ On the frontend side, the ProviderEditorDialog, ModelEntryRow, and KeyringUnavai
 **Primary recommendation:** Use `keyring = "4.0.1"` + `keyring-core = "1.0.0"` together (not `keyring` alone). Call `keyring::use_native_store(true)` on app startup and `keyring::release_store()` on shutdown. Wrap all keyring operations in `tokio::task::spawn_blocking`.
 
 <user_constraints>
+
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
+
 - **D-01:** Use the `keyring` crate — same pattern as gtk_ref KeyringStore (service name "revelry", provider_id as username). Not a Tauri plugin.
 - **D-02:** Pin `keyring` to version 4.0.0 (user preference over 3.6.3 from gtk_ref). Researcher/planner must verify 4.0.0 API stability and feature flag changes before implementing.
 - **D-03:** KeyringStore as a standalone `src-tauri/src/secrets/` module — not routed through DbWorker. Clean separation; keyring ops are independent of DB.
@@ -36,6 +38,7 @@ On the frontend side, the ProviderEditorDialog, ModelEntryRow, and KeyringUnavai
 - **D-16:** Add `model_name TEXT` column to the `conversations` table (Phase 4 migration #3). Alongside existing `provider_id` FK, this identifies the specific model used for the conversation.
 
 ### Claude's Discretion
+
 - Exact layout of the provider editor dialog fields (grouping, order, spacing)
 - Whether `model_name` column on `providers` table should be kept (for primary/default model) or removed in favor of the `models` JSON array
 - Exact wording of the keyring-unavailable banner message
@@ -43,74 +46,78 @@ On the frontend side, the ProviderEditorDialog, ModelEntryRow, and KeyringUnavai
 - Exact keyring test entry naming convention for the startup check
 
 ### Deferred Ideas (OUT OF SCOPE)
+
 None — discussion stayed within phase scope.
 </user_constraints>
 
 <phase_requirements>
+
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|------------------|
-| PROV-01 | User can add an AI provider with name, type, and API key | ProviderEditorDialog create mode + Tauri `save_provider` command + `save_api_key` keyring command |
-| PROV-02 | User can edit provider configuration | ProviderEditorDialog edit mode + Tauri `save_provider` command |
-| PROV-03 | User can delete a provider | KebabMenu delete action + `delete_provider` DB command + `delete_api_key` keyring command (best-effort) |
-| PROV-04 | API keys are stored in the OS-native keychain (never on disk) | KeyringStore module using keyring-core 1.0 / keyring 4.0.1 Entry API, `tokio::task::spawn_blocking` |
-| PROV-05 | User can select a provider and model for a conversation | `model_name` column on conversations + provider_id FK; model selection UI deferred to Phase 5 |
-| PROV-06 | User can configure generation parameters (temperature, top_p, max_tokens, frequency_penalty, presence_penalty) | Generation params in ProviderEditorDialog + stored in providers table |
+| ID      | Description                                                                                                    | Research Support                                                                                        |
+| ------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| PROV-01 | User can add an AI provider with name, type, and API key                                                       | ProviderEditorDialog create mode + Tauri `save_provider` command + `save_api_key` keyring command       |
+| PROV-02 | User can edit provider configuration                                                                           | ProviderEditorDialog edit mode + Tauri `save_provider` command                                          |
+| PROV-03 | User can delete a provider                                                                                     | KebabMenu delete action + `delete_provider` DB command + `delete_api_key` keyring command (best-effort) |
+| PROV-04 | API keys are stored in the OS-native keychain (never on disk)                                                  | KeyringStore module using keyring-core 1.0 / keyring 4.0.1 Entry API, `tokio::task::spawn_blocking`     |
+| PROV-05 | User can select a provider and model for a conversation                                                        | `model_name` column on conversations + provider_id FK; model selection UI deferred to Phase 5           |
+| PROV-06 | User can configure generation parameters (temperature, top_p, max_tokens, frequency_penalty, presence_penalty) | Generation params in ProviderEditorDialog + stored in providers table                                   |
+
 </phase_requirements>
 
 ## Architectural Responsibility Map
 
-| Capability | Primary Tier | Secondary Tier | Rationale |
-|------------|-------------|----------------|-----------|
-| API key storage/retrieval | OS Keychain (via Rust keyring-core) | — | Security invariant: keys never touch disk or IPC. Only the Rust backend can access the keychain. |
-| Provider CRUD persistence | Backend (Rust/SQLite via DbWorker) | — | Database operations follow established DbWorker pattern. Provider data (not keys) stored in SQLite. |
-| Keyring availability check | Backend (Rust keyring) | Frontend (state display) | Rust performs the actual keychain probe; frontend only stores/display the boolean result. |
-| Provider type defaults | Backend (Rust ProviderType enum) | Frontend (type selector rendering) | `default_base_url()` and `default_model_name()` live in Rust; frontend receives a lookup map or computes client-side. |
-| Provider editor UI | Frontend (Svelte) | — | Dialog, form validation, model list management are all client-side. Only persists on Save. |
-| `has_api_key` indicator | Backend (Rust, probes keyring) | Frontend (display only) | Rust checks if a key exists for a provider_id and returns the boolean; never sends the key to frontend. |
-| Schema migration | Backend (Rust/SQLite) | — | `ALTER TABLE ADD COLUMN` in migration #3. No frontend involvement. |
+| Capability                 | Primary Tier                        | Secondary Tier                     | Rationale                                                                                                             |
+| -------------------------- | ----------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| API key storage/retrieval  | OS Keychain (via Rust keyring-core) | —                                  | Security invariant: keys never touch disk or IPC. Only the Rust backend can access the keychain.                      |
+| Provider CRUD persistence  | Backend (Rust/SQLite via DbWorker)  | —                                  | Database operations follow established DbWorker pattern. Provider data (not keys) stored in SQLite.                   |
+| Keyring availability check | Backend (Rust keyring)              | Frontend (state display)           | Rust performs the actual keychain probe; frontend only stores/display the boolean result.                             |
+| Provider type defaults     | Backend (Rust ProviderType enum)    | Frontend (type selector rendering) | `default_base_url()` and `default_model_name()` live in Rust; frontend receives a lookup map or computes client-side. |
+| Provider editor UI         | Frontend (Svelte)                   | —                                  | Dialog, form validation, model list management are all client-side. Only persists on Save.                            |
+| `has_api_key` indicator    | Backend (Rust, probes keyring)      | Frontend (display only)            | Rust checks if a key exists for a provider_id and returns the boolean; never sends the key to frontend.               |
+| Schema migration           | Backend (Rust/SQLite)               | —                                  | `ALTER TABLE ADD COLUMN` in migration #3. No frontend involvement.                                                    |
 
 ## Standard Stack
 
 ### Core (Backend — Rust)
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| keyring | 4.0.1 | Store management: `use_native_store()`, `release_store()` | [VERIFIED: crates.io] Convenience wrapper for platform store selection. bundles all platform stores. |
-| keyring-core | 1.0.0 | Entry API: `Entry::new()`, `set_password()`, `get_password()`, `delete_credential()` | [VERIFIED: crates.io + docs.rs] The actual credential management library. keyring 4.0 delegates to this. |
-| tokio | 1.x (features: sync, rt-multi-thread) | Async runtime + `spawn_blocking` for keyring ops | [VERIFIED: Cargo.toml] Already in project; needs `rt-multi-thread` feature added for `spawn_blocking`. |
-| rusqlite | 0.31 (features: bundled) | SQLite provider CRUD via DbWorker | [VERIFIED: Cargo.toml] Already in project; provider CRUD follows existing pattern. |
-| serde + serde_json | 1.x | ProviderType serialization, models JSON column | [VERIFIED: Cargo.toml] Already in project. |
+| Library            | Version                               | Purpose                                                                              | Why Standard                                                                                             |
+| ------------------ | ------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| keyring            | 4.0.1                                 | Store management: `use_native_store()`, `release_store()`                            | [VERIFIED: crates.io] Convenience wrapper for platform store selection. bundles all platform stores.     |
+| keyring-core       | 1.0.0                                 | Entry API: `Entry::new()`, `set_password()`, `get_password()`, `delete_credential()` | [VERIFIED: crates.io + docs.rs] The actual credential management library. keyring 4.0 delegates to this. |
+| tokio              | 1.x (features: sync, rt-multi-thread) | Async runtime + `spawn_blocking` for keyring ops                                     | [VERIFIED: Cargo.toml] Already in project; needs `rt-multi-thread` feature added for `spawn_blocking`.   |
+| rusqlite           | 0.31 (features: bundled)              | SQLite provider CRUD via DbWorker                                                    | [VERIFIED: Cargo.toml] Already in project; provider CRUD follows existing pattern.                       |
+| serde + serde_json | 1.x                                   | ProviderType serialization, models JSON column                                       | [VERIFIED: Cargo.toml] Already in project.                                                               |
 
 ### Core (Frontend — Svelte)
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| bits-ui | 2.x | Dialog, Select headless primitives for ProviderEditorDialog | [VERIFIED: AGENTS.md] Project's headless component library. |
-| @lucide/svelte | 1.x | Icons: AlertTriangle, Check, Cpu, Plus, MoreVertical, Loader2, X | [VERIFIED: AGENTS.md] Project's icon library. |
-| tailwind-variants | 3.x | Component variant definitions if needed | [VERIFIED: AGENTS.md] Project's variant system. |
-| @tauri-apps/api | 2.x | `invoke()` for Tauri IPC | [VERIFIED: api.ts] Already in project. |
+| Library           | Version | Purpose                                                          | Why Standard                                                |
+| ----------------- | ------- | ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| bits-ui           | 2.x     | Dialog, Select headless primitives for ProviderEditorDialog      | [VERIFIED: AGENTS.md] Project's headless component library. |
+| @lucide/svelte    | 1.x     | Icons: AlertTriangle, Check, Cpu, Plus, MoreVertical, Loader2, X | [VERIFIED: AGENTS.md] Project's icon library.               |
+| tailwind-variants | 3.x     | Component variant definitions if needed                          | [VERIFIED: AGENTS.md] Project's variant system.             |
+| @tauri-apps/api   | 2.x     | `invoke()` for Tauri IPC                                         | [VERIFIED: api.ts] Already in project.                      |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| apple-native-keyring-store | 1.0.0 | macOS Keychain Services backend | Pulled in automatically by keyring 4.0.1 — no direct dependency needed |
-| linux-keyutils-keyring-store | 1.0.0 | Linux kernel keyutils backend | Pulled in automatically by keyring 4.0.1 |
-| dbus-secret-service-keyring-store | 1.0.0 | Linux Secret Service (libdbus) backend | Pulled in automatically by keyring 4.0.1 — used when `use_native_store(true)` |
-| zbus-secret-service-keyring-store | 1.0.0 | Linux Secret Service (zbus) backend | Pulled in automatically by keyring 4.0.1 |
-| windows-native-keyring-store | 1.0.0 | Windows Credential Manager backend | Pulled in automatically by keyring 4.0.1 |
+| Library                           | Version | Purpose                                | When to Use                                                                   |
+| --------------------------------- | ------- | -------------------------------------- | ----------------------------------------------------------------------------- |
+| apple-native-keyring-store        | 1.0.0   | macOS Keychain Services backend        | Pulled in automatically by keyring 4.0.1 — no direct dependency needed        |
+| linux-keyutils-keyring-store      | 1.0.0   | Linux kernel keyutils backend          | Pulled in automatically by keyring 4.0.1                                      |
+| dbus-secret-service-keyring-store | 1.0.0   | Linux Secret Service (libdbus) backend | Pulled in automatically by keyring 4.0.1 — used when `use_native_store(true)` |
+| zbus-secret-service-keyring-store | 1.0.0   | Linux Secret Service (zbus) backend    | Pulled in automatically by keyring 4.0.1                                      |
+| windows-native-keyring-store      | 1.0.0   | Windows Credential Manager backend     | Pulled in automatically by keyring 4.0.1                                      |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| keyring 4.0.1 + keyring-core 1.0.0 | keyring 3.6.3 (gtk_ref version) | 3.6.3 has simpler API (no store init needed) but is the "final release of v3" and won't receive updates. D-02 explicitly pins to 4.0.0. |
-| keyring 4.0.1 + keyring-core 1.0.0 | tauri-plugin-keyring | Would add a Tauri plugin dependency. D-01 explicitly says "Not a Tauri plugin." |
-| keyring 4.0.1 + keyring-core 1.0.0 | keyring-core 1.0.0 alone | keyring-core doesn't include platform store crates or `use_native_store()`. Would need manual store selection per platform. Using keyring 4.0.1 as well is simpler. |
+| Instead of                         | Could Use                       | Tradeoff                                                                                                                                                            |
+| ---------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| keyring 4.0.1 + keyring-core 1.0.0 | keyring 3.6.3 (gtk_ref version) | 3.6.3 has simpler API (no store init needed) but is the "final release of v3" and won't receive updates. D-02 explicitly pins to 4.0.0.                             |
+| keyring 4.0.1 + keyring-core 1.0.0 | tauri-plugin-keyring            | Would add a Tauri plugin dependency. D-01 explicitly says "Not a Tauri plugin."                                                                                     |
+| keyring 4.0.1 + keyring-core 1.0.0 | keyring-core 1.0.0 alone        | keyring-core doesn't include platform store crates or `use_native_store()`. Would need manual store selection per platform. Using keyring 4.0.1 as well is simpler. |
 
 **Installation:**
+
 ```toml
 # In src-tauri/Cargo.toml, add:
 keyring = "4.0"
@@ -121,6 +128,7 @@ tokio = { version = "1", features = ["sync", "rt-multi-thread"] }
 ```
 
 **Version verification:**
+
 - keyring 4.0.1 [VERIFIED: crates.io — published 2026-05-12]
 - keyring-core 1.0.0 [VERIFIED: crates.io + docs.rs]
 - tokio 1.x [VERIFIED: Cargo.toml already has `1` with `sync` feature]
@@ -235,6 +243,7 @@ src/routes/
 **When to use:** Once at app startup, before any keyring operations.
 
 **Example:**
+
 ```rust
 // Source: [CITED: docs.rs/keyring/4.0.1] + [CITED: github.com/open-source-cooperative/keyring-rs/wiki/Keyring-Core]
 use keyring;      // for use_native_store(), release_store()
@@ -262,6 +271,7 @@ pub fn cleanup_keyring() {
 **When to use:** Every keyring operation inside async Tauri commands.
 
 **Example:**
+
 ```rust
 // Source: adapted from gtk_ref/src/secrets/mod.rs with v4 API
 use anyhow::Result;
@@ -312,6 +322,7 @@ impl KeyringStore {
 **When to use:** All keyring Tauri commands.
 
 **Example:**
+
 ```rust
 // Source: [CITED: docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html]
 #[tauri::command]
@@ -341,6 +352,7 @@ pub async fn check_keyring_available() -> Result<bool, String> {
 **When to use:** All provider database operations.
 
 **Example:**
+
 ```rust
 // In DbCommand enum (db/mod.rs):
 LoadProviders { reply: oneshot::Sender<anyhow::Result<Vec<ProviderConfig>>> },
@@ -367,6 +379,7 @@ pub async fn get_providers(db: State<'_, DbWorker>) -> Result<Vec<ProviderConfig
 **When to use:** Every provider list load; individual provider load.
 
 **Example:**
+
 ```rust
 // In Tauri commands:
 #[tauri::command]
@@ -392,61 +405,69 @@ pub async fn has_api_key(provider_id: String) -> Result<bool, String> {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| OS keychain access | Custom FFI to macOS Keychain / Linux Secret Service / Windows Credential Manager | keyring 4.0.1 + keyring-core 1.0.0 | Platform-specific keychain APIs are complex, error-prone, and security-sensitive. keyring handles all the edge cases. |
-| Keyring availability check | Try/catch around Entry::new() without cleanup | KeyringStore::is_available() with test entry create+delete | Must be a real round-trip: create → verify → delete. Otherwise, a "no keyring daemon" scenario may silently succeed at Entry::new() but fail at set_password(). |
-| Provider type defaults | Hardcoded lookup table in TypeScript | ProviderType Rust enum with default_base_url() / default_model_name() | Single source of truth in Rust. Frontend can receive a defaults map via a Tauri command. |
-| JSON column storage | Custom serde for models TEXT column | `serde_json::to_string()` / `serde_json::from_str()` | Same pattern as tags, alternate_greetings, extensions columns already in the codebase. |
-| spawn_blocking for sync ops | Custom thread pool or channel for keyring | `tokio::task::spawn_blocking()` | tokio's built-in blocking thread pool. No need to reinvent. |
+| Problem                     | Don't Build                                                                      | Use Instead                                                           | Why                                                                                                                                                             |
+| --------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OS keychain access          | Custom FFI to macOS Keychain / Linux Secret Service / Windows Credential Manager | keyring 4.0.1 + keyring-core 1.0.0                                    | Platform-specific keychain APIs are complex, error-prone, and security-sensitive. keyring handles all the edge cases.                                           |
+| Keyring availability check  | Try/catch around Entry::new() without cleanup                                    | KeyringStore::is_available() with test entry create+delete            | Must be a real round-trip: create → verify → delete. Otherwise, a "no keyring daemon" scenario may silently succeed at Entry::new() but fail at set_password(). |
+| Provider type defaults      | Hardcoded lookup table in TypeScript                                             | ProviderType Rust enum with default_base_url() / default_model_name() | Single source of truth in Rust. Frontend can receive a defaults map via a Tauri command.                                                                        |
+| JSON column storage         | Custom serde for models TEXT column                                              | `serde_json::to_string()` / `serde_json::from_str()`                  | Same pattern as tags, alternate_greetings, extensions columns already in the codebase.                                                                          |
+| spawn_blocking for sync ops | Custom thread pool or channel for keyring                                        | `tokio::task::spawn_blocking()`                                       | tokio's built-in blocking thread pool. No need to reinvent.                                                                                                     |
 
 **Key insight:** The keyring v4 architecture split into `keyring-core` (library) + `keyring` (store management + convenience) is the canonical way to use v4. Don't try to use just `keyring` or just `keyring-core` alone.
 
 ## Common Pitfalls
 
 ### Pitfall 1: Using keyring v4 without store initialization
+
 **What goes wrong:** `Entry::new()` returns `NoDefaultStore` error. In v3, the default store was implicit.
 **Why it happens:** keyring v4 requires `use_native_store()` or another `use_*_store()` call before any `Entry::new()`.
 **How to avoid:** Call `keyring::use_native_store(true)` during Tauri app setup, before any keyring commands can be invoked.
 **Warning signs:** `NoDefaultStore` error from keyring-core.
 
 ### Pitfall 2: Forgetting release_store() on shutdown
+
 **What goes wrong:** Linux Secret Service connections may not be properly cleaned up, causing resource leaks.
 **Why it happens:** keyring v4 requires explicit cleanup. v3 didn't need this.
 **How to avoid:** Call `keyring::release_store()` during Tauri app shutdown.
 **Warning signs:** D-Bus connection warnings on Linux; no visible issue on macOS/Windows (but still required for correctness).
 
 ### Pitfall 3: Using keyring 4.0.0 instead of 4.0.1
+
 **What goes wrong:** iOS sample code bug (doesn't affect desktop, but 4.0.1 is the latest stable).
 **Why it happens:** CONTEXT.md D-02 says "4.0.0" but 4.0.1 is the actual latest with bug fixes.
 **How to avoid:** Pin to `keyring = "4.0"` (SemVer range allows 4.0.1) or explicitly `"4.0.1"`.
 **Warning signs:** None for desktop — but using the latest patch is best practice.
 
 ### Pitfall 4: Not adding rt-multi-thread tokio feature
+
 **What goes wrong:** `spawn_blocking` requires the `rt-multi-thread` or `rt` feature. Current Cargo.toml only has `sync`.
 **Why it happens:** `tokio::task::spawn_blocking` needs a multi-threaded runtime. The `sync` feature alone doesn't include the runtime.
 **How to avoid:** Update tokio dependency: `tokio = { version = "1", features = ["sync", "rt-multi-thread"] }`. Tauri 2 itself may already pull this in, but explicit is better.
 **Warning signs:** Compile error: `spawn_blocking` is unavailable or runtime panic about missing runtime.
 
 ### Pitfall 5: Provider delete doesn't clean up keyring entry
+
 **What goes wrong:** After deleting a provider from SQLite, the API key remains in the OS keychain forever.
 **Why it happens:** The keyring operation is independent of the DB operation and must be called separately.
 **How to avoid:** In the `delete_provider` Tauri command, after successful DB deletion, call `KeyringStore::delete_key()` as best-effort (ignore errors if key doesn't exist or keyring is unavailable).
 **Warning signs:** Orphaned keychain entries accumulating after provider deletions.
 
 ### Pitfall 6: keyring Entry::new() service name mismatch
+
 **What goes wrong:** If the service name changes between saves and loads, keys can't be found.
 **Why it happens:** Service name is part of the keyring entry identity (service + username pair).
 **How to avoid:** Use a single constant `SERVICE_NAME = "revelry"` in KeyringStore. Never change it.
 **Warning signs:** `NoEntry` errors when loading keys that were definitely saved.
 
 ### Pitfall 7: ALTER TABLE ADD COLUMN with DEFAULT value
+
 **What goes wrong:** SQLite's ALTER TABLE is limited — you can't add a column with a non-constant DEFAULT in older versions, but SQLite 3.25+ supports it.
 **Why it happens:** rusqlite's bundled SQLite is always a recent version (3.39+), so `ALTER TABLE ... ADD COLUMN ... DEFAULT '[]'` is supported.
 **How to avoid:** Use the bundled SQLite feature (already enabled). Test migration with `Connection::open_in_memory()`.
 **Warning signs:** Migration failure on systems with very old system SQLite (but bundled feature avoids this).
 
 ### Pitfall 8: ProviderType serde mismatch between Rust and TypeScript
+
 **What goes wrong:** Rust serializes `ProviderType::OpenAI` as `"OpenAI"` (PascalCase) but TypeScript expects `"openai"` (snake_case).
 **Why it happens:** gtk_ref's `serde_json::to_string(&ProviderType::OpenAI)` produces `"OpenAI"` by default. The frontend `ProviderType` uses lowercase snake_case values.
 **How to avoid:** Use `#[serde(rename_all = "snake_case")]` on the Rust `ProviderType` enum, or implement custom serialization. Verify round-trip matches the TypeScript union type.
@@ -609,10 +630,10 @@ export interface Provider {
   name: string;
   provider_type: ProviderType;
   base_url?: string;
-  model_name: string;        // primary/default model
-  models: ProviderModelEntry[];  // all models
+  model_name: string; // primary/default model
+  models: ProviderModelEntry[]; // all models
   default_params?: GenerationParams;
-  has_api_key: boolean;      // from backend, never the actual key
+  has_api_key: boolean; // from backend, never the actual key
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -622,7 +643,7 @@ export interface Conversation {
   id: string;
   character_id: string;
   provider_id?: string;
-  model_name?: string;       // NEW: specific model within provider
+  model_name?: string; // NEW: specific model within provider
   creator_persona_id?: string;
   generation_preset_id?: string;
   title: string;
@@ -634,29 +655,30 @@ export interface Conversation {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| keyring 3.6.3 (single crate with feature flags) | keyring 4.0 + keyring-core 1.0 (split architecture) | 2026-04-26 (keyring v4.0.0 release) | Must use both crates; must call `use_native_store()` before Entry ops; must call `release_store()` on shutdown |
-| keyring v3 `apple-native` / `linux-native` / `windows-native` feature flags | Separate store crates (apple-native-keyring-store, linux-keyutils-keyring-store, etc.) — all bundled by keyring 4.0 | 2026-04-26 | No feature flags needed on `keyring` crate itself. All platform stores are unconditional dependencies. |
-| keyring v3 implicit store initialization | keyring v4 explicit `use_native_store()` call | 2026-04-26 | Must add init call at app startup |
-| ProviderType PascalCase serde | `#[serde(rename_all = "snake_case")]` | Phase 4 design | Must match TypeScript `ProviderType` union values |
+| Old Approach                                                                | Current Approach                                                                                                    | When Changed                        | Impact                                                                                                         |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| keyring 3.6.3 (single crate with feature flags)                             | keyring 4.0 + keyring-core 1.0 (split architecture)                                                                 | 2026-04-26 (keyring v4.0.0 release) | Must use both crates; must call `use_native_store()` before Entry ops; must call `release_store()` on shutdown |
+| keyring v3 `apple-native` / `linux-native` / `windows-native` feature flags | Separate store crates (apple-native-keyring-store, linux-keyutils-keyring-store, etc.) — all bundled by keyring 4.0 | 2026-04-26                          | No feature flags needed on `keyring` crate itself. All platform stores are unconditional dependencies.         |
+| keyring v3 implicit store initialization                                    | keyring v4 explicit `use_native_store()` call                                                                       | 2026-04-26                          | Must add init call at app startup                                                                              |
+| ProviderType PascalCase serde                                               | `#[serde(rename_all = "snake_case")]`                                                                               | Phase 4 design                      | Must match TypeScript `ProviderType` union values                                                              |
 
 **Deprecated/outdated:**
+
 - keyring 3.x series: "Likely final release of v3" per maintainer. No future updates. [CITED: github.com/open-source-cooperative/keyring-rs/releases/tag/v3.6.3-republish]
 - `keyring::Entry` (v3): Moved to `keyring_core::Entry` in v4. Import path changed.
 - keyring v3 feature flags (`apple-native`, `linux-native`, `windows-native`): No longer exist in v4. All platform stores are pulled in automatically.
 
 ## Assumptions Log
 
-| # | Claim | Section | Risk if Wrong |
-|---|-------|---------|---------------|
-| A1 | `keyring::use_native_store(true)` is the correct initialization call for all platforms (macOS, Linux, Windows) | Architecture Patterns | If wrong: keyring ops fail at runtime. [VERIFIED: docs.rs/keyring/4.0.1 confirms `use_native_store` selects per-platform] |
-| A2 | `tokio::task::spawn_blocking` requires `rt-multi-thread` feature (not just `rt`) | Pitfall 4 | If wrong: compile error or runtime panic. [VERIFIED: Context7 tokio docs confirm spawn_blocking needs runtime] |
-| A3 | SQLite `ALTER TABLE ADD COLUMN ... DEFAULT '[]'` works with rusqlite bundled SQLite | Pitfall 7 | If wrong: migration fails. [VERIFIED: SQLite 3.25+ supports this; bundled SQLite is 3.39+] |
-| A4 | `ProviderType` Rust serde with `rename_all = "snake_case"` will produce `"openai"` (not `"OpenAI"`) matching TypeScript | Pitfall 8 | If wrong: frontend can't match provider type strings. [ASSUMED — must verify in implementation] |
-| A5 | `keyring 4.0.1` is a suitable replacement for `4.0.0` (pinned in D-02) | Pitfall 3 | If wrong: no real risk — 4.0.1 is just an iOS sample code bug fix. [VERIFIED: GitHub release notes] |
-| A6 | Tauri 2 already depends on tokio with rt-multi-thread feature | Pitfall 4 | If wrong: need to explicitly add the feature. [ASSUMED — needs Cargo.toml verification] |
-| A7 | `keyring::release_store()` can safely be called even if `use_native_store()` was never called | Architecture Patterns | If wrong: shutdown may panic. [ASSUMED — needs verification] |
+| #   | Claim                                                                                                                   | Section               | Risk if Wrong                                                                                                             |
+| --- | ----------------------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| A1  | `keyring::use_native_store(true)` is the correct initialization call for all platforms (macOS, Linux, Windows)          | Architecture Patterns | If wrong: keyring ops fail at runtime. [VERIFIED: docs.rs/keyring/4.0.1 confirms `use_native_store` selects per-platform] |
+| A2  | `tokio::task::spawn_blocking` requires `rt-multi-thread` feature (not just `rt`)                                        | Pitfall 4             | If wrong: compile error or runtime panic. [VERIFIED: Context7 tokio docs confirm spawn_blocking needs runtime]            |
+| A3  | SQLite `ALTER TABLE ADD COLUMN ... DEFAULT '[]'` works with rusqlite bundled SQLite                                     | Pitfall 7             | If wrong: migration fails. [VERIFIED: SQLite 3.25+ supports this; bundled SQLite is 3.39+]                                |
+| A4  | `ProviderType` Rust serde with `rename_all = "snake_case"` will produce `"openai"` (not `"OpenAI"`) matching TypeScript | Pitfall 8             | If wrong: frontend can't match provider type strings. [ASSUMED — must verify in implementation]                           |
+| A5  | `keyring 4.0.1` is a suitable replacement for `4.0.0` (pinned in D-02)                                                  | Pitfall 3             | If wrong: no real risk — 4.0.1 is just an iOS sample code bug fix. [VERIFIED: GitHub release notes]                       |
+| A6  | Tauri 2 already depends on tokio with rt-multi-thread feature                                                           | Pitfall 4             | If wrong: need to explicitly add the feature. [ASSUMED — needs Cargo.toml verification]                                   |
+| A7  | `keyring::release_store()` can safely be called even if `use_native_store()` was never called                           | Architecture Patterns | If wrong: shutdown may panic. [ASSUMED — needs verification]                                                              |
 
 ## Open Questions
 
@@ -682,14 +704,14 @@ export interface Conversation {
 
 ## Environment Availability
 
-| Dependency | Required By | Available | Version | Fallback |
-|------------|------------|-----------|---------|----------|
-| Rust/Cargo | Backend build | ✓ | 1.95.0 | — |
-| Bun | Frontend build | ✓ | 1.3.13 | — |
-| Node.js | Tauri tooling | ✓ | 25.9.0 | — |
-| Tauri CLI | Build/deploy | ✓ | 2.11.1 | — |
-| macOS Keychain | KeyringStore | ✓ | — (native) | — |
-| SQLite (bundled) | DB operations | ✓ | 3.39+ (bundled) | — |
+| Dependency       | Required By    | Available | Version         | Fallback |
+| ---------------- | -------------- | --------- | --------------- | -------- |
+| Rust/Cargo       | Backend build  | ✓         | 1.95.0          | —        |
+| Bun              | Frontend build | ✓         | 1.3.13          | —        |
+| Node.js          | Tauri tooling  | ✓         | 25.9.0          | —        |
+| Tauri CLI        | Build/deploy   | ✓         | 2.11.1          | —        |
+| macOS Keychain   | KeyringStore   | ✓         | — (native)      | —        |
+| SQLite (bundled) | DB operations  | ✓         | 3.39+ (bundled) | —        |
 
 **Missing dependencies with no fallback:** None — all required tools are available.
 
@@ -698,29 +720,33 @@ export interface Conversation {
 ## Validation Architecture
 
 ### Test Framework
-| Property | Value |
-|----------|-------|
-| Framework | Rust: cargo test (built-in); Svelte: Vitest (not yet configured) |
-| Config file | Cargo.toml (Rust); none for Svelte yet |
-| Quick run command | `cargo test -p revelry --lib 2>&1 | head -30` |
-| Full suite command | `cargo test -p revelry` |
+
+| Property           | Value                                                            |
+| ------------------ | ---------------------------------------------------------------- | --------- |
+| Framework          | Rust: cargo test (built-in); Svelte: Vitest (not yet configured) |
+| Config file        | Cargo.toml (Rust); none for Svelte yet                           |
+| Quick run command  | `cargo test -p revelry --lib 2>&1                                | head -30` |
+| Full suite command | `cargo test -p revelry`                                          |
 
 ### Phase Requirements → Test Map
-| Req ID | Behavior | Test Type | Automated Command | File Exists? |
-|--------|----------|-----------|-------------------|-------------|
-| PROV-01 | Save provider + API key to DB + keychain | unit (Rust) + integration (IPC) | `cargo test -p revelry --lib test_insert_provider` | ❌ Wave 0 |
-| PROV-02 | Update provider in DB | unit (Rust) | `cargo test -p revelry --lib test_update_provider` | ❌ Wave 0 |
-| PROV-03 | Delete provider from DB + keyring | unit (Rust) | `cargo test -p revelry --lib test_delete_provider` | ❌ Wave 0 |
-| PROV-04 | API key stored only in OS keychain | unit (Rust) | `cargo test -p revelry --lib test_no_api_key_column` | ✅ Existing (migration test) |
-| PROV-05 | Conversation references provider + model | unit (Rust) | `cargo test -p revelry --lib test_conversation_model_name` | ❌ Wave 0 |
-| PROV-06 | Generation params stored/retrieved | unit (Rust) | `cargo test -p revelry --lib test_generation_params` | ❌ Wave 0 |
+
+| Req ID  | Behavior                                 | Test Type                       | Automated Command                                          | File Exists?                 |
+| ------- | ---------------------------------------- | ------------------------------- | ---------------------------------------------------------- | ---------------------------- |
+| PROV-01 | Save provider + API key to DB + keychain | unit (Rust) + integration (IPC) | `cargo test -p revelry --lib test_insert_provider`         | ❌ Wave 0                    |
+| PROV-02 | Update provider in DB                    | unit (Rust)                     | `cargo test -p revelry --lib test_update_provider`         | ❌ Wave 0                    |
+| PROV-03 | Delete provider from DB + keyring        | unit (Rust)                     | `cargo test -p revelry --lib test_delete_provider`         | ❌ Wave 0                    |
+| PROV-04 | API key stored only in OS keychain       | unit (Rust)                     | `cargo test -p revelry --lib test_no_api_key_column`       | ✅ Existing (migration test) |
+| PROV-05 | Conversation references provider + model | unit (Rust)                     | `cargo test -p revelry --lib test_conversation_model_name` | ❌ Wave 0                    |
+| PROV-06 | Generation params stored/retrieved       | unit (Rust)                     | `cargo test -p revelry --lib test_generation_params`       | ❌ Wave 0                    |
 
 ### Sampling Rate
+
 - **Per task commit:** `cargo test -p revelry --lib`
 - **Per wave merge:** `cargo test -p revelry`
 - **Phase gate:** Full suite green before `/gsd-verify-work`
 
 ### Wave 0 Gaps
+
 - [ ] `src-tauri/src/db/providers.rs` — test provider CRUD with models JSON column
 - [ ] `src-tauri/src/domain/provider.rs` — test ProviderType serde roundtrip with snake_case
 - [ ] `src-tauri/src/secrets/mod.rs` — test KeyringStore save/load/delete (requires OS keychain)
@@ -731,27 +757,28 @@ export interface Conversation {
 
 ### Applicable ASVS Categories
 
-| ASVS Category | Applies | Standard Control |
-|---------------|---------|-----------------|
-| V2 Authentication | no | No user auth — single-user desktop app |
-| V3 Session Management | no | No sessions — desktop app |
-| V4 Access Control | no | No multi-user access |
-| V5 Input Validation | yes | zod/TypeScript strict for frontend; Rust type system for backend |
-| V6 Cryptography | yes | keyring crate for OS-native keychain (never hand-roll crypto) |
+| ASVS Category         | Applies | Standard Control                                                 |
+| --------------------- | ------- | ---------------------------------------------------------------- |
+| V2 Authentication     | no      | No user auth — single-user desktop app                           |
+| V3 Session Management | no      | No sessions — desktop app                                        |
+| V4 Access Control     | no      | No multi-user access                                             |
+| V5 Input Validation   | yes     | zod/TypeScript strict for frontend; Rust type system for backend |
+| V6 Cryptography       | yes     | keyring crate for OS-native keychain (never hand-roll crypto)    |
 
 ### Known Threat Patterns for Provider Setup
 
-| Pattern | STRIDE | Standard Mitigation |
-|---------|--------|---------------------|
-| API key leakage via IPC payloads | Information Disclosure | Never return API key in Tauri command responses; only `has_api_key: bool` |
-| API key leakage via SQLite | Information Disclosure | No `api_key` column in providers table (verified by existing migration test) |
-| API key leakage via logs | Information Disclosure | Never log API key values; only log success/failure of keyring operations |
-| Keyring unavailability on headless Linux | Denial of Service | Graceful degradation: banner warning, disabled API key field, Ollama still works |
-| SQL injection in provider CRUD | Tampering | Parameterized queries via rusqlite `params![]` macro |
+| Pattern                                  | STRIDE                 | Standard Mitigation                                                              |
+| ---------------------------------------- | ---------------------- | -------------------------------------------------------------------------------- |
+| API key leakage via IPC payloads         | Information Disclosure | Never return API key in Tauri command responses; only `has_api_key: bool`        |
+| API key leakage via SQLite               | Information Disclosure | No `api_key` column in providers table (verified by existing migration test)     |
+| API key leakage via logs                 | Information Disclosure | Never log API key values; only log success/failure of keyring operations         |
+| Keyring unavailability on headless Linux | Denial of Service      | Graceful degradation: banner warning, disabled API key field, Ollama still works |
+| SQL injection in provider CRUD           | Tampering              | Parameterized queries via rusqlite `params![]` macro                             |
 
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - [CITED: docs.rs/keyring/4.0.1] — keyring 4.0.1 API: `use_native_store()`, `release_store()`, store functions
 - [CITED: docs.rs/keyring-core/1.0.0] — Entry struct API: `new()`, `set_password()`, `get_password()`, `delete_credential()`
 - [CITED: github.com/open-source-cooperative/keyring-rs/releases] — v4.0.0 release notes, v4.0.1 release notes, v3.6.3 "final release" notes
@@ -759,16 +786,19 @@ export interface Conversation {
 - [VERIFIED: codebase] — gtk_ref/src/secrets/mod.rs, gtk_ref/src/domain/provider.rs, gtk_ref/src/db/providers.rs
 
 ### Secondary (MEDIUM confidence)
+
 - [CITED: docs.rs/tokio/latest] — spawn_blocking documentation and examples
 - [CITED: SQLite documentation] — ALTER TABLE ADD COLUMN compatibility
 
 ### Tertiary (LOW confidence)
+
 - [ASSUMED] ProviderType `#[serde(rename_all = "snake_case")]` will produce lowercase values matching TypeScript — needs compile-time verification
 - [ASSUMED] Tauri 2's tokio dependency includes rt-multi-thread — needs Cargo.toml verification
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH — keyring 4.0.1 + keyring-core 1.0.0 verified on crates.io and docs.rs; all other deps already in project
 - Architecture: HIGH — follows established DbWorker pattern; spawn_blocking pattern verified in tokio docs; KeyringStore port is straightforward
 - Pitfalls: HIGH — keyring v4 breaking changes identified and documented with official sources; ProviderType serde mismatch identified

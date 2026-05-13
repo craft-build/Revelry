@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Native Desktop Shell** - App runs as a Tauri window with full SvelteKit routing ✅ 2026-05-11
 - [x] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data ✅ 2026-05-11
 - [x] **Phase 3: Editors** - Create and edit characters, personas, and lorebooks ✅ 2026-05-12
-- [ ] **Phase 4: Provider Setup** - Users configure AI providers with API keys stored in OS keychain
+- [x] **Phase 4: Provider Setup** - Users configure AI providers with API keys stored in OS keychain ✅ 2026-05-13
 - [ ] **Phase 5: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
 - [ ] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting
 - [ ] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export
@@ -121,7 +121,7 @@ Plans:
 
 **Wave 2** _(autonomous — persona + lorebook editors, blocked on Wave 1)_
 
-- [x] 03-02: Persona Editor dialog + PersonaCard kebab menu + persona avatar_path wiring _(blocked on 03-01)_
+- [x] 03-02: Persona Editor dialog + PersonaCard kebab menu + persona avatar*path wiring *(blocked on 03-01)\_
 - [x] 03-03: Lorebook Editor with keyword testing + LorebookCard + Lorebooks tab _(blocked on 03-01)_
 
 **Wave 3** _(autonomous — integration + polish, blocked on Waves 1 and 2)_
@@ -156,11 +156,11 @@ Plans:
 
 **Wave 1** _(autonomous — backend keyring + provider CRUD pipeline)_
 
-- [ ] 04-01: KeyringStore + ProviderConfig domain + migration + CRUD + Tauri commands
+- [x] 04-01: KeyringStore + ProviderConfig domain + migration + CRUD + Tauri commands
 
 **Wave 2** _(autonomous — frontend UI + settings wiring, blocked on Wave 1)_
 
-- [ ] 04-02: ProviderEditorDialog + ModelEntryRow + KeyringUnavailableBanner + settings page wiring _(blocked on 04-01)_
+- [x] 04-02: ProviderEditorDialog + ModelEntryRow + KeyringUnavailableBanner + settings page wiring _(blocked on 04-01)_
 
 **Cross-cutting constraints:**
 
@@ -168,7 +168,7 @@ Plans:
 - Keyring v4 init: `keyring::use_native_store(true)` MUST be called before any `Entry::new()` — Plan 01 Task 1, never moved or removed
 - API key security: has_api_key returns boolean only; never expose key in IPC responses — enforced across both plans
 - Type alignment: Provider interface in TypeScript (models array, has_api_key, model_name) must match Rust ProviderConfig serde output
-      **UI hint**: yes
+  **UI hint**: yes
 
 ### Phase 5: Live Conversations
 
@@ -288,7 +288,7 @@ Plans:
 
 1. User can toggle between dark and light themes
 2. App respects system appearance preference with manual override
-    **Plans**: 2 plans in 2 waves
+   **Plans**: 2 plans in 2 waves
 
 Plans:
 
@@ -306,7 +306,7 @@ Plans:
 - keyring v4 split: `keyring = "4.0"` + `keyring-core = "1.0"` — both crates required; store init before use
 - ProviderType serde: Rust uses `#[serde(rename_all = "snake_case")]` to match TypeScript values
 - Conversation model_name write path: update_conversation_provider function persists both provider_id and model_name together
-      **UI hint**: yes
+  **UI hint**: yes
 
 ### Phase 11: Spec Update & Distribution
 
@@ -338,7 +338,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Native Desktop Shell        | 4/4            | Complete    | 2026-05-11 |
 | 2. Persistent Data             | 4/4            | Complete    | 2026-05-11 |
 | 3. Editors                     | 4/4            | Complete    | 2026-05-12 |
-| 4. Provider Setup              | 1/2            | In Progress | -          |
+| 4. Provider Setup              | 2/2            | Complete    | 2026-05-13 |
 | 5. Live Conversations          | 0/5            | Not started | -          |
 | 6. Smart Prompts               | 0/4            | Not started | -          |
 | 7. Rich Output & Cards         | 0/4            | Not started | -          |

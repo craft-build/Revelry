@@ -41,6 +41,8 @@
 	let is_saving = $state(false);
 	let backend_error = $state('');
 	let discard_open = $state(false);
+	let prev_provider_type = $state<string>('');
+	let type_change_confirm_open = $state(false);
 
 	// ── Validation errors ──────────────────────────────────────────────────
 	let name_error = $state('');
@@ -102,6 +104,7 @@
 			if (mode === 'edit' && provider) {
 				form_name = provider.name;
 				form_provider_type = provider.provider_type;
+				prev_provider_type = provider.provider_type;
 				form_base_url = provider.base_url ?? '';
 				form_api_key = '';
 				form_models = provider.models.map((m) => ({ ...m }));
@@ -111,6 +114,7 @@
 			} else {
 				form_name = '';
 				form_provider_type = '';
+				prev_provider_type = '';
 				form_base_url = '';
 				form_api_key = '';
 				form_models = [];
@@ -136,13 +140,52 @@
 	// ── Provider type change handler ──────────────────────────────────────
 	function handleTypeChange() {
 		const defaults = type_defaults[form_provider_type];
-		if (defaults) {
-			form_base_url = defaults.base_url ?? '';
-			if (form_models.length === 0) {
-				form_models = [{ name: defaults.model, context_window_size: null, enabled: true }];
-			}
+		if (!defaults) {
+			type_error = '';
+			return;
 		}
+
+		// Check if base_url or models were modified from the previous type's defaults
+		const prevDefaults = type_defaults[prev_provider_type];
+		const base_url_modified = prevDefaults && form_base_url !== (prevDefaults.base_url ?? '');
+		const models_modified =
+			prevDefaults &&
+			(form_models.length !== 1 ||
+				form_models[0]?.name !== prevDefaults.model ||
+				form_models[0]?.context_window_size !== null ||
+				form_models[0]?.enabled !== true);
+
+		if (prev_provider_type && (base_url_modified || models_modified)) {
+			// Show confirmation before resetting
+			type_change_confirm_open = true;
+			return;
+		}
+
+		// Not dirty — proceed with reset
+		applyTypeDefaults(defaults);
+		prev_provider_type = form_provider_type;
 		type_error = '';
+	}
+
+	function applyTypeDefaults(defaults: { base_url: string | null; model: string }) {
+		form_base_url = defaults.base_url ?? '';
+		form_models = [{ name: defaults.model, context_window_size: null, enabled: true }];
+	}
+
+	function handleTypeChangeConfirm() {
+		type_change_confirm_open = false;
+		const defaults = type_defaults[form_provider_type];
+		if (defaults) {
+			applyTypeDefaults(defaults);
+		}
+		prev_provider_type = form_provider_type;
+		type_error = '';
+	}
+
+	function handleTypeChangeCancel() {
+		type_change_confirm_open = false;
+		// Revert to previous type
+		form_provider_type = prev_provider_type;
 	}
 
 	// ── Dialog close handling ─────────────────────────────────────────────
@@ -241,8 +284,7 @@
 			if (!m.name.trim()) {
 				newModelErrors[i] = 'Model name is required.';
 				valid = false;
-			}
-			if (m.context_window_size != null && m.context_window_size <= 0) {
+			} else if (m.context_window_size != null && (Number.isNaN(m.context_window_size) || m.context_window_size <= 0)) {
 				newModelErrors[i] = 'Context size must be a positive number.';
 				valid = false;
 			}
@@ -333,7 +375,8 @@
 					api_key: form_api_key || undefined
 				});
 			}
-			handleOpenChange(false);
+			open = false;
+			onopenchange?.(false);
 		} catch (err) {
 			backend_error =
 				err instanceof Error ? err.message : "Couldn't save provider. Something went wrong.";
@@ -489,12 +532,20 @@
 					</div>
 				{/each}
 			</div>
-			<Button variant="secondary" size="sm" onclick={addModel} disabled={is_saving}>
-				<Plus class="size-3.5" />
-				Add model
-			</Button>
-			{#if form_models.length === 0}
-				<p class="text-xs text-(--color-destructive)">At least one model is required.</p>
+			{#if form_models.length > 0}
+				<Button variant="secondary" size="sm" onclick={addModel} disabled={is_saving}>
+					<Plus class="size-3.5" />
+					Add model
+				</Button>
+			{:else}
+				<div class="rounded-(--radius-md) border border-dashed border-(--color-border) px-4 py-5 text-center">
+					<p class="text-sm font-medium text-(--color-foreground)">No models added.</p>
+					<p class="mt-1 text-xs text-(--color-muted)">Add at least one model that this provider supports. The default model is pre-filled.</p>
+					<Button variant="secondary" size="sm" class="mt-3" onclick={addModel} disabled={is_saving}>
+						<Plus class="size-3.5" />
+						Add model
+					</Button>
+				</div>
 			{/if}
 		</div>
 
@@ -575,5 +626,16 @@
 	title="Discard changes?"
 	description="You have unsaved changes. Closing this dialog will discard them."
 	confirm_label="Discard"
+	cancel_label="Keep editing"
 	onconfirm={handleDiscardConfirm}
+/>
+
+<DeleteConfirmationDialog
+	bind:open={type_change_confirm_open}
+	title="Change provider type?"
+	description="Changing the provider type will reset the base URL and models to the new type's defaults. Continue?"
+	confirm_label="Change type"
+	cancel_label="Keep current"
+	onconfirm={handleTypeChangeConfirm}
+	oncancel={handleTypeChangeCancel}
 />

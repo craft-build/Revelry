@@ -177,6 +177,24 @@ pub fn remove_lorebook_from_character(
     Ok(())
 }
 
+/// Loads all lorebooks assigned to a character, ordered by sort_order.
+pub fn load_lorebooks_for_character(
+    conn: &Connection,
+    character_id: &str,
+) -> Result<Vec<Lorebook>> {
+    let mut stmt = conn.prepare_cached(
+        "SELECT l.id, l.name, l.description, l.created_at, l.updated_at
+         FROM lorebooks l
+         INNER JOIN character_lorebooks cl ON cl.lorebook_id = l.id
+         WHERE cl.character_id = ?1
+         ORDER BY cl.sort_order ASC",
+    )?;
+    let lorebooks = stmt
+        .query_map(params![character_id], |row| row_to_lorebook(row))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(lorebooks)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -361,5 +379,40 @@ mod tests {
         let entries =
             load_lorebook_entries(&conn, &lorebook.id).expect("Load entries should succeed");
         assert!(entries.is_empty(), "Entries should be cascade-deleted");
+    }
+
+    #[test]
+    fn test_load_lorebooks_for_character() {
+        let conn = setup_test_db();
+        let character = CharacterCardV2::new("Lorebook Query Test".to_string());
+        crate::db::characters::insert_character(&conn, &character)
+            .expect("Insert character should succeed");
+
+        let lb1 = Lorebook::new("Lorebook A".to_string());
+        let lb2 = Lorebook::new("Lorebook B".to_string());
+        let lb3 = Lorebook::new("Unassigned Lorebook".to_string());
+        insert_lorebook(&conn, &lb1).expect("Insert lb1 should succeed");
+        insert_lorebook(&conn, &lb2).expect("Insert lb2 should succeed");
+        insert_lorebook(&conn, &lb3).expect("Insert lb3 should succeed");
+
+        assign_lorebook_to_character(&conn, &character.id, &lb2.id, 0)
+            .expect("Assign lb2 should succeed");
+        assign_lorebook_to_character(&conn, &character.id, &lb1.id, 1)
+            .expect("Assign lb1 should succeed");
+
+        let loaded =
+            load_lorebooks_for_character(&conn, &character.id).expect("Load should succeed");
+        assert_eq!(loaded.len(), 2, "Should have 2 assigned lorebooks");
+        // Ordered by sort_order: lb2 (0) then lb1 (1)
+        assert_eq!(loaded[0].id, lb2.id, "First lorebook should be lb2 (sort 0)");
+        assert_eq!(loaded[1].id, lb1.id, "Second lorebook should be lb1 (sort 1)");
+
+        // Unassigned character should return empty
+        let other = CharacterCardV2::new("Other Character".to_string());
+        crate::db::characters::insert_character(&conn, &other)
+            .expect("Insert other character should succeed");
+        let empty =
+            load_lorebooks_for_character(&conn, &other.id).expect("Load should succeed");
+        assert!(empty.is_empty(), "Unassigned character should have no lorebooks");
     }
 }

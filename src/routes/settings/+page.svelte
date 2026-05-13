@@ -307,6 +307,7 @@
 			delete_loading = true;
 			try {
 				await app.deleteProvider(delete_target);
+				delete_open = false;
 			} catch (err) {
 				console.error('Failed to delete provider:', err);
 			} finally {

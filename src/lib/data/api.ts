@@ -103,6 +103,18 @@ export async function updateConversationPersona(
   });
 }
 
+export async function updateConversationProvider(
+  id: string,
+  providerId: string | null,
+  modelName: string | null,
+): Promise<void> {
+  return invoke<void>("update_conversation_provider", {
+    id,
+    providerId,
+    modelName,
+  });
+}
+
 // ── Presets ────────────────────────────────────────────────────────────────────
 
 export async function getPresets(): Promise<GenerationPreset[]> {
@@ -167,6 +179,12 @@ export async function removeLorebookFromCharacter(
     characterId,
     lorebookId,
   });
+}
+
+export async function getCharacterLorebooks(
+  characterId: string,
+): Promise<Lorebook[]> {
+  return invoke<Lorebook[]>("get_character_lorebooks", { characterId });
 }
 
 // ── Avatars ────────────────────────────────────────────────────────────────────

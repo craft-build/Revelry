@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { app } from '$lib/stores/app.svelte';
 	import { Avatar, Tooltip } from '$lib/components/ui';
-	import { Sparkles, Clock, MoreHorizontal } from '@lucide/svelte';
+	import { Clock, MoreHorizontal } from '@lucide/svelte';
 	import PersonaSwitcher from './PersonaSwitcher.svelte';
+	import ProviderModelSelector from './ProviderModelSelector.svelte';
 </script>
 
 <header
@@ -33,15 +34,7 @@
 
 		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
 
-		<Tooltip text="Model: claude-opus-4-7">
-			<button
-				type="button"
-				class="inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-elevated) px-2.5 text-xs font-medium hover:bg-(--color-surface-hover)"
-			>
-				<Sparkles class="size-3 text-(--color-accent)" />
-				<span class="font-mono text-[11px]">opus-4.7</span>
-			</button>
-		</Tooltip>
+		<ProviderModelSelector />
 
 		<Tooltip text="Branch history">
 			<button

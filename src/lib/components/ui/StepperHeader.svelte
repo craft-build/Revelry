@@ -33,7 +33,7 @@
 					step.state === 'completed' &&
 						'bg-(--color-accent) text-(--color-accent-fg)',
 					step.state === 'current' &&
-						'bg-(--color-accent)/15 text-(--color-accent) ring-1 ring-(--color-accent)',
+						'bg-(--color-accent)/15 text-(--color-accent) ring-1 ring-inset ring-(--color-accent)',
 					(step.state === 'locked' || step.state === 'upcoming') &&
 						'bg-(--color-surface-elevated) text-(--color-muted)',
 					(step.state === 'locked') && 'opacity-50'

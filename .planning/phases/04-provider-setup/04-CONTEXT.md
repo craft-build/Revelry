@@ -9,6 +9,7 @@
 Users can configure AI providers (name, type, API key, models, generation params) through the settings page, with API keys stored exclusively in the OS-native keychain — never written to disk. Providers support multiple models under a single API key. The app gracefully handles keyring unavailability on Linux.
 
 In scope:
+
 - KeyringStore: OS-native keychain integration via `keyring` 4.0.0 crate
 - Provider domain model port: ProviderConfig with 1:N provider-models (JSON column)
 - Schema migration: add `models` JSON column and `model_name` to providers/conversations
@@ -161,7 +162,7 @@ NOT in scope: AI streaming/inference (Phase 5), prompt assembly (Phase 6), token
 <specifics>
 ## Specific Ideas
 
-- Keyring startup check: try to create/delete an entry with a well-known test key (e.g., service="revelry", username="__keyring_test__"). If it fails, keyring is unavailable.
+- Keyring startup check: try to create/delete an entry with a well-known test key (e.g., service="revelry", username="**keyring_test**"). If it fails, keyring is unavailable.
 - Provider editor: when user selects a ProviderType in create mode, auto-fill base_url from ProviderType::default_base_url() and add the default model from ProviderType::default_model_name() to the models array.
 - The backend should return a `has_api_key: boolean` field alongside provider data (not the actual key) so the frontend can display "Key set ✓" / "No key" status without ever receiving the key.
 - Provider type categories for the grouped select:

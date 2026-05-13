@@ -169,10 +169,11 @@
 					tags: parseTags(form_tags)
 				});
 			}
-			handleOpenChange(false);
-		} catch (err) {
-			backend_error =
-				err instanceof Error ? err.message : 'Failed to save persona.';
+		open = false;
+		onopenchange?.(false);
+	} catch (err) {
+		backend_error =
+			err instanceof Error ? err.message : 'Failed to save persona.';
 		} finally {
 			is_saving = false;
 		}

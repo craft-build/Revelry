@@ -9,8 +9,12 @@
 		description?: string;
 		/** Label for the confirm button */
 		confirm_label?: string;
+		/** Label for the cancel button */
+		cancel_label?: string;
 		/** Called when the user confirms deletion */
 		onconfirm?: () => void;
+		/** Called when the user cancels */
+		oncancel?: () => void;
 		/** Whether the deletion is in progress */
 		loading?: boolean;
 	}
@@ -21,7 +25,9 @@
 		title = 'Delete',
 		description = 'This action cannot be undone. Are you sure you want to continue?',
 		confirm_label = 'Delete',
+		cancel_label = 'Cancel',
 		onconfirm,
+		oncancel,
 		loading = false
 	}: Props = $props();
 
@@ -37,8 +43,8 @@
 
 <Dialog {open} onopenchange={handleOpenChange} {title} {description}>
 	{#snippet footer()}
-		<Button variant="secondary" size="sm" onclick={() => handleOpenChange(false)} disabled={loading}>
-			Cancel
+		<Button variant="secondary" size="sm" onclick={() => { oncancel?.(); handleOpenChange(false); }} disabled={loading}>
+			{cancel_label}
 		</Button>
 		<Button variant="destructive" size="sm" onclick={handleConfirm} disabled={loading}>
 			{#if loading}

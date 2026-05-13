@@ -20,6 +20,7 @@ import {
   deleteConversation as apiDeleteConversation,
   getPresets as apiGetPresets,
   updateConversationPersona as apiUpdateConversationPersona,
+  updateConversationProvider as apiUpdateConversationProvider,
   getLorebooks as apiGetLorebooks,
   saveLorebook as apiSaveLorebook,
   deleteLorebook as apiDeleteLorebook,
@@ -29,8 +30,12 @@ import {
   saveProvider as apiSaveProvider,
   deleteProvider as apiDeleteProvider,
   saveApiKey as apiSaveApiKey,
+  deleteApiKey as apiDeleteApiKey,
   hasApiKey as apiHasApiKey,
   checkKeyringAvailable as apiCheckKeyringAvailable,
+  assignLorebookToCharacter as apiAssignLorebookToCharacter,
+  removeLorebookFromCharacter as apiRemoveLorebookFromCharacter,
+  getCharacterLorebooks as apiGetCharacterLorebooks,
 } from "$lib/data/api";
 
 /**
@@ -128,7 +133,14 @@ class AppState {
         apiGetProviders(),
       ]);
 
-      const [characters, personas, lorebooks, conversations, presets, providers] = results;
+      const [
+        characters,
+        personas,
+        lorebooks,
+        conversations,
+        presets,
+        providers,
+      ] = results;
 
       if (characters.status === "fulfilled") {
         this.characters = characters.value;
@@ -464,6 +476,42 @@ class AppState {
     }
   }
 
+  // ── Character-lorebook junction ────────────────────────────────────────
+
+  async getCharacterLorebooks(characterId: string): Promise<Lorebook[]> {
+    try {
+      return await apiGetCharacterLorebooks(characterId);
+    } catch (err) {
+      console.error("Failed to load character lorebooks:", err);
+      throw err;
+    }
+  }
+
+  async assignLorebookToCharacter(
+    characterId: string,
+    lorebookId: string,
+    sortOrder: number,
+  ): Promise<void> {
+    try {
+      await apiAssignLorebookToCharacter(characterId, lorebookId, sortOrder);
+    } catch (err) {
+      console.error("Failed to assign lorebook to character:", err);
+      throw err;
+    }
+  }
+
+  async removeLorebookFromCharacter(
+    characterId: string,
+    lorebookId: string,
+  ): Promise<void> {
+    try {
+      await apiRemoveLorebookFromCharacter(characterId, lorebookId);
+    } catch (err) {
+      console.error("Failed to remove lorebook from character:", err);
+      throw err;
+    }
+  }
+
   // ── Avatar upload ──────────────────────────────────────────────────────
 
   async uploadAvatar(id: string, sourcePath: string): Promise<string> {
@@ -551,6 +599,46 @@ class AppState {
       this.providers = this.providers.filter((p) => p.id !== id);
     } catch (err) {
       console.error("Failed to delete provider:", err);
+      throw err;
+    }
+  }
+
+  async updateConversationProvider(providerId: string | null, modelName: string | null): Promise<void> {
+    if (!this.active_conversation_id) return;
+    const conv = this.active_conversation;
+    const prevProviderId = conv?.provider_id ?? null;
+    const prevModelName = conv?.model_name ?? null;
+    // Optimistically update local state
+    this.conversations = this.conversations.map((c) =>
+      c.id === this.active_conversation_id
+        ? { ...c, provider_id: providerId ?? undefined, model_name: modelName ?? undefined }
+        : c,
+    );
+    try {
+      await apiUpdateConversationProvider(
+        this.active_conversation_id,
+        providerId,
+        modelName,
+      );
+    } catch (err) {
+      console.error("Failed to persist provider/model switch:", err);
+      // Revert on failure
+      this.conversations = this.conversations.map((c) =>
+        c.id === this.active_conversation_id
+          ? { ...c, provider_id: prevProviderId ?? undefined, model_name: prevModelName ?? undefined }
+          : c,
+      );
+    }
+  }
+
+  async deleteApiKey(providerId: string): Promise<void> {
+    try {
+      await apiDeleteApiKey(providerId);
+      this.providers = this.providers.map((p) =>
+        p.id === providerId ? { ...p, has_api_key: false } : p,
+      );
+    } catch (err) {
+      console.error("Failed to delete API key:", err);
       throw err;
     }
   }
