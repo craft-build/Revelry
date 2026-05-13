@@ -1,6 +1,7 @@
 mod commands;
 mod db;
 mod domain;
+mod secrets;
 
 use db::DbWorker;
 
@@ -18,6 +19,11 @@ pub fn run() {
         );
         std::process::exit(1);
     });
+
+    // Initialize keyring store (v4 requires explicit init before Entry::new())
+    if let Err(e) = keyring::use_native_store(true) {
+        tracing::warn!("Failed to initialize keyring: {}. Keyring features will be disabled.", e);
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
@@ -58,4 +64,7 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    // Release keyring store on shutdown (v4 requires explicit cleanup)
+    keyring::release_store();
 }
