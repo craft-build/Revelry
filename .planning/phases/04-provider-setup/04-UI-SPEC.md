@@ -75,15 +75,15 @@ All new spacing uses existing Tailwind token values. No custom spacing values in
 | Field label                      | 12px    | 400    | Geist sans  | "Name", "Type", "Base URL", "API Key"            |
 | Field error                      | 12px    | 400    | Geist sans  | `--color-destructive`                             |
 | Provider card name               | 14px    | 600    | Fraunces    | Card title in settings list                       |
-| Provider type tag                | 10px    | 500    | Geist sans  | Tag component, uppercase tracking-wide            |
-| Model name (mono)                | 11px    | 400    | Geist Mono  | `font-mono text-[11px]` in card and model rows   |
+| Provider type tag                | 10px    | 500    | Geist sans  | **Inherited** from Phase 3 Tag component — not a Phase 4 declaration |
+| Model name (mono)                | 12px    | 400    | Geist Mono  | `font-mono text-xs` in card and model rows (Label/small role) |
 | Generation param label           | 12px    | 400    | Geist sans  | "Temperature", "Top P", "Max tokens"             |
 | Generation param value           | 12px    | 400    | Geist Mono  | `font-mono text-xs` for numeric values            |
 | Keyring banner text             | 14px    | 400    | Geist sans  | Warning message body                              |
 | Keyring banner heading          | 14px    | 600    | Geist sans  | Warning message title                             |
 | "Key set ✓" / "No key" status   | 12px    | 400    | Geist sans  | API key status indicator on provider card         |
 
-**No 500 (medium) weight anywhere** except the Tag component's built-in `font-medium` at 10px (inherited from Phase 3). All other labels, nav items, and metadata use 400. All headings, dialog titles, and emphasis use 600.
+**No 500 (medium) weight in Phase 4 declarations.** The Tag component's built-in `font-medium` at 10px is inherited from Phase 3 — it is not a Phase 4 type declaration. All Phase 4 labels, nav items, and metadata use 400. All Phase 4 headings, dialog titles, and emphasis use 600.
 
 ---
 
@@ -508,7 +508,7 @@ interface Props {
 **Phase 4 changes:**
 
 1. Replace "Edit" button with `KebabMenu` (MoreVertical trigger). Menu items: Edit, Delete (destructive).
-2. Replace single model name display with models list: show first 3 model names in `font-mono text-[11px]`, with "+N more" if more than 3.
+2. Replace single model name display with models list: show first 3 model names in `font-mono text-xs`, with "+N more" if more than 3.
 3. Replace mock API key input with API key status indicator:
    - `has_api_key === true`: `Check` icon (green/success) + "Key set" text
    - `has_api_key === false`: "No key" text (subtle)
@@ -641,7 +641,7 @@ The following decisions were in "Claude's Discretion" in CONTEXT.md and are here
 
 7. **Keyring test entry naming:** The startup keyring availability check creates and deletes a test entry with service name "revelry" and username `__keyring_test__`. The double-underscore prefix makes it clearly a system entry, not a user provider.
 
-8. **Provider card models display — show up to 3:** On the settings page provider card, show the first 3 enabled model names in `font-mono text-[11px]`, separated by `·`. If more than 3 models exist, append "+N more". This replaces the current single `provider.model` display.
+8. **Provider card models display — show up to 3:** On the settings page provider card, show the first 3 enabled model names in `font-mono text-xs` (12px), separated by `·`. If more than 3 models exist, append "+N more". This replaces the current single `provider.model` display.
 
 9. **Generation params all optional:** Temperature, Top P, and Max Tokens fields in the editor are optional (no pre-filled defaults). Leaving them blank means "use the provider/model default." This avoids imposing arbitrary defaults that might not match the user's provider.
 
