@@ -67,12 +67,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Providers
 
-- [ ] **PROV-01**: User can add an AI provider with name, type (OpenAI, Anthropic, custom OpenAI-compatible, etc.), and API key
-- [ ] **PROV-02**: User can edit provider configuration
-- [ ] **PROV-03**: User can delete a provider
-- [ ] **PROV-04**: API keys are stored in the OS-native keychain (never on disk)
-- [ ] **PROV-05**: User can select a provider and model for a conversation
-- [ ] **PROV-06**: User can configure generation parameters (temperature, top_p, max_tokens, frequency_penalty, presence_penalty)
+- [x] **PROV-01**: User can add an AI provider with name, type (OpenAI, Anthropic, custom OpenAI-compatible, etc.), and API key
+- [x] **PROV-02**: User can edit provider configuration
+- [x] **PROV-03**: User can delete a provider
+- [x] **PROV-04**: API keys are stored in the OS-native keychain (never on disk)
+- [x] **PROV-05**: User can select a provider and model for a conversation
+- [x] **PROV-06**: User can configure generation parameters (temperature, top_p, max_tokens, frequency_penalty, presence_penalty)
 
 ### Lorebook
 
@@ -182,12 +182,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRMP-03     | Phase 6  | Pending |
 | PRMP-04     | Phase 9  | Pending |
 | PRMP-05     | Phase 9  | Pending |
-| PROV-01     | Phase 4  | Pending |
-| PROV-02     | Phase 4  | Pending |
-| PROV-03     | Phase 4  | Pending |
-| PROV-04     | Phase 4  | Pending |
-| PROV-05     | Phase 4  | Pending |
-| PROV-06     | Phase 4  | Pending |
+| PROV-01     | Phase 4  | Complete |
+| PROV-02     | Phase 4  | Complete |
+| PROV-03     | Phase 4  | Complete |
+| PROV-04     | Phase 4  | Complete |
+| PROV-05     | Phase 4  | Complete |
+| PROV-06     | Phase 4  | Complete |
 | LORB-01     | Phase 9  | Pending |
 | LORB-02     | Phase 9  | Pending |
 | LORB-03     | Phase 9  | Pending |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 4 context gathered
-last_updated: "2026-05-13T02:06:09.309Z"
-last_activity: 2026-05-12 — Phase 3 execution complete
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-05-13T02:53:49Z"
+last_activity: 2026-05-13 -- Phase 04 Plan 01 completed
 progress:
   total_phases: 11
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 13
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 4 — Provider Setup
+**Current focus:** Phase 04 — provider-setup
 
 ## Current Position
 
-Phase: 4 of 11 (Provider Setup) — Ready to plan
-Plan: 0/4 plans complete
-Status: Phase 3 complete, ready to plan Phase 4
-Last activity: 2026-05-12 — Phase 3 execution complete
+Phase: 04 (provider-setup) — EXECUTING
+Plan: 2 of 2
+Status: Plan 01 completed, ready for Plan 02
+Last activity: 2026-05-13 -- Phase 04 Plan 01 completed (KeyringStore + provider backend)
 
-Progress: [██████░░░░] 27%
+Progress: [███████░░] 78%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
-- Average duration: ~20 min
-- Total execution time: ~2.5 hours
+- Total plans completed: 9
+- Average duration: ~18 min
+- Total execution time: ~2.6 hours
 
 **By Phase:**
 
@@ -47,6 +47,7 @@ Progress: [██████░░░░] 27%
 | 1     | 4     | 75min  | 19min    |
 | 2     | 4     | ~80min | 20min    |
 | 3     | 4     | ~90min | 22min    |
+| 4     | 1/2   | 5min   | 5min     |
 
 _Updated after each plan completion_
 
@@ -62,6 +63,9 @@ Recent decisions affecting current work:
 - Vault mode explicitly excluded
 - Bundle identifier changed from com.revelry.app to com.revelry.desktop (Phase 1 UAT fix)
 - AppHeader drag region deferred to future work item (Phase 1 UAT)
+- Explicit serde rename per ProviderType variant instead of rename_all (serde splits OpenAI → open_a_i)
+- keyring v4 requires use_native_store(true) init + release_store() shutdown
+- get_providers returns ProviderWithKeyStatus with batch has_api_key check
 
 ### Pending Todos
 
@@ -69,7 +73,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- ~~⚠️ [Phase 2/4] No character or persona creation UI — 6 UAT tests blocked~~ **RESOLVED by Phase 3** — Character, persona, and lorebook editors are now built and functional.
+None.
 
 ## Deferred Items
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T02:06:09.306Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-provider-setup/04-CONTEXT.md
+Last session: 2026-05-13T02:53:49Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-provider-setup/04-02-PLAN.md

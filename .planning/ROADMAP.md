@@ -288,12 +288,24 @@ Plans:
 
 1. User can toggle between dark and light themes
 2. App respects system appearance preference with manual override
-   **Plans**: TBD
+    **Plans**: 2 plans in 2 waves
 
 Plans:
 
-- [ ] 10-01: Implement theme toggle with CSS variables and system preference detection
-- [ ] 10-02: Light theme token definitions and testing
+**Wave 1** _(autonomous — backend: keyring + domain + migration + CRUD + commands)_
+
+- [x] 04-01: KeyringStore + ProviderConfig domain + migration #3 + CRUD + Tauri commands
+
+**Wave 2** _(autonomous — frontend: editor dialog + settings wiring + ChatHeader selector, blocked on Wave 1)_
+
+- [ ] 04-02: ProviderEditorDialog + ModelEntryRow + KeyringUnavailableBanner + settings wiring + ChatHeader provider/model selector
+
+**Cross-cutting constraints:**
+
+- API key security: keys stored only in OS keychain via KeyringStore; never in SQLite, IPC responses, or logs
+- keyring v4 split: `keyring = "4.0"` + `keyring-core = "1.0"` — both crates required; store init before use
+- ProviderType serde: Rust uses `#[serde(rename_all = "snake_case")]` to match TypeScript values
+- Conversation model_name write path: update_conversation_provider function persists both provider_id and model_name together
       **UI hint**: yes
 
 ### Phase 11: Spec Update & Distribution
@@ -326,7 +338,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Native Desktop Shell        | 4/4            | Complete    | 2026-05-11 |
 | 2. Persistent Data             | 4/4            | Complete    | 2026-05-11 |
 | 3. Editors                     | 4/4            | Complete    | 2026-05-12 |
-| 4. Provider Setup              | 0/2            | Not started | -          |
+| 4. Provider Setup              | 1/2            | In Progress | -          |
 | 5. Live Conversations          | 0/5            | Not started | -          |
 | 6. Smart Prompts               | 0/4            | Not started | -          |
 | 7. Rich Output & Cards         | 0/4            | Not started | -          |
