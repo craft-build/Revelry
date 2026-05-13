@@ -5,3 +5,4 @@ pub mod keywords;
 pub mod lorebooks;
 pub mod personas;
 pub mod presets;
+pub mod providers;

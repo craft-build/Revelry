@@ -61,6 +61,14 @@ pub fn run() {
             commands::avatars::upload_avatar,
             commands::avatars::delete_avatar,
             commands::keywords::test_lorebook_keywords,
+            commands::providers::get_providers,
+            commands::providers::save_provider,
+            commands::providers::delete_provider,
+            commands::providers::save_api_key,
+            commands::providers::has_api_key,
+            commands::providers::delete_api_key,
+            commands::providers::check_keyring_available,
+            commands::providers::update_conversation_provider,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

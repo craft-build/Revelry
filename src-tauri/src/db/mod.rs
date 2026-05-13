@@ -5,6 +5,7 @@ pub mod lorebook;
 pub mod migrations;
 pub mod models;
 pub mod personas;
+pub mod providers;
 pub mod regex_scripts;
 
 use crate::domain::character::CharacterCardV2;
@@ -12,6 +13,7 @@ use crate::domain::conversation::{Conversation, Message};
 use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{Lorebook, LorebookEntry};
 use crate::domain::persona::Persona;
+use crate::domain::provider::ProviderConfig;
 use rusqlite::Connection;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -76,6 +78,12 @@ pub enum DbCommand {
         persona_id: Option<String>,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
+    UpdateConversationProvider {
+        conversation_id: String,
+        provider_id: Option<String>,
+        model_name: Option<String>,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
 
     // Message operations
     LoadMessages {
@@ -133,6 +141,19 @@ pub enum DbCommand {
     RemoveLorebookFromCharacter {
         character_id: String,
         lorebook_id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // Provider operations
+    LoadProviders {
+        reply: oneshot::Sender<anyhow::Result<Vec<ProviderConfig>>>,
+    },
+    SaveProvider {
+        provider: ProviderConfig,
+        reply: oneshot::Sender<anyhow::Result<ProviderConfig>>,
+    },
+    DeleteProvider {
+        id: String,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
 }
@@ -285,6 +306,20 @@ impl DbWorker {
                 );
                 let _ = reply.send(result);
             }
+            DbCommand::UpdateConversationProvider {
+                conversation_id,
+                provider_id,
+                model_name,
+                reply,
+            } => {
+                let result = conversations::update_conversation_provider(
+                    conn,
+                    &conversation_id,
+                    provider_id.as_deref(),
+                    model_name.as_deref(),
+                );
+                let _ = reply.send(result);
+            }
             DbCommand::LoadMessages {
                 conversation_id,
                 reply,
@@ -370,6 +405,27 @@ impl DbWorker {
             } => {
                 let result =
                     lorebook::remove_lorebook_from_character(conn, &character_id, &lorebook_id);
+                let _ = reply.send(result);
+            }
+
+            // Provider operations
+            DbCommand::LoadProviders { reply } => {
+                let result = providers::load_providers(conn);
+                let _ = reply.send(result);
+            }
+            DbCommand::SaveProvider { provider, reply } => {
+                let result = if providers::load_provider(conn, &provider.id)
+                    .unwrap_or(None)
+                    .is_some()
+                {
+                    providers::update_provider(conn, &provider).map(|_| provider.clone())
+                } else {
+                    providers::insert_provider(conn, &provider).map(|_| provider.clone())
+                };
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteProvider { id, reply } => {
+                let result = providers::delete_provider(conn, &id);
                 let _ = reply.send(result);
             }
         }
