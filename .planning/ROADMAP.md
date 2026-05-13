@@ -150,14 +150,24 @@ Plans:
 3. User can select a provider and model for a conversation
 4. User can configure generation parameters (temperature, top_p, max_tokens)
 5. App handles keyring unavailability on Linux gracefully
-   **Plans**: TBD
+   **Plans**: 2 plans in 2 waves
 
 Plans:
 
-- [ ] 04-01: Implement KeyringStore with OS-native keychain integration
-- [ ] 04-02: Port provider domain model and DB persistence
-- [ ] 04-03: Create Tauri commands for provider CRUD
-- [ ] 04-04: Wire settings page to real provider backend with keyring
+**Wave 1** _(autonomous — backend keyring + provider CRUD pipeline)_
+
+- [ ] 04-01: KeyringStore + ProviderConfig domain + migration + CRUD + Tauri commands
+
+**Wave 2** _(autonomous — frontend UI + settings wiring, blocked on Wave 1)_
+
+- [ ] 04-02: ProviderEditorDialog + ModelEntryRow + KeyringUnavailableBanner + settings page wiring _(blocked on 04-01)_
+
+**Cross-cutting constraints:**
+
+- ProviderType serde: Rust uses `#[serde(rename_all = "snake_case")]` to produce "openai" etc. matching TypeScript ProviderType union values — any change to either side breaks round-trip
+- Keyring v4 init: `keyring::use_native_store(true)` MUST be called before any `Entry::new()` — Plan 01 Task 1, never moved or removed
+- API key security: has_api_key returns boolean only; never expose key in IPC responses — enforced across both plans
+- Type alignment: Provider interface in TypeScript (models array, has_api_key, model_name) must match Rust ProviderConfig serde output
       **UI hint**: yes
 
 ### Phase 5: Live Conversations
@@ -316,7 +326,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Native Desktop Shell        | 4/4            | Complete    | 2026-05-11 |
 | 2. Persistent Data             | 4/4            | Complete    | 2026-05-11 |
 | 3. Editors                     | 4/4            | Complete    | 2026-05-12 |
-| 4. Provider Setup              | 0/4            | Not started | -          |
+| 4. Provider Setup              | 0/2            | Not started | -          |
 | 5. Live Conversations          | 0/5            | Not started | -          |
 | 6. Smart Prompts               | 0/4            | Not started | -          |
 | 7. Rich Output & Cards         | 0/4            | Not started | -          |
