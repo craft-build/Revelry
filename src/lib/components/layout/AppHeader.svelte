@@ -4,6 +4,7 @@
 	import { app } from '$lib/stores/app.svelte';
 	import { cn } from '$lib/utils';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Logo from '$lib/components/ui/Logo.svelte';
 
 	const views = [
 		{ href: '/', label: 'Chat', icon: MessageSquare, match: (p: string) => p === '/' || p.startsWith('/chat') },
@@ -31,10 +32,7 @@
 
 	<!-- App identity -->
 	<div class="flex items-center gap-2 px-1">
-		<div
-			class="size-5 rounded-sm bg-gradient-to-br from-(--color-accent) to-(--color-accent-muted)"
-			aria-hidden="true"
-		></div>
+		<Logo />
 		<span class="font-display text-sm font-semibold tracking-wide">Revelry</span>
 	</div>
 

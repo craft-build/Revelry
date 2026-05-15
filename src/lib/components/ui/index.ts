@@ -3,6 +3,7 @@ export { default as AvatarUpload } from "./AvatarUpload.svelte";
 export { default as Button, buttonVariants } from "./Button.svelte";
 export { default as Dialog } from "./Dialog.svelte";
 export { default as Input } from "./Input.svelte";
+export { default as Logo } from "./Logo.svelte";
 export { default as KebabMenu } from "./KebabMenu.svelte";
 export { default as KebabMenuItem } from "./KebabMenuItem.svelte";
 export { default as KebabMenuSeparator } from "./KebabMenuSeparator.svelte";
