@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planned
-stopped_at: Phase 5 planned
-last_updated: "2026-05-16T02:30:00.000Z"
+status: completed
+stopped_at: Phase 5 complete
+last_updated: "2026-05-16T02:33:34.179Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 11
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 19
-  completed_plans: 15
-  percent: 79
+  completed_plans: 20
+  percent: 45
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 5 planned — ready to execute
+**Current focus:** Phase 5 complete — ready to plan Phase 6
 
 ## Current Position
 
-Phase: 5 of 11 (Live Conversations) — PLANNED
-Plan: 0/5 plans complete
-Status: Phase 5 planning complete — 5 plans in 5 waves
+Phase: 05 of 5 (live conversations)
+Plan: 5 of 5
+Status: Milestone complete
 Last activity: 2026-05-16
 
 Progress: [████████░░] 45%
@@ -36,18 +36,19 @@ Progress: [████████░░] 45%
 
 **Velocity:**
 
-- Total plans completed: 10
-- Average duration: ~17 min
-- Total execution time: ~2.7 hours
+- Total plans completed: 24
+- Average duration: ~14 min
+- Total execution time: ~5.5 hours
 
 **By Phase:**
 
-| Phase | Plans | Total  | Avg/Plan |
-| ----- | ----- | ------ | -------- |
-| 1     | 4     | 75min  | 19min    |
-| 2     | 4     | ~80min | 20min    |
-| 3     | 4     | ~90min | 22min    |
-| 4     | 2     | 11min  | 6min     |
+| Phase | Plans | Total    | Avg/Plan |
+| ----- | ----- | -------- | -------- |
+| 1     | 4     | 75min    | 19min    |
+| 2     | 4     | ~80min   | 20min    |
+| 3     | 4     | ~90min   | 22min    |
+| 4     | 2     | 11min    | 6min     |
+| 5     | 5     | ~20min   | 4min     |
 
 _Updated after each plan completion_
 
@@ -66,10 +67,15 @@ Recent decisions affecting current work:
 - Explicit serde rename per ProviderType variant instead of rename_all (serde splits OpenAI → open_a_i)
 - keyring v4 requires use_native_store(true) init + release_store() shutdown
 - get_providers returns ProviderWithKeyStatus with batch has_api_key check
+- rig-core 0.37 lib name is `rig_core` (not `rig`)
+- rig-core 0.37 uses builder pattern for all provider clients
+- Domain Message aliased as DomainMessage to avoid rig_core name clash
+- Frontend pre-generates message UUID and sort_order for atomic backend save
+- System prompt built from character personality + scenario with generic fallback
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
@@ -85,6 +91,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T02:30:00.000Z
-Stopped at: Phase 5 planned
-Resume file: .planning/phases/05-live-conversations/05-01-PLAN.md
+Last session: 2026-05-16T03:15:00.000Z
+Stopped at: Phase 5 complete
+Next phase: 06 (Smart Prompts)

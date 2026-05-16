@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Persistent Data** - Characters, personas, and conversations load from SQLite instead of mock data ✅ 2026-05-11
 - [x] **Phase 3: Editors** - Create and edit characters, personas, and lorebooks ✅ 2026-05-12
 - [x] **Phase 4: Provider Setup** - Users configure AI providers with API keys stored in OS keychain ✅ 2026-05-13
-- [ ] **Phase 5: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters
+- [x] **Phase 5: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters ✅ 2026-05-16
 - [ ] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting
 - [ ] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
@@ -188,23 +188,23 @@ Plans:
 
 **Wave 1** _(autonomous — AiService port + rig-core 0.37)_
 
-- [ ] 05-01: Port AiService from gtk_ref/ with rig-core 0.37 streaming + StreamChunk + CancelState
+- [x] 05-01: Port AiService from gtk_ref/ with rig-core 0.37 streaming + StreamChunk + CancelState
 
 **Wave 2** _(autonomous — Tauri Channel commands + DB extensions, blocked on Wave 1)_
 
-- [ ] 05-02: Implement Tauri Channel-based streaming commands (start_chat, stop_generation, regenerate, edit_and_resend) + DB extensions
+- [x] 05-02: Implement Tauri Channel-based streaming commands (start_chat, stop_generation, regenerate, edit_and_resend) + DB extensions
 
 **Wave 3** _(autonomous — frontend wiring, blocked on Wave 2)_
 
-- [ ] 05-03: Replace mock streaming with real AI invoke in chat view + wire stop button + disable input
+- [x] 05-03: Replace mock streaming with real AI invoke in chat view + wire stop button + disable input
 
 **Wave 4** _(autonomous — error rendering + regenerate, blocked on Wave 3)_
 
-- [ ] 05-04: Inline error rendering + stop reason badges + regenerate hover action in MessageBubble
+- [x] 05-04: Inline error rendering + stop reason badges + regenerate hover action in MessageBubble
 
 **Wave 5** _(manual — edit mode + end-to-end verification, blocked on Wave 4)_
 
-- [ ] 05-05: Implement edit/resend functionality with inline edit mode + human verification
+- [x] 05-05: Implement edit/resend functionality with inline edit mode + human verification
 
 **Cross-cutting constraints:**
 
@@ -361,7 +361,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. Persistent Data             | 4/4            | Complete    | 2026-05-11 |
 | 3. Editors                     | 4/4            | Complete    | 2026-05-12 |
 | 4. Provider Setup              | 2/2            | Complete    | 2026-05-13 |
-| 5. Live Conversations          | 0/5            | Planned     | -          |
+| 5. Live Conversations          | 5/5            | Complete    | 2026-05-16 |
 | 6. Smart Prompts               | 0/4            | Not started | -          |
 | 7. Rich Output & Cards         | 0/4            | Not started | -          |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |

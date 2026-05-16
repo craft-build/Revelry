@@ -138,4 +138,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-05-12 after Phase 3_
+_Last updated: 2026-05-16 after Phase 5_
