@@ -71,6 +71,7 @@ class AppState {
   sidebar_open = $state<boolean>(true);
   character_search_query = $state<string>("");
   keyring_available = $state<boolean>(true);
+  focusProviderSelector = $state<boolean>(false);
 
   // ── Derived ────────────────────────────────────────────────────────────
   get active_conversation(): Conversation | undefined {

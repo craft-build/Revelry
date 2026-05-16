@@ -41,6 +41,12 @@
 	function handleCancel() {
 		app.stopGeneration();
 	}
+
+	let lastAiMessageId = $derived(
+		app.messages
+			.filter((m) => m.role === 'assistant' && m.metadata?.stop_reason !== 'error')
+			.at(-1)?.id,
+	);
 </script>
 
 <svelte:head>
@@ -62,6 +68,7 @@
 					{message}
 					character={app.active_character}
 					persona={app.active_persona}
+					isLastAiMessage={message.id === lastAiMessageId}
 				/>
 			{/each}
 		{/if}

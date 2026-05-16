@@ -4,6 +4,17 @@
 	import { Clock, MoreHorizontal } from '@lucide/svelte';
 	import PersonaSwitcher from './PersonaSwitcher.svelte';
 	import ProviderModelSelector from './ProviderModelSelector.svelte';
+
+	let providerTrigger: HTMLButtonElement | undefined = $state();
+
+	// When focusProviderSelector is set (from error bubble "Switch provider" link),
+	// focus the provider/model selector trigger and reset the flag.
+	$effect(() => {
+		if (app.focusProviderSelector && providerTrigger) {
+			providerTrigger.click();
+			app.focusProviderSelector = false;
+		}
+	});
 </script>
 
 <header
