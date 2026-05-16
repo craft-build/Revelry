@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-05-16T04:39:29Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-05-16T04:57:22Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 22
-  completed_plans: 21
-  percent: 48
+  completed_plans: 22
+  percent: 50
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-10)
 ## Current Position
 
 Phase: 06 of 6 (smart prompts)
-Plan: 1 of 4
-Status: Executing Phase 06
+Plan: 2 of 3
+Status: Executing Phase 06, Plan 2 complete
 Last activity: 2026-05-16
 
-Progress: [█████████░] 48%
+Progress: [█████████░] 50%
 
 ## Performance Metrics
 
@@ -75,6 +75,9 @@ Recent decisions affecting current work:
 - System prompt built from character personality + scenario with generic fallback
 - Service module uses rig_core::completion::Message (matching ai/mod.rs convention)
 - Lorebook activation stubbed in PromptEngine for Phase 9 forward compat
+- BudgetInfo derives Copy for ownership safety in tokio::select! branches
+- stream_chat accepts Vec<Message> (pre-built by PromptEngine) instead of &[DomainMessage]
+- ChatContext + load_chat_context pattern consolidates shared DB loading for all chat commands
 
 ### Pending Todos
 
