@@ -250,10 +250,15 @@ Plans:
 
 Plans:
 
-- [ ] 07-01: Port MarkdownService from gtk_ref/ (pulldown-cmark)
-- [ ] 07-02: Replace naive rendering with real markdown in MessageBubble
-- [ ] 07-03: Port CardIO service from gtk_ref/ (PNG tEXt chunk read/write)
-- [ ] 07-04: Wire card import/export to character library UI
+**Wave 1** _(autonomous — markdown + card I/O backend, parallel)_
+
+- [ ] 07-01: Frontend Markdown Rendering Pipeline (marked + DOMPurify + Shiki)
+- [ ] 07-02: Port Card I/O Backend from gtk_ref/ (PNG tEXt chunk read/write)
+
+**Wave 2** _(autonomous — Shiki preload + frontend card UI, blocked on Wave 1)_
+
+- [ ] 07-03: Shiki Preloading in Root Layout _(blocked on 07-01)_
+- [ ] 07-04: Wire Card Import/Export to Frontend UI _(blocked on 07-02)_
       **UI hint**: yes
 
 ### Phase 8: Advanced Conversations
@@ -363,7 +368,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Provider Setup              | 2/2            | Complete    | 2026-05-13 |
 | 5. Live Conversations          | 5/5            | Complete    | 2026-05-16 |
 | 6. Smart Prompts               | 3/4            | In Progress | 2026-05-16 |
-| 7. Rich Output & Cards         | 0/4            | Not started | -          |
+| 7. Rich Output & Cards         | 0/4            | In Progress | -          |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 0/5            | Not started | -          |
 | 10. Theme & Polish             | 0/2            | Not started | -          |
