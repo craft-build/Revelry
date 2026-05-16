@@ -361,7 +361,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. Persistent Data             | 4/4            | Complete    | 2026-05-11 |
 | 3. Editors                     | 4/4            | Complete    | 2026-05-12 |
 | 4. Provider Setup              | 2/2            | Complete    | 2026-05-13 |
-| 5. Live Conversations          | 0/5            | Not started | -          |
+| 5. Live Conversations          | 0/5            | Planned     | -          |
 | 6. Smart Prompts               | 0/4            | Not started | -          |
 | 7. Rich Output & Cards         | 0/4            | Not started | -          |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
