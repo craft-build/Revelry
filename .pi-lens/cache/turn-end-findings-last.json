@@ -1,0 +1,4 @@
+{
+  "signature": "src/routes/chat/[id]/+page.svelte::📐 Cascade errors in 1 neighbor file(s) — fix before finishing turn:\n<diagnostics file=\"src/lib/components/chat/ChatHeader.svelte\" reason=\"fallback\">\n  line 13, col 11 rule=cascade:2339: Property 'focusProviderSelector' does not exist on type 'AppState'.\n  line 15, col 8 rule=cascade:2339: Property 'focusProviderSelector' does not exist on type 'AppState'.\n</diagnostics>",
+  "sessionId": "lens-mp7pnw4i-d8203fa7"
+}

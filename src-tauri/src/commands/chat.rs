@@ -20,6 +20,8 @@ struct ChatContext {
     character: Option<crate::domain::character::CharacterCardV2>,
     persona: Option<crate::domain::persona::Persona>,
     provider: crate::domain::provider::ProviderConfig,
+    /// The active model name — conversation override or provider default.
+    active_model_name: String,
     messages: Vec<DomainMessage>,
     api_key: String,
 }
@@ -141,7 +143,8 @@ async fn load_chat_context(
     Ok(Some(ChatContext {
         character,
         persona,
-        provider,
+        provider: provider.clone(),
+        active_model_name: conversation.model_name.as_deref().unwrap_or(&provider.model_name).to_string(),
         messages,
         api_key,
     }))
@@ -154,7 +157,7 @@ fn assemble_prompt(
     messages: &[DomainMessage],
 ) -> (String, Vec<rig_core::completion::Message>, BudgetInfo) {
     let token_svc = TokenCountService::new();
-    let context_window = token_svc.resolve_context_window_size(&ctx.provider);
+    let context_window = token_svc.resolve_context_window_size(&ctx.provider, &ctx.active_model_name);
 
     let assembled = match &ctx.character {
         Some(ch) => PromptEngine::assemble_with_budget(

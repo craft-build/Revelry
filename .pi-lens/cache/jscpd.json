@@ -1,0 +1,2192 @@
+{
+  "success": true,
+  "clones": [
+    {
+      "fileA": "src/lib/components/personas/PersonaEditorDialog.svelte",
+      "startA": 106,
+      "fileB": "src/lib/components/providers/ProviderEditorDialog.svelte",
+      "startB": 192,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "src/lib/components/personas/PersonaEditorDialog.svelte",
+      "startA": 305,
+      "fileB": "src/lib/components/providers/ProviderEditorDialog.svelte",
+      "startB": 604,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src/lib/components/characters/CharacterEditorDialog.svelte",
+      "startA": 205,
+      "fileB": "src/lib/components/personas/PersonaEditorDialog.svelte",
+      "startB": 101,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/workstream.cjs",
+      "startA": 384,
+      "fileB": ".gsd/get-shit-done/bin/lib/workstream.cjs",
+      "startB": 180,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/workstream.cjs",
+      "startA": 412,
+      "fileB": ".gsd/get-shit-done/bin/lib/workstream.cjs",
+      "startB": 199,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/workstream.cjs",
+      "startA": 471,
+      "fileB": ".gsd/get-shit-done/bin/lib/workstream.cjs",
+      "startB": 192,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/state-command-router.cjs",
+      "startA": 59,
+      "fileB": ".gsd/get-shit-done/bin/lib/state-command-router.cjs",
+      "startB": 47,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startA": 258,
+      "fileB": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startB": 168,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startA": 392,
+      "fileB": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startB": 159,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startA": 402,
+      "fileB": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startB": 166,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startA": 422,
+      "fileB": ".gsd/get-shit-done/bin/lib/profile-pipeline.cjs",
+      "startB": 182,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/graphify.cjs",
+      "startA": 18,
+      "fileB": ".gsd/get-shit-done/bin/lib/intel.cjs",
+      "startB": 53,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/graphify.cjs",
+      "startA": 402,
+      "fileB": ".gsd/get-shit-done/bin/lib/graphify.cjs",
+      "startB": 331,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/frontmatter.cjs",
+      "startA": 352,
+      "fileB": ".gsd/get-shit-done/bin/lib/frontmatter.cjs",
+      "startB": 338,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/frontmatter.cjs",
+      "startA": 368,
+      "fileB": ".gsd/get-shit-done/bin/lib/frontmatter.cjs",
+      "startB": 321,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/config.cjs",
+      "startA": 430,
+      "fileB": ".gsd/get-shit-done/bin/lib/config.cjs",
+      "startB": 418,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startA": 225,
+      "fileB": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startB": 66,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startA": 324,
+      "fileB": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startB": 44,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startA": 404,
+      "fileB": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startB": 44,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startA": 443,
+      "fileB": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startB": 371,
+      "lines": 29,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startA": 476,
+      "fileB": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startB": 44,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startA": 507,
+      "fileB": ".gsd/get-shit-done/bin/lib/audit.cjs",
+      "startB": 371,
+      "lines": 29,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/service/template.rs",
+      "startA": 122,
+      "fileB": "src-tauri/src/service/template.rs",
+      "startB": 84,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/service/prompt.rs",
+      "startA": 372,
+      "fileB": "src-tauri/src/service/token_count.rs",
+      "startB": 130,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/service/prompt.rs",
+      "startA": 631,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 535,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/service/prompt.rs",
+      "startA": 650,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 398,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/domain/persona.rs",
+      "startA": 91,
+      "fileB": "src-tauri/src/service/template.rs",
+      "startB": 281,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/domain/character.rs",
+      "startA": 185,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 146,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/providers.rs",
+      "startA": 70,
+      "fileB": "src-tauri/src/db/providers.rs",
+      "startB": 9,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/models.rs",
+      "startA": 87,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 35,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/models.rs",
+      "startA": 245,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 113,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/models.rs",
+      "startA": 282,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 142,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/models.rs",
+      "startA": 294,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 142,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/models.rs",
+      "startA": 302,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 40,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/migrations.rs",
+      "startA": 608,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 422,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/migrations.rs",
+      "startA": 729,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 709,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/migrations.rs",
+      "startA": 763,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 421,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/migrations.rs",
+      "startA": 779,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 421,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/migrations.rs",
+      "startA": 795,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 513,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/lorebook.rs",
+      "startA": 118,
+      "fileB": "src-tauri/src/db/lorebook.rs",
+      "startB": 91,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/lorebook.rs",
+      "startA": 292,
+      "fileB": "src-tauri/src/db/lorebook.rs",
+      "startB": 273,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/lorebook.rs",
+      "startA": 370,
+      "fileB": "src-tauri/src/db/lorebook.rs",
+      "startB": 314,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/generation.rs",
+      "startA": 49,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 107,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 315,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 336,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 384,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 462,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 493,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 547,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/conversations.rs",
+      "startA": 574,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 239,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/characters.rs",
+      "startA": 71,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 53,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/characters.rs",
+      "startA": 89,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 9,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/characters.rs",
+      "startA": 104,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 26,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/characters.rs",
+      "startA": 174,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 109,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/db/characters.rs",
+      "startA": 255,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 237,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/providers.rs",
+      "startA": 67,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/providers.rs",
+      "startA": 136,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/personas.rs",
+      "startA": 9,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 55,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/personas.rs",
+      "startA": 21,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/personas.rs",
+      "startA": 35,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/personas.rs",
+      "startA": 52,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 11,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 9,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 22,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 34,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 40,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 53,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 34,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 73,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 90,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 103,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 34,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 127,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 146,
+      "fileB": "src-tauri/src/commands/lorebooks.rs",
+      "startB": 73,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 163,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 9,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 9,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 23,
+      "fileB": "src-tauri/src/commands/lorebooks.rs",
+      "startB": 162,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 37,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 34,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 54,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 51,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 72,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 86,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 99,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 9,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/conversations.rs",
+      "startA": 116,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 53,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 67,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 94,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 18,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 243,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 67,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 325,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 67,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 344,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 67,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 361,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 322,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 378,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 265,
+      "lines": 28,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 410,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 309,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 423,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 322,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 445,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 459,
+      "fileB": "src-tauri/src/commands/lorebooks.rs",
+      "startB": 126,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 477,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 361,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 494,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 265,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/characters.rs",
+      "startA": 13,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 9,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/characters.rs",
+      "startA": 28,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 53,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/characters.rs",
+      "startA": 41,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 34,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/characters.rs",
+      "startA": 58,
+      "fileB": "src-tauri/src/commands/personas.rs",
+      "startB": 51,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 225,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 213,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 234,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 244,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 254,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 264,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 274,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 284,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 294,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 304,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 314,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 337,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 212,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 347,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 324,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/ui/persona_editor.rs",
+      "startA": 177,
+      "fileB": "gtk_ref/src/ui/preset_editor.rs",
+      "startB": 143,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/ui/characters.rs",
+      "startA": 369,
+      "fileB": "gtk_ref/src/ui/lorebook_editor.rs",
+      "startB": 169,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/ui/characters.rs",
+      "startA": 404,
+      "fileB": "gtk_ref/src/ui/characters.rs",
+      "startB": 367,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/ui/characters.rs",
+      "startA": 531,
+      "fileB": "gtk_ref/src/ui/characters.rs",
+      "startB": 511,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/ui/characters.rs",
+      "startA": 550,
+      "fileB": "gtk_ref/src/ui/characters.rs",
+      "startB": 511,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/token_count.rs",
+      "startA": 1,
+      "fileB": "src-tauri/src/service/token_count.rs",
+      "startB": 1,
+      "lines": 126,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/token_count.rs",
+      "startA": 129,
+      "fileB": "src-tauri/src/service/token_count.rs",
+      "startB": 141,
+      "lines": 44,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/token_count.rs",
+      "startA": 172,
+      "fileB": "src-tauri/src/service/token_count.rs",
+      "startB": 184,
+      "lines": 30,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/template.rs",
+      "startA": 1,
+      "fileB": "src-tauri/src/service/template.rs",
+      "startB": 1,
+      "lines": 173,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/template.rs",
+      "startA": 174,
+      "fileB": "src-tauri/src/service/template.rs",
+      "startB": 172,
+      "lines": 221,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/provider_test.rs",
+      "startA": 149,
+      "fileB": "gtk_ref/src/service/provider_test.rs",
+      "startB": 76,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/provider_test.rs",
+      "startA": 201,
+      "fileB": "gtk_ref/src/service/provider_test.rs",
+      "startB": 76,
+      "lines": 23,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/provider_test.rs",
+      "startA": 237,
+      "fileB": "gtk_ref/src/service/provider_test.rs",
+      "startB": 195,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/provider_test.rs",
+      "startA": 243,
+      "fileB": "gtk_ref/src/service/provider_test.rs",
+      "startB": 76,
+      "lines": 23,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 16,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 17,
+      "lines": 28,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 42,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 44,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 56,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 59,
+      "lines": 34,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 120,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 97,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 149,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 119,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 174,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 141,
+      "lines": 24,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 196,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 164,
+      "lines": 173,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 393,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 360,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 436,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 379,
+      "lines": 138,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 574,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 516,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 595,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 536,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 616,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 556,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 684,
+      "fileB": "gtk_ref/src/service/prompt.rs",
+      "startB": 644,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 743,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 582,
+      "lines": 26,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 770,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 608,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 795,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 536,
+      "lines": 20,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/prompt.rs",
+      "startA": 815,
+      "fileB": "src-tauri/src/service/prompt.rs",
+      "startB": 399,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/lorebook.rs",
+      "startA": 270,
+      "fileB": "gtk_ref/src/service/prompt.rs",
+      "startB": 424,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/lorebook.rs",
+      "startA": 294,
+      "fileB": "gtk_ref/src/service/lorebook.rs",
+      "startB": 266,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/lorebook.rs",
+      "startA": 312,
+      "fileB": "gtk_ref/src/service/prompt.rs",
+      "startB": 403,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/card_io.rs",
+      "startA": 251,
+      "fileB": "gtk_ref/src/service/card_io.rs",
+      "startB": 225,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 10,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 14,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 52,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 49,
+      "lines": 20,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 98,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 139,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 186,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 170,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 205,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 221,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 237,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 253,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 269,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 285,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 301,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 317,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 333,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 349,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 367,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 203,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 385,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 185,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 401,
+      "fileB": "gtk_ref/src/service/ai.rs",
+      "startB": 365,
+      "lines": 20,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 418,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 357,
+      "lines": 46,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 600,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 728,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 645,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 547,
+      "lines": 30,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/service/ai.rs",
+      "startA": 674,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 645,
+      "lines": 30,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/secrets/mod.rs",
+      "startA": 12,
+      "fileB": "src-tauri/src/secrets/mod.rs",
+      "startB": 12,
+      "lines": 36,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/secrets/mod.rs",
+      "startA": 62,
+      "fileB": "src-tauri/src/secrets/mod.rs",
+      "startB": 93,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/secrets/mod.rs",
+      "startA": 80,
+      "fileB": "src-tauri/src/secrets/mod.rs",
+      "startB": 111,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/provider.rs",
+      "startA": 23,
+      "fileB": "src-tauri/src/domain/provider.rs",
+      "startB": 41,
+      "lines": 31,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/provider.rs",
+      "startA": 53,
+      "fileB": "src-tauri/src/domain/provider.rs",
+      "startB": 71,
+      "lines": 22,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/provider.rs",
+      "startA": 129,
+      "fileB": "src-tauri/src/domain/provider.rs",
+      "startB": 188,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/provider.rs",
+      "startA": 149,
+      "fileB": "src-tauri/src/domain/provider.rs",
+      "startB": 208,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/provider.rs",
+      "startA": 339,
+      "fileB": "src-tauri/src/domain/provider.rs",
+      "startB": 237,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/persona.rs",
+      "startA": 1,
+      "fileB": "src-tauri/src/domain/persona.rs",
+      "startB": 1,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/persona.rs",
+      "startA": 33,
+      "fileB": "src-tauri/src/domain/persona.rs",
+      "startB": 35,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/persona.rs",
+      "startA": 43,
+      "fileB": "src-tauri/src/domain/persona.rs",
+      "startB": 46,
+      "lines": 26,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/persona.rs",
+      "startA": 68,
+      "fileB": "src-tauri/src/domain/persona.rs",
+      "startB": 75,
+      "lines": 33,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/persona.rs",
+      "startA": 100,
+      "fileB": "src-tauri/src/domain/persona.rs",
+      "startB": 111,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/generation.rs",
+      "startA": 1,
+      "fileB": "src-tauri/src/domain/generation.rs",
+      "startB": 1,
+      "lines": 22,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/generation.rs",
+      "startA": 30,
+      "fileB": "src-tauri/src/domain/generation.rs",
+      "startB": 30,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/generation.rs",
+      "startA": 48,
+      "fileB": "src-tauri/src/domain/generation.rs",
+      "startB": 48,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/generation.rs",
+      "startA": 66,
+      "fileB": "src-tauri/src/domain/generation.rs",
+      "startB": 66,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/generation.rs",
+      "startA": 84,
+      "fileB": "src-tauri/src/domain/generation.rs",
+      "startB": 84,
+      "lines": 39,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/generation.rs",
+      "startA": 122,
+      "fileB": "src-tauri/src/domain/generation.rs",
+      "startB": 126,
+      "lines": 50,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/conversation.rs",
+      "startA": 40,
+      "fileB": "src-tauri/src/domain/conversation.rs",
+      "startB": 52,
+      "lines": 31,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/conversation.rs",
+      "startA": 108,
+      "fileB": "gtk_ref/src/domain/conversation.rs",
+      "startB": 88,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/conversation.rs",
+      "startA": 217,
+      "fileB": "src-tauri/src/domain/conversation.rs",
+      "startB": 192,
+      "lines": 24,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/conversation.rs",
+      "startA": 273,
+      "fileB": "src-tauri/src/domain/conversation.rs",
+      "startB": 217,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/conversation.rs",
+      "startA": 283,
+      "fileB": "src-tauri/src/domain/conversation.rs",
+      "startB": 226,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 1,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 1,
+      "lines": 47,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 85,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 11,
+      "lines": 20,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 185,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 92,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 273,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 110,
+      "lines": 32,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 304,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 141,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 313,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 150,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 430,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 176,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 439,
+      "fileB": "gtk_ref/src/domain/character.rs",
+      "startB": 309,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/domain/character.rs",
+      "startA": 443,
+      "fileB": "src-tauri/src/domain/character.rs",
+      "startB": 189,
+      "lines": 22,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/regex_scripts.rs",
+      "startA": 79,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 214,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/providers.rs",
+      "startA": 31,
+      "fileB": "src-tauri/src/db/providers.rs",
+      "startB": 44,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/providers.rs",
+      "startA": 97,
+      "fileB": "src-tauri/src/db/providers.rs",
+      "startB": 103,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/providers.rs",
+      "startA": 152,
+      "fileB": "src-tauri/src/db/providers.rs",
+      "startB": 172,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/providers.rs",
+      "startA": 166,
+      "fileB": "src-tauri/src/db/providers.rs",
+      "startB": 158,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 26,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 28,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 37,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 39,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 52,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 54,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 77,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 80,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 93,
+      "fileB": "gtk_ref/src/db/providers.rs",
+      "startB": 92,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 161,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 321,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 168,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 115,
+      "lines": 54,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/personas.rs",
+      "startA": 221,
+      "fileB": "src-tauri/src/db/personas.rs",
+      "startB": 171,
+      "lines": 38,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 56,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 23,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 102,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 51,
+      "lines": 32,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 134,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 55,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 144,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 73,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 157,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 92,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 176,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 55,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 213,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 138,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 241,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 24,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 262,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 55,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 323,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 55,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 346,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 226,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/models.rs",
+      "startA": 365,
+      "fileB": "gtk_ref/src/db/models.rs",
+      "startB": 55,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/mod.rs",
+      "startA": 2,
+      "fileB": "src-tauri/src/db/mod.rs",
+      "startB": 1,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 33,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 31,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 59,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 65,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 121,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 110,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 143,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 140,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 167,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 125,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 181,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 158,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 234,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 292,
+      "lines": 49,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 278,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 417,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 317,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 422,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/migrations.rs",
+      "startA": 355,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 621,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/lorebook.rs",
+      "startA": 69,
+      "fileB": "gtk_ref/src/db/lorebook.rs",
+      "startB": 9,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/lorebook.rs",
+      "startA": 88,
+      "fileB": "src-tauri/src/db/lorebook.rs",
+      "startB": 136,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/generation.rs",
+      "startA": 1,
+      "fileB": "src-tauri/src/db/generation.rs",
+      "startB": 1,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/generation.rs",
+      "startA": 44,
+      "fileB": "src-tauri/src/db/generation.rs",
+      "startB": 17,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/generation.rs",
+      "startA": 71,
+      "fileB": "src-tauri/src/db/generation.rs",
+      "startB": 45,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/generation.rs",
+      "startA": 152,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 321,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/generation.rs",
+      "startA": 221,
+      "fileB": "src-tauri/src/db/generation.rs",
+      "startB": 75,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/generation.rs",
+      "startA": 242,
+      "fileB": "gtk_ref/src/db/generation.rs",
+      "startB": 228,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 39,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 45,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 52,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 59,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 134,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 159,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 227,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 223,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 267,
+      "fileB": "src-tauri/src/db/migrations.rs",
+      "startB": 375,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 327,
+      "fileB": "gtk_ref/src/db/conversations.rs",
+      "startB": 303,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 355,
+      "fileB": "gtk_ref/src/db/conversations.rs",
+      "startB": 322,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 376,
+      "fileB": "gtk_ref/src/db/conversations.rs",
+      "startB": 322,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 410,
+      "fileB": "gtk_ref/src/db/conversations.rs",
+      "startB": 322,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 431,
+      "fileB": "gtk_ref/src/db/conversations.rs",
+      "startB": 322,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/conversations.rs",
+      "startA": 458,
+      "fileB": "gtk_ref/src/db/conversations.rs",
+      "startB": 322,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 8,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 9,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 19,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 23,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 42,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 47,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 55,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 61,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 72,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 79,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 81,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 89,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 84,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 93,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 93,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 102,
+      "lines": 22,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 114,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 124,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 130,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 140,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 137,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 146,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 149,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 158,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 165,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 321,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 171,
+      "fileB": "src-tauri/src/db/conversations.rs",
+      "startB": 223,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 195,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 190,
+      "lines": 46,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 240,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 238,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 248,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 265,
+      "lines": 45,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/characters.rs",
+      "startA": 288,
+      "fileB": "src-tauri/src/db/characters.rs",
+      "startB": 328,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "gtk_ref/src/db/backup.rs",
+      "startA": 316,
+      "fileB": "src-tauri/src/db/models.rs",
+      "startB": 322,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "docs/Revelry.svg",
+      "startA": 3,
+      "fileB": "static/favicon.svg",
+      "startB": 3,
+      "lines": 33,
+      "tokens": 0
+    },
+    {
+      "fileA": "docs/Revelry.svg",
+      "startA": 1,
+      "fileB": "static/favicon.svg",
+      "startB": 1,
+      "lines": 37,
+      "tokens": 0
+    }
+  ],
+  "duplicatedLines": 4705,
+  "totalLines": 39904,
+  "percentage": 11.79
+}

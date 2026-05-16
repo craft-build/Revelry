@@ -38,28 +38,38 @@ impl TokenCountService {
         count + count / 10
     }
 
-    /// Resolves the context window size for a provider using a 3-tier fallback:
-    /// 1. If provider.context_window_size is Some(n) and n > 0, return n (user override)
-    /// 2. Look up provider.model_name in built-in defaults table
-    /// 3. Fall back to DEFAULT_CONTEXT_WINDOW
+    /// Resolves the context window size for a provider using a 4-tier fallback:
+    /// 1. If provider.context_window_size is Some(n) and n > 0, return n (provider-level override)
+    /// 2. Per-model entry override from provider.models matching the active model name
+    /// 3. Look up active model name in built-in defaults table
+    /// 4. Fall back to DEFAULT_CONTEXT_WINDOW
     /// Per D-02.
-    pub fn resolve_context_window_size(&self, provider: &ProviderConfig) -> i64 {
-        // Tier 1: User override
+    pub fn resolve_context_window_size(&self, provider: &ProviderConfig, active_model_name: &str) -> i64 {
+        // Tier 1: Provider-level user override
         if let Some(size) = provider.context_window_size {
             if size > 0 {
                 return size;
             }
         }
 
-        // Tier 2: Built-in model defaults
+        // Tier 2: Per-model entry override
+        if let Some(entry) = provider.models.iter().find(|m| m.name == active_model_name) {
+            if let Some(size) = entry.context_window_size {
+                if size > 0 {
+                    return size;
+                }
+            }
+        }
+
+        // Tier 3: Built-in model defaults
         let defaults = built_in_model_context_windows();
         for (pattern, size) in defaults {
-            if provider.model_name.contains(pattern) {
+            if active_model_name.contains(pattern) {
                 return size;
             }
         }
 
-        // Tier 3: Default fallback
+        // Tier 4: Default fallback
         DEFAULT_CONTEXT_WINDOW
     }
 
@@ -164,7 +174,7 @@ mod tests {
         let service = TokenCountService::new();
         let mut provider = ProviderConfig::new("Test".to_string(), ProviderType::OpenAI);
         provider.context_window_size = Some(50000);
-        let size = service.resolve_context_window_size(&provider);
+        let size = service.resolve_context_window_size(&provider, &provider.model_name);
         assert_eq!(size, 50000, "Should return user override when present");
     }
 
@@ -174,7 +184,7 @@ mod tests {
         let provider = ProviderConfig::new("Test".to_string(), ProviderType::OpenAI);
         // ProviderType::OpenAI defaults to model_name "gpt-4o-mini"
         // "gpt-4o-mini" contains "gpt-4o" → should match 128000
-        let size = service.resolve_context_window_size(&provider);
+        let size = service.resolve_context_window_size(&provider, &provider.model_name);
         assert_eq!(size, 128000, "Should return built-in default for known model");
     }
 
@@ -183,7 +193,7 @@ mod tests {
         let service = TokenCountService::new();
         let mut provider = ProviderConfig::new("Test".to_string(), ProviderType::CustomOpenAICompatible);
         provider.model_name = "some-unknown-model-v1".to_string();
-        let size = service.resolve_context_window_size(&provider);
+        let size = service.resolve_context_window_size(&provider, &provider.model_name);
         assert_eq!(size, DEFAULT_CONTEXT_WINDOW, "Should fall back to DEFAULT for unknown model");
     }
 

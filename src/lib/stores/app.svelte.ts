@@ -97,6 +97,29 @@ class AppState {
     return this.personas.find((p) => p.id === persona_id);
   }
 
+  get active_provider(): Provider | undefined {
+    const conv = this.active_conversation;
+    if (!conv?.provider_id) return undefined;
+    return this.providers.find((p) => p.id === conv.provider_id);
+  }
+
+  /** Effective context window size for the active conversation.
+   *  1. Use backend-reported budget limit if available
+   *  2. Fall back to the model entry's context_window_size
+   *  3. Fall back to the provider-level context_window_size
+   *  4. Default to 8192 */
+  get effective_context_limit(): number {
+    if (this.context_budget) return this.context_budget.tokensLimit;
+    const provider = this.active_provider;
+    if (!provider) return 8192;
+    const conv = this.active_conversation;
+    const modelName = conv?.model_name ?? provider.model_name;
+    const modelEntry = provider.models.find((m) => m.name === modelName);
+    if (modelEntry?.context_window_size) return modelEntry.context_window_size;
+    if (provider.context_window_size) return provider.context_window_size;
+    return 8192;
+  }
+
   get filtered_characters(): CharacterCard[] {
     const q = this.character_search_query.trim().toLowerCase();
     if (!q) return this.characters;
@@ -219,6 +242,7 @@ class AppState {
   closeConversation() {
     this.active_conversation_id = null;
     this.messages = [];
+    this.context_budget = null;
   }
 
   appendMessage(message: Message) {

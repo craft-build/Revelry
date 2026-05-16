@@ -13,7 +13,7 @@
 	let textarea: HTMLTextAreaElement | undefined = $state();
 
 	let usedContext = $derived(app.context_budget?.tokensUsed ?? 0);
-	let contextLimit = $derived(app.context_budget?.tokensLimit ?? 8192);
+	let contextLimit = $derived(app.effective_context_limit);
 	let contextPct = $derived(
 		contextLimit > 0 ? Math.min(100, (usedContext / contextLimit) * 100) : 0,
 	);

@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "files": {
+    "src/lib/components/chat/MessageBubble.svelte": {
+      "latest": {
+        "commit": "ac02447",
+        "timestamp": "2026-05-16T02:23:13.252Z",
+        "mi": 34.2,
+        "cognitive": 8,
+        "nesting": 1,
+        "lines": 114,
+        "maxCyclomatic": 1,
+        "entropy": 5.27
+      },
+      "history": [
+        {
+          "commit": "ac02447",
+          "timestamp": "2026-05-16T02:23:13.252Z",
+          "mi": 34.2,
+          "cognitive": 8,
+          "nesting": 1,
+          "lines": 114,
+          "maxCyclomatic": 1,
+          "entropy": 5.27
+        }
+      ],
+      "trend": "stable"
+    },
+    "src/lib/components/chat/ChatHeader.svelte": {
+      "latest": {
+        "commit": "ac02447",
+        "timestamp": "2026-05-16T02:23:17.842Z",
+        "mi": 41.6,
+        "cognitive": 0,
+        "nesting": 1,
+        "lines": 53,
+        "maxCyclomatic": 1,
+        "entropy": 4.51
+      },
+      "history": [
+        {
+          "commit": "ac02447",
+          "timestamp": "2026-05-16T02:23:17.842Z",
+          "mi": 41.6,
+          "cognitive": 0,
+          "nesting": 1,
+          "lines": 53,
+          "maxCyclomatic": 1,
+          "entropy": 4.51
+        }
+      ],
+      "trend": "stable"
+    },
+    "src/lib/components/chat/ProviderModelSelector.svelte": {
+      "latest": {
+        "commit": "ac02447",
+        "timestamp": "2026-05-16T02:23:21.937Z",
+        "mi": 33.5,
+        "cognitive": 6,
+        "nesting": 1,
+        "lines": 100,
+        "maxCyclomatic": 1,
+        "entropy": 5.63
+      },
+      "history": [
+        {
+          "commit": "ac02447",
+          "timestamp": "2026-05-16T02:23:21.937Z",
+          "mi": 33.5,
+          "cognitive": 6,
+          "nesting": 1,
+          "lines": 100,
+          "maxCyclomatic": 1,
+          "entropy": 5.63
+        }
+      ],
+      "trend": "stable"
+    },
+    "src/lib/components/chat/MessageInput.svelte": {
+      "latest": {
+        "commit": "a5d4444",
+        "timestamp": "2026-05-16T04:20:09.753Z",
+        "mi": 34.5,
+        "cognitive": 17,
+        "nesting": 2,
+        "lines": 102,
+        "maxCyclomatic": 14,
+        "entropy": 5.83
+      },
+      "history": [
+        {
+          "commit": "66b1f65",
+          "timestamp": "2026-05-16T04:06:55.114Z",
+          "mi": 34.5,
+          "cognitive": 17,
+          "nesting": 2,
+          "lines": 102,
+          "maxCyclomatic": 14,
+          "entropy": 5.83
+        },
+        {
+          "commit": "0ed3031",
+          "timestamp": "2026-05-16T04:11:51.665Z",
+          "mi": 34.5,
+          "cognitive": 17,
+          "nesting": 2,
+          "lines": 102,
+          "maxCyclomatic": 14,
+          "entropy": 5.83
+        },
+        {
+          "commit": "161fb6c",
+          "timestamp": "2026-05-16T04:15:07.674Z",
+          "mi": 34.5,
+          "cognitive": 17,
+          "nesting": 2,
+          "lines": 102,
+          "maxCyclomatic": 14,
+          "entropy": 5.83
+        },
+        {
+          "commit": "a5d4444",
+          "timestamp": "2026-05-16T04:20:09.753Z",
+          "mi": 34.5,
+          "cognitive": 17,
+          "nesting": 2,
+          "lines": 102,
+          "maxCyclomatic": 14,
+          "entropy": 5.83
+        }
+      ],
+      "trend": "stable"
+    },
+    "src/lib/stores/app.svelte.ts": {
+      "latest": {
+        "commit": "a6a08e3",
+        "timestamp": "2026-05-16T05:09:01.811Z",
+        "mi": 7.1,
+        "cognitive": 488,
+        "nesting": 6,
+        "lines": 994,
+        "maxCyclomatic": 36,
+        "entropy": 7.53
+      },
+      "history": [
+        {
+          "commit": "66b1f65",
+          "timestamp": "2026-05-16T04:07:01.181Z",
+          "mi": 7.2,
+          "cognitive": 488,
+          "nesting": 6,
+          "lines": 974,
+          "maxCyclomatic": 36,
+          "entropy": 7.48
+        },
+        {
+          "commit": "0ed3031",
+          "timestamp": "2026-05-16T04:11:51.703Z",
+          "mi": 7.2,
+          "cognitive": 488,
+          "nesting": 6,
+          "lines": 974,
+          "maxCyclomatic": 36,
+          "entropy": 7.48
+        },
+        {
+          "commit": "161fb6c",
+          "timestamp": "2026-05-16T04:15:07.709Z",
+          "mi": 7.2,
+          "cognitive": 488,
+          "nesting": 6,
+          "lines": 974,
+          "maxCyclomatic": 36,
+          "entropy": 7.48
+        },
+        {
+          "commit": "a5d4444",
+          "timestamp": "2026-05-16T04:20:19.882Z",
+          "mi": 7.2,
+          "cognitive": 488,
+          "nesting": 6,
+          "lines": 974,
+          "maxCyclomatic": 36,
+          "entropy": 7.48
+        },
+        {
+          "commit": "a6a08e3",
+          "timestamp": "2026-05-16T05:09:01.811Z",
+          "mi": 7.1,
+          "cognitive": 488,
+          "nesting": 6,
+          "lines": 994,
+          "maxCyclomatic": 36,
+          "entropy": 7.53
+        }
+      ],
+      "trend": "stable"
+    },
+    "src/lib/types/index.ts": {
+      "latest": {
+        "commit": "a6a08e3",
+        "timestamp": "2026-05-16T05:08:56.140Z",
+        "mi": 38,
+        "cognitive": 0,
+        "nesting": 0,
+        "lines": 182,
+        "maxCyclomatic": 1,
+        "entropy": 5.22
+      },
+      "history": [
+        {
+          "commit": "66b1f65",
+          "timestamp": "2026-05-16T04:07:01.225Z",
+          "mi": 38.8,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 170,
+          "maxCyclomatic": 1,
+          "entropy": 5.16
+        },
+        {
+          "commit": "0ed3031",
+          "timestamp": "2026-05-16T04:11:51.872Z",
+          "mi": 38.8,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 170,
+          "maxCyclomatic": 1,
+          "entropy": 5.16
+        },
+        {
+          "commit": "161fb6c",
+          "timestamp": "2026-05-16T04:15:07.881Z",
+          "mi": 38.8,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 170,
+          "maxCyclomatic": 1,
+          "entropy": 5.16
+        },
+        {
+          "commit": "a5d4444",
+          "timestamp": "2026-05-16T04:20:09.735Z",
+          "mi": 38.8,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 170,
+          "maxCyclomatic": 1,
+          "entropy": 5.16
+        },
+        {
+          "commit": "a6a08e3",
+          "timestamp": "2026-05-16T05:08:56.140Z",
+          "mi": 38,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 182,
+          "maxCyclomatic": 1,
+          "entropy": 5.22
+        }
+      ],
+      "trend": "stable"
+    },
+    "src/lib/data/api.ts": {
+      "latest": {
+        "commit": "0ed3031",
+        "timestamp": "2026-05-16T04:12:15.759Z",
+        "mi": 28.6,
+        "cognitive": 0,
+        "nesting": 1,
+        "lines": 236,
+        "maxCyclomatic": 1,
+        "entropy": 5.16
+      },
+      "history": [
+        {
+          "commit": "0ed3031",
+          "timestamp": "2026-05-16T04:12:15.759Z",
+          "mi": 28.6,
+          "cognitive": 0,
+          "nesting": 1,
+          "lines": 236,
+          "maxCyclomatic": 1,
+          "entropy": 5.16
+        }
+      ],
+      "trend": "stable"
+    }
+  },
+  "capturedAt": "2026-05-16T05:09:06.811Z"
+}
