@@ -11,6 +11,8 @@ created: 2026-05-15
 
 > Visual and interaction contract for the Live Conversations phase. Real AI streaming replaces mock responses. Users can send messages and receive token-by-token AI responses, stop generation mid-stream, regenerate the last AI response, and edit/resend their own messages. Inline error messages appear in the chat when generation fails. All design tokens, typography, color, spacing, and radii are inherited from Phase 1's locked design system.
 
+**Visual hierarchy — focal point declaration:** Primary focal point: the latest AI message bubble (streaming content); secondary: stop button; tertiary: input area.
+
 ---
 
 ## Design System
@@ -72,9 +74,9 @@ All new spacing uses existing Tailwind token values. No custom spacing values in
 | Error label                    | 12px | 600    | Geist sans  | "Generation failed" speaker name area on error bubbles       |
 | Edit textarea                  | 14px | 400    | Geist sans  | Inline edit textarea replacing bubble content                |
 | Save & resend button label     | 12px | 400    | Geist sans  | "Save & resend" in edit mode action row                     |
-| Cancel edit button label       | 12px | 400    | Geist sans  | "Cancel" in edit mode action row                            |
+| Cancel edit button label       | 12px | 400    | Geist sans  | "Discard changes" in edit mode action row                    |
 | Retry link (error bubble)      | 12px | 400    | Geist sans  | "Retry" or "Switch provider" links below error text         |
-| Stop reason badge              | 10px | 500    | Geist sans  | "cancelled" / "length" stop reason on AI bubbles            |
+| Stop reason badge              | 10px | 500    | Geist sans  | **Inherited** from Phase 3 Tag component — not a Phase 5 declaration |
 
 **No 500 (medium) weight in Phase 5 declarations.** The stop reason badge uses inherited Tag component styling (Phase 3). All Phase 5 body text, error text, and labels use 400. All Phase 5 emphasis (error label, headings) uses 600.
 
@@ -119,6 +121,9 @@ All colors defined as OKLCH values in `src/app.css` @theme block. Dark theme onl
 - Saving spinner (Phase 3)
 - "Save provider" button (Phase 4)
 - Provider type group selected indicator (Phase 4)
+- Save & resend button (edit mode) (Phase 5)
+- Retry link in error bubble (Phase 5)
+- Switch provider link in error bubble (Phase 5)
 
 **Phase 5 semantic color usages (no new tokens):**
 
@@ -337,7 +342,7 @@ On AI messages where `metadata.stop_reason` is not `"end"`:
 | **Regenerate last AI msg** | Click Regenerate icon on last AI MessageBubble  | Last AI message deleted from UI and DB. New AI placeholder created at same sort_order. `invoke('regenerate')` called. New stream begins with same provider/model (D-11, D-13). | Regenerate icon only visible on the **last** AI message. Conditional rendering based on message index + role. |
 | **Edit user message**      | Click Edit (Pencil) icon on user MessageBubble  | MessageBubble enters edit mode: bubble content replaced by textarea pre-filled with message text. Hover actions hidden. "Save & resend" + "Cancel" buttons shown below textarea. | Only on user messages (D-10). Edit icon hidden on AI messages.                                |
 | **Save & resend**          | Click "Save & resend" in edit mode              | Calls `app.editResend(messageId, newContent)`. All messages after the edited message are deleted from UI and DB (D-08). New AI placeholder created. Stream begins from edited point. | Truncation includes the old AI response to the edited message and any subsequent exchanges.   |
-| **Cancel edit**            | Click "Cancel" or press Escape in edit mode     | Edit mode exits. Original message text restored. No changes made.                                                                                          | Escape key also cancels edit.                                                                 |
+| **Cancel edit**            | Click "Discard changes" or press Escape in edit mode | Edit mode exits. Original message text restored. No changes made.                                                                                          | Escape key also cancels edit.                                                                 |
 | **Retry after error**      | Click "Retry" link in error bubble              | Calls `app.regenerate()`. Same as Regenerate — deletes error message, creates new AI placeholder, starts new stream.                                      | Uses same provider/model.                                                                     |
 | **Switch provider (error)** | Click "Switch provider" link in error bubble    | Opens ProviderModelSelector popover in ChatHeader (via DOM focus/click). Error message remains in chat until user sends again.                             | Focus the selector, let user pick. They then manually retry (send new message or regenerate). |
 | **Channel listener loop**  | `StreamChunk` events from Tauri Channel        | On `Token`: append to AI message content, update UI. On `Complete`: finalize message, save to DB, set `is_generating = false`. On `Error`: render inline error bubble. | Runs inside `app.startChat()` action.                                                         |
@@ -369,7 +374,7 @@ When edit mode is active on a user MessageBubble:
 
 2. **Action row transformation:** Normal hover actions (Copy, Edit, Delete) are hidden. Replaced by:
    - "Save & resend" button: `variant="primary" size="sm"` — accent background
-   - "Cancel" button: `variant="ghost" size="sm"` — subtle text
+   - "Discard changes" button: `variant="ghost" size="sm"` — subtle text
 
 3. **Keyboard shortcuts in edit mode:**
    - Escape: Cancel edit (restores original)
@@ -405,7 +410,7 @@ When edit mode is active on a user MessageBubble:
 | Copy hover action                 | Copy icon only      | `aria-label="Copy"`                              |
 | Delete hover action               | Trash icon only     | `aria-label="Delete"`                            |
 | Save & resend (edit mode)        | "Save & resend"    | Primary button in edit action row                |
-| Cancel (edit mode)                | "Cancel"            | Ghost button in edit action row                  |
+| Cancel (edit mode)                | "Discard changes"  | Ghost button in edit action row                  |
 | Saving… (edit mode)               | "Saving…"           | During edit/resend async operation               |
 | Retry link (error bubble)         | "Retry"             | Accent-colored link in error bubble              |
 | Switch provider link (error bubble)| "Switch provider"  | Accent-colored link in error bubble              |
@@ -522,11 +527,11 @@ The following decisions were in "Claude's Discretion" in CONTEXT.md and are here
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-15
