@@ -230,7 +230,7 @@ Plans:
 
 Plans:
 
-- [ ] 06-01: Port PromptEngine from gtk_ref/ with budget-aware assembly
+- [x] 06-01: Port PromptEngine from gtk_ref/ with budget-aware assembly
 - [ ] 06-02: Integrate tiktoken-rs for real token counting
 - [ ] 06-03: Wire token count display to real data in message input
 - [ ] 06-04: Integrate prompt engine into the streaming chat flow
@@ -362,7 +362,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Editors                     | 4/4            | Complete    | 2026-05-12 |
 | 4. Provider Setup              | 2/2            | Complete    | 2026-05-13 |
 | 5. Live Conversations          | 5/5            | Complete    | 2026-05-16 |
-| 6. Smart Prompts               | 0/4            | Not started | -          |
+| 6. Smart Prompts               | 1/4            | In Progress | 2026-05-16 |
 | 7. Rich Output & Cards         | 0/4            | Not started | -          |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 0/5            | Not started | -          |

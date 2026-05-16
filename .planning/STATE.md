@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Phase 6 context gathered
-last_updated: "2026-05-16T03:30:00.000Z"
+status: executing
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-05-16T04:39:29Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 11
   completed_phases: 5
-  total_plans: 19
-  completed_plans: 20
-  percent: 45
+  total_plans: 22
+  completed_plans: 21
+  percent: 48
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 6 context gathered — ready to plan
+**Current focus:** Phase 6 — Smart Prompts (plan 1 of 4 complete)
 
 ## Current Position
 
-Phase: 06 of 11 (smart prompts)
-Plan: 0 of 4
-Status: Context gathered
+Phase: 06 of 6 (smart prompts)
+Plan: 1 of 4
+Status: Executing Phase 06
 Last activity: 2026-05-16
 
-Progress: [████████░░] 45%
+Progress: [█████████░] 48%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 24
-- Average duration: ~14 min
-- Total execution time: ~5.5 hours
+- Total plans completed: 25
+- Average duration: ~13 min
+- Total execution time: ~5.6 hours
 
 **By Phase:**
 
@@ -49,6 +49,7 @@ Progress: [████████░░] 45%
 | 3     | 4     | ~90min | 22min    |
 | 4     | 2     | 11min  | 6min     |
 | 5     | 5     | ~20min | 4min     |
+| 6     | 1     | 5min   | 5min     |
 
 _Updated after each plan completion_
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - Domain Message aliased as DomainMessage to avoid rig_core name clash
 - Frontend pre-generates message UUID and sort_order for atomic backend save
 - System prompt built from character personality + scenario with generic fallback
+- Service module uses rig_core::completion::Message (matching ai/mod.rs convention)
+- Lorebook activation stubbed in PromptEngine for Phase 9 forward compat
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T03:30:00.000Z
-Stopped at: Phase 6 context gathered
-Next phase: 06 (Smart Prompts)
+Last session: 2026-05-16T04:34:00.000Z
+Stopped at: Completed 06-01-PLAN.md
+Next plan: 06-02 (Integrate tiktoken-rs for real token counting)
