@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-05-16T04:57:22Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-05-16T04:51:06Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 22
-  completed_plans: 22
-  percent: 50
+  completed_plans: 25
+  percent: 55
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 6 — Smart Prompts (plan 1 of 4 complete)
+**Current focus:** Phase 6 — Smart Prompts (plan 3 of 4 complete)
 
 ## Current Position
 
 Phase: 06 of 6 (smart prompts)
-Plan: 2 of 3
-Status: Executing Phase 06, Plan 2 complete
+Plan: 3 of 4
+Status: Executing Phase 06
 Last activity: 2026-05-16
 
-Progress: [█████████░] 50%
+Progress: [█████████░] 55%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 25
+- Total plans completed: 28
 - Average duration: ~13 min
-- Total execution time: ~5.6 hours
+- Total execution time: ~5.7 hours
 
 **By Phase:**
 
@@ -49,7 +49,7 @@ Progress: [█████████░] 50%
 | 3     | 4     | ~90min | 22min    |
 | 4     | 2     | 11min  | 6min     |
 | 5     | 5     | ~20min | 4min     |
-| 6     | 1     | 5min   | 5min     |
+| 6     | 3     | ~14min | 5min     |
 
 _Updated after each plan completion_
 
@@ -78,6 +78,8 @@ Recent decisions affecting current work:
 - BudgetInfo derives Copy for ownership safety in tokio::select! branches
 - stream_chat accepts Vec<Message> (pre-built by PromptEngine) instead of &[DomainMessage]
 - ChatContext + load_chat_context pattern consolidates shared DB loading for all chat commands
+- Context bar fallback to 8192 when no budget data from backend (06-03)
+- estimateTokens kept in utils per UI-SPEC decision #3 (06-03)
 
 ### Pending Todos
 
@@ -97,6 +99,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T04:34:00.000Z
-Stopped at: Completed 06-01-PLAN.md
-Next plan: 06-02 (Integrate tiktoken-rs for real token counting)
+Last session: 2026-05-16T04:51:06Z
+Stopped at: Completed 06-03-PLAN.md
+Next plan: 06-04 (Integrate prompt engine into streaming chat flow)
