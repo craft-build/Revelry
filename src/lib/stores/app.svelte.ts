@@ -7,6 +7,7 @@ import type {
   GenerationPreset,
   Lorebook,
   StreamChunk,
+  ContextBudget,
 } from "$lib/types";
 import { Channel } from "@tauri-apps/api/core";
 import {
@@ -68,6 +69,9 @@ class AppState {
   active_conversation_id = $state<string | null>(null);
   messages = $state<Message[]>([]);
   is_generating = $state<boolean>(false);
+
+  // ── Context budget ─────────────────────────────────────────────────────
+  context_budget = $state<ContextBudget | null>(null);
 
   // ── UI state ───────────────────────────────────────────────────────────
   sidebar_open = $state<boolean>(true);
@@ -249,6 +253,11 @@ class AppState {
         ? { ...c, last_message_preview: preview, updated_at: now }
         : c,
     );
+  }
+
+  /** Update context budget from backend response. */
+  updateContextBudget(budget: ContextBudget) {
+    this.context_budget = budget;
   }
 
   toggleSidebar() {
@@ -787,6 +796,12 @@ class AppState {
                 }
               : m,
           );
+          // Update context budget
+          this.updateContextBudget({
+            tokensUsed: chunk.data.tokensUsed,
+            tokensLimit: chunk.data.tokensLimit,
+            truncatedCount: chunk.data.truncatedCount,
+          });
           // Persist the completed AI message to the database
           const completedMsg = this.messages.find((m) => m.id === aiId);
           if (completedMsg) {
@@ -923,6 +938,12 @@ class AppState {
                 }
               : m,
           );
+          // Update context budget
+          this.updateContextBudget({
+            tokensUsed: chunk.data.tokensUsed,
+            tokensLimit: chunk.data.tokensLimit,
+            truncatedCount: chunk.data.truncatedCount,
+          });
           // Persist the regenerated AI message to the database
           const regeneratedMsg = this.messages.find((m) => m.id === aiId);
           if (regeneratedMsg) {
@@ -1050,6 +1071,12 @@ class AppState {
                 }
               : m,
           );
+          // Update context budget
+          this.updateContextBudget({
+            tokensUsed: chunk.data.tokensUsed,
+            tokensLimit: chunk.data.tokensLimit,
+            truncatedCount: chunk.data.truncatedCount,
+          });
           // Persist the edited AI message to the database
           const editedMsg = this.messages.find((m) => m.id === aiId);
           if (editedMsg) {
