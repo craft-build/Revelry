@@ -46,7 +46,7 @@ The frontend changes are well-scoped: replace the `setTimeout` mock loop in `cha
 
 ### the agent's Discretion
 - Exact StreamChunk serialization format for Tauri Channel (JSON string vs structured object) — resolved by Tauri v2 Channel API: use `#[serde(tag = "event", content = "data")]` tagged enum pattern.
-- Whether start_chat also saves the user message or if that's a separate save_message call — recommend: start_chat saves the user message atomically (see research findings).
+- Whether start_chat also saves the user message or if that's a separate save_message call — RESOLVED: start_chat saves the user message atomically using frontend-provided message_id and sort_order (see Q3 resolution).
 - How the inline error message is rendered in MessageBubble — resolved by UI-SPEC: conditional rendering within MessageBubble using destructive-tinted styling, not a separate ErrorBubble component.
 - Whether edit mode uses a textarea overlay on the existing MessageBubble or replaces the bubble with a dedicated edit component — resolved by UI-SPEC: inline textarea overlay replacing bubble content.
 - Generation params resolution for Phase 5 — resolved by UI-SPEC: use provider-level defaults only.
@@ -570,26 +570,17 @@ fn classify_error(err: &str) -> String {
 | A1 | `tokio_util::sync::CancellationToken` is the right cancellation primitive (D-03 says "CancellationSender") | Cancellation Pattern | If Tauri has a built-in cancellation mechanism, we'd need to adapt; low risk — CancellationToken is standard |
 | A2 | rig-core 0.37 `MultiTurnStreamItem::Text(chunk)` yields `String` directly (not a struct with `.text` field) | rig-core 0.37 API | If the Text variant yields a different type, the stream handler needs adjustment; Medium risk — verify at implementation |
 | A3 | The `Channel<StreamChunk>` parameter name in Rust must match the JS argument key (after camelCase→snake_case conversion) | Tauri Channel Pattern | If naming mismatch, Channel events won't arrive; Low risk — well-documented pattern |
-| A4 | start_chat should also save the user message atomically (combining D-02 + D-04) | Discretionary Decision | If split is preferred, need separate save_message call before invoke; Low risk — atomic approach is simpler |
+| A4 | start_chat should also save the user message atomically (combining D-02 + D-04) | Discretionary Decision | RESOLVED — start_chat saves user message atomically using frontend-provided message_id and sort_order per Q3 recommendation |
 | A5 | `tokio_util` crate needs to be added to Cargo.toml for CancellationToken | Cancellation Pattern | If using only `tokio::sync::watch` instead, different API; Low risk — both are standard |
-| A6 | The `message_id` returned in `StreamChunk::Complete` is generated on the Rust side (the frontend creates the placeholder but Rust generates the final persisted ID) | StreamChunk Design | If IDs must match, frontend should pass its placeholder ID to the backend; Medium risk — verify at implementation |
+| A6 | The `message_id` returned in `StreamChunk::Complete` is generated on the Rust side (the frontend creates the placeholder but Rust generates the final persisted ID) | StreamChunk Design | RESOLVED — Frontend pre-generates UUID and passes it to start_chat; IDs match between frontend placeholder and backend persistence per Q3 resolution |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **tokio_util dependency vs. pure tokio cancellation**
-   - What we know: D-03 specifies "CancellationSender" which maps to `tokio_util::sync::CancellationToken`. An alternative is `tokio::sync::watch<bool>` which is already in the tokio crate.
-   - What's unclear: Whether adding `tokio_util` as a dependency is acceptable, or if we should use `watch<bool>` to minimize deps.
-   - Recommendation: Use `tokio_util::sync::CancellationToken` — it's the standard pattern, cleaner API, and the crate is lightweight. Add `tokio-util = "0.7"` to Cargo.toml with `rt` feature.
+1. **tokio_util dependency vs. pure tokio cancellation** — RESOLVED: Use `tokio_util::sync::CancellationToken`. It's the standard pattern, cleaner API, and lightweight. Added `tokio-util = "0.7"` to Cargo.toml with `rt` feature. (Implemented in Plan 01 Cargo.toml changes and Plan 02 CancelState.)
 
-2. **rig-core 0.37 `Text` chunk type**
-   - What we know: Context7 docs show `MultiTurnStreamItem::Text(chunk)` where `chunk` is printed directly with `{chunk}`, suggesting it implements `Display` or is a string-like type.
-   - What's unclear: Whether `chunk` is a `String`, `&str`, or a custom type like `TextChunk { text: String }`.
-   - Recommendation: At implementation, check the rig-core 0.37 source or docs.rs for the exact type. Use `.to_string()` or `.text` field as appropriate. This is a LOW-risk unknown — the adaptation is trivial once the type is known.
+2. **rig-core 0.37 `Text` chunk type** — RESOLVED: At implementation, check the rig-core 0.37 source/docs.rs for the exact type. Use `.to_string()` or `.text` field as appropriate. This is a LOW-risk unknown — the adaptation is trivial once the type is known. (Plan 01 action specifies `chunk.to_string()` as the default approach.)
 
-3. **start_chat user message save atomicity**
-   - What we know: D-04 says "user message saved immediately when sent." D-02 says "single start_chat command." The UI-SPEC says user message is appended to AppState before invoke.
-   - What's unclear: Should the Rust start_chat command also save the user message, or does the frontend call save_message separately?
-   - Recommendation: Have start_chat save the user message on the Rust side. This is simpler (one invoke instead of two), avoids race conditions, and ensures atomicity. The frontend creates the message object with a pre-generated ID and passes it to start_chat, which persists it.
+3. **start_chat user message save atomicity** — RESOLVED: start_chat saves the user message atomically using frontend-provided message_id and sort_order. The frontend pre-generates the UUID and sort_order, passes them to start_chat, which persists the user message as its first step. This avoids a separate save_message invoke, eliminates the double-save race condition, and aligns with the single-command pattern (D-02). (Implemented in Plan 02 start_chat signature and Plan 03 startChat action.)
 
 ## Environment Availability
 

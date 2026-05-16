@@ -55,7 +55,7 @@ NOT in scope: budget-aware prompt assembly (Phase 6), token counting (Phase 6), 
 ### Claude's Discretion
 
 - Exact StreamChunk serialization format for Tauri Channel (JSON string vs structured object) — I will pick based on Tauri v2 Channel API constraints.
-- Whether start_chat also saves the user message or if that's a separate save_message call — I will pick based on atomicity vs. simplicity tradeoff.
+- Whether start_chat also saves the user message or if that's a separate save_message call — RESOLVED: start_chat saves atomically using frontend-provided message_id and sort_order (per RESEARCH Q3 recommendation).
 - How the inline error message is rendered in MessageBubble (distinct style, role, or a separate ErrorBubble component) — I will pick based on existing component patterns.
 - Whether edit mode uses a textarea overlay on the existing MessageBubble or replaces the bubble with a dedicated edit component — I will pick based on UX ergonomics.
 - Generation params resolution for Phase 5 — use provider-level defaults only. Per-conversation overrides and preset selection are Phase 6 territory.
