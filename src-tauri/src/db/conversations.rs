@@ -130,10 +130,8 @@ pub fn delete_messages_after_sort_order(
     conversation_id: &str,
     sort_order: i32,
 ) -> Result<()> {
-    conn.prepare_cached(
-        "DELETE FROM messages WHERE conversation_id = ?1 AND sort_order > ?2",
-    )?
-    .execute(params![conversation_id, sort_order])?;
+    conn.prepare_cached("DELETE FROM messages WHERE conversation_id = ?1 AND sort_order > ?2")?
+        .execute(params![conversation_id, sort_order])?;
 
     // Update conversation's last_message_preview to the latest remaining message
     let now = Utc::now();
@@ -208,7 +206,12 @@ pub fn update_conversation_provider(
     conn.prepare_cached(
         "UPDATE conversations SET provider_id = ?1, model_name = ?2, updated_at = ?3 WHERE id = ?4",
     )?
-    .execute(params![provider_id, model_name, now.to_rfc3339(), conversation_id])?;
+    .execute(params![
+        provider_id,
+        model_name,
+        now.to_rfc3339(),
+        conversation_id
+    ])?;
     Ok(())
 }
 
@@ -558,7 +561,8 @@ mod tests {
         save_message(&conn, &user_msg).expect("Save should succeed");
 
         // Update the content
-        update_message_content(&conn, &user_msg.id, "Updated content").expect("Update should succeed");
+        update_message_content(&conn, &user_msg.id, "Updated content")
+            .expect("Update should succeed");
 
         // Verify the content was updated
         let messages = load_messages(&conn, &conversation.id).expect("Load should succeed");

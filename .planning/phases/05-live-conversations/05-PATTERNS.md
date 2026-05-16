@@ -6,22 +6,22 @@
 
 ## File Classification
 
-| New/Modified File | Role | Data Flow | Closest Analog | Match Quality |
-|-------------------|------|-----------|----------------|---------------|
-| `src-tauri/src/ai/mod.rs` (NEW) | service | streaming | `gtk_ref/src/service/ai.rs` | exact (porting target) |
-| `src-tauri/src/commands/chat.rs` (NEW) | controller | request-response + streaming | `src-tauri/src/commands/providers.rs` | role-match |
-| `src-tauri/src/commands/mod.rs` (MODIFY) | config | — | existing file | self |
-| `src-tauri/src/lib.rs` (MODIFY) | config | — | existing file | self |
-| `src-tauri/Cargo.toml` (MODIFY) | config | — | existing file | self |
-| `src-tauri/src/domain/mod.rs` (MODIFY) | config | — | existing file | self |
-| `src-tauri/src/db/conversations.rs` (MODIFY) | model | CRUD | existing file | self |
-| `src-tauri/src/db/mod.rs` (MODIFY) | model | CRUD | existing file | self |
-| `src/routes/chat/[id]/+page.svelte` (MODIFY) | component | streaming | existing file | self |
-| `src/lib/stores/app.svelte.ts` (MODIFY) | service | event-driven | existing file | self |
-| `src/lib/data/api.ts` (MODIFY) | service | request-response | existing file | self |
-| `src/lib/components/chat/MessageBubble.svelte` (MODIFY) | component | event-driven | existing file | self |
-| `src/lib/components/chat/MessageInput.svelte` (MODIFY) | component | event-driven | existing file | self |
-| `src/lib/types/index.ts` (MODIFY) | model | — | existing file | self |
+| New/Modified File                                       | Role       | Data Flow                    | Closest Analog                        | Match Quality          |
+| ------------------------------------------------------- | ---------- | ---------------------------- | ------------------------------------- | ---------------------- |
+| `src-tauri/src/ai/mod.rs` (NEW)                         | service    | streaming                    | `gtk_ref/src/service/ai.rs`           | exact (porting target) |
+| `src-tauri/src/commands/chat.rs` (NEW)                  | controller | request-response + streaming | `src-tauri/src/commands/providers.rs` | role-match             |
+| `src-tauri/src/commands/mod.rs` (MODIFY)                | config     | —                            | existing file                         | self                   |
+| `src-tauri/src/lib.rs` (MODIFY)                         | config     | —                            | existing file                         | self                   |
+| `src-tauri/Cargo.toml` (MODIFY)                         | config     | —                            | existing file                         | self                   |
+| `src-tauri/src/domain/mod.rs` (MODIFY)                  | config     | —                            | existing file                         | self                   |
+| `src-tauri/src/db/conversations.rs` (MODIFY)            | model      | CRUD                         | existing file                         | self                   |
+| `src-tauri/src/db/mod.rs` (MODIFY)                      | model      | CRUD                         | existing file                         | self                   |
+| `src/routes/chat/[id]/+page.svelte` (MODIFY)            | component  | streaming                    | existing file                         | self                   |
+| `src/lib/stores/app.svelte.ts` (MODIFY)                 | service    | event-driven                 | existing file                         | self                   |
+| `src/lib/data/api.ts` (MODIFY)                          | service    | request-response             | existing file                         | self                   |
+| `src/lib/components/chat/MessageBubble.svelte` (MODIFY) | component  | event-driven                 | existing file                         | self                   |
+| `src/lib/components/chat/MessageInput.svelte` (MODIFY)  | component  | event-driven                 | existing file                         | self                   |
+| `src/lib/types/index.ts` (MODIFY)                       | model      | —                            | existing file                         | self                   |
 
 ## Pattern Assignments
 
@@ -32,6 +32,7 @@
 **Critical adaptation:** Replace rig-core 0.36 `MultiTurnStreamItem::StreamAssistantItem(StreamedAssistantContent::Text(t))` with rig-core 0.37 `MultiTurnStreamItem::Text(chunk)`. Replace `tokio::sync::mpsc` channel output with `tauri::ipc::Channel<StreamChunk>`. Add `CancellationToken` for stop_generation support.
 
 **Imports pattern** (from `gtk_ref/src/service/ai.rs` lines 1-7, adapted for 0.37):
+
 ```rust
 use crate::domain::conversation::{Message, MessageRole};
 use crate::domain::provider::{ProviderConfig, ProviderType};
@@ -43,6 +44,7 @@ use tauri::ipc::Channel;
 ```
 
 **StreamChunk enum** (new — replaces gtk_ref's `StreamChunk` lines 72-80, adapted for Tauri Channel serde):
+
 ```rust
 /// A chunk of data from a streaming AI response.
 /// Serialized via Tauri Channel to the frontend.
@@ -56,6 +58,7 @@ pub enum StreamChunk {
 ```
 
 **GenerationParams** (from `gtk_ref/src/service/ai.rs` lines 11-52 — port directly):
+
 ```rust
 #[derive(Clone, Debug, Default)]
 pub struct GenerationParams {
@@ -69,6 +72,7 @@ pub struct GenerationParams {
 ```
 
 **provider_supports_param** (from `gtk_ref/src/service/ai.rs` lines 56-69 — port directly):
+
 ```rust
 fn provider_supports_param(provider_type: &ProviderType, param_name: &str) -> bool {
     match param_name {
@@ -88,6 +92,7 @@ fn provider_supports_param(provider_type: &ProviderType, param_name: &str) -> bo
 The 15-arm match block dispatching `ProviderType` to rig-core clients ports directly. Each arm follows the same pattern: build client → build agent with preamble/temperature/max_tokens/additional_params → `stream_with_agent`. **Key change:** use `ProviderType` variants from `src-tauri/src/domain/provider.rs` (which has `CustomOpenAICompatible` instead of `Custom`).
 
 **stream_with_agent** (from `gtk_ref/src/service/ai.rs` lines 476-515 — MUST adapt for 0.37):
+
 ```rust
 // OLD (0.36) — DO NOT COPY:
 // Ok(MultiTurnStreamItem::StreamAssistantItem(StreamedAssistantContent::Text(t))) => {
@@ -115,6 +120,7 @@ Ok(MultiTurnStreamItem::FinalResponse(res)) => {
 **split_last_prompt** (from `gtk_ref/src/service/ai.rs` lines 143-151 — port directly, identical logic).
 
 **classify_error** (NEW — no analog in gtk_ref):
+
 ```rust
 fn classify_error(err: &str) -> String {
     let err_lower = err.to_lowercase();
@@ -139,6 +145,7 @@ fn classify_error(err: &str) -> String {
 **Analog:** `src-tauri/src/commands/providers.rs`
 
 **Imports pattern** (from `src-tauri/src/commands/providers.rs` lines 1-5, extended for chat):
+
 ```rust
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -149,6 +156,7 @@ use crate::ai::StreamChunk;
 ```
 
 **Tauri command pattern** (from `src-tauri/src/commands/providers.rs` lines 17-44):
+
 ```rust
 #[tauri::command]
 pub async fn get_providers(db: State<'_, DbWorker>) -> Result<Vec<ProviderWithKeyStatus>, String> {
@@ -165,6 +173,7 @@ pub async fn get_providers(db: State<'_, DbWorker>) -> Result<Vec<ProviderWithKe
 ```
 
 **DbWorker oneshot pattern** (from `src-tauri/src/commands/conversations.rs` lines 65-80):
+
 ```rust
 #[tauri::command]
 pub async fn get_messages(
@@ -185,6 +194,7 @@ pub async fn get_messages(
 ```
 
 **KeyringStore spawn_blocking pattern** (from `src-tauri/src/commands/providers.rs` lines 31-34):
+
 ```rust
 let has_key = tokio::task::spawn_blocking(move || {
     crate::secrets::KeyringStore::load_key(&pid).is_ok()
@@ -194,6 +204,7 @@ let has_key = tokio::task::spawn_blocking(move || {
 ```
 
 **start_chat command skeleton** (new — combines patterns above):
+
 ```rust
 #[tauri::command]
 pub async fn start_chat(
@@ -215,6 +226,7 @@ pub async fn start_chat(
 ```
 
 **CancelState managed state** (new — follows DbWorker managed state pattern):
+
 ```rust
 pub struct CancelState {
     pub token: std::sync::Mutex<Option<tokio_util::sync::CancellationToken>>,
@@ -228,6 +240,7 @@ pub struct CancelState {
 **Analog:** existing file at `src-tauri/src/commands/mod.rs`
 
 **Current pattern** (lines 1-8):
+
 ```rust
 pub mod avatars;
 pub mod characters;
@@ -248,6 +261,7 @@ pub mod providers;
 **Analog:** existing file at `src-tauri/src/lib.rs`
 
 **Current command registration pattern** (lines 35-73):
+
 ```rust
 .invoke_handler(tauri::generate_handler![
     commands::characters::get_characters,
@@ -258,6 +272,7 @@ pub mod providers;
 ```
 
 **Changes needed:**
+
 1. Add `mod ai;` at top (alongside `mod commands;`, `mod db;`, `mod domain;`, `mod secrets;`)
 2. Add `CancelState` to managed state: `.manage(CancelState { token: std::sync::Mutex::new(None) })`
 3. Add new commands to `invoke_handler`:
@@ -273,6 +288,7 @@ pub mod providers;
 **Analog:** existing file at `src-tauri/Cargo.toml`
 
 **Current dependency pattern** (lines 15-34):
+
 ```toml
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset"] }
@@ -281,6 +297,7 @@ tokio = { version = "1", features = ["sync", "rt-multi-thread"] }
 ```
 
 **Changes needed:**
+
 1. Add `rig-core = "0.37"` (NOT 0.36 — critical per RESEARCH.md Pitfall 1)
 2. Add `futures = "0.3"` (required for `StreamExt`)
 3. Add `tokio-util = { version = "0.7", features = ["rt"] }` (for `CancellationToken`)
@@ -293,6 +310,7 @@ tokio = { version = "1", features = ["sync", "rt-multi-thread"] }
 **Analog:** existing file at `src-tauri/src/domain/mod.rs`
 
 **Current pattern** (lines 1-15):
+
 ```rust
 pub mod character;
 pub mod conversation;
@@ -307,6 +325,7 @@ pub use conversation::{Conversation, Message};
 ```
 
 **Change:** No module addition needed here — the `ai` module lives at `src-tauri/src/ai/mod.rs` (separate from domain). If we want to re-export `StreamChunk`, add:
+
 ```rust
 // No change needed — ai module is separate from domain
 ```
@@ -320,6 +339,7 @@ However, if the `ai` module is registered at `src-tauri/src/ai/mod.rs`, it's a t
 **Analog:** existing file at `src-tauri/src/db/mod.rs`
 
 **Current DbCommand pattern** (lines 25-163):
+
 ```rust
 pub enum DbCommand {
     // ... existing variants with oneshot reply channels
@@ -332,6 +352,7 @@ pub enum DbCommand {
 ```
 
 **Changes needed — add new DbCommand variants:**
+
 ```rust
 // New variants for Phase 5 chat operations
 DeleteMessage {
@@ -359,6 +380,7 @@ UpdateMessageContent {
 **Analog:** existing file (already contains `save_message`, `load_messages`, etc.)
 
 **New functions to add:**
+
 - `delete_message(conn: &Connection, id: &str) -> Result<()>`
 - `delete_messages_after_sort_order(conn: &Connection, conversation_id: &str, sort_order: i32) -> Result<()>` — `DELETE FROM messages WHERE conversation_id = ? AND sort_order > ?`
 - `update_message_content(conn: &Connection, id: &str, content: &str) -> Result<()>` — `UPDATE messages SET content = ? WHERE id = ?`
@@ -370,51 +392,60 @@ UpdateMessageContent {
 **Analog:** existing file
 
 **Current mock streaming pattern** (lines 43-89 — TO BE REPLACED):
+
 ```typescript
 function handleSend(text: string) {
-    if (!app.active_conversation_id) return;
-    const now = new Date().toISOString();
-    const nextSortOrder = (app.messages.at(-1)?.sort_order ?? -1) + 1;
+  if (!app.active_conversation_id) return;
+  const now = new Date().toISOString();
+  const nextSortOrder = (app.messages.at(-1)?.sort_order ?? -1) + 1;
 
-    const userMsg: Message = { /* ... */ };
-    app.appendMessage(userMsg);
+  const userMsg: Message = {
+    /* ... */
+  };
+  app.appendMessage(userMsg);
 
-    const aiId = `msg_${Date.now()}_a`;
-    const aiMsg: Message = { /* ... is_streaming: true ... */ };
-    app.appendMessage(aiMsg);
-    app.is_generating = true;
+  const aiId = `msg_${Date.now()}_a`;
+  const aiMsg: Message = {
+    /* ... is_streaming: true ... */
+  };
+  app.appendMessage(aiMsg);
+  app.is_generating = true;
 
-    // Simulated token stream — REPLACE THIS
-    const sample = '...';
-    const chunks = sample.match(/.{1,4}/g) ?? [sample];
-    let acc = '';
-    let i = 0;
-    const streamTick = () => { /* setTimeout loop */ };
-    setTimeout(streamTick, 200);
+  // Simulated token stream — REPLACE THIS
+  const sample = "...";
+  const chunks = sample.match(/.{1,4}/g) ?? [sample];
+  let acc = "";
+  let i = 0;
+  const streamTick = () => {
+    /* setTimeout loop */
+  };
+  setTimeout(streamTick, 200);
 }
 ```
 
 **New pattern** — delegate to AppState:
+
 ```typescript
 function handleSend(text: string) {
-    if (!app.active_conversation_id) return;
-    app.startChat(text);  // All streaming logic moves to AppState
+  if (!app.active_conversation_id) return;
+  app.startChat(text); // All streaming logic moves to AppState
 }
 
 function handleCancel() {
-    app.stopGeneration();  // Replaces direct updateStreamingMessage
+  app.stopGeneration(); // Replaces direct updateStreamingMessage
 }
 
 function handleRegenerate() {
-    app.regenerate();
+  app.regenerate();
 }
 
 function handleEditResend(messageId: string, newContent: string) {
-    app.editResend(messageId, newContent);
+  app.editResend(messageId, newContent);
 }
 ```
 
 **Preserved patterns:**
+
 - `$effect` for conversation hydration (lines 19-26)
 - `$effect` for auto-scroll on message changes (lines 29-36)
 - `MessageBubble` rendering loop (lines 115-121)
@@ -427,6 +458,7 @@ function handleEditResend(messageId: string, newContent: string) {
 **Analog:** existing file
 
 **Current action pattern** (e.g., `switchPersona` lines 228-251):
+
 ```typescript
 async switchPersona(persona_id: string) {
     if (!this.active_conversation_id) return;
@@ -485,6 +517,7 @@ async editResend(messageId: string, newContent: string) {
 ```
 
 **Existing streaming support** (lines 213-222 — keep as-is):
+
 ```typescript
 appendMessage(message: Message) {
     this.messages = [...this.messages, message];
@@ -505,47 +538,48 @@ updateStreamingMessage(id: string, content: string, done = false) {
 **Analog:** existing file
 
 **Current invoke pattern** (lines 24-26):
+
 ```typescript
 export async function getCharacters(): Promise<CharacterCard[]> {
-    return invoke<CharacterCard[]>("get_characters");
+  return invoke<CharacterCard[]>("get_characters");
 }
 ```
 
 **Current parameterized invoke pattern** (lines 86-88):
+
 ```typescript
 export async function getMessages(conversationId: string): Promise<Message[]> {
-    return invoke<Message[]>("get_messages", { conversationId });
+  return invoke<Message[]>("get_messages", { conversationId });
 }
 ```
 
 **New wrappers to add:**
+
 ```typescript
 import { Channel } from "@tauri-apps/api/core";
 
 // Channel-based streaming invoke (new pattern for Phase 5)
 export async function startChat(
-    conversationId: string,
-    content: string,
-    onEvent: Channel<StreamChunk>,
+  conversationId: string,
+  content: string,
+  onEvent: Channel<StreamChunk>,
 ): Promise<void> {
-    return invoke<void>("start_chat", { conversationId, content, onEvent });
+  return invoke<void>("start_chat", { conversationId, content, onEvent });
 }
 
 export async function stopGeneration(): Promise<void> {
-    return invoke<void>("stop_generation");
+  return invoke<void>("stop_generation");
 }
 
-export async function regenerate(
-    conversationId: string,
-): Promise<void> {
-    return invoke<void>("regenerate", { conversationId });
+export async function regenerate(conversationId: string): Promise<void> {
+  return invoke<void>("regenerate", { conversationId });
 }
 
 export async function editAndResend(
-    messageId: string,
-    newContent: string,
+  messageId: string,
+  newContent: string,
 ): Promise<void> {
-    return invoke<void>("edit_and_resend", { messageId, newContent });
+  return invoke<void>("edit_and_resend", { messageId, newContent });
 }
 ```
 
@@ -558,6 +592,7 @@ export async function editAndResend(
 **Analog:** existing file
 
 **Current props pattern** (lines 7-12):
+
 ```svelte
 interface Props {
     message: Message;
@@ -568,6 +603,7 @@ let { message, character, persona }: Props = $props();
 ```
 
 **Current hover actions pattern** (lines 83-120):
+
 ```svelte
 <div class={cn(
     'mt-0.5 flex gap-0.5 px-1 opacity-0 transition-opacity group-hover:opacity-100',
@@ -583,6 +619,7 @@ let { message, character, persona }: Props = $props();
 ```
 
 **Changes needed:**
+
 1. **Edit mode**: Add `$state` for `isEditing` boolean. When true, replace bubble `<p>` content with `<textarea>`. Show "Save & resend" / "Discard changes" buttons instead of hover actions.
 2. **Conditional hover actions**: Edit button only on user messages. Regenerate only on last AI message. Error messages show Copy only.
 3. **Error rendering**: When `message.metadata?.stop_reason === 'error'`, render with destructive-tinted styling:
@@ -599,6 +636,7 @@ let { message, character, persona }: Props = $props();
 **Analog:** existing file
 
 **Current stop button pattern** (lines 96-104):
+
 ```svelte
 {#if app.is_generating}
     <button type="button"
@@ -623,24 +661,30 @@ Add `disabled={app.is_generating}` to the textarea element (line 86-94).
 **Analog:** existing file
 
 **Current MessageMetadata pattern** (lines 113-119):
+
 ```typescript
 export interface MessageMetadata {
-    persona_id?: string;
-    provider?: string;
-    model?: string;
-    stop_reason?: "end" | "cancelled" | "length" | "error";
-    [key: string]: unknown;
+  persona_id?: string;
+  provider?: string;
+  model?: string;
+  stop_reason?: "end" | "cancelled" | "length" | "error";
+  [key: string]: unknown;
 }
 ```
 
 **Changes needed:**
+
 1. Add `error_type?: string` to `MessageMetadata` (for `context_length_exceeded`, `authentication_failed`, etc.)
 2. Add `StreamChunk` discriminated union type:
+
 ```typescript
 export type StreamChunk =
-    | { event: "token"; data: { content: string } }
-    | { event: "complete"; data: { messageId: string; content: string; stopReason: string } }
-    | { event: "error"; data: { error: string; errorType: string } };
+  | { event: "token"; data: { content: string } }
+  | {
+      event: "complete";
+      data: { messageId: string; content: string; stopReason: string };
+    }
+  | { event: "error"; data: { error: string; errorType: string } };
 ```
 
 ---
@@ -648,8 +692,10 @@ export type StreamChunk =
 ## Shared Patterns
 
 ### DbWorker Oneshot Request-Response
+
 **Source:** `src-tauri/src/commands/conversations.rs` lines 7-15
 **Apply to:** All new Tauri commands (`start_chat`, `regenerate`, `edit_and_resend`) that need to load/save data via DbWorker
+
 ```rust
 let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
 db.send(DbCommand::SomeCommand { /* params */, reply: reply_tx })
@@ -661,8 +707,10 @@ reply_rx
 ```
 
 ### KeyringStore spawn_blocking
+
 **Source:** `src-tauri/src/commands/providers.rs` lines 31-34
 **Apply to:** `start_chat` command when loading API key
+
 ```rust
 tokio::task::spawn_blocking(move || {
     crate::secrets::KeyringStore::load_key(&provider_id)
@@ -673,8 +721,10 @@ tokio::task::spawn_blocking(move || {
 ```
 
 ### Optimistic State Update + Backend Persist + Revert on Failure
+
 **Source:** `src/lib/stores/app.svelte.ts` lines 228-251 (`switchPersona`)
 **Apply to:** All new AppState actions (`editResend`, `regenerate`, `updateConversationProvider`)
+
 ```typescript
 // 1. Optimistically update local state
 this.messages = /* updated */;
@@ -689,23 +739,29 @@ try {
 ```
 
 ### Tauri Command Registration Triangle
+
 **Source:** `src-tauri/src/lib.rs` lines 35-73
 **Apply to:** All new Tauri commands — must appear in three places:
+
 1. `src-tauri/src/commands/mod.rs` — `pub mod chat;`
 2. `src-tauri/src/commands/chat.rs` — `#[tauri::command] pub async fn start_chat(...)`
 3. `src-tauri/src/lib.rs` — `commands::chat::start_chat` in `invoke_handler`
 
 ### TypeScript Type Alignment (Rust serde ↔ TS interface)
+
 **Source:** `src/lib/types/index.ts` + `src-tauri/src/domain/conversation.rs`
 **Apply to:** `StreamChunk` enum — Rust `#[serde(rename_all = "camelCase", tag = "event", content = "data")]` must produce JSON matching the TS discriminated union:
+
 ```typescript
 // Rust produces: { "event": "token", "data": { "content": "Hello" } }
 // TS matches: { event: "token"; data: { content: string } }
 ```
 
 ### Svelte 5 Component Props Pattern
+
 **Source:** `src/lib/components/chat/MessageBubble.svelte` lines 7-13
 **Apply to:** Any new component or modified component receiving new props
+
 ```svelte
 interface Props {
     message: Message;
@@ -717,8 +773,10 @@ let { message, character, persona, isLastAiMessage = false }: Props = $props();
 ```
 
 ### Hover Action Button Pattern
+
 **Source:** `src/lib/components/chat/MessageBubble.svelte` lines 90-119
 **Apply to:** New Edit, Regenerate, and Retry hover actions — same class structure
+
 ```svelte
 <button type="button"
     class="inline-flex size-6 items-center justify-center rounded-(--radius-sm) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
@@ -730,10 +788,10 @@ let { message, character, persona, isLastAiMessage = false }: Props = $props();
 
 ## No Analog Found
 
-| File | Role | Data Flow | Reason |
-|------|------|-----------|--------|
-| `src-tauri/src/ai/mod.rs` | service | streaming | Partial analog in `gtk_ref/src/service/ai.rs` — but Tauri Channel + CancellationToken + rig-core 0.37 API are all new patterns not in codebase |
-| `src-tauri/src/commands/chat.rs` | controller | streaming | No existing Tauri command uses `Channel<StreamChunk>` — this is a new pattern for the codebase |
+| File                             | Role       | Data Flow | Reason                                                                                                                                         |
+| -------------------------------- | ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src-tauri/src/ai/mod.rs`        | service    | streaming | Partial analog in `gtk_ref/src/service/ai.rs` — but Tauri Channel + CancellationToken + rig-core 0.37 API are all new patterns not in codebase |
+| `src-tauri/src/commands/chat.rs` | controller | streaming | No existing Tauri command uses `Channel<StreamChunk>` — this is a new pattern for the codebase                                                 |
 
 **Planner guidance:** For the two files above, combine the closest analogs documented in Pattern Assignments with the concrete code examples from `05-RESEARCH.md` (Pattern 1: Tauri v2 Channel Streaming, Pattern 2: rig-core 0.37 Streaming, Pattern 3: Cancellation via CancellationToken).
 

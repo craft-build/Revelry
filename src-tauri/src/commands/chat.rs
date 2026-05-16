@@ -22,6 +22,7 @@ pub async fn start_chat(
     content: String,
     message_id: String,
     sort_order: i32,
+    ai_message_id: String,
 ) -> Result<(), String> {
     // 1. Cancel any existing stream
     {
@@ -165,8 +166,7 @@ pub async fn start_chat(
     // 9. Resolve generation params from provider
     let params = AiService::from_provider_config(&provider);
 
-    // 10. Create AI placeholder message ID and set up cancellation
-    let ai_message_id = uuid::Uuid::new_v4().to_string();
+    // 10. Use frontend-provided AI message ID and set up cancellation
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
@@ -214,6 +214,7 @@ pub async fn regenerate(
     cancel_state: State<'_, CancelState>,
     channel: Channel<StreamChunk>,
     conversation_id: String,
+    ai_message_id: String,
 ) -> Result<(), String> {
     // Cancel any existing stream
     {
@@ -367,8 +368,7 @@ pub async fn regenerate(
 
     let params = AiService::from_provider_config(&provider);
 
-    // Set up cancellation and stream
-    let ai_message_id = uuid::Uuid::new_v4().to_string();
+    // Set up cancellation and stream (use frontend-provided AI message ID)
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
@@ -399,6 +399,8 @@ pub async fn edit_and_resend(
     channel: Channel<StreamChunk>,
     message_id: String,
     new_content: String,
+    conversation_id: String,
+    ai_message_id: String,
 ) -> Result<(), String> {
     // Cancel any existing stream
     {
@@ -408,36 +410,22 @@ pub async fn edit_and_resend(
         }
     }
 
-    // 1. Load the message to edit by loading all conversations' messages and finding it
-    //    We need the conversation_id, so we load conversations first and find the message.
-    let (conversation_id, sort_order) = {
+    // 1. Find the message directly using conversation_id
+    let sort_order = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadConversations { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let conversations = reply_rx
+        db.send(DbCommand::LoadMessages {
+            conversation_id: conversation_id.clone(),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        let msgs = reply_rx
             .await
             .map_err(|e| format!("DB worker dropped: {}", e))?
             .map_err(|e| e.to_string())?;
-
-        let mut found = None;
-        for conv in &conversations {
-            let (msg_tx, msg_rx) = tokio::sync::oneshot::channel();
-            db.send(DbCommand::LoadMessages {
-                conversation_id: conv.id.clone(),
-                reply: msg_tx,
-            })
-            .map_err(|e| e.to_string())?;
-            let msgs = msg_rx
-                .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
-
-            if let Some(msg) = msgs.iter().find(|m| m.id == message_id) {
-                found = Some((conv.id.clone(), msg.sort_order));
-                break;
-            }
-        }
-        found.ok_or_else(|| "Message not found".to_string())?
+        msgs.iter()
+            .find(|m| m.id == message_id)
+            .map(|m| m.sort_order)
+            .ok_or_else(|| "Message not found".to_string())?
     };
 
     // 2. Update message content
@@ -581,8 +569,7 @@ pub async fn edit_and_resend(
 
     let params = AiService::from_provider_config(&provider);
 
-    // Set up cancellation and stream
-    let ai_message_id = uuid::Uuid::new_v4().to_string();
+    // Set up cancellation and stream (use frontend-provided AI message ID)
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;

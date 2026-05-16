@@ -365,11 +365,7 @@ impl DbWorker {
                 );
                 let _ = reply.send(result);
             }
-            DbCommand::UpdateMessageContent {
-                id,
-                content,
-                reply,
-            } => {
+            DbCommand::UpdateMessageContent { id, content, reply } => {
                 let result = conversations::update_message_content(conn, &id, &content);
                 let _ = reply.send(result);
             }

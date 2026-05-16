@@ -4,15 +4,41 @@ plan: 02
 subsystem: tauri-commands
 tags: [channel, streaming, cancel, regenerate, edit-resend]
 dependency_graph:
-  requires: [src-tauri/src/ai/mod.rs, src-tauri/src/secrets/mod.rs, src-tauri/src/db/conversations.rs]
-  provides: [start_chat, stop_generation, regenerate, edit_and_resend, CancelState, delete_message, delete_messages_after_sort_order, update_message_content]
+  requires:
+    [
+      src-tauri/src/ai/mod.rs,
+      src-tauri/src/secrets/mod.rs,
+      src-tauri/src/db/conversations.rs,
+    ]
+  provides:
+    [
+      start_chat,
+      stop_generation,
+      regenerate,
+      edit_and_resend,
+      CancelState,
+      delete_message,
+      delete_messages_after_sort_order,
+      update_message_content,
+    ]
   affects: [src-tauri/src/lib.rs, src-tauri/src/commands/mod.rs]
 tech_stack:
   added: [tokio-util CancellationToken (already in deps)]
-  patterns: [Tauri Channel streaming, oneshot DbWorker pattern, spawn_blocking for keyring]
+  patterns:
+    [
+      Tauri Channel streaming,
+      oneshot DbWorker pattern,
+      spawn_blocking for keyring,
+    ]
 key_files:
   created: [src-tauri/src/commands/chat.rs]
-  modified: [src-tauri/src/db/conversations.rs, src-tauri/src/db/mod.rs, src-tauri/src/commands/mod.rs, src-tauri/src/lib.rs]
+  modified:
+    [
+      src-tauri/src/db/conversations.rs,
+      src-tauri/src/db/mod.rs,
+      src-tauri/src/commands/mod.rs,
+      src-tauri/src/lib.rs,
+    ]
 decisions:
   - D-06: System prompt built from character personality + scenario, fallback to generic
   - D-07: Batch-load entities and filter in memory instead of adding single-entity DB commands
@@ -33,11 +59,11 @@ None — implementation followed the plan exactly.
 
 ## Key Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Entity loading | Batch-load + filter | Avoids adding single-entity DB commands; conversations are few enough that in-memory filtering is fine |
-| System prompt | personality + scenario from CharacterCardV2 | Matches the character design intent; falls back to generic prompt when both are empty |
-| API key loading | spawn_blocking for all providers | Ollama skips keyring entirely (returns empty string), cloud providers use KeyringStore |
+| Decision        | Choice                                      | Rationale                                                                                              |
+| --------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Entity loading  | Batch-load + filter                         | Avoids adding single-entity DB commands; conversations are few enough that in-memory filtering is fine |
+| System prompt   | personality + scenario from CharacterCardV2 | Matches the character design intent; falls back to generic prompt when both are empty                  |
+| API key loading | spawn_blocking for all providers            | Ollama skips keyring entirely (returns empty string), cloud providers use KeyringStore                 |
 
 ## Test Results
 

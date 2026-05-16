@@ -261,6 +261,7 @@ export async function startChat(
   content: string,
   messageId: string,
   sortOrder: number,
+  aiMessageId: string,
   onEvent: Channel<StreamChunk>,
 ): Promise<void> {
   return invoke<void>("start_chat", {
@@ -268,6 +269,7 @@ export async function startChat(
     content,
     messageId,
     sortOrder,
+    aiMessageId,
     channel: onEvent,
   });
 }
@@ -278,15 +280,28 @@ export async function stopGeneration(): Promise<void> {
 
 export async function regenerate(
   conversationId: string,
+  aiMessageId: string,
   onEvent: Channel<StreamChunk>,
 ): Promise<void> {
-  return invoke<void>("regenerate", { conversationId, channel: onEvent });
+  return invoke<void>("regenerate", {
+    conversationId,
+    aiMessageId,
+    channel: onEvent,
+  });
 }
 
 export async function editAndResend(
   messageId: string,
   newContent: string,
+  conversationId: string,
+  aiMessageId: string,
   onEvent: Channel<StreamChunk>,
 ): Promise<void> {
-  return invoke<void>("edit_and_resend", { messageId, newContent, channel: onEvent });
+  return invoke<void>("edit_and_resend", {
+    messageId,
+    newContent,
+    conversationId,
+    aiMessageId,
+    channel: onEvent,
+  });
 }

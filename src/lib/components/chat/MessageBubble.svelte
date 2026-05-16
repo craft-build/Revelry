@@ -297,6 +297,7 @@
 					type="button"
 					class="inline-flex size-6 items-center justify-center rounded-(--radius-sm) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
 					aria-label="Copy"
+					onclick={() => navigator.clipboard.writeText(message.content)}
 				>
 					<Copy class="size-3" />
 				</button>

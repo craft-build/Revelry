@@ -38,12 +38,12 @@ created: 2026-05-15
 
 **Phase 5 additions:**
 
-| Token               | Value         | Usage                                                           |
-| ------------------- | ------------- | --------------------------------------------------------------- |
-| `edit-area-pad`     | 12px (p-3)    | Padding for the inline edit textarea inside MessageBubble       |
-| `edit-actions-gap`  | 8px (gap-2)   | Gap between Save & Resend / Cancel buttons in edit mode        |
-| `error-bubble-pad`  | 16px (px-4 py-3) | Padding for inline error message bubbles (same as normal)  |
-| `error-icon-gap`    | 8px (gap-2)   | Gap between AlertTriangle icon and error text                  |
+| Token              | Value            | Usage                                                     |
+| ------------------ | ---------------- | --------------------------------------------------------- |
+| `edit-area-pad`    | 12px (p-3)       | Padding for the inline edit textarea inside MessageBubble |
+| `edit-actions-gap` | 8px (gap-2)      | Gap between Save & Resend / Cancel buttons in edit mode   |
+| `error-bubble-pad` | 16px (px-4 py-3) | Padding for inline error message bubbles (same as normal) |
+| `error-icon-gap`   | 8px (gap-2)      | Gap between AlertTriangle icon and error text             |
 
 All new spacing uses existing Tailwind token values. No custom spacing values introduced.
 
@@ -66,17 +66,17 @@ All new spacing uses existing Tailwind token values. No custom spacing values in
 
 **Phase 5 role breakdown by element:**
 
-| Element                        | Size | Weight | Font Family | Notes                                                        |
-| ------------------------------ | ---- | ------ | ----------- | ------------------------------------------------------------ |
-| Chat bubble text (user)        | 15px | 400    | Geist sans  | Normal message rendering                                     |
-| Chat bubble text (AI)          | 15px | 400    | Geist sans  | Normal message rendering, with streaming caret               |
-| Chat bubble text (error)       | 15px | 400    | Geist sans  | Inline error message — `--color-destructive` text           |
-| Error label                    | 12px | 600    | Geist sans  | "Generation failed" speaker name area on error bubbles       |
-| Edit textarea                  | 14px | 400    | Geist sans  | Inline edit textarea replacing bubble content                |
-| Save & resend button label     | 12px | 400    | Geist sans  | "Save & resend" in edit mode action row                     |
-| Cancel edit button label       | 12px | 400    | Geist sans  | "Discard changes" in edit mode action row                    |
-| Retry link (error bubble)      | 12px | 400    | Geist sans  | "Retry" or "Switch provider" links below error text         |
-| Stop reason badge              | 10px | 500    | Geist sans  | **Inherited** from Phase 3 Tag component — not a Phase 5 declaration |
+| Element                    | Size | Weight | Font Family | Notes                                                                |
+| -------------------------- | ---- | ------ | ----------- | -------------------------------------------------------------------- |
+| Chat bubble text (user)    | 15px | 400    | Geist sans  | Normal message rendering                                             |
+| Chat bubble text (AI)      | 15px | 400    | Geist sans  | Normal message rendering, with streaming caret                       |
+| Chat bubble text (error)   | 15px | 400    | Geist sans  | Inline error message — `--color-destructive` text                    |
+| Error label                | 12px | 600    | Geist sans  | "Generation failed" speaker name area on error bubbles               |
+| Edit textarea              | 14px | 400    | Geist sans  | Inline edit textarea replacing bubble content                        |
+| Save & resend button label | 12px | 400    | Geist sans  | "Save & resend" in edit mode action row                              |
+| Cancel edit button label   | 12px | 400    | Geist sans  | "Discard changes" in edit mode action row                            |
+| Retry link (error bubble)  | 12px | 400    | Geist sans  | "Retry" or "Switch provider" links below error text                  |
+| Stop reason badge          | 10px | 500    | Geist sans  | **Inherited** from Phase 3 Tag component — not a Phase 5 declaration |
 
 **No 500 (medium) weight in Phase 5 declarations.** The stop reason badge uses inherited Tag component styling (Phase 3). All Phase 5 body text, error text, and labels use 400. All Phase 5 emphasis (error label, headings) uses 600.
 
@@ -86,26 +86,26 @@ All new spacing uses existing Tailwind token values. No custom spacing values in
 
 All colors defined as OKLCH values in `src/app.css` @theme block. Dark theme only — light theme deferred to Phase 10.
 
-| Role                | OKLCH Value             | Tailwind Token             | Usage                                                   |
-| ------------------- | ----------------------- | -------------------------- | ------------------------------------------------------- |
-| **Dominant (60%)**  | `oklch(0.16 0.005 270)` | `--color-background`       | App background, page-level surface                      |
-| **Secondary (30%)** | `oklch(0.19 0.006 270)` | `--color-surface`          | Sidebar, header, input area backgrounds                 |
-|                     | `oklch(0.22 0.008 270)` | `--color-surface-elevated` | Elevated panels, active nav tab                         |
-|                     | `oklch(0.24 0.009 270)` | `--color-surface-hover`    | Hover state backgrounds                                 |
-|                     | `oklch(0.21 0.007 270)` | `--color-surface-input`    | Text input backgrounds                                  |
-| **Accent (10%)**    | `oklch(0.78 0.13 195)`  | `--color-accent`           | See reserved-for list below                             |
-|                     | `oklch(0.18 0.02 200)`  | `--color-accent-fg`        | Text on accent backgrounds                              |
-|                     | `oklch(0.32 0.06 195)`  | `--color-accent-muted`     | Selection highlight, progress bars, subtle accent fills |
-| **Foreground**      | `oklch(0.96 0.005 270)` | `--color-foreground`       | Primary text color                                      |
-| **Muted**           | `oklch(0.65 0.012 270)` | `--color-muted`            | Secondary text, timestamps, previews                    |
-| **Subtle**          | `oklch(0.45 0.01 270)`  | `--color-subtle`           | Placeholder text, disabled icons, metadata              |
-| **Border**          | `oklch(0.28 0.008 270)` | `--color-border`           | Default borders                                         |
-| **Border strong**   | `oklch(0.36 0.01 270)`  | `--color-border-strong`    | Emphasized borders                                      |
-| **Destructive**     | `oklch(0.66 0.18 25)`   | `--color-destructive`      | Stop-generation button, delete actions, generation errors |
-| **Warning**         | `oklch(0.78 0.14 80)`   | `--color-warning`          | Reserved for future                                    |
-| **Success**         | `oklch(0.72 0.15 155)`  | `--color-success`          | Reserved for future                                    |
-| **Bubble user**     | `oklch(0.26 0.02 220)`  | `--color-bubble-user`      | User message bubble background                          |
-| **Bubble character**| `oklch(0.21 0.007 270)` | `--color-bubble-character` | Character message bubble background                     |
+| Role                 | OKLCH Value             | Tailwind Token             | Usage                                                     |
+| -------------------- | ----------------------- | -------------------------- | --------------------------------------------------------- |
+| **Dominant (60%)**   | `oklch(0.16 0.005 270)` | `--color-background`       | App background, page-level surface                        |
+| **Secondary (30%)**  | `oklch(0.19 0.006 270)` | `--color-surface`          | Sidebar, header, input area backgrounds                   |
+|                      | `oklch(0.22 0.008 270)` | `--color-surface-elevated` | Elevated panels, active nav tab                           |
+|                      | `oklch(0.24 0.009 270)` | `--color-surface-hover`    | Hover state backgrounds                                   |
+|                      | `oklch(0.21 0.007 270)` | `--color-surface-input`    | Text input backgrounds                                    |
+| **Accent (10%)**     | `oklch(0.78 0.13 195)`  | `--color-accent`           | See reserved-for list below                               |
+|                      | `oklch(0.18 0.02 200)`  | `--color-accent-fg`        | Text on accent backgrounds                                |
+|                      | `oklch(0.32 0.06 195)`  | `--color-accent-muted`     | Selection highlight, progress bars, subtle accent fills   |
+| **Foreground**       | `oklch(0.96 0.005 270)` | `--color-foreground`       | Primary text color                                        |
+| **Muted**            | `oklch(0.65 0.012 270)` | `--color-muted`            | Secondary text, timestamps, previews                      |
+| **Subtle**           | `oklch(0.45 0.01 270)`  | `--color-subtle`           | Placeholder text, disabled icons, metadata                |
+| **Border**           | `oklch(0.28 0.008 270)` | `--color-border`           | Default borders                                           |
+| **Border strong**    | `oklch(0.36 0.01 270)`  | `--color-border-strong`    | Emphasized borders                                        |
+| **Destructive**      | `oklch(0.66 0.18 25)`   | `--color-destructive`      | Stop-generation button, delete actions, generation errors |
+| **Warning**          | `oklch(0.78 0.14 80)`   | `--color-warning`          | Reserved for future                                       |
+| **Success**          | `oklch(0.72 0.15 155)`  | `--color-success`          | Reserved for future                                       |
+| **Bubble user**      | `oklch(0.26 0.02 220)`  | `--color-bubble-user`      | User message bubble background                            |
+| **Bubble character** | `oklch(0.21 0.007 270)` | `--color-bubble-character` | Character message bubble background                       |
 
 **Accent reserved for (explicit list):**
 
@@ -127,21 +127,21 @@ All colors defined as OKLCH values in `src/app.css` @theme block. Dark theme onl
 
 **Phase 5 semantic color usages (no new tokens):**
 
-| State                                  | Token Used                | Usage                                                          |
-| -------------------------------------- | ------------------------- | -------------------------------------------------------------- |
-| Error bubble background                | `--color-destructive/10`  | 10% opacity destructive background for inline error messages   |
-| Error bubble border                    | `--color-destructive/20`  | 20% opacity destructive border                                |
-| Error bubble icon                      | `--color-destructive`     | `AlertTriangle` icon tint in error message                     |
-| Error bubble text                      | `--color-destructive`     | Error description text                                         |
-| Error bubble link (Retry)              | `--color-accent`          | "Retry" action link below error text                          |
-| Error bubble link (Switch provider)    | `--color-accent`          | "Switch provider" action link below error text                |
-| Stop reason "cancelled" badge          | `--color-warning/20` bg   | "cancelled" stop reason on AI messages                        |
-| Stop reason "length" badge             | `--color-warning/20` bg  | "length" stop reason on AI messages                           |
-| Edit textarea border (active)          | `--color-accent`          | Border highlight when edit textarea is focused                 |
-| Save & resend button                   | `--color-accent` bg       | Primary action in edit mode (accent background)               |
-| Cancel edit button                     | `--color-subtle`          | Ghost/outline style cancel in edit mode                       |
-| Edit action icon (hover)               | `--color-foreground`      | Pencil icon on hover (same as existing hover action pattern)  |
-| Regenerate action icon (hover)         | `--color-foreground`      | Refresh icon on hover (same as existing hover action pattern) |
+| State                               | Token Used               | Usage                                                         |
+| ----------------------------------- | ------------------------ | ------------------------------------------------------------- |
+| Error bubble background             | `--color-destructive/10` | 10% opacity destructive background for inline error messages  |
+| Error bubble border                 | `--color-destructive/20` | 20% opacity destructive border                                |
+| Error bubble icon                   | `--color-destructive`    | `AlertTriangle` icon tint in error message                    |
+| Error bubble text                   | `--color-destructive`    | Error description text                                        |
+| Error bubble link (Retry)           | `--color-accent`         | "Retry" action link below error text                          |
+| Error bubble link (Switch provider) | `--color-accent`         | "Switch provider" action link below error text                |
+| Stop reason "cancelled" badge       | `--color-warning/20` bg  | "cancelled" stop reason on AI messages                        |
+| Stop reason "length" badge          | `--color-warning/20` bg  | "length" stop reason on AI messages                           |
+| Edit textarea border (active)       | `--color-accent`         | Border highlight when edit textarea is focused                |
+| Save & resend button                | `--color-accent` bg      | Primary action in edit mode (accent background)               |
+| Cancel edit button                  | `--color-subtle`         | Ghost/outline style cancel in edit mode                       |
+| Edit action icon (hover)            | `--color-foreground`     | Pencil icon on hover (same as existing hover action pattern)  |
+| Regenerate action icon (hover)      | `--color-foreground`     | Refresh icon on hover (same as existing hover action pattern) |
 
 No new color tokens are added.
 
@@ -151,12 +151,12 @@ No new color tokens are added.
 
 **Inherited from Phase 1.** No changes.
 
-| Token         | Value          | Usage                                              |
-| ------------- | -------------- | -------------------------------------------------- |
-| `--radius-sm` | 0.375rem (6px) | Small buttons, icon buttons, action chips          |
-| `--radius-md` | 0.5rem (8px)   | Default buttons, inputs, edit textarea             |
-| `--radius-lg` | 0.75rem (12px) | Chat bubbles, error bubbles, edit textarea frame   |
-| `--radius-xl` | 1rem (16px)    | Dialog panels, modal containers                   |
+| Token         | Value          | Usage                                            |
+| ------------- | -------------- | ------------------------------------------------ |
+| `--radius-sm` | 0.375rem (6px) | Small buttons, icon buttons, action chips        |
+| `--radius-md` | 0.5rem (8px)   | Default buttons, inputs, edit textarea           |
+| `--radius-lg` | 0.75rem (12px) | Chat bubbles, error bubbles, edit textarea frame |
+| `--radius-xl` | 1rem (16px)    | Dialog panels, modal containers                  |
 
 **Phase 5 note:** The inline edit textarea uses `--radius-lg` to match the chat bubble shape it replaces. Error message bubbles use `--radius-lg` consistent with regular chat bubbles. Stop reason badges use `--radius-sm`.
 
@@ -174,15 +174,15 @@ No new domain components. All changes are modifications to existing components.
 
 ### Modified Existing Components
 
-| Component                                | Change                     | What Changes                                                                                                                                                                                                                                                                                            |
-| ---------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MessageBubble.svelte`                   | Edit mode + error + regen  | (1) Edit hover action now functional: click enters inline edit mode — bubble content becomes textarea, action row shows "Save & resend" / "Cancel". (2) Error message rendering: when `metadata.stop_reason === "error"`, bubble uses destructive-tinted style with AlertTriangle icon, retry/provider links. (3) Regenerate hover action: only visible on the **last AI message** in the conversation; click triggers regeneration. (4) Edit hover action: only visible on **user messages**. (5) Stop reason badge on AI messages when `metadata.stop_reason` is "cancelled" or "length". |
-| `chat/[id]/+page.svelte`                 | Replace mock streaming     | Remove `handleSend` mock streaming setTimeout loop. Replace with real Tauri Channel listener: `handleSend` calls `app.startChat()`, `handleCancel` calls `app.stopGeneration()`. Auto-scroll remains. No provider check — handled by AppState.                                                            |
-| `AppState` (`app.svelte.ts`)             | New actions + streaming    | Add `startChat(content: string)` action that invokes `start_chat`, receives Channel, listens for StreamChunk events (Token/Complete/Error), calls appendMessage/updateStreamingMessage accordingly. Add `stopGeneration()`, `regenerate()`, `editResend(messageId, newContent)` actions.             |
-| `api.ts`                                 | New invoke wrappers        | Add: `startChat`, `stopGeneration`, `regenerate`, `editAndResend` wrappers with Tauri Channel support.                                                                                                                                                                                                  |
-| `types/index.ts`                         | Updated types              | Add `StreamChunk` type for frontend channel handling: `{ type: "token" | "complete" | "error", content?: string, message_id?: string, error?: string }`. May add `is_error` flag to MessageMetadata.                                                                                                  |
-| `MessageInput.svelte`                    | Minimal change             | Stop button behavior confirmed: already wired to `oncancel`. With real streaming, `handleCancel` in the page calls `app.stopGeneration()` which invokes `stop_generation`. No visual changes needed.                                                                                                 |
-| `ChatHeader.svelte`                      | No visual changes          | ProviderModelSelector already wired. No Phase 5 changes to this component.                                                                                                                                                                                                                             |
+| Component                    | Change                    | What Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------- |
+| `MessageBubble.svelte`       | Edit mode + error + regen | (1) Edit hover action now functional: click enters inline edit mode — bubble content becomes textarea, action row shows "Save & resend" / "Cancel". (2) Error message rendering: when `metadata.stop_reason === "error"`, bubble uses destructive-tinted style with AlertTriangle icon, retry/provider links. (3) Regenerate hover action: only visible on the **last AI message** in the conversation; click triggers regeneration. (4) Edit hover action: only visible on **user messages**. (5) Stop reason badge on AI messages when `metadata.stop_reason` is "cancelled" or "length". |
+| `chat/[id]/+page.svelte`     | Replace mock streaming    | Remove `handleSend` mock streaming setTimeout loop. Replace with real Tauri Channel listener: `handleSend` calls `app.startChat()`, `handleCancel` calls `app.stopGeneration()`. Auto-scroll remains. No provider check — handled by AppState.                                                                                                                                                                                                                                                                                                                                              |
+| `AppState` (`app.svelte.ts`) | New actions + streaming   | Add `startChat(content: string)` action that invokes `start_chat`, receives Channel, listens for StreamChunk events (Token/Complete/Error), calls appendMessage/updateStreamingMessage accordingly. Add `stopGeneration()`, `regenerate()`, `editResend(messageId, newContent)` actions.                                                                                                                                                                                                                                                                                                    |
+| `api.ts`                     | New invoke wrappers       | Add: `startChat`, `stopGeneration`, `regenerate`, `editAndResend` wrappers with Tauri Channel support.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `types/index.ts`             | Updated types             | Add `StreamChunk` type for frontend channel handling: `{ type: "token"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | "complete" | "error", content?: string, message_id?: string, error?: string }`. May add `is_error` flag to MessageMetadata. |
+| `MessageInput.svelte`        | Minimal change            | Stop button behavior confirmed: already wired to `oncancel`. With real streaming, `handleCancel` in the page calls `app.stopGeneration()` which invokes `stop_generation`. No visual changes needed.                                                                                                                                                                                                                                                                                                                                                                                        |
+| `ChatHeader.svelte`          | No visual changes         | ProviderModelSelector already wired. No Phase 5 changes to this component.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ---
 
@@ -192,14 +192,14 @@ No new domain components. All changes are modifications to existing components.
 
 This is the core state machine for Phase 5. The UI transitions through these states during a real AI generation:
 
-| State        | Trigger                           | `is_generating` | Visual Indicators                                                                                                  |
-| ------------ | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Idle**     | No active generation              | `false`          | Send button visible. Input enabled. No streaming caret.                                                            |
-| **Sending**  | User submits message              | `true`           | Send button → Stop button. Input disabled (prevent double-send). User message rendered. AI placeholder bubble with streaming caret. |
-| **Streaming**| First `StreamChunk.Token` arrives | `true`           | Stop button visible. AI bubble content updates token-by-token. Streaming caret `▍` at end. Auto-scroll active.     |
-| **Complete** | `StreamChunk.Complete` received   | `false`          | Send button restored. Input re-enabled. Streaming caret removed. AI message saved to DB. Stop reason badge shown if not "end". |
-| **Error**    | `StreamChunk.Error` received      | `false`          | Send button restored. Input re-enabled. Error bubble rendered inline. No streaming caret.                          |
-| **Stopped**  | User clicks Stop / `stop_generation` invoked | `false` | Send button restored. Input re-enabled. AI message finalized with current partial content. `stop_reason: "cancelled"` badge shown. |
+| State         | Trigger                                      | `is_generating` | Visual Indicators                                                                                                                   |
+| ------------- | -------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Idle**      | No active generation                         | `false`         | Send button visible. Input enabled. No streaming caret.                                                                             |
+| **Sending**   | User submits message                         | `true`          | Send button → Stop button. Input disabled (prevent double-send). User message rendered. AI placeholder bubble with streaming caret. |
+| **Streaming** | First `StreamChunk.Token` arrives            | `true`          | Stop button visible. AI bubble content updates token-by-token. Streaming caret `▍` at end. Auto-scroll active.                      |
+| **Complete**  | `StreamChunk.Complete` received              | `false`         | Send button restored. Input re-enabled. Streaming caret removed. AI message saved to DB. Stop reason badge shown if not "end".      |
+| **Error**     | `StreamChunk.Error` received                 | `false`         | Send button restored. Input re-enabled. Error bubble rendered inline. No streaming caret.                                           |
+| **Stopped**   | User clicks Stop / `stop_generation` invoked | `false`         | Send button restored. Input re-enabled. AI message finalized with current partial content. `stop_reason: "cancelled"` badge shown.  |
 
 **Transition details:**
 
@@ -219,10 +219,10 @@ This is the core state machine for Phase 5. The UI transitions through these sta
 
 **MessageInput state transitions:**
 
-| `is_generating` | Send Button   | Stop Button | Input State  |
-| ---------------- | ------------- | ----------- | ------------ |
-| `false`          | Visible       | Hidden      | Enabled      |
-| `true`           | Hidden        | Visible     | Disabled     |
+| `is_generating` | Send Button | Stop Button | Input State |
+| --------------- | ----------- | ----------- | ----------- |
+| `false`         | Visible     | Hidden      | Enabled     |
+| `true`          | Hidden      | Visible     | Disabled    |
 
 The input textarea is **disabled** during generation to prevent double-send. Text is cleared immediately on send (as current behavior). If the user needs to queue a follow-up, they must wait for generation to complete or stop it first.
 
@@ -230,21 +230,21 @@ The input textarea is **disabled** during generation to prevent double-send. Tex
 
 When the user clicks the Edit hover action on a user message:
 
-| State           | Visual                                                                                                    |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| **Viewing**     | Normal bubble rendering. Hover actions visible (Copy, Edit, Delete).                                      |
-| **Editing**     | Bubble content replaced by `<textarea>` pre-filled with message content. Border accent on focus. Normal hover actions hidden; replaced by "Save & resend" (primary) and "Cancel" (ghost) buttons. |
-| **Saving**      | "Save & resend" button shows `Loader2` spinner + label changes to "Saving…". Cancel button disabled. Textarea disabled. |
-| **Saved**       | Edit mode exits. Truncated messages removed from UI. New AI stream begins. Same visual as Sending state.  |
+| State       | Visual                                                                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Viewing** | Normal bubble rendering. Hover actions visible (Copy, Edit, Delete).                                                                                                                              |
+| **Editing** | Bubble content replaced by `<textarea>` pre-filled with message content. Border accent on focus. Normal hover actions hidden; replaced by "Save & resend" (primary) and "Cancel" (ghost) buttons. |
+| **Saving**  | "Save & resend" button shows `Loader2` spinner + label changes to "Saving…". Cancel button disabled. Textarea disabled.                                                                           |
+| **Saved**   | Edit mode exits. Truncated messages removed from UI. New AI stream begins. Same visual as Sending state.                                                                                          |
 
 ### Regenerate Loading State
 
 When the user clicks Regenerate on the last AI message:
 
-| State           | Visual                                                                                                         |
-| --------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Idle**        | Normal bubble rendering. Regenerate hover action visible (last AI message only).                              |
-| **Regenerating**| Old AI message removed from UI. New AI placeholder with streaming caret appears in its place. Stop button shown. Same visual as Sending/Streaming states. |
+| State            | Visual                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Idle**         | Normal bubble rendering. Regenerate hover action visible (last AI message only).                                                                          |
+| **Regenerating** | Old AI message removed from UI. New AI placeholder with streaming caret appears in its place. Stop button shown. Same visual as Sending/Streaming states. |
 
 ---
 
@@ -265,6 +265,7 @@ When AI generation fails (context overflow, auth failure, network error, rate li
 **Error message model:**
 
 The error is rendered as a `Message` object with:
+
 - `role: "assistant"` (it's a response to the user's message)
 - `content: "{error description}"` (the specific error text)
 - `metadata.stop_reason: "error"`
@@ -299,15 +300,15 @@ The error is rendered as a `Message` object with:
 
 **Error type to display copy mapping:**
 
-| Error Type                     | Error Bubble Heading | Error Bubble Body                                                                               | Actions                  |
-| ------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
-| `context_length_exceeded`      | Generation failed     | Context length exceeded. The conversation is too long for this model's context window.          | Retry · Switch provider  |
-| `authentication_failed`        | Generation failed     | Authentication failed. Check that your API key is correct in Settings.                          | Retry · Switch provider  |
-| `network_error`                | Generation failed     | Network error. Check your internet connection and try again.                                    | Retry                    |
-| `rate_limited`                 | Generation failed     | Rate limited. You've hit the provider's usage limit. Wait a moment and try again.               | Retry · Switch provider  |
-| `provider_error` (generic)     | Generation failed     | The provider returned an error: {error_detail}.                                                | Retry · Switch provider  |
-| `no_provider_configured`       | Generation failed     | No provider configured. Select a provider and model from the header.                            | Switch provider          |
-| `no_api_key`                   | Generation failed     | No API key set for this provider. Add your key in Settings.                                     | Switch provider          |
+| Error Type                 | Error Bubble Heading | Error Bubble Body                                                                      | Actions                 |
+| -------------------------- | -------------------- | -------------------------------------------------------------------------------------- | ----------------------- |
+| `context_length_exceeded`  | Generation failed    | Context length exceeded. The conversation is too long for this model's context window. | Retry · Switch provider |
+| `authentication_failed`    | Generation failed    | Authentication failed. Check that your API key is correct in Settings.                 | Retry · Switch provider |
+| `network_error`            | Generation failed    | Network error. Check your internet connection and try again.                           | Retry                   |
+| `rate_limited`             | Generation failed    | Rate limited. You've hit the provider's usage limit. Wait a moment and try again.      | Retry · Switch provider |
+| `provider_error` (generic) | Generation failed    | The provider returned an error: {error_detail}.                                        | Retry · Switch provider |
+| `no_provider_configured`   | Generation failed    | No provider configured. Select a provider and model from the header.                   | Switch provider         |
+| `no_api_key`               | Generation failed    | No API key set for this provider. Add your key in Settings.                            | Switch provider         |
 
 **Error bubble is NOT dismissible** — it remains in the chat flow until the user takes action (retry, switch provider, or sends a new message which implicitly moves past it).
 
@@ -320,12 +321,12 @@ The error is rendered as a `Message` object with:
 
 On AI messages where `metadata.stop_reason` is not `"end"`:
 
-| Stop Reason   | Badge Text     | Badge Style                                                                |
-| ------------- | -------------- | -------------------------------------------------------------------------- |
-| `cancelled`   | "Stopped"      | `bg-(--color-warning)/20 text-(--color-warning) text-[10px] font-medium rounded-(--radius-sm) px-1.5 py-0.5` |
-| `length`      | "Max tokens"   | `bg-(--color-warning)/20 text-(--color-warning) text-[10px] font-medium rounded-(--radius-sm) px-1.5 py-0.5` |
-| `end`         | (no badge)     | Normal completion, no badge shown                                          |
-| `error`       | (error bubble) | See error bubble styling above — not a badge, full error rendering        |
+| Stop Reason | Badge Text     | Badge Style                                                                                                  |
+| ----------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `cancelled` | "Stopped"      | `bg-(--color-warning)/20 text-(--color-warning) text-[10px] font-medium rounded-(--radius-sm) px-1.5 py-0.5` |
+| `length`    | "Max tokens"   | `bg-(--color-warning)/20 text-(--color-warning) text-[10px] font-medium rounded-(--radius-sm) px-1.5 py-0.5` |
+| `end`       | (no badge)     | Normal completion, no badge shown                                                                            |
+| `error`     | (error bubble) | See error bubble styling above — not a badge, full error rendering                                           |
 
 **Badge position:** Below the AI bubble, before the hover actions row. Only visible when `stop_reason !== "end"` and `stop_reason !== undefined`.
 
@@ -335,28 +336,28 @@ On AI messages where `metadata.stop_reason` is not `"end"`:
 
 ### New Patterns in Phase 5
 
-| Pattern                    | Trigger                                         | Behavior                                                                                                                                                   | Notes                                                                                         |
-| -------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Send message (real)**     | Enter / Ctrl+Enter in MessageInput              | User message created and saved to DB immediately (D-04). AI placeholder created in memory. `invoke('start_chat')` called with conversation_id + content. Channel listener begins. | Replaces mock streaming setTimeout loop. Input cleared and disabled during generation.        |
-| **Stop generation**        | Click Stop button in MessageInput               | `invoke('stop_generation')` called. Backend drops CancellationSender, stream stops. Partial AI response finalized with `stop_reason: "cancelled"`. `is_generating = false`. | Stop button already exists in MessageInput — behavior confirmed.                              |
-| **Regenerate last AI msg** | Click Regenerate icon on last AI MessageBubble  | Last AI message deleted from UI and DB. New AI placeholder created at same sort_order. `invoke('regenerate')` called. New stream begins with same provider/model (D-11, D-13). | Regenerate icon only visible on the **last** AI message. Conditional rendering based on message index + role. |
-| **Edit user message**      | Click Edit (Pencil) icon on user MessageBubble  | MessageBubble enters edit mode: bubble content replaced by textarea pre-filled with message text. Hover actions hidden. "Save & resend" + "Cancel" buttons shown below textarea. | Only on user messages (D-10). Edit icon hidden on AI messages.                                |
-| **Save & resend**          | Click "Save & resend" in edit mode              | Calls `app.editResend(messageId, newContent)`. All messages after the edited message are deleted from UI and DB (D-08). New AI placeholder created. Stream begins from edited point. | Truncation includes the old AI response to the edited message and any subsequent exchanges.   |
-| **Cancel edit**            | Click "Discard changes" or press Escape in edit mode | Edit mode exits. Original message text restored. No changes made.                                                                                          | Escape key also cancels edit.                                                                 |
-| **Retry after error**      | Click "Retry" link in error bubble              | Calls `app.regenerate()`. Same as Regenerate — deletes error message, creates new AI placeholder, starts new stream.                                      | Uses same provider/model.                                                                     |
-| **Switch provider (error)** | Click "Switch provider" link in error bubble    | Opens ProviderModelSelector popover in ChatHeader (via DOM focus/click). Error message remains in chat until user sends again.                             | Focus the selector, let user pick. They then manually retry (send new message or regenerate). |
-| **Channel listener loop**  | `StreamChunk` events from Tauri Channel        | On `Token`: append to AI message content, update UI. On `Complete`: finalize message, save to DB, set `is_generating = false`. On `Error`: render inline error bubble. | Runs inside `app.startChat()` action.                                                         |
+| Pattern                     | Trigger                                              | Behavior                                                                                                                                                                             | Notes                                                                                                         |
+| --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **Send message (real)**     | Enter / Ctrl+Enter in MessageInput                   | User message created and saved to DB immediately (D-04). AI placeholder created in memory. `invoke('start_chat')` called with conversation_id + content. Channel listener begins.    | Replaces mock streaming setTimeout loop. Input cleared and disabled during generation.                        |
+| **Stop generation**         | Click Stop button in MessageInput                    | `invoke('stop_generation')` called. Backend drops CancellationSender, stream stops. Partial AI response finalized with `stop_reason: "cancelled"`. `is_generating = false`.          | Stop button already exists in MessageInput — behavior confirmed.                                              |
+| **Regenerate last AI msg**  | Click Regenerate icon on last AI MessageBubble       | Last AI message deleted from UI and DB. New AI placeholder created at same sort_order. `invoke('regenerate')` called. New stream begins with same provider/model (D-11, D-13).       | Regenerate icon only visible on the **last** AI message. Conditional rendering based on message index + role. |
+| **Edit user message**       | Click Edit (Pencil) icon on user MessageBubble       | MessageBubble enters edit mode: bubble content replaced by textarea pre-filled with message text. Hover actions hidden. "Save & resend" + "Cancel" buttons shown below textarea.     | Only on user messages (D-10). Edit icon hidden on AI messages.                                                |
+| **Save & resend**           | Click "Save & resend" in edit mode                   | Calls `app.editResend(messageId, newContent)`. All messages after the edited message are deleted from UI and DB (D-08). New AI placeholder created. Stream begins from edited point. | Truncation includes the old AI response to the edited message and any subsequent exchanges.                   |
+| **Cancel edit**             | Click "Discard changes" or press Escape in edit mode | Edit mode exits. Original message text restored. No changes made.                                                                                                                    | Escape key also cancels edit.                                                                                 |
+| **Retry after error**       | Click "Retry" link in error bubble                   | Calls `app.regenerate()`. Same as Regenerate — deletes error message, creates new AI placeholder, starts new stream.                                                                 | Uses same provider/model.                                                                                     |
+| **Switch provider (error)** | Click "Switch provider" link in error bubble         | Opens ProviderModelSelector popover in ChatHeader (via DOM focus/click). Error message remains in chat until user sends again.                                                       | Focus the selector, let user pick. They then manually retry (send new message or regenerate).                 |
+| **Channel listener loop**   | `StreamChunk` events from Tauri Channel              | On `Token`: append to AI message content, update UI. On `Complete`: finalize message, save to DB, set `is_generating = false`. On `Error`: render inline error bubble.               | Runs inside `app.startChat()` action.                                                                         |
 
 ### Conditional Hover Action Visibility
 
 The hover actions on MessageBubble change based on message role and position:
 
-| Action      | User Message | AI Message (last) | AI Message (not last) | Error Message |
-| ----------- | ------------- | ----------------- | --------------------- | ------------- |
-| Copy        | ✅            | ✅                | ✅                    | ✅            |
-| Edit        | ✅            | —                 | —                     | —             |
-| Regenerate  | —             | ✅                 | —                     | —             |
-| Delete      | ✅            | ✅                 | ✅                    | —             |
+| Action     | User Message | AI Message (last) | AI Message (not last) | Error Message |
+| ---------- | ------------ | ----------------- | --------------------- | ------------- |
+| Copy       | ✅           | ✅                | ✅                    | ✅            |
+| Edit       | ✅           | —                 | —                     | —             |
+| Regenerate | —            | ✅                | —                     | —             |
+| Delete     | ✅           | ✅                | ✅                    | —             |
 
 **"Last AI message"** is determined by: message is the most recent message in `app.messages` where `role === "assistant"` and `stop_reason !== "error"`.
 
@@ -384,16 +385,16 @@ When edit mode is active on a user MessageBubble:
 
 ### Deferred Interactions (Not in Phase 5)
 
-| Pattern                         | Deferred To | Reason                                                     |
-| ------------------------------- | ----------- | ---------------------------------------------------------- |
-| Message branching / forking     | Phase 8     | Branch navigation UI is a separate phase                   |
-| Full-text search across messages| Phase 8     | FTS5 integration                                           |
-| Per-conversation gen param overrides | Phase 6 | Only provider-level defaults in Phase 5                   |
-| Preset selection in chat         | Phase 6     | Preset picker deferred to Smart Prompts                   |
-| Markdown rendering              | Phase 7     | Current naive italic-asterisk rendering continues          |
-| Persona in system prompt        | Phase 6     | Minimal prompt in Phase 5 (D-05)                           |
-| Lorebook in prompt              | Phase 9     | Not yet implemented                                        |
-| Delete message (functional)     | Phase 8     | Delete button exists but behavior TBD with branching       |
+| Pattern                              | Deferred To | Reason                                               |
+| ------------------------------------ | ----------- | ---------------------------------------------------- |
+| Message branching / forking          | Phase 8     | Branch navigation UI is a separate phase             |
+| Full-text search across messages     | Phase 8     | FTS5 integration                                     |
+| Per-conversation gen param overrides | Phase 6     | Only provider-level defaults in Phase 5              |
+| Preset selection in chat             | Phase 6     | Preset picker deferred to Smart Prompts              |
+| Markdown rendering                   | Phase 7     | Current naive italic-asterisk rendering continues    |
+| Persona in system prompt             | Phase 6     | Minimal prompt in Phase 5 (D-05)                     |
+| Lorebook in prompt                   | Phase 9     | Not yet implemented                                  |
+| Delete message (functional)          | Phase 8     | Delete button exists but behavior TBD with branching |
 
 ---
 
@@ -401,48 +402,48 @@ When edit mode is active on a user MessageBubble:
 
 ### CTAs and Button Labels
 
-| Element                           | Copy                | Context                                          |
-| --------------------------------- | ------------------- | ------------------------------------------------ |
-| Stop generation button            | Square icon only    | In MessageInput, `aria-label="Stop generation"`  |
-| Send button                       | Send icon only      | In MessageInput, `aria-label="Send"`             |
-| Edit hover action                 | Pencil icon only    | `aria-label="Edit"`                              |
-| Regenerate hover action           | Refresh icon only   | `aria-label="Regenerate"`                        |
-| Copy hover action                 | Copy icon only      | `aria-label="Copy"`                              |
-| Delete hover action               | Trash icon only     | `aria-label="Delete"`                            |
-| Save & resend (edit mode)        | "Save & resend"    | Primary button in edit action row                |
-| Cancel (edit mode)                | "Discard changes"  | Ghost button in edit action row                  |
-| Saving… (edit mode)               | "Saving…"           | During edit/resend async operation               |
-| Retry link (error bubble)         | "Retry"             | Accent-colored link in error bubble              |
-| Switch provider link (error bubble)| "Switch provider"  | Accent-colored link in error bubble              |
+| Element                             | Copy              | Context                                         |
+| ----------------------------------- | ----------------- | ----------------------------------------------- |
+| Stop generation button              | Square icon only  | In MessageInput, `aria-label="Stop generation"` |
+| Send button                         | Send icon only    | In MessageInput, `aria-label="Send"`            |
+| Edit hover action                   | Pencil icon only  | `aria-label="Edit"`                             |
+| Regenerate hover action             | Refresh icon only | `aria-label="Regenerate"`                       |
+| Copy hover action                   | Copy icon only    | `aria-label="Copy"`                             |
+| Delete hover action                 | Trash icon only   | `aria-label="Delete"`                           |
+| Save & resend (edit mode)           | "Save & resend"   | Primary button in edit action row               |
+| Cancel (edit mode)                  | "Discard changes" | Ghost button in edit action row                 |
+| Saving… (edit mode)                 | "Saving…"         | During edit/resend async operation              |
+| Retry link (error bubble)           | "Retry"           | Accent-colored link in error bubble             |
+| Switch provider link (error bubble) | "Switch provider" | Accent-colored link in error bubble             |
 
 ### Empty States
 
-| Element                    | Copy                                  | Context                  |
-| -------------------------- | ------------------------------------- | ------------------------ |
-| No messages in conversation| "No messages yet. Send something to begin." | Existing — unchanged |
+| Element                     | Copy                                        | Context              |
+| --------------------------- | ------------------------------------------- | -------------------- |
+| No messages in conversation | "No messages yet. Send something to begin." | Existing — unchanged |
 
 ### Error States
 
-| Element                              | Copy                                                                      | Context                           |
-| ------------------------------------ | ------------------------------------------------------------------------- | --------------------------------- |
-| Error bubble heading                 | "Generation failed"                                                       | All generation error types        |
-| Context length exceeded body         | "Context length exceeded. The conversation is too long for this model's context window." | `context_length_exceeded`     |
-| Authentication failed body           | "Authentication failed. Check that your API key is correct in Settings."   | `authentication_failed`           |
-| Network error body                   | "Network error. Check your internet connection and try again."            | `network_error`                   |
-| Rate limited body                    | "Rate limited. You've hit the provider's usage limit. Wait a moment and try again." | `rate_limited`           |
-| Provider error body                  | "The provider returned an error: {error_detail}."                         | `provider_error` (generic)        |
-| No provider configured body          | "No provider configured. Select a provider and model from the header."    | `no_provider_configured`          |
-| No API key body                      | "No API key set for this provider. Add your key in Settings."             | `no_api_key`                      |
-| Stop reason badge "cancelled"        | "Stopped"                                                                 | User stopped generation            |
-| Stop reason badge "length"           | "Max tokens"                                                              | Model hit max_tokens limit         |
+| Element                       | Copy                                                                                     | Context                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------- | -------------------------- |
+| Error bubble heading          | "Generation failed"                                                                      | All generation error types |
+| Context length exceeded body  | "Context length exceeded. The conversation is too long for this model's context window." | `context_length_exceeded`  |
+| Authentication failed body    | "Authentication failed. Check that your API key is correct in Settings."                 | `authentication_failed`    |
+| Network error body            | "Network error. Check your internet connection and try again."                           | `network_error`            |
+| Rate limited body             | "Rate limited. You've hit the provider's usage limit. Wait a moment and try again."      | `rate_limited`             |
+| Provider error body           | "The provider returned an error: {error_detail}."                                        | `provider_error` (generic) |
+| No provider configured body   | "No provider configured. Select a provider and model from the header."                   | `no_provider_configured`   |
+| No API key body               | "No API key set for this provider. Add your key in Settings."                            | `no_api_key`               |
+| Stop reason badge "cancelled" | "Stopped"                                                                                | User stopped generation    |
+| Stop reason badge "length"    | "Max tokens"                                                                             | Model hit max_tokens limit |
 
 ### Destructive Actions
 
-| Action           | Confirmation | Rationale                                                                                              |
-| ---------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
-| Edit & resend    | None         | Truncates subsequent messages (D-08). "Save & resend" label communicates the destructive nature.      |
-| Regenerate       | None         | Replaces last AI message in-place (D-11). Non-destructive from user perspective — old response replaced. |
-| Stop generation  | None         | Immediately stops stream. Partial response preserved. User expectation is immediate stop.              |
+| Action          | Confirmation | Rationale                                                                                                |
+| --------------- | ------------ | -------------------------------------------------------------------------------------------------------- |
+| Edit & resend   | None         | Truncates subsequent messages (D-08). "Save & resend" label communicates the destructive nature.         |
+| Regenerate      | None         | Replaces last AI message in-place (D-11). Non-destructive from user perspective — old response replaced. |
+| Stop generation | None         | Immediately stops stream. Partial response preserved. User expectation is immediate stop.                |
 
 No confirmation dialogs in Phase 5. All destructive actions are self-explanatory from their labels.
 

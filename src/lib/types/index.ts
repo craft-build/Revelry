@@ -123,7 +123,10 @@ export interface MessageMetadata {
  * Tagged with `event` field, payload in `data` field. */
 export type StreamChunk =
   | { event: "token"; data: { content: string } }
-  | { event: "complete"; data: { messageId: string; content: string; stopReason: string } }
+  | {
+      event: "complete";
+      data: { messageId: string; content: string; stopReason: string };
+    }
   | { event: "error"; data: { error: string; errorType: string } };
 
 export interface Conversation {

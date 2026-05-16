@@ -404,15 +404,23 @@ mod tests {
             load_lorebooks_for_character(&conn, &character.id).expect("Load should succeed");
         assert_eq!(loaded.len(), 2, "Should have 2 assigned lorebooks");
         // Ordered by sort_order: lb2 (0) then lb1 (1)
-        assert_eq!(loaded[0].id, lb2.id, "First lorebook should be lb2 (sort 0)");
-        assert_eq!(loaded[1].id, lb1.id, "Second lorebook should be lb1 (sort 1)");
+        assert_eq!(
+            loaded[0].id, lb2.id,
+            "First lorebook should be lb2 (sort 0)"
+        );
+        assert_eq!(
+            loaded[1].id, lb1.id,
+            "Second lorebook should be lb1 (sort 1)"
+        );
 
         // Unassigned character should return empty
         let other = CharacterCardV2::new("Other Character".to_string());
         crate::db::characters::insert_character(&conn, &other)
             .expect("Insert other character should succeed");
-        let empty =
-            load_lorebooks_for_character(&conn, &other.id).expect("Load should succeed");
-        assert!(empty.is_empty(), "Unassigned character should have no lorebooks");
+        let empty = load_lorebooks_for_character(&conn, &other.id).expect("Load should succeed");
+        assert!(
+            empty.is_empty(),
+            "Unassigned character should have no lorebooks"
+        );
     }
 }

@@ -41,6 +41,7 @@ import {
   regenerate as apiRegenerate,
   editAndResend as apiEditAndResend,
   deleteMessage as apiDeleteMessage,
+  saveMessage as apiSaveMessage,
 } from "$lib/data/api";
 
 /**
@@ -239,12 +240,25 @@ class AppState {
     if (done) this.is_generating = false;
   }
 
+  /** Update a conversation's last_message_preview and updated_at in the sidebar list. */
+  updateConversationPreview(conversationId: string, content: string) {
+    const preview = content.slice(0, 100);
+    const now = new Date().toISOString();
+    this.conversations = this.conversations.map((c) =>
+      c.id === conversationId
+        ? { ...c, last_message_preview: preview, updated_at: now }
+        : c,
+    );
+  }
+
   toggleSidebar() {
     this.sidebar_open = !this.sidebar_open;
   }
 
   async switchPersona(persona_id: string) {
     if (!this.active_conversation_id) return;
+    // Save previous value for rollback
+    const prevPersonaId = this.active_conversation?.creator_persona_id;
     // Optimistically update local state
     this.conversations = this.conversations.map((c) =>
       c.id === this.active_conversation_id
@@ -259,10 +273,10 @@ class AppState {
       );
     } catch (err) {
       console.error("Failed to persist persona switch:", err);
-      // Revert on failure
+      // Revert to previous value on failure
       this.conversations = this.conversations.map((c) =>
         c.id === this.active_conversation_id
-          ? { ...c, creator_persona_id: undefined }
+          ? { ...c, creator_persona_id: prevPersonaId }
           : c,
       );
     }
@@ -773,6 +787,17 @@ class AppState {
                 }
               : m,
           );
+          // Persist the completed AI message to the database
+          const completedMsg = this.messages.find((m) => m.id === aiId);
+          if (completedMsg) {
+            apiSaveMessage(completedMsg).catch((err) =>
+              console.error("Failed to save AI message:", err),
+            );
+            this.updateConversationPreview(
+              completedMsg.conversation_id,
+              completedMsg.content,
+            );
+          }
           break;
         case "error":
           this.messages = this.messages.map((m) =>
@@ -800,6 +825,7 @@ class AppState {
         content,
         userMsg.id,
         userMsg.sort_order,
+        aiId,
         onEvent,
       );
     } catch (err) {
@@ -897,6 +923,17 @@ class AppState {
                 }
               : m,
           );
+          // Persist the regenerated AI message to the database
+          const regeneratedMsg = this.messages.find((m) => m.id === aiId);
+          if (regeneratedMsg) {
+            apiSaveMessage(regeneratedMsg).catch((err) =>
+              console.error("Failed to save regenerated AI message:", err),
+            );
+            this.updateConversationPreview(
+              regeneratedMsg.conversation_id,
+              regeneratedMsg.content,
+            );
+          }
           break;
         case "error":
           this.messages = this.messages.map((m) =>
@@ -919,7 +956,7 @@ class AppState {
     };
 
     try {
-      await apiRegenerate(this.active_conversation_id, onEvent);
+      await apiRegenerate(this.active_conversation_id, aiId, onEvent);
     } catch (err) {
       console.error("regenerate failed:", err);
       const errorContent =
@@ -953,6 +990,9 @@ class AppState {
     // Find the message and update its content locally
     const msg = this.messages.find((m) => m.id === messageId);
     if (!msg) return;
+
+    // Save state for rollback on failure
+    const prevMessages = [...this.messages];
 
     // Update content locally
     this.messages = this.messages.map((m) =>
@@ -1010,6 +1050,17 @@ class AppState {
                 }
               : m,
           );
+          // Persist the edited AI message to the database
+          const editedMsg = this.messages.find((m) => m.id === aiId);
+          if (editedMsg) {
+            apiSaveMessage(editedMsg).catch((err) =>
+              console.error("Failed to save edited AI message:", err),
+            );
+            this.updateConversationPreview(
+              editedMsg.conversation_id,
+              editedMsg.content,
+            );
+          }
           break;
         case "error":
           this.messages = this.messages.map((m) =>
@@ -1032,30 +1083,19 @@ class AppState {
     };
 
     try {
-      await apiEditAndResend(messageId, newContent, onEvent);
+      await apiEditAndResend(
+        messageId,
+        newContent,
+        this.active_conversation_id,
+        aiId,
+        onEvent,
+      );
     } catch (err) {
       console.error("editResend failed:", err);
-      const errorContent =
-        err instanceof Error
-          ? err.message
-          : typeof err === "string"
-            ? err
-            : "Edit & resend failed.";
-      this.messages = this.messages.map((m) =>
-        m.id === aiId
-          ? {
-              ...m,
-              content: errorContent,
-              is_streaming: false,
-              metadata: {
-                ...m.metadata,
-                stop_reason: "error" as const,
-                error_type: "provider_error",
-              },
-            }
-          : m,
-      );
+      // Rollback to previous state (removes AI placeholder too)
+      this.messages = prevMessages;
       this.is_generating = false;
+      throw err;
     }
   }
 }
