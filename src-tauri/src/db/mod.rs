@@ -94,6 +94,20 @@ pub enum DbCommand {
         message: Message,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
+    DeleteMessage {
+        id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    DeleteMessagesAfterSortOrder {
+        conversation_id: String,
+        sort_order: i32,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    UpdateMessageContent {
+        id: String,
+        content: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
 
     // Preset operations
     LoadPresets {
@@ -333,6 +347,30 @@ impl DbWorker {
             }
             DbCommand::SaveMessage { message, reply } => {
                 let result = conversations::save_message(conn, &message);
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteMessage { id, reply } => {
+                let result = conversations::delete_message(conn, &id);
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteMessagesAfterSortOrder {
+                conversation_id,
+                sort_order,
+                reply,
+            } => {
+                let result = conversations::delete_messages_after_sort_order(
+                    conn,
+                    &conversation_id,
+                    sort_order,
+                );
+                let _ = reply.send(result);
+            }
+            DbCommand::UpdateMessageContent {
+                id,
+                content,
+                reply,
+            } => {
+                let result = conversations::update_message_content(conn, &id, &content);
                 let _ = reply.send(result);
             }
             DbCommand::LoadPresets { reply } => {

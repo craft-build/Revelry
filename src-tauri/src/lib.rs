@@ -33,6 +33,9 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(db_worker)
+        .manage(commands::chat::CancelState {
+            token: std::sync::Mutex::new(None),
+        })
         .invoke_handler(tauri::generate_handler![
             commands::characters::get_characters,
             commands::characters::save_character,
@@ -71,6 +74,10 @@ pub fn run() {
             commands::providers::delete_api_key,
             commands::providers::check_keyring_available,
             commands::providers::update_conversation_provider,
+            commands::chat::start_chat,
+            commands::chat::stop_generation,
+            commands::chat::regenerate,
+            commands::chat::edit_and_resend,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

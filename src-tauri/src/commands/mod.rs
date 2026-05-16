@@ -1,5 +1,6 @@
 pub mod avatars;
 pub mod characters;
+pub mod chat;
 pub mod conversations;
 pub mod keywords;
 pub mod lorebooks;

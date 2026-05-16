@@ -114,6 +114,56 @@ pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
     Ok(())
 }
 
+/// Deletes a single message by ID.
+/// Used by regenerate to delete the last AI message before re-streaming.
+pub fn delete_message(conn: &Connection, id: &str) -> Result<()> {
+    conn.prepare_cached("DELETE FROM messages WHERE id = ?1")?
+        .execute(params![id])?;
+    Ok(())
+}
+
+/// Deletes all messages with sort_order greater than the given value.
+/// Used by edit/resend to truncate the conversation from the edit point.
+/// Also updates the conversation's last_message_preview to the latest remaining message.
+pub fn delete_messages_after_sort_order(
+    conn: &Connection,
+    conversation_id: &str,
+    sort_order: i32,
+) -> Result<()> {
+    conn.prepare_cached(
+        "DELETE FROM messages WHERE conversation_id = ?1 AND sort_order > ?2",
+    )?
+    .execute(params![conversation_id, sort_order])?;
+
+    // Update conversation's last_message_preview to the latest remaining message
+    let now = Utc::now();
+    let preview: Option<String> = conn
+        .prepare_cached(
+            "SELECT content FROM messages WHERE conversation_id = ?1 ORDER BY sort_order DESC LIMIT 1",
+        )?
+        .query_row(params![conversation_id], |row| row.get(0))
+        .ok();
+
+    conn.prepare_cached(
+        "UPDATE conversations SET updated_at = ?1, last_message_preview = ?2 WHERE id = ?3",
+    )?
+    .execute(params![
+        now.to_rfc3339(),
+        preview.unwrap_or_default(),
+        conversation_id
+    ])?;
+
+    Ok(())
+}
+
+/// Updates a message's content by ID.
+/// Used by edit/resend to update the edited message before re-streaming.
+pub fn update_message_content(conn: &Connection, id: &str, content: &str) -> Result<()> {
+    conn.prepare_cached("UPDATE messages SET content = ?1 WHERE id = ?2")?
+        .execute(params![content, id])?;
+    Ok(())
+}
+
 /// Searches conversations using SQL LIKE on title and last_message_preview.
 pub fn search_conversations(conn: &Connection, query: &str) -> Result<Vec<Conversation>> {
     let pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
@@ -403,6 +453,117 @@ mod tests {
 
         let results = search_conversations(&conn, "nonexistent").expect("Search should succeed");
         assert!(results.is_empty(), "Should find no conversations");
+    }
+
+    #[test]
+    fn test_delete_message() {
+        let conn = setup_test_db();
+        let character = make_test_character("Aria");
+        insert_character(&conn, &character).expect("Insert character should succeed");
+
+        let conversation =
+            start_conversation(&conn, &character.id).expect("Start conversation should succeed");
+
+        // Save a user message
+        let user_msg = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "Hello".to_string(),
+            1,
+        );
+        save_message(&conn, &user_msg).expect("Save should succeed");
+
+        // Verify it was saved
+        let messages = load_messages(&conn, &conversation.id).expect("Load should succeed");
+        assert_eq!(messages.len(), 2); // initial + user
+
+        // Delete the user message
+        delete_message(&conn, &user_msg.id).expect("Delete should succeed");
+
+        // Verify it was deleted
+        let messages = load_messages(&conn, &conversation.id).expect("Load should succeed");
+        assert_eq!(messages.len(), 1); // only initial remains
+        assert_eq!(messages[0].role, MessageRole::Assistant);
+    }
+
+    #[test]
+    fn test_delete_messages_after_sort_order() {
+        let conn = setup_test_db();
+        let character = make_test_character("Aria");
+        insert_character(&conn, &character).expect("Insert character should succeed");
+
+        let conversation =
+            start_conversation(&conn, &character.id).expect("Start conversation should succeed");
+
+        // Save several messages
+        let user_msg = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "Hello".to_string(),
+            1,
+        );
+        save_message(&conn, &user_msg).expect("Save should succeed");
+
+        let ai_msg = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::Assistant,
+            "Hi there!".to_string(),
+            2,
+        );
+        save_message(&conn, &ai_msg).expect("Save should succeed");
+
+        let user_msg2 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "How are you?".to_string(),
+            3,
+        );
+        save_message(&conn, &user_msg2).expect("Save should succeed");
+
+        // Verify 4 messages total (initial + 3)
+        let messages = load_messages(&conn, &conversation.id).expect("Load should succeed");
+        assert_eq!(messages.len(), 4);
+
+        // Delete messages after sort_order 1 (the user message at position 1)
+        delete_messages_after_sort_order(&conn, &conversation.id, 1)
+            .expect("Delete should succeed");
+
+        // Verify only initial + user_msg remain (sort_order 0 and 1)
+        let messages = load_messages(&conn, &conversation.id).expect("Load should succeed");
+        assert_eq!(messages.len(), 2);
+        assert_eq!(messages[0].sort_order, 0);
+        assert_eq!(messages[1].sort_order, 1);
+
+        // Verify conversation preview was updated to the latest remaining message
+        let convs = load_conversations(&conn).expect("Load should succeed");
+        let conv = convs.iter().find(|c| c.id == conversation.id).unwrap();
+        assert_eq!(conv.last_message_preview, "Hello");
+    }
+
+    #[test]
+    fn test_update_message_content() {
+        let conn = setup_test_db();
+        let character = make_test_character("Aria");
+        insert_character(&conn, &character).expect("Insert character should succeed");
+
+        let conversation =
+            start_conversation(&conn, &character.id).expect("Start conversation should succeed");
+
+        let user_msg = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "Original content".to_string(),
+            1,
+        );
+        save_message(&conn, &user_msg).expect("Save should succeed");
+
+        // Update the content
+        update_message_content(&conn, &user_msg.id, "Updated content").expect("Update should succeed");
+
+        // Verify the content was updated
+        let messages = load_messages(&conn, &conversation.id).expect("Load should succeed");
+        let updated = messages.iter().find(|m| m.id == user_msg.id).unwrap();
+        assert_eq!(updated.content, "Updated content");
     }
 
     #[test]
