@@ -36,16 +36,16 @@ created: 2026-05-16
 
 **Phase 7 additions:**
 
-| Token                  | Value             | Usage                                                           |
-| ---------------------- | ----------------- | --------------------------------------------------------------- |
-| `prose-body-gap`       | 16px (space-y-4)  | Vertical gap between block-level markdown elements (paragraphs, lists, etc.) |
-| `prose-heading-gap`    | 8px (mt-2)        | Gap between heading and following paragraph                     |
-| `code-block-pad`       | 16px (p-4)        | Padding inside fenced code blocks                               |
-| `code-block-radius`    | 0.75rem           | Border radius for code block containers (matches `--radius-lg`) |
-| `inline-code-pad`      | 2px 6px (px-1.5 py-0.5) | Padding for inline `code` elements                        |
-| `table-cell-pad`       | 8px 12px (px-3 py-2) | Padding for GFM table cells                               |
-| `blockquote-border`    | 3px (border-l-3)  | Left border width for blockquotes                               |
-| `blockquote-pad`       | 8px 16px (pl-4 py-2) | Left padding + vertical padding for blockquotes             |
+| Token               | Value                   | Usage                                                                        |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------- |
+| `prose-body-gap`    | 16px (space-y-4)        | Vertical gap between block-level markdown elements (paragraphs, lists, etc.) |
+| `prose-heading-gap` | 8px (mt-2)              | Gap between heading and following paragraph                                  |
+| `code-block-pad`    | 16px (p-4)              | Padding inside fenced code blocks                                            |
+| `code-block-radius` | 0.75rem                 | Border radius for code block containers (matches `--radius-lg`)              |
+| `inline-code-pad`   | 2px 6px (px-1.5 py-0.5) | Padding for inline `code` elements                                           |
+| `table-cell-pad`    | 8px 12px (px-3 py-2)    | Padding for GFM table cells                                                  |
+| `blockquote-border` | 3px (border-l-3)        | Left border width for blockquotes                                            |
+| `blockquote-pad`    | 8px 16px (pl-4 py-2)    | Left padding + vertical padding for blockquotes                              |
 
 All new spacing uses existing Tailwind token values. No custom spacing values introduced.
 
@@ -70,34 +70,34 @@ Exceptions: none
 
 **Phase 7 role breakdown — markdown prose typography:**
 
-| Element                         | Size    | Weight | Line Height | Font Family  | Notes                                  |
-| ------------------------------- | ------- | ------ | ----------- | ------------ | -------------------------------------- |
-| Markdown body text (paragraphs) | 15px    | 400    | 1.75        | Geist sans   | Slightly taller line-height than plain bubble for prose readability |
-| Markdown h1                     | 24px    | 600    | 1.2         | Geist sans   | Top margin: 24px; first-child: no margin |
-| Markdown h2                     | 20px    | 600    | 1.25        | Geist sans   | Top margin: 20px; first-child: no margin |
-| Markdown h3                     | 16px    | 600    | 1.3         | Geist sans   | Top margin: 16px; first-child: no margin |
+| Element                         | Size                                                                                           | Weight | Line Height | Font Family | Notes                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- | ------ | ----------- | ----------- | ------------------------------------------------------------------- |
+| Markdown body text (paragraphs) | 15px                                                                                           | 400    | 1.75        | Geist sans  | Slightly taller line-height than plain bubble for prose readability |
+| Markdown h1                     | 24px                                                                                           | 600    | 1.2         | Geist sans  | Top margin: 24px; first-child: no margin                            |
+| Markdown h2                     | 20px                                                                                           | 600    | 1.25        | Geist sans  | Top margin: 20px; first-child: no margin                            |
+| Markdown h3                     | 16px                                                                                           | 600    | 1.3         | Geist sans  | Top margin: 16px; first-child: no margin                            |
 | Markdown h4–h6                  | Not styled separately — h3 is the deepest heading rendered. h4+ render as bold paragraph text. |
-| Markdown strong                 | 15px    | 600    | 1.75        | Geist sans   | Inherits parent size/line-height        |
-| Markdown em                     | 15px    | 400    | 1.75        | Geist sans   | `text-(--color-muted)` per D-05 narration styling |
-| Markdown inline code            | 13px    | 400    | 1.75        | Geist Mono   | Slightly smaller than body; monospace   |
-| Markdown fenced code block      | 13px    | 400    | 1.5         | Geist Mono   | Shiki-highlighted                       |
-| Markdown blockquote             | 15px    | 400    | 1.75        | Geist sans   | Muted foreground, left accent border    |
-| Markdown list items (ul/ol)     | 15px    | 400    | 1.75        | Geist sans   | Left padding: 24px for nesting          |
-| Markdown GFM table              | 14px    | 400    | 1.5         | Geist sans   | Slightly compact for tabular data       |
-| Markdown GFM task list checkbox | 14px    | —      | —           | —            | Native checkbox, accent-colored when checked |
-| Markdown link                   | 15px    | 400    | 1.75        | Geist sans   | `text-(--color-accent) hover:underline` |
-| Markdown horizontal rule        | —       | —      | —           | —            | `border-(--color-border)` 1px line      |
-| Code block language label       | 12px    | 400    | 1.0         | Geist sans   | Top-right of code block, `text-(--color-subtle)` uppercase |
+| Markdown strong                 | 15px                                                                                           | 600    | 1.75        | Geist sans  | Inherits parent size/line-height                                    |
+| Markdown em                     | 15px                                                                                           | 400    | 1.75        | Geist sans  | `text-(--color-muted)` per D-05 narration styling                   |
+| Markdown inline code            | 13px                                                                                           | 400    | 1.75        | Geist Mono  | Slightly smaller than body; monospace                               |
+| Markdown fenced code block      | 13px                                                                                           | 400    | 1.5         | Geist Mono  | Shiki-highlighted                                                   |
+| Markdown blockquote             | 15px                                                                                           | 400    | 1.75        | Geist sans  | Muted foreground, left accent border                                |
+| Markdown list items (ul/ol)     | 15px                                                                                           | 400    | 1.75        | Geist sans  | Left padding: 24px for nesting                                      |
+| Markdown GFM table              | 14px                                                                                           | 400    | 1.5         | Geist sans  | Slightly compact for tabular data                                   |
+| Markdown GFM task list checkbox | 14px                                                                                           | —      | —           | —           | Native checkbox, accent-colored when checked                        |
+| Markdown link                   | 15px                                                                                           | 400    | 1.75        | Geist sans  | `text-(--color-accent) hover:underline`                             |
+| Markdown horizontal rule        | —                                                                                              | —      | —           | —           | `border-(--color-border)` 1px line                                  |
+| Code block language label       | 12px                                                                                           | 400    | 1.0         | Geist sans  | Top-right of code block, `text-(--color-subtle)` uppercase          |
 
 **Phase 7 role breakdown — card import/export typography:**
 
-| Element                          | Size    | Weight | Font Family | Notes                                   |
-| -------------------------------- | ------- | ------ | ----------- | --------------------------------------- |
-| "Import card" button label       | 12px    | 500    | Geist sans  | Inherited from Button secondary variant  |
-| "Export" kebab menu item label   | 14px    | 400    | Geist sans  | Inherited from KebabMenuItem pattern     |
-| Import error dialog heading      | 18px    | 600    | Geist sans  | Inherited from Dialog title pattern      |
-| Import error dialog body         | 14px    | 400    | Geist sans  | Standard dialog body size                |
-| Import error detail text         | 12px    | 400    | Geist Mono  | Monospace for technical error details    |
+| Element                        | Size | Weight | Font Family | Notes                                   |
+| ------------------------------ | ---- | ------ | ----------- | --------------------------------------- |
+| "Import card" button label     | 12px | 500    | Geist sans  | Inherited from Button secondary variant |
+| "Export" kebab menu item label | 14px | 400    | Geist sans  | Inherited from KebabMenuItem pattern    |
+| Import error dialog heading    | 18px | 600    | Geist sans  | Inherited from Dialog title pattern     |
+| Import error dialog body       | 14px | 400    | Geist sans  | Standard dialog body size               |
+| Import error detail text       | 12px | 400    | Geist Mono  | Monospace for technical error details   |
 
 ---
 
@@ -109,34 +109,34 @@ All colors defined as OKLCH values in `src/app.css` @theme block. Dark theme onl
 
 **Phase 7 markdown prose colors:**
 
-| Element                    | Color Token                    | Usage                                        |
-| -------------------------- | ------------------------------ | -------------------------------------------- |
-| Markdown body text         | `--color-foreground`           | Default prose text                            |
-| Markdown em / italic       | `--color-muted`                | Muted text for narration (D-05)              |
-| Markdown strong            | `--color-foreground`           | Bold text uses normal foreground, weight 600 |
-| Markdown link              | `--color-accent`               | Links are accent-colored                     |
-| Markdown inline code bg    | `--color-surface-elevated`     | Background for `code` elements               |
-| Markdown inline code text  | `--color-accent`               | Monospace inline code is accent-tinted       |
-| Markdown fenced code bg    | `--color-surface`              | Dark background for code blocks              |
-| Markdown fenced code border| `--color-border`               | Border around code block container           |
-| Markdown blockquote border | `--color-border-strong`        | Left border on blockquotes                   |
-| Markdown blockquote text   | `--color-muted`                | Quoted text is visually recessed             |
-| Markdown HR                | `--color-border`               | Horizontal rule color                        |
-| Markdown table header bg   | `--color-surface-elevated`     | Header row background in GFM tables          |
-| Markdown table border      | `--color-border`               | Table cell borders                           |
-| Markdown table header text | `--color-foreground`           | Header row text, weight 600                  |
-| Code language label        | `--color-subtle`               | Language indicator in top-right of code block |
-| Shiki line number gutter   | `--color-subtle`               | Line numbers (if displayed)                  |
+| Element                     | Color Token                | Usage                                         |
+| --------------------------- | -------------------------- | --------------------------------------------- |
+| Markdown body text          | `--color-foreground`       | Default prose text                            |
+| Markdown em / italic        | `--color-muted`            | Muted text for narration (D-05)               |
+| Markdown strong             | `--color-foreground`       | Bold text uses normal foreground, weight 600  |
+| Markdown link               | `--color-accent`           | Links are accent-colored                      |
+| Markdown inline code bg     | `--color-surface-elevated` | Background for `code` elements                |
+| Markdown inline code text   | `--color-accent`           | Monospace inline code is accent-tinted        |
+| Markdown fenced code bg     | `--color-surface`          | Dark background for code blocks               |
+| Markdown fenced code border | `--color-border`           | Border around code block container            |
+| Markdown blockquote border  | `--color-border-strong`    | Left border on blockquotes                    |
+| Markdown blockquote text    | `--color-muted`            | Quoted text is visually recessed              |
+| Markdown HR                 | `--color-border`           | Horizontal rule color                         |
+| Markdown table header bg    | `--color-surface-elevated` | Header row background in GFM tables           |
+| Markdown table border       | `--color-border`           | Table cell borders                            |
+| Markdown table header text  | `--color-foreground`       | Header row text, weight 600                   |
+| Code language label         | `--color-subtle`           | Language indicator in top-right of code block |
+| Shiki line number gutter    | `--color-subtle`           | Line numbers (if displayed)                   |
 
 **Phase 7 card import/export colors:**
 
-| Element                     | Color Token              | Usage                                       |
-| --------------------------- | ------------------------ | ------------------------------------------- |
-| Import error border         | `--color-destructive/20` | Error dialog border                         |
-| Import error bg             | `--color-destructive/10` | Error dialog highlight area                 |
-| Import error icon           | `--color-destructive`    | AlertTriangle icon in error dialog          |
-| Export loading spinner      | `--color-accent`         | Spinner while generating PNG                |
-| Import loading spinner      | `--color-accent`         | Spinner while parsing card file             |
+| Element                | Color Token              | Usage                              |
+| ---------------------- | ------------------------ | ---------------------------------- |
+| Import error border    | `--color-destructive/20` | Error dialog border                |
+| Import error bg        | `--color-destructive/10` | Error dialog highlight area        |
+| Import error icon      | `--color-destructive`    | AlertTriangle icon in error dialog |
+| Export loading spinner | `--color-accent`         | Spinner while generating PNG       |
+| Import loading spinner | `--color-accent`         | Spinner while parsing card file    |
 
 **Accent reserved for (updated list — adds Phase 7 items):**
 
@@ -153,12 +153,12 @@ All Phase 1–6 accent reservations carry forward. Phase 7 adds:
 
 ### CTAs and Button Labels
 
-| Element                          | Copy              | Context                                         |
-| -------------------------------- | ----------------- | ----------------------------------------------- |
-| "Import card" button             | "Import card"     | Characters library header, `Upload` icon prefix |
-| "Export" kebab menu item         | "Export"          | CharacterCard kebab menu, `Download` icon prefix|
-| Import error dialog dismiss      | "Close"           | Error dialog close button                       |
-| Import error dialog title        | "Import failed"   | Error dialog heading                            |
+| Element                     | Copy            | Context                                          |
+| --------------------------- | --------------- | ------------------------------------------------ |
+| "Import card" button        | "Import card"   | Characters library header, `Upload` icon prefix  |
+| "Export" kebab menu item    | "Export"        | CharacterCard kebab menu, `Download` icon prefix |
+| Import error dialog dismiss | "Close"         | Error dialog close button                        |
+| Import error dialog title   | "Import failed" | Error dialog heading                             |
 
 ### Empty States
 
@@ -170,14 +170,14 @@ No new empty states. The existing character library empty state ("No characters 
 
 When card import fails, a modal error dialog shows the specific error:
 
-| Error Condition              | Heading         | Body                                                                             |
-| ---------------------------- | --------------- | -------------------------------------------------------------------------------- |
-| Missing `chara` tEXt chunk   | Import failed   | "This PNG file does not contain a character card. Only TavernAI V2 format is supported." |
-| Invalid JSON in card data    | Import failed   | "The character card data is corrupted or invalid. The file may be damaged."      |
-| V1 format detected           | Import failed   | "TavernAI V1 cards are not supported. Please use a V2 format card."              |
-| File too large (>10MB)       | Import failed   | "The file is too large to import. Maximum size is 10 MB."                        |
-| Unsupported file format      | Import failed   | "Unsupported file format. Please use a PNG file with an embedded character card."|
-| Unknown / generic error      | Import failed   | "Could not read the character card: {error detail}"                              |
+| Error Condition            | Heading       | Body                                                                                     |
+| -------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
+| Missing `chara` tEXt chunk | Import failed | "This PNG file does not contain a character card. Only TavernAI V2 format is supported." |
+| Invalid JSON in card data  | Import failed | "The character card data is corrupted or invalid. The file may be damaged."              |
+| V1 format detected         | Import failed | "TavernAI V1 cards are not supported. Please use a V2 format card."                      |
+| File too large (>10MB)     | Import failed | "The file is too large to import. Maximum size is 10 MB."                                |
+| Unsupported file format    | Import failed | "Unsupported file format. Please use a PNG file with an embedded character card."        |
+| Unknown / generic error    | Import failed | "Could not read the character card: {error detail}"                                      |
 
 **Error dialog visual contract:**
 
@@ -210,21 +210,21 @@ None. All Phase 7 components use existing primitives.
 
 ### New Domain Components (`src/lib/components/`)
 
-| Component                         | Location                                        | Purpose                                                       |
-| --------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
-| `MarkdownRenderer.svelte`         | `src/lib/components/chat/MarkdownRenderer.svelte` | Renders sanitized GFM markdown HTML with Shiki code blocks  |
-| `ImportErrorDialog.svelte`        | `src/lib/components/characters/ImportErrorDialog.svelte` | Modal showing specific import error details (D-08)  |
+| Component                  | Location                                                 | Purpose                                                    |
+| -------------------------- | -------------------------------------------------------- | ---------------------------------------------------------- |
+| `MarkdownRenderer.svelte`  | `src/lib/components/chat/MarkdownRenderer.svelte`        | Renders sanitized GFM markdown HTML with Shiki code blocks |
+| `ImportErrorDialog.svelte` | `src/lib/components/characters/ImportErrorDialog.svelte` | Modal showing specific import error details (D-08)         |
 
 ### Modified Existing Components
 
-| Component                     | Change                    | What Changes                                                                                                                                                                                                                                                                                                 |
-| ----------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `MessageBubble.svelte`        | Replace naive rendering   | (1) Remove `renderInlineMarkdown()` function entirely. (2) Replace `{@html renderInlineMarkdown(message.content)}` with conditional rendering: when `message.is_streaming` → show raw text with streaming-caret (existing behavior); when streaming completes → render `<MarkdownRenderer content={message.content} />`. (3) Remove `whitespace-pre-wrap` from the rendered-markdown path (markdown handles its own whitespace). (4) Keep `whitespace-pre-wrap` for the streaming/raw-text path only. |
-| `characters/+page.svelte`     | Wire import button        | (1) Add onclick handler to existing "Import card" button: open native file picker via `tauri_plugin_dialog`, call backend `import_card` command, on success open `CharacterEditorDialog` in "create" mode pre-filled with parsed data (D-07), on error open `ImportErrorDialog` (D-08). (2) Add `import_error_open` state, `import_error_message` state. (3) Add `ImportErrorDialog` to the template. |
-| `CharacterCard.svelte`        | Add export kebab item     | (1) Add `onexport?: (id: string) => void` prop. (2) Add `Download` icon import from lucide. (3) Add `<KebabMenuItem>` between Edit and the separator: `<Download class="size-3.5" /> Export`. (4) Add `<KebabMenuSeparator />` before the destructive Delete item to group: Edit | Export — separator — Delete. |
-| `AppState` (`app.svelte.ts`)  | Import/export actions     | (1) Add `importCharacter(fileData)` action: calls backend `import_card`, returns parsed character data for editor pre-fill. (2) Add `exportCharacter(id)` action: calls backend `export_card`, opens native save dialog. (3) No new state fields — import result goes directly to editor. |
-| `api.ts`                      | New invoke wrappers       | Add `importCard(filePath: string)` and `exportCard(characterId: string, savePath: string)` wrappers.                                                                                                                                                                                                          |
-| `app.css`                     | Markdown prose styles     | Add `@layer components` block for `.prose-markdown` with GFM prose styling (paragraphs, headings, lists, tables, blockquotes, code blocks, horizontal rules). See § Custom Utilities below.                                                                                                                |
+| Component                    | Change                  | What Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `MessageBubble.svelte`       | Replace naive rendering | (1) Remove `renderInlineMarkdown()` function entirely. (2) Replace `{@html renderInlineMarkdown(message.content)}` with conditional rendering: when `message.is_streaming` → show raw text with streaming-caret (existing behavior); when streaming completes → render `<MarkdownRenderer content={message.content} />`. (3) Remove `whitespace-pre-wrap` from the rendered-markdown path (markdown handles its own whitespace). (4) Keep `whitespace-pre-wrap` for the streaming/raw-text path only. |
+| `characters/+page.svelte`    | Wire import button      | (1) Add onclick handler to existing "Import card" button: open native file picker via `tauri_plugin_dialog`, call backend `import_card` command, on success open `CharacterEditorDialog` in "create" mode pre-filled with parsed data (D-07), on error open `ImportErrorDialog` (D-08). (2) Add `import_error_open` state, `import_error_message` state. (3) Add `ImportErrorDialog` to the template.                                                                                                 |
+| `CharacterCard.svelte`       | Add export kebab item   | (1) Add `onexport?: (id: string) => void` prop. (2) Add `Download` icon import from lucide. (3) Add `<KebabMenuItem>` between Edit and the separator: `<Download class="size-3.5" /> Export`. (4) Add `<KebabMenuSeparator />` before the destructive Delete item to group: Edit                                                                                                                                                                                                                      | Export — separator — Delete. |
+| `AppState` (`app.svelte.ts`) | Import/export actions   | (1) Add `importCharacter(fileData)` action: calls backend `import_card`, returns parsed character data for editor pre-fill. (2) Add `exportCharacter(id)` action: calls backend `export_card`, opens native save dialog. (3) No new state fields — import result goes directly to editor.                                                                                                                                                                                                             |
+| `api.ts`                     | New invoke wrappers     | Add `importCard(filePath: string)` and `exportCard(characterId: string, savePath: string)` wrappers.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `app.css`                    | Markdown prose styles   | Add `@layer components` block for `.prose-markdown` with GFM prose styling (paragraphs, headings, lists, tables, blockquotes, code blocks, horizontal rules). See § Custom Utilities below.                                                                                                                                                                                                                                                                                                           |
 
 ### What Does NOT Change
 
@@ -243,40 +243,41 @@ None. All Phase 7 components use existing primitives.
 
 ### Markdown Render Timing (from D-02)
 
-| State             | Message Visual                                                  | Transition                                        |
-| ----------------- | --------------------------------------------------------------- | ------------------------------------------------- |
-| **Streaming**     | Raw text with `whitespace-pre-wrap`, streaming-caret `▍` suffix | Existing behavior — no change                     |
-| **Just completed**| Raw text visible for ~1 frame, then markdown renders            | Swap is fast — `marked.parse()` + DOMPurify is synchronous |
-| **Rendered**      | Full GFM markdown with Shiki-highlighted code blocks            | Stable state until message is edited              |
-| **Code highlight**| Code blocks render plaintext first, then Shiki applies async    | Brief flash possible — mitigated by Shiki preloading on app init |
+| State              | Message Visual                                                  | Transition                                                       |
+| ------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Streaming**      | Raw text with `whitespace-pre-wrap`, streaming-caret `▍` suffix | Existing behavior — no change                                    |
+| **Just completed** | Raw text visible for ~1 frame, then markdown renders            | Swap is fast — `marked.parse()` + DOMPurify is synchronous       |
+| **Rendered**       | Full GFM markdown with Shiki-highlighted code blocks            | Stable state until message is edited                             |
+| **Code highlight** | Code blocks render plaintext first, then Shiki applies async    | Brief flash possible — mitigated by Shiki preloading on app init |
 
 **No skeleton/placeholder during markdown render.** `marked.parse()` is synchronous and fast (< 5ms for typical AI responses). The swap from raw text to rendered markdown is effectively instantaneous.
 
 **Shiki lazy-loading:** Shiki's grammar files are loaded asynchronously. On first code block render, there may be a brief plaintext display before highlighting applies. Mitigated by:
+
 1. Preloading Shiki engine on app startup (in `+layout.svelte` `$effect`)
 2. Highlighting is applied in a `$effect` that runs after initial render
 3. Code blocks use the same `--color-surface` background in both states — only the text colors change
 
 ### Card Import States
 
-| State              | Visual                                                                                        |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| **Idle**           | "Import card" button in header — normal secondary variant                                      |
-| **File picking**   | Native Tauri file dialog open. App UI is accessible but button shows loading state            |
-| **Parsing**        | "Import card" button shows `Loader2` spinner, label changes to "Importing…"                    |
-| **Success**        | `CharacterEditorDialog` opens in "create" mode with imported fields pre-filled. Button resets. |
-| **Error**          | `ImportErrorDialog` opens with specific error message. Button resets.                         |
+| State            | Visual                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| **Idle**         | "Import card" button in header — normal secondary variant                                      |
+| **File picking** | Native Tauri file dialog open. App UI is accessible but button shows loading state             |
+| **Parsing**      | "Import card" button shows `Loader2` spinner, label changes to "Importing…"                    |
+| **Success**      | `CharacterEditorDialog` opens in "create" mode with imported fields pre-filled. Button resets. |
+| **Error**        | `ImportErrorDialog` opens with specific error message. Button resets.                          |
 
 ### Card Export States
 
-| State              | Visual                                                                                        |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| **Idle**           | "Export" item in CharacterCard kebab menu                                                      |
+| State              | Visual                                                                                                                                                                                                                |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Idle**           | "Export" item in CharacterCard kebab menu                                                                                                                                                                             |
 | **Generating PNG** | Kebab menu closes. No visible loading state (export is fast — < 500ms for typical cards). If the operation takes longer, the kebab menu re-opens with the Export item showing a `Loader2` spinner and disabled state. |
-| **Save dialog**    | Native Tauri save dialog opens with pre-filled filename (`{character.name}.png`)               |
-| **Saved**          | Dialog closes. No confirmation toast — file is saved.                                          |
-| **Cancelled**      | User cancelled save dialog. No error shown.                                                    |
-| **Error**          | If export fails, show a brief inline error: the kebab menu re-opens with Export item showing an `AlertTriangle` icon and the item is disabled. Click elsewhere to dismiss. |
+| **Save dialog**    | Native Tauri save dialog opens with pre-filled filename (`{character.name}.png`)                                                                                                                                      |
+| **Saved**          | Dialog closes. No confirmation toast — file is saved.                                                                                                                                                                 |
+| **Cancelled**      | User cancelled save dialog. No error shown.                                                                                                                                                                           |
+| **Error**          | If export fails, show a brief inline error: the kebab menu re-opens with Export item showing an `AlertTriangle` icon and the item is disabled. Click elsewhere to dismiss.                                            |
 
 ---
 
@@ -284,12 +285,12 @@ None. All Phase 7 components use existing primitives.
 
 ### New Patterns in Phase 7
 
-| Pattern                    | Trigger                                    | Behavior                                                                                                                                                                 | Notes                                                   |
-| -------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| **Import card**            | Click "Import card" button                 | Native file picker opens (`.png` and `.json` filter). On file selection, backend `import_card` parses the file. On success: `CharacterEditorDialog` opens pre-filled (D-07). On error: `ImportErrorDialog` opens (D-08). | Uses `tauri_plugin_dialog` (already installed) |
-| **Review & save import**   | CharacterEditorDialog after import         | User reviews/edits imported character data (name, description, personality, scenario, greeting, dialogues, avatar). Click "Save" to persist. Click "Cancel" to discard import. | Standard `CharacterEditorDialog` in "create" mode |
-| **Export card**            | Click "Export" in CharacterCard kebab menu | Backend `export_card` generates PNG with embedded `chara` tEXt chunk. Native save dialog opens pre-filled with `{character.name}.png`. User picks location and saves.   | Uses `tauri_plugin_dialog` (already installed) |
-| **View rendered markdown** | Automatic on streaming completion          | When `message.is_streaming` transitions from `true` to `false`, the raw text in MessageBubble is replaced by the rendered markdown output. No user action needed.       | Seamless swap — raw text during streaming, rich markdown when done |
+| Pattern                    | Trigger                                    | Behavior                                                                                                                                                                                                                 | Notes                                                              |
+| -------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| **Import card**            | Click "Import card" button                 | Native file picker opens (`.png` and `.json` filter). On file selection, backend `import_card` parses the file. On success: `CharacterEditorDialog` opens pre-filled (D-07). On error: `ImportErrorDialog` opens (D-08). | Uses `tauri_plugin_dialog` (already installed)                     |
+| **Review & save import**   | CharacterEditorDialog after import         | User reviews/edits imported character data (name, description, personality, scenario, greeting, dialogues, avatar). Click "Save" to persist. Click "Cancel" to discard import.                                           | Standard `CharacterEditorDialog` in "create" mode                  |
+| **Export card**            | Click "Export" in CharacterCard kebab menu | Backend `export_card` generates PNG with embedded `chara` tEXt chunk. Native save dialog opens pre-filled with `{character.name}.png`. User picks location and saves.                                                    | Uses `tauri_plugin_dialog` (already installed)                     |
+| **View rendered markdown** | Automatic on streaming completion          | When `message.is_streaming` transitions from `true` to `false`, the raw text in MessageBubble is replaced by the rendered markdown output. No user action needed.                                                        | Seamless swap — raw text during streaming, rich markdown when done |
 
 ### Markdown Render Conditional (from D-02)
 
@@ -334,14 +335,14 @@ Edit and Export are grouped as non-destructive actions. Separator before Delete 
 
 ### Deferred Interactions (Not in Phase 7)
 
-| Pattern                          | Deferred To | Reason                                    |
-| -------------------------------- | ----------- | ----------------------------------------- |
-| Drag-and-drop card import        | Future      | Button-based import per D-06              |
-| JSON standalone export           | Future      | PNG-only per D-10                         |
-| Bulk import/export               | Future      | Single card per action per CONTEXT.md     |
-| Custom narration styling         | Future      | Standard italic per D-05                  |
-| Markdown streaming render        | Future      | Raw text during streaming per D-02        |
-| Message branching / forking      | Phase 8     | Branch navigation UI is a separate phase  |
+| Pattern                     | Deferred To | Reason                                   |
+| --------------------------- | ----------- | ---------------------------------------- |
+| Drag-and-drop card import   | Future      | Button-based import per D-06             |
+| JSON standalone export      | Future      | PNG-only per D-10                        |
+| Bulk import/export          | Future      | Single card per action per CONTEXT.md    |
+| Custom narration styling    | Future      | Standard italic per D-05                 |
+| Markdown streaming render   | Future      | Raw text during streaming per D-02       |
+| Message branching / forking | Phase 8     | Branch navigation UI is a separate phase |
 
 ---
 
@@ -371,7 +372,9 @@ A `@layer components` block for GFM markdown prose styling inside chat bubbles. 
       margin-top: 24px;
       margin-bottom: 8px;
     }
-    & h1:first-child { margin-top: 0; }
+    & h1:first-child {
+      margin-top: 0;
+    }
 
     & h2 {
       font-size: 20px;
@@ -380,7 +383,9 @@ A `@layer components` block for GFM markdown prose styling inside chat bubbles. 
       margin-top: 20px;
       margin-bottom: 8px;
     }
-    & h2:first-child { margin-top: 0; }
+    & h2:first-child {
+      margin-top: 0;
+    }
 
     & h3 {
       font-size: 16px;
@@ -389,9 +394,13 @@ A `@layer components` block for GFM markdown prose styling inside chat bubbles. 
       margin-top: 16px;
       margin-bottom: 8px;
     }
-    & h3:first-child { margin-top: 0; }
+    & h3:first-child {
+      margin-top: 0;
+    }
 
-    & h4, & h5, & h6 {
+    & h4,
+    & h5,
+    & h6 {
       font-size: 15px;
       font-weight: 600;
       margin-top: 16px;
@@ -501,7 +510,10 @@ A `@layer components` block for GFM markdown prose styling inside chat bubbles. 
     }
 
     /* Nested lists */
-    & ul ul, & ol ol, & ul ol, & ol ul {
+    & ul ul,
+    & ol ol,
+    & ul ol,
+    & ol ul {
       margin-top: 4px;
       margin-bottom: 4px;
     }
@@ -572,11 +584,11 @@ A `@layer components` block for GFM markdown prose styling inside chat bubbles. 
 
 **New npm dependencies (frontend only):**
 
-| Package     | Version  | Purpose                                    | Bundle Impact           |
-| ----------- | -------- | ------------------------------------------ | ----------------------- |
-| `marked`    | ^15.x    | GFM markdown parser (D-01, D-03)           | ~40KB minified          |
-| `dompurify` | ^3.x     | HTML sanitizer for AI-generated content    | ~20KB minified          |
-| `shiki`     | ^3.x     | Syntax highlighting for code blocks (D-04) | ~200KB lazy-loaded      |
+| Package     | Version | Purpose                                    | Bundle Impact      |
+| ----------- | ------- | ------------------------------------------ | ------------------ |
+| `marked`    | ^15.x   | GFM markdown parser (D-01, D-03)           | ~40KB minified     |
+| `dompurify` | ^3.x    | HTML sanitizer for AI-generated content    | ~20KB minified     |
+| `shiki`     | ^3.x    | Syntax highlighting for code blocks (D-04) | ~200KB lazy-loaded |
 
 **Security note on `dompurify`:** All markdown output passes through DOMPurify before rendering via `{@html}`. This prevents XSS from malicious AI-generated content (e.g., `<script>` tags, `javascript:` URLs, event handlers). DOMPurify is the industry-standard sanitizer for this use case.
 
@@ -632,9 +644,9 @@ Total: ~350 lines of frontend code. The remaining work is backend (Rust) — por
 
 ### New Icon Imports
 
-| Icon       | From               | Used In                      |
-| ---------- | ------------------ | ---------------------------- |
-| `Download` | `@lucide/svelte`   | CharacterCard kebab menu     |
+| Icon       | From             | Used In                  |
+| ---------- | ---------------- | ------------------------ |
+| `Download` | `@lucide/svelte` | CharacterCard kebab menu |
 
 `Upload` icon is already imported in `characters/+page.svelte` — reused for the import button (already wired in the template, just needs the onclick handler).
 
