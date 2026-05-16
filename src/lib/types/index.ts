@@ -125,9 +125,23 @@ export type StreamChunk =
   | { event: "token"; data: { content: string } }
   | {
       event: "complete";
-      data: { messageId: string; content: string; stopReason: string };
+      data: {
+        messageId: string;
+        content: string;
+        stopReason: string;
+        tokensUsed: number;
+        tokensLimit: number;
+        truncatedCount: number;
+      };
     }
   | { event: "error"; data: { error: string; errorType: string } };
+
+/** Context budget info returned from backend after each generation. */
+export interface ContextBudget {
+  tokensUsed: number;
+  tokensLimit: number;
+  truncatedCount: number;
+}
 
 export interface Conversation {
   id: string;
