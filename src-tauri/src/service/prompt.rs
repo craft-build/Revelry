@@ -13,6 +13,8 @@ pub struct AssembledPrompt {
     pub chat_history: Vec<rig_core::completion::Message>,
     /// Context utilization ratio (0.0 to 1.0) — what fraction of the context window is used.
     pub context_utilization: f64,
+    /// Total tokens used in the assembled prompt (preamble + history + overhead).
+    pub tokens_used: usize,
     /// Number of messages truncated from history due to budget constraints.
     pub truncated_messages: usize,
     /// Number of lorebook entries activated and injected.
@@ -39,6 +41,7 @@ impl PromptEngine {
             preamble,
             chat_history,
             context_utilization: 0.0,
+            tokens_used: 0,
             truncated_messages: 0,
             active_lorebook_count: 0,
         }
@@ -53,6 +56,7 @@ impl PromptEngine {
             preamble,
             chat_history: Vec::new(),
             context_utilization: 0.0,
+            tokens_used: 0,
             truncated_messages: 0,
             active_lorebook_count: 0,
         }
@@ -157,6 +161,7 @@ impl PromptEngine {
             preamble,
             chat_history,
             context_utilization: context_utilization.min(1.0),
+            tokens_used,
             truncated_messages,
             active_lorebook_count,
         }

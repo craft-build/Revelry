@@ -3,14 +3,210 @@ use tauri::ipc::Channel;
 use tauri::State;
 use tokio_util::sync::CancellationToken;
 
-use crate::ai::{AiService, GenerationParams, StreamChunk};
+use crate::ai::{AiService, BudgetInfo, GenerationParams, StreamChunk};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::conversation::{Message as DomainMessage, MessageRole};
+use crate::service::prompt::PromptEngine;
+use crate::service::token_count::TokenCountService;
 
 /// Managed state holding the cancellation token for the currently active stream.
 /// Only one stream can be active at a time — starting a new stream cancels any existing one.
 pub struct CancelState {
     pub token: Mutex<Option<CancellationToken>>,
+}
+
+/// Shared context loaded for all chat commands.
+struct ChatContext {
+    character: Option<crate::domain::character::CharacterCardV2>,
+    persona: Option<crate::domain::persona::Persona>,
+    provider: crate::domain::provider::ProviderConfig,
+    messages: Vec<DomainMessage>,
+    api_key: String,
+}
+
+/// Loads all context needed for prompt assembly and streaming.
+/// Returns Ok(Some(ChatContext)) on success, or sends an error StreamChunk and returns Ok(None).
+async fn load_chat_context(
+    db: &State<'_, DbWorker>,
+    channel: &Channel<StreamChunk>,
+    conversation_id: &str,
+) -> Result<Option<ChatContext>, String> {
+    // 1. Load conversation
+    let conversation = {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadConversations { reply: reply_tx })
+            .map_err(|e| e.to_string())?;
+        let conversations = reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?;
+        conversations
+            .into_iter()
+            .find(|c| c.id == conversation_id)
+            .ok_or_else(|| "Conversation not found".to_string())?
+    };
+
+    // 2. Load messages
+    let messages = {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadMessages {
+            conversation_id: conversation_id.to_string(),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?
+    };
+
+    // 3. Load character
+    let character = {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadCharacters { reply: reply_tx })
+            .map_err(|e| e.to_string())?;
+        let characters = reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?;
+        characters
+            .into_iter()
+            .find(|c| c.id == conversation.character_id)
+    };
+
+    // 4. Load persona
+    let persona = match &conversation.creator_persona_id {
+        Some(pid) => {
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::LoadPersonas { reply: reply_tx })
+                .map_err(|e| e.to_string())?;
+            let personas = reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?;
+            personas.into_iter().find(|p| p.id == *pid)
+        }
+        None => None,
+    };
+
+    // 5. Load provider
+    let provider = match &conversation.provider_id {
+        Some(pid) => {
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::LoadProviders { reply: reply_tx })
+                .map_err(|e| e.to_string())?;
+            let providers = reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?;
+            providers.into_iter().find(|p| p.id == *pid)
+        }
+        None => None,
+    };
+
+    let provider = match provider {
+        Some(p) => p,
+        None => {
+            let _ = channel.send(StreamChunk::Error {
+                error: "No provider configured for this conversation. Select a provider and model from the header.".to_string(),
+                error_type: "no_provider_configured".to_string(),
+            });
+            return Ok(None);
+        }
+    };
+
+    // 6. Load API key
+    let provider_id_for_key = provider.id.clone();
+    let provider_type = provider.provider_type.clone();
+    let api_key_result = tokio::task::spawn_blocking(move || {
+        if !provider_type.requires_api_key() {
+            return Ok(String::new());
+        }
+        crate::secrets::KeyringStore::load_key(&provider_id_for_key)
+    })
+    .await
+    .map_err(|e| format!("Keyring task failed: {}", e))?;
+
+    let api_key = match api_key_result {
+        Ok(key) => key,
+        Err(_) => {
+            let _ = channel.send(StreamChunk::Error {
+                error: "No API key set for this provider. Add your key in Settings.".to_string(),
+                error_type: "no_api_key".to_string(),
+            });
+            return Ok(None);
+        }
+    };
+
+    Ok(Some(ChatContext {
+        character,
+        persona,
+        provider,
+        messages,
+        api_key,
+    }))
+}
+
+/// Assembles a prompt using PromptEngine with budget awareness.
+/// Returns (system_prompt, chat_history_messages, budget_info).
+fn assemble_prompt(
+    ctx: &ChatContext,
+    messages: &[DomainMessage],
+) -> (String, Vec<rig_core::completion::Message>, BudgetInfo) {
+    let token_svc = TokenCountService::new();
+    let context_window = token_svc.resolve_context_window_size(&ctx.provider);
+
+    let assembled = match &ctx.character {
+        Some(ch) => PromptEngine::assemble_with_budget(
+            ch,
+            ctx.persona.as_ref(),
+            messages,
+            &[], // No lorebook entries yet (Phase 9)
+            &token_svc,
+            context_window,
+        ),
+        None => {
+            // No character — use minimal fallback prompt
+            let preamble = "You are a helpful assistant.".to_string();
+            let chat_history: Vec<rig_core::completion::Message> = messages
+                .iter()
+                .filter(|m| !m.content.is_empty())
+                .map(|msg| match msg.role {
+                    MessageRole::User => rig_core::completion::Message::user(&msg.content),
+                    MessageRole::Assistant => {
+                        rig_core::completion::Message::assistant(&msg.content)
+                    }
+                    MessageRole::System => rig_core::completion::Message::system(&msg.content),
+                })
+                .collect();
+            let preamble_tokens = token_svc.count_tokens(&preamble);
+            let msg_tokens: usize = messages
+                .iter()
+                .map(|m| 4 + token_svc.count_tokens(&m.content))
+                .sum();
+            let tokens_used = preamble_tokens + msg_tokens;
+            crate::service::prompt::AssembledPrompt {
+                preamble,
+                chat_history,
+                context_utilization: if context_window > 0 {
+                    (tokens_used as f64) / (context_window as f64)
+                } else {
+                    0.0
+                },
+                tokens_used,
+                truncated_messages: 0,
+                active_lorebook_count: 0,
+            }
+        }
+    };
+
+    let budget = BudgetInfo {
+        tokens_used: assembled.tokens_used,
+        tokens_limit: context_window as usize,
+        truncated_count: assembled.truncated_messages,
+    };
+
+    (assembled.preamble, assembled.chat_history, budget)
 }
 
 #[tauri::command]
@@ -54,140 +250,38 @@ pub async fn start_chat(
             .map_err(|e| e.to_string())?;
     }
 
-    // 3. Load conversation
-    let conversation = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadConversations { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let conversations = reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
-        conversations
-            .into_iter()
-            .find(|c| c.id == conversation_id)
-            .ok_or_else(|| "Conversation not found".to_string())?
+    // 3. Load context
+    let ctx = match load_chat_context(&db, &channel, &conversation_id).await? {
+        Some(c) => c,
+        None => return Ok(()), // Error already sent via channel
     };
 
-    // 4. Load all messages for this conversation
-    let mut messages = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadMessages {
-            conversation_id: conversation_id.clone(),
-            reply: reply_tx,
-        })
-        .map_err(|e| e.to_string())?;
-        reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
-    };
+    // 4. Append user message and assemble prompt
+    let mut all_messages = ctx.messages.clone();
+    all_messages.push(user_message);
+    let (system_prompt, chat_history, budget) = assemble_prompt(&ctx, &all_messages);
 
-    // 5. Load character for system prompt
-    let character = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadCharacters { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let characters = reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
-        characters
-            .into_iter()
-            .find(|c| c.id == conversation.character_id)
-    };
-
-    // 6. Load provider configuration
-    let provider = match &conversation.provider_id {
-        Some(pid) => {
-            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-            db.send(DbCommand::LoadProviders { reply: reply_tx })
-                .map_err(|e| e.to_string())?;
-            let providers = reply_rx
-                .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
-            providers.into_iter().find(|p| p.id == *pid)
-        }
-        None => None,
-    };
-
-    let provider = match provider {
-        Some(p) => p,
-        None => {
-            let _ = channel.send(StreamChunk::Error {
-                error: "No provider configured for this conversation. Select a provider and model from the header.".to_string(),
-                error_type: "no_provider_configured".to_string(),
-            });
-            return Ok(());
-        }
-    };
-
-    // 7. Load API key (or empty string for Ollama)
-    let provider_id_for_key = provider.id.clone();
-    let provider_type = provider.provider_type.clone();
-    let api_key_result = tokio::task::spawn_blocking(move || {
-        if !provider_type.requires_api_key() {
-            return Ok(String::new());
-        }
-        crate::secrets::KeyringStore::load_key(&provider_id_for_key)
-    })
-    .await
-    .map_err(|e| format!("Keyring task failed: {}", e))?;
-
-    let api_key = match api_key_result {
-        Ok(key) => key,
-        Err(_) => {
-            let _ = channel.send(StreamChunk::Error {
-                error: "No API key set for this provider. Add your key in Settings.".to_string(),
-                error_type: "no_api_key".to_string(),
-            });
-            return Ok(());
-        }
-    };
-
-    // 8. Build system prompt from character personality + scenario
-    let system_prompt = match &character {
-        Some(ch) => {
-            let parts: Vec<&str> = [&ch.personality, &ch.scenario]
-                .iter()
-                .filter(|s| !s.is_empty())
-                .map(|s| s.as_str())
-                .collect();
-            if parts.is_empty() {
-                "You are a helpful assistant.".to_string()
-            } else {
-                parts.join("\n\n")
-            }
-        }
-        None => "You are a helpful assistant.".to_string(),
-    };
-
-    // 9. Resolve generation params from provider
-    let params = AiService::from_provider_config(&provider);
-
-    // 10. Use frontend-provided AI message ID and set up cancellation
+    // 5. Resolve generation params and start streaming
+    let params = AiService::from_provider_config(&ctx.provider);
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
         *token_guard = Some(cancel_token.clone());
     }
 
-    // Add the user message to the loaded messages for the prompt context
-    messages.push(user_message);
-
-    // 11. Spawn the streaming task
-    let provider_config = provider.clone();
+    let provider_config = ctx.provider.clone();
+    let api_key = ctx.api_key.clone();
     tokio::spawn(async move {
         AiService::stream_chat(
             &provider_config,
             &system_prompt,
-            &messages,
+            chat_history,
             &api_key,
             params,
-            ai_message_id.clone(),
+            ai_message_id,
             channel,
             cancel_token,
+            budget,
         );
     });
 
@@ -257,19 +351,10 @@ pub async fn regenerate(
             .map_err(|e| e.to_string())?;
     }
 
-    // Now load conversation and provider/character to re-stream
-    let conversation = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadConversations { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let conversations = reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
-        conversations
-            .into_iter()
-            .find(|c| c.id == conversation_id)
-            .ok_or_else(|| "Conversation not found".to_string())?
+    // Load context
+    let ctx = match load_chat_context(&db, &channel, &conversation_id).await? {
+        Some(c) => c,
+        None => return Ok(()),
     };
 
     // Reload messages after deletion
@@ -286,106 +371,30 @@ pub async fn regenerate(
             .map_err(|e| e.to_string())?
     };
 
-    // Load character
-    let character = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadCharacters { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let characters = reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
-        characters
-            .into_iter()
-            .find(|c| c.id == conversation.character_id)
-    };
+    // Assemble prompt
+    let (system_prompt, chat_history, budget) = assemble_prompt(&ctx, &updated_messages);
 
-    // Load provider
-    let provider = match &conversation.provider_id {
-        Some(pid) => {
-            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-            db.send(DbCommand::LoadProviders { reply: reply_tx })
-                .map_err(|e| e.to_string())?;
-            let providers = reply_rx
-                .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
-            providers.into_iter().find(|p| p.id == *pid)
-        }
-        None => None,
-    };
-
-    let provider = match provider {
-        Some(p) => p,
-        None => {
-            let _ = channel.send(StreamChunk::Error {
-                error: "No provider configured for this conversation.".to_string(),
-                error_type: "no_provider_configured".to_string(),
-            });
-            return Ok(());
-        }
-    };
-
-    // Load API key
-    let provider_id_for_key = provider.id.clone();
-    let provider_type = provider.provider_type.clone();
-    let api_key_result = tokio::task::spawn_blocking(move || {
-        if !provider_type.requires_api_key() {
-            return Ok(String::new());
-        }
-        crate::secrets::KeyringStore::load_key(&provider_id_for_key)
-    })
-    .await
-    .map_err(|e| format!("Keyring task failed: {}", e))?;
-
-    let api_key = match api_key_result {
-        Ok(key) => key,
-        Err(_) => {
-            let _ = channel.send(StreamChunk::Error {
-                error: "No API key set for this provider.".to_string(),
-                error_type: "no_api_key".to_string(),
-            });
-            return Ok(());
-        }
-    };
-
-    // Build system prompt
-    let system_prompt = match &character {
-        Some(ch) => {
-            let parts: Vec<&str> = [&ch.personality, &ch.scenario]
-                .iter()
-                .filter(|s| !s.is_empty())
-                .map(|s| s.as_str())
-                .collect();
-            if parts.is_empty() {
-                "You are a helpful assistant.".to_string()
-            } else {
-                parts.join("\n\n")
-            }
-        }
-        None => "You are a helpful assistant.".to_string(),
-    };
-
-    let params = AiService::from_provider_config(&provider);
-
-    // Set up cancellation and stream (use frontend-provided AI message ID)
+    // Resolve generation params and start streaming
+    let params = AiService::from_provider_config(&ctx.provider);
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
         *token_guard = Some(cancel_token.clone());
     }
 
-    let provider_config = provider.clone();
+    let provider_config = ctx.provider.clone();
+    let api_key = ctx.api_key.clone();
     tokio::spawn(async move {
         AiService::stream_chat(
             &provider_config,
             &system_prompt,
-            &updated_messages,
+            chat_history,
             &api_key,
             params,
             ai_message_id,
             channel,
             cancel_token,
+            budget,
         );
     });
 
@@ -458,22 +467,13 @@ pub async fn edit_and_resend(
             .map_err(|e| e.to_string())?;
     }
 
-    // 4. Load conversation and context for re-streaming
-    let conversation = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadConversations { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let conversations = reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
-        conversations
-            .into_iter()
-            .find(|c| c.id == conversation_id)
-            .ok_or_else(|| "Conversation not found".to_string())?
+    // 4. Load context
+    let ctx = match load_chat_context(&db, &channel, &conversation_id).await? {
+        Some(c) => c,
+        None => return Ok(()),
     };
 
-    // Reload messages after edit and truncation
+    // 5. Reload messages after edit and truncation
     let updated_messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
@@ -487,106 +487,30 @@ pub async fn edit_and_resend(
             .map_err(|e| e.to_string())?
     };
 
-    // Load character
-    let character = {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadCharacters { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
-        let characters = reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
-        characters
-            .into_iter()
-            .find(|c| c.id == conversation.character_id)
-    };
+    // 6. Assemble prompt
+    let (system_prompt, chat_history, budget) = assemble_prompt(&ctx, &updated_messages);
 
-    // Load provider
-    let provider = match &conversation.provider_id {
-        Some(pid) => {
-            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-            db.send(DbCommand::LoadProviders { reply: reply_tx })
-                .map_err(|e| e.to_string())?;
-            let providers = reply_rx
-                .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
-            providers.into_iter().find(|p| p.id == *pid)
-        }
-        None => None,
-    };
-
-    let provider = match provider {
-        Some(p) => p,
-        None => {
-            let _ = channel.send(StreamChunk::Error {
-                error: "No provider configured for this conversation.".to_string(),
-                error_type: "no_provider_configured".to_string(),
-            });
-            return Ok(());
-        }
-    };
-
-    // Load API key
-    let provider_id_for_key = provider.id.clone();
-    let provider_type = provider.provider_type.clone();
-    let api_key_result = tokio::task::spawn_blocking(move || {
-        if !provider_type.requires_api_key() {
-            return Ok(String::new());
-        }
-        crate::secrets::KeyringStore::load_key(&provider_id_for_key)
-    })
-    .await
-    .map_err(|e| format!("Keyring task failed: {}", e))?;
-
-    let api_key = match api_key_result {
-        Ok(key) => key,
-        Err(_) => {
-            let _ = channel.send(StreamChunk::Error {
-                error: "No API key set for this provider.".to_string(),
-                error_type: "no_api_key".to_string(),
-            });
-            return Ok(());
-        }
-    };
-
-    // Build system prompt
-    let system_prompt = match &character {
-        Some(ch) => {
-            let parts: Vec<&str> = [&ch.personality, &ch.scenario]
-                .iter()
-                .filter(|s| !s.is_empty())
-                .map(|s| s.as_str())
-                .collect();
-            if parts.is_empty() {
-                "You are a helpful assistant.".to_string()
-            } else {
-                parts.join("\n\n")
-            }
-        }
-        None => "You are a helpful assistant.".to_string(),
-    };
-
-    let params = AiService::from_provider_config(&provider);
-
-    // Set up cancellation and stream (use frontend-provided AI message ID)
+    // 7. Resolve generation params and start streaming
+    let params = AiService::from_provider_config(&ctx.provider);
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
         *token_guard = Some(cancel_token.clone());
     }
 
-    let provider_config = provider.clone();
+    let provider_config = ctx.provider.clone();
+    let api_key = ctx.api_key.clone();
     tokio::spawn(async move {
         AiService::stream_chat(
             &provider_config,
             &system_prompt,
-            &updated_messages,
+            chat_history,
             &api_key,
             params,
             ai_message_id,
             channel,
             cancel_token,
+            budget,
         );
     });
 
