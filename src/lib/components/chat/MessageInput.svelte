@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Send, Square, Paperclip } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
-	import { estimateTokens } from '$lib/utils';
 
 	interface Props {
 		onsend?: (text: string) => void;
@@ -13,15 +12,18 @@
 	let text = $state('');
 	let textarea: HTMLTextAreaElement | undefined = $state();
 
-	let tokens = $derived(estimateTokens(text));
-
-	// Approximate context utilization across all in-context messages.
-	// Real value comes from the backend's chat-engine token budget calc.
-	let usedContext = $derived(
-		app.messages.reduce((sum, m) => sum + (m.token_count ?? estimateTokens(m.content)), 0) + tokens
+	let usedContext = $derived(app.context_budget?.tokensUsed ?? 0);
+	let contextLimit = $derived(app.context_budget?.tokensLimit ?? 8192);
+	let contextPct = $derived(
+		contextLimit > 0 ? Math.min(100, (usedContext / contextLimit) * 100) : 0,
 	);
-	const contextLimit = 8192;
-	let contextPct = $derived(Math.min(100, (usedContext / contextLimit) * 100));
+
+	/** Returns the semantic color token for the progress bar fill based on utilization. */
+	let barColor = $derived.by(() => {
+		if (contextPct > 95) return 'bg-(--color-destructive)';
+		if (contextPct >= 80) return 'bg-(--color-warning)';
+		return 'bg-(--color-success)';
+	});
 
 	function handleSubmit() {
 		const trimmed = text.trim();
@@ -61,7 +63,7 @@
 				<span>{usedContext.toLocaleString()} / {contextLimit.toLocaleString()} tok</span>
 				<div class="h-1 w-32 overflow-hidden rounded-full bg-(--color-surface-elevated)">
 					<div
-						class="h-full bg-(--color-accent) transition-[width] duration-300"
+						class="h-full {barColor} transition-[width,background-color] duration-300"
 						style:width="{contextPct}%"
 					></div>
 				</div>
