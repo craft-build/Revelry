@@ -115,8 +115,16 @@ export interface MessageMetadata {
   provider?: string;
   model?: string;
   stop_reason?: "end" | "cancelled" | "length" | "error";
+  error_type?: string;
   [key: string]: unknown;
 }
+
+/** Discriminated union matching Rust StreamChunk serde output.
+ * Tagged with `event` field, payload in `data` field. */
+export type StreamChunk =
+  | { event: "token"; data: { content: string } }
+  | { event: "complete"; data: { messageId: string; content: string; stopReason: string } }
+  | { event: "error"; data: { error: string; errorType: string } };
 
 export interface Conversation {
   id: string;

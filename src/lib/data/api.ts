@@ -5,7 +5,7 @@
  * Arguments use camelCase (Tauri v2 auto-converts to snake_case for Rust).
  */
 
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, type Channel } from "@tauri-apps/api/core";
 import type {
   CharacterCard,
   Conversation,
@@ -17,6 +17,7 @@ import type {
   Lorebook,
   LorebookEntry,
   KeywordTestResult,
+  StreamChunk,
 } from "$lib/types";
 
 // ── Characters ────────────────────────────────────────────────────────────────
@@ -247,4 +248,35 @@ export async function deleteApiKey(providerId: string): Promise<void> {
 
 export async function checkKeyringAvailable(): Promise<boolean> {
   return invoke<boolean>("check_keyring_available");
+}
+
+// ── Chat streaming ────────────────────────────────────────────────────────────
+
+export async function startChat(
+  conversationId: string,
+  content: string,
+  messageId: string,
+  sortOrder: number,
+  onEvent: Channel<StreamChunk>,
+): Promise<void> {
+  return invoke<void>("start_chat", { conversationId, content, messageId, sortOrder, onEvent });
+}
+
+export async function stopGeneration(): Promise<void> {
+  return invoke<void>("stop_generation");
+}
+
+export async function regenerate(
+  conversationId: string,
+  onEvent: Channel<StreamChunk>,
+): Promise<void> {
+  return invoke<void>("regenerate", { conversationId, onEvent });
+}
+
+export async function editAndResend(
+  messageId: string,
+  newContent: string,
+  onEvent: Channel<StreamChunk>,
+): Promise<void> {
+  return invoke<void>("edit_and_resend", { messageId, newContent, onEvent });
 }

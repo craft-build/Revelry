@@ -6,8 +6,9 @@ import type {
   Provider,
   GenerationPreset,
   Lorebook,
-  ProviderModelEntry,
+  StreamChunk,
 } from "$lib/types";
+import { Channel } from "@tauri-apps/api/core";
 import {
   getCharacters as apiGetCharacters,
   saveCharacter as apiSaveCharacter,
@@ -31,11 +32,14 @@ import {
   deleteProvider as apiDeleteProvider,
   saveApiKey as apiSaveApiKey,
   deleteApiKey as apiDeleteApiKey,
-  hasApiKey as apiHasApiKey,
   checkKeyringAvailable as apiCheckKeyringAvailable,
   assignLorebookToCharacter as apiAssignLorebookToCharacter,
   removeLorebookFromCharacter as apiRemoveLorebookFromCharacter,
   getCharacterLorebooks as apiGetCharacterLorebooks,
+  startChat as apiStartChat,
+  stopGeneration as apiStopGeneration,
+  regenerate as apiRegenerate,
+  editAndResend as apiEditAndResend,
 } from "$lib/data/api";
 
 /**
@@ -649,6 +653,266 @@ class AppState {
     } catch (err) {
       this.keyring_available = false;
       console.error("Failed to check keyring availability:", err);
+    }
+  }
+
+  // ── Streaming chat actions ───────────────────────────────────────────
+
+  /** Send a user message and stream an AI response via Tauri Channel. */
+  async startChat(content: string): Promise<void> {
+    if (!this.active_conversation_id) return;
+    const conv = this.active_conversation;
+    if (!conv) return;
+
+    // Check provider is configured
+    if (!conv.provider_id) {
+      const errMsg: Message = {
+        id: crypto.randomUUID(),
+        conversation_id: this.active_conversation_id,
+        role: "assistant",
+        content: "No provider configured. Select a provider and model from the header.",
+        sort_order: (this.messages.at(-1)?.sort_order ?? -1) + 1,
+        timestamp: new Date().toISOString(),
+        is_streaming: false,
+        metadata: { stop_reason: "error", error_type: "no_provider_configured" },
+      };
+      this.appendMessage(errMsg);
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const nextSortOrder = (this.messages.at(-1)?.sort_order ?? -1) + 1;
+
+    // Create user message (frontend pre-generates id and sort_order)
+    const userMsg: Message = {
+      id: crypto.randomUUID(),
+      conversation_id: this.active_conversation_id,
+      role: "user",
+      content,
+      sort_order: nextSortOrder,
+      timestamp: now,
+    };
+    this.appendMessage(userMsg);
+
+    // Create AI placeholder
+    const aiId = crypto.randomUUID();
+    const aiMsg: Message = {
+      id: aiId,
+      conversation_id: this.active_conversation_id,
+      role: "assistant",
+      content: "",
+      sort_order: nextSortOrder + 1,
+      timestamp: now,
+      is_streaming: true,
+      metadata: {
+        model: conv.model_name,
+      },
+    };
+    this.appendMessage(aiMsg);
+    this.is_generating = true;
+
+    // Set up Channel for streaming
+    const onEvent = new Channel<StreamChunk>();
+    let accumulated = "";
+
+    onEvent.onmessage = (chunk: StreamChunk) => {
+      switch (chunk.event) {
+        case "token":
+          accumulated += chunk.data.content;
+          this.updateStreamingMessage(aiId, accumulated);
+          break;
+        case "complete":
+          this.updateStreamingMessage(aiId, chunk.data.content || accumulated, true);
+          // Update metadata with stop reason
+          this.messages = this.messages.map((m) =>
+            m.id === aiId
+              ? { ...m, metadata: { ...m.metadata, stop_reason: chunk.data.stopReason as Message["metadata"] extends { stop_reason?: infer S } ? S : never } }
+              : m,
+          );
+          break;
+        case "error":
+          this.messages = this.messages.map((m) =>
+            m.id === aiId
+              ? {
+                  ...m,
+                  content: chunk.data.error,
+                  is_streaming: false,
+                  metadata: { ...m.metadata, stop_reason: "error" as const, error_type: chunk.data.errorType },
+                }
+              : m,
+          );
+          this.is_generating = false;
+          break;
+      }
+    };
+
+    try {
+      await apiStartChat(
+        this.active_conversation_id,
+        content,
+        userMsg.id,
+        userMsg.sort_order,
+        onEvent,
+      );
+    } catch (err) {
+      console.error("startChat invoke failed:", err);
+      this.messages = this.messages.map((m) =>
+        m.id === aiId
+          ? { ...m, content: "Failed to start generation.", is_streaming: false, metadata: { ...m.metadata, stop_reason: "error" as const, error_type: "provider_error" } }
+          : m,
+      );
+      this.is_generating = false;
+    }
+  }
+
+  /** Stop the active AI generation. */
+  async stopGeneration(): Promise<void> {
+    try {
+      await apiStopGeneration();
+    } catch (err) {
+      console.error("stopGeneration failed:", err);
+    }
+  }
+
+  /** Regenerate the last AI response. */
+  async regenerate(): Promise<void> {
+    if (!this.active_conversation_id) return;
+
+    // Remove the last AI message from local state
+    const lastAiIdx = this.messages.findLastIndex((m) => m.role === "assistant" && m.metadata?.stop_reason !== "error");
+    if (lastAiIdx === -1) return;
+
+    this.messages = this.messages.filter((_, i) => i !== lastAiIdx);
+
+    // Create AI placeholder
+    const aiId = crypto.randomUUID();
+    const nextSortOrder = (this.messages.at(-1)?.sort_order ?? -1) + 1;
+    const aiMsg: Message = {
+      id: aiId,
+      conversation_id: this.active_conversation_id,
+      role: "assistant",
+      content: "",
+      sort_order: nextSortOrder,
+      timestamp: new Date().toISOString(),
+      is_streaming: true,
+      metadata: { model: this.active_conversation?.model_name },
+    };
+    this.appendMessage(aiMsg);
+    this.is_generating = true;
+
+    // Set up Channel
+    const onEvent = new Channel<StreamChunk>();
+    let accumulated = "";
+
+    onEvent.onmessage = (chunk: StreamChunk) => {
+      switch (chunk.event) {
+        case "token":
+          accumulated += chunk.data.content;
+          this.updateStreamingMessage(aiId, accumulated);
+          break;
+        case "complete":
+          this.updateStreamingMessage(aiId, chunk.data.content || accumulated, true);
+          this.messages = this.messages.map((m) =>
+            m.id === aiId
+              ? { ...m, metadata: { ...m.metadata, stop_reason: chunk.data.stopReason as Message["metadata"] extends { stop_reason?: infer S } ? S : never } }
+              : m,
+          );
+          break;
+        case "error":
+          this.messages = this.messages.map((m) =>
+            m.id === aiId
+              ? {
+                  ...m,
+                  content: chunk.data.error,
+                  is_streaming: false,
+                  metadata: { ...m.metadata, stop_reason: "error" as const, error_type: chunk.data.errorType },
+                }
+              : m,
+          );
+          this.is_generating = false;
+          break;
+      }
+    };
+
+    try {
+      await apiRegenerate(this.active_conversation_id, onEvent);
+    } catch (err) {
+      console.error("regenerate failed:", err);
+      this.is_generating = false;
+    }
+  }
+
+  /** Edit a message and resend from that point. */
+  async editResend(messageId: string, newContent: string): Promise<void> {
+    if (!this.active_conversation_id) return;
+
+    // Find the message and update its content locally
+    const msg = this.messages.find((m) => m.id === messageId);
+    if (!msg) return;
+
+    // Update content locally
+    this.messages = this.messages.map((m) =>
+      m.id === messageId ? { ...m, content: newContent } : m,
+    );
+
+    // Remove all subsequent messages
+    this.messages = this.messages.filter((m) => m.sort_order <= msg.sort_order);
+
+    // Create AI placeholder
+    const aiId = crypto.randomUUID();
+    const nextSortOrder = msg.sort_order + 1;
+    const aiMsg: Message = {
+      id: aiId,
+      conversation_id: this.active_conversation_id,
+      role: "assistant",
+      content: "",
+      sort_order: nextSortOrder,
+      timestamp: new Date().toISOString(),
+      is_streaming: true,
+      metadata: { model: this.active_conversation?.model_name },
+    };
+    this.appendMessage(aiMsg);
+    this.is_generating = true;
+
+    // Set up Channel
+    const onEvent = new Channel<StreamChunk>();
+    let accumulated = "";
+
+    onEvent.onmessage = (chunk: StreamChunk) => {
+      switch (chunk.event) {
+        case "token":
+          accumulated += chunk.data.content;
+          this.updateStreamingMessage(aiId, accumulated);
+          break;
+        case "complete":
+          this.updateStreamingMessage(aiId, chunk.data.content || accumulated, true);
+          this.messages = this.messages.map((m) =>
+            m.id === aiId
+              ? { ...m, metadata: { ...m.metadata, stop_reason: chunk.data.stopReason as Message["metadata"] extends { stop_reason?: infer S } ? S : never } }
+              : m,
+          );
+          break;
+        case "error":
+          this.messages = this.messages.map((m) =>
+            m.id === aiId
+              ? {
+                  ...m,
+                  content: chunk.data.error,
+                  is_streaming: false,
+                  metadata: { ...m.metadata, stop_reason: "error" as const, error_type: chunk.data.errorType },
+                }
+              : m,
+          );
+          this.is_generating = false;
+          break;
+      }
+    };
+
+    try {
+      await apiEditAndResend(messageId, newContent, onEvent);
+    } catch (err) {
+      console.error("editResend failed:", err);
+      this.is_generating = false;
     }
   }
 }

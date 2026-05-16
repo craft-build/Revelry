@@ -90,7 +90,8 @@
 				onkeydown={handleKey}
 				placeholder="Message {app.active_character?.name ?? 'character'}…"
 				rows="1"
-				class="block flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-relaxed text-(--color-foreground) placeholder:text-(--color-subtle) focus:outline-none"
+				disabled={app.is_generating}
+				class="block flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-relaxed text-(--color-foreground) placeholder:text-(--color-subtle) focus:outline-none disabled:opacity-50"
 			></textarea>
 
 			{#if app.is_generating}

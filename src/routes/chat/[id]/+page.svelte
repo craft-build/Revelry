@@ -5,7 +5,6 @@
 	import ChatHeader from '$lib/components/chat/ChatHeader.svelte';
 	import MessageBubble from '$lib/components/chat/MessageBubble.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
-	import type { Message } from '$lib/types';
 
 	interface Props {
 		data: { id: string };
@@ -35,66 +34,12 @@
 		});
 	});
 
-	/**
-	 * Placeholder send handler — in the real app this dispatches a SendMessage
-	 * message that the chat-engine module turns into a rig streaming
-	 * completion. Here we fake the streaming so the UI is testable.
-	 */
 	function handleSend(text: string) {
-		if (!app.active_conversation_id) return;
-
-		const now = new Date().toISOString();
-		const nextSortOrder = (app.messages.at(-1)?.sort_order ?? -1) + 1;
-
-		const userMsg: Message = {
-			id: `msg_${Date.now()}_u`,
-			conversation_id: app.active_conversation_id,
-			role: 'user',
-			content: text,
-			sort_order: nextSortOrder,
-			timestamp: now
-		};
-		app.appendMessage(userMsg);
-
-		// Begin a streaming response
-		const aiId = `msg_${Date.now()}_a`;
-		const aiMsg: Message = {
-			id: aiId,
-			conversation_id: app.active_conversation_id,
-			role: 'assistant',
-			content: '',
-			sort_order: nextSortOrder + 1,
-			timestamp: now,
-			is_streaming: true,
-			metadata: { model: 'claude-opus-4-7' }
-		};
-		app.appendMessage(aiMsg);
-		app.is_generating = true;
-
-		// Simulated token stream
-		const sample =
-			'A measured pause. *She turns from the kettle, finally meeting your eye, and something in her expression has softened by a fraction.* You may sit, if you wish. The chair by the fire — yes, that one. Mind the loose joint in the back leg.';
-		const chunks = sample.match(/.{1,4}/g) ?? [sample];
-		let acc = '';
-		let i = 0;
-		const streamTick = () => {
-			if (i >= chunks.length) {
-				app.updateStreamingMessage(aiId, acc, true);
-				return;
-			}
-			acc += chunks[i++];
-			app.updateStreamingMessage(aiId, acc);
-			setTimeout(streamTick, 30);
-		};
-		setTimeout(streamTick, 200);
+		app.startChat(text);
 	}
 
 	function handleCancel() {
-		const last = app.messages.at(-1);
-		if (last?.is_streaming) {
-			app.updateStreamingMessage(last.id, last.content, true);
-		}
-		app.is_generating = false;
+		app.stopGeneration();
 	}
 </script>
 
