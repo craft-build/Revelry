@@ -35,3 +35,4 @@ keyring-core = "1.0"
 rig-core = "0.37"
 futures = "0.3"
 tokio-util = { version = "0.7", features = ["rt"] }
+tiktoken-rs = "0.11"

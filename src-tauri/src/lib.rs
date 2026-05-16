@@ -3,6 +3,7 @@ mod commands;
 mod db;
 mod domain;
 mod secrets;
+mod service;
 
 use db::DbWorker;
 
