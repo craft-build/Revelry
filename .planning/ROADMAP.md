@@ -182,16 +182,38 @@ Plans:
 2. User can stop generation mid-stream
 3. User can regenerate the last AI response with the same or different provider
 4. User can edit a sent message and regenerate from that point
-   **Plans**: TBD
+   **Plans**: 5 plans in 5 waves
 
 Plans:
 
-- [ ] 05-01: Port AiService from gtk_ref/ with rig-core streaming
-- [ ] 05-02: Implement Tauri Channel-based streaming (Rust → SvelteKit)
-- [ ] 05-03: Replace mock streaming with real AI invoke in chat view
-- [ ] 05-04: Implement stop generation and regenerate commands
-- [ ] 05-05: Implement edit/resend functionality
-      **UI hint**: yes
+**Wave 1** _(autonomous — AiService port + rig-core 0.37)_
+
+- [ ] 05-01: Port AiService from gtk_ref/ with rig-core 0.37 streaming + StreamChunk + CancelState
+
+**Wave 2** _(autonomous — Tauri Channel commands + DB extensions, blocked on Wave 1)_
+
+- [ ] 05-02: Implement Tauri Channel-based streaming commands (start_chat, stop_generation, regenerate, edit_and_resend) + DB extensions
+
+**Wave 3** _(autonomous — frontend wiring, blocked on Wave 2)_
+
+- [ ] 05-03: Replace mock streaming with real AI invoke in chat view + wire stop button + disable input
+
+**Wave 4** _(autonomous — error rendering + regenerate, blocked on Wave 3)_
+
+- [ ] 05-04: Inline error rendering + stop reason badges + regenerate hover action in MessageBubble
+
+**Wave 5** _(manual — edit mode + end-to-end verification, blocked on Wave 4)_
+
+- [ ] 05-05: Implement edit/resend functionality with inline edit mode + human verification
+
+**Cross-cutting constraints:**
+
+- rig-core version: must use 0.37 (NOT 0.36 from gtk_ref) — MultiTurnStreamItem::Text replaces StreamAssistantItem (RESEARCH Pitfall 1)
+- StreamChunk serde: `tag = "event", content = "data"` must match TypeScript discriminated union — both sides must stay in sync
+- CancelState: single CancellationToken in managed state — only one active stream at a time; start_chat cancels any existing stream first (RESEARCH Pitfall 4)
+- API key security: keys loaded via KeyringStore::load_key() inside spawn_blocking — never passed through Channel or IPC responses
+- Type alignment: Rust StreamChunk serde camelCase output must match TS StreamChunk type (Phase 2 D-08)
+  **UI hint**: yes
 
 ### Phase 6: Smart Prompts
 
