@@ -22,6 +22,22 @@ pub struct GenerationParams {
     pub stop_sequences: Option<Vec<String>>,
 }
 
+/// Budget info from PromptEngine to include in StreamChunk::Complete.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct BudgetInfo {
+    pub tokens_used: usize,
+    pub tokens_limit: usize,
+    pub truncated_count: usize,
+}
+
+/// Budget info from PromptEngine to include in StreamChunk::Complete.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct BudgetInfo {
+    pub tokens_used: usize,
+    pub tokens_limit: usize,
+    pub truncated_count: usize,
+}
+
 /// A chunk of data from a streaming AI response.
 /// Serialized via Tauri Channel to the frontend using tagged enum pattern.
 #[derive(Clone, Serialize)]
@@ -32,6 +48,9 @@ pub enum StreamChunk {
         message_id: String,
         content: String,
         stop_reason: String,
+        tokens_used: usize,
+        tokens_limit: usize,
+        truncated_count: usize,
     },
     Error { error: String, error_type: String },
 }
@@ -92,7 +111,7 @@ pub struct AiService;
 /// Helper macro to build a rig agent from a provider client with consistent parameter handling.
 /// Each provider arm follows the same pattern: client → agent(model) → preamble → params → build.
 macro_rules! build_agent_and_stream {
-    ($client:expr, $model_name:expr, $system_prompt:expr, $params:expr, $additional:expr, $prompt:expr, $history:expr, $channel:expr, $message_id:expr, $cancel:expr) => {{
+    ($client:expr, $model_name:expr, $system_prompt:expr, $params:expr, $additional:expr, $prompt:expr, $history:expr, $channel:expr, $message_id:expr, $cancel:expr, $budget:expr) => {{
         let mut builder = $client.agent($model_name).preamble($system_prompt);
         if let Some(temp) = $params.temperature {
             builder = builder.temperature(temp);
@@ -104,7 +123,7 @@ macro_rules! build_agent_and_stream {
             builder = builder.additional_params(serde_json::Value::Object($additional.clone()));
         }
         let agent = builder.build();
-        AiService::stream_with_agent(&agent, $prompt, $history, $channel, $message_id, $cancel)
+        AiService::stream_with_agent(&agent, $prompt, $history, $channel, $message_id, $cancel, $budget)
             .await;
     }};
 }
@@ -116,12 +135,13 @@ impl AiService {
     pub fn stream_chat(
         provider: &ProviderConfig,
         system_prompt: &str,
-        messages: &[DomainMessage],
+        chat_history: Vec<Message>,
         api_key: &str,
         params: GenerationParams,
         message_id: String,
         channel: Channel<StreamChunk>,
         cancel: CancellationToken,
+        budget: BudgetInfo,
     ) {
         let provider_type = provider.provider_type.clone();
         let base_url = provider.base_url.clone();
@@ -129,19 +149,8 @@ impl AiService {
         let system = system_prompt.to_string();
         let key = api_key.to_string();
 
-        // Convert domain messages to rig messages
-        let rig_messages: Vec<Message> = messages
-            .iter()
-            .filter(|m| !m.content.is_empty())
-            .map(|msg| match msg.role {
-                MessageRole::User => Message::user(&msg.content),
-                MessageRole::Assistant => Message::assistant(&msg.content),
-                MessageRole::System => Message::system(&msg.content),
-            })
-            .collect();
-
         // Last message is the active prompt, rest is chat history
-        let (prompt, history) = Self::split_last_prompt(rig_messages);
+        let (prompt, history) = Self::split_last_prompt(chat_history);
 
         tokio::spawn(async move {
             if let Err(e) = Self::run_stream(
@@ -156,6 +165,7 @@ impl AiService {
                 &channel,
                 &message_id,
                 &cancel,
+                budget,
             )
             .await
             {
@@ -192,6 +202,7 @@ impl AiService {
         channel: &Channel<StreamChunk>,
         message_id: &str,
         cancel: &CancellationToken,
+        budget: BudgetInfo,
     ) -> Result<(), String> {
         // Build provider-specific additional_params JSON (D-02)
         let additional = Self::build_additional_params(provider_type, params);
@@ -421,6 +432,7 @@ impl AiService {
         channel: &Channel<StreamChunk>,
         message_id: &str,
         cancel: &CancellationToken,
+        budget: BudgetInfo,
     ) where
         M: CompletionModel + 'static,
         M::StreamingResponse: GetTokenUsage,
@@ -438,6 +450,9 @@ impl AiService {
                     message_id: msg_id,
                     content: String::new(),
                     stop_reason: "cancelled".to_string(),
+                    tokens_used: budget.tokens_used,
+                    tokens_limit: budget.tokens_limit,
+                    truncated_count: budget.truncated_count,
                 });
             }
             _ = async {
@@ -460,6 +475,9 @@ impl AiService {
                                 message_id: msg_id.clone(),
                                 content: res.response().to_string(),
                                 stop_reason: "end".to_string(),
+                                tokens_used: budget.tokens_used,
+                                tokens_limit: budget.tokens_limit,
+                                truncated_count: budget.truncated_count,
                             });
                             break;
                         }
@@ -684,14 +702,18 @@ mod tests {
             message_id: "msg-123".to_string(),
             content: "Full response".to_string(),
             stop_reason: "end".to_string(),
+            tokens_used: 4200,
+            tokens_limit: 128000,
+            truncated_count: 2,
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
         let parsed: serde_json::Value =
             serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(parsed["event"], "complete");
         assert_eq!(parsed["data"]["messageId"], "msg-123");
-        assert_eq!(parsed["data"]["content"], "Full response");
-        assert_eq!(parsed["data"]["stopReason"], "end");
+        assert_eq!(parsed["data"]["tokensUsed"], 4200);
+        assert_eq!(parsed["data"]["tokensLimit"], 128000);
+        assert_eq!(parsed["data"]["truncatedCount"], 2);
     }
 
     #[test]
