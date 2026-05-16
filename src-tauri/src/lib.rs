@@ -51,6 +51,7 @@ pub fn run() {
             commands::conversations::search_conversations,
             commands::conversations::get_messages,
             commands::conversations::save_message,
+            commands::conversations::delete_message,
             commands::conversations::update_conversation_persona,
             commands::presets::get_presets,
             commands::lorebooks::get_lorebooks,

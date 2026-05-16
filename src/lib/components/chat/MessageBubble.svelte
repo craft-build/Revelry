@@ -325,6 +325,7 @@
 				<!-- Delete: on user and AI messages, NOT on error messages -->
 				<button
 					type="button"
+					onclick={() => app.deleteMessage(message.id)}
 					class="inline-flex size-6 items-center justify-center rounded-(--radius-sm) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-destructive)"
 					aria-label="Delete"
 				>

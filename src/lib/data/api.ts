@@ -92,6 +92,10 @@ export async function saveMessage(message: Message): Promise<void> {
   return invoke<void>("save_message", { message });
 }
 
+export async function deleteMessage(id: string): Promise<void> {
+  return invoke<void>("delete_message", { id });
+}
+
 // ── Conversation persona ──────────────────────────────────────────────────────
 
 export async function updateConversationPersona(
@@ -259,7 +263,13 @@ export async function startChat(
   sortOrder: number,
   onEvent: Channel<StreamChunk>,
 ): Promise<void> {
-  return invoke<void>("start_chat", { conversationId, content, messageId, sortOrder, onEvent });
+  return invoke<void>("start_chat", {
+    conversationId,
+    content,
+    messageId,
+    sortOrder,
+    channel: onEvent,
+  });
 }
 
 export async function stopGeneration(): Promise<void> {
@@ -270,7 +280,7 @@ export async function regenerate(
   conversationId: string,
   onEvent: Channel<StreamChunk>,
 ): Promise<void> {
-  return invoke<void>("regenerate", { conversationId, onEvent });
+  return invoke<void>("regenerate", { conversationId, channel: onEvent });
 }
 
 export async function editAndResend(
@@ -278,5 +288,5 @@ export async function editAndResend(
   newContent: string,
   onEvent: Channel<StreamChunk>,
 ): Promise<void> {
-  return invoke<void>("edit_and_resend", { messageId, newContent, onEvent });
+  return invoke<void>("edit_and_resend", { messageId, newContent, channel: onEvent });
 }

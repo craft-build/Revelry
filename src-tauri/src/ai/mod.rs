@@ -322,7 +322,8 @@ impl AiService {
                     .api_key(api_key)
                     .base_url(url)
                     .build()
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| e.to_string())?
+                    .completions_api();
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
                     prompt, history, channel, message_id, cancel
@@ -344,7 +345,8 @@ impl AiService {
                     .api_key(api_key)
                     .base_url(url)
                     .build()
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| e.to_string())?
+                    .completions_api();
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
                     prompt, history, channel, message_id, cancel

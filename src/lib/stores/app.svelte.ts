@@ -40,6 +40,7 @@ import {
   stopGeneration as apiStopGeneration,
   regenerate as apiRegenerate,
   editAndResend as apiEditAndResend,
+  deleteMessage as apiDeleteMessage,
 } from "$lib/data/api";
 
 /**
@@ -217,6 +218,18 @@ class AppState {
 
   appendMessage(message: Message) {
     this.messages = [...this.messages, message];
+  }
+
+  async deleteMessage(id: string): Promise<void> {
+    const prev = this.messages;
+    this.messages = this.messages.filter((m) => m.id !== id);
+    try {
+      await apiDeleteMessage(id);
+    } catch (err) {
+      console.error("Failed to delete message:", err);
+      this.messages = prev;
+      throw err;
+    }
   }
 
   updateStreamingMessage(id: string, content: string, done = false) {
@@ -608,7 +621,10 @@ class AppState {
     }
   }
 
-  async updateConversationProvider(providerId: string | null, modelName: string | null): Promise<void> {
+  async updateConversationProvider(
+    providerId: string | null,
+    modelName: string | null,
+  ): Promise<void> {
     if (!this.active_conversation_id) return;
     const conv = this.active_conversation;
     const prevProviderId = conv?.provider_id ?? null;
@@ -616,7 +632,11 @@ class AppState {
     // Optimistically update local state
     this.conversations = this.conversations.map((c) =>
       c.id === this.active_conversation_id
-        ? { ...c, provider_id: providerId ?? undefined, model_name: modelName ?? undefined }
+        ? {
+            ...c,
+            provider_id: providerId ?? undefined,
+            model_name: modelName ?? undefined,
+          }
         : c,
     );
     try {
@@ -630,7 +650,11 @@ class AppState {
       // Revert on failure
       this.conversations = this.conversations.map((c) =>
         c.id === this.active_conversation_id
-          ? { ...c, provider_id: prevProviderId ?? undefined, model_name: prevModelName ?? undefined }
+          ? {
+              ...c,
+              provider_id: prevProviderId ?? undefined,
+              model_name: prevModelName ?? undefined,
+            }
           : c,
       );
     }
@@ -671,11 +695,15 @@ class AppState {
         id: crypto.randomUUID(),
         conversation_id: this.active_conversation_id,
         role: "assistant",
-        content: "No provider configured. Select a provider and model from the header.",
+        content:
+          "No provider configured. Select a provider and model from the header.",
         sort_order: (this.messages.at(-1)?.sort_order ?? -1) + 1,
         timestamp: new Date().toISOString(),
         is_streaming: false,
-        metadata: { stop_reason: "error", error_type: "no_provider_configured" },
+        metadata: {
+          stop_reason: "error",
+          error_type: "no_provider_configured",
+        },
       };
       this.appendMessage(errMsg);
       return;
@@ -723,11 +751,26 @@ class AppState {
           this.updateStreamingMessage(aiId, accumulated);
           break;
         case "complete":
-          this.updateStreamingMessage(aiId, chunk.data.content || accumulated, true);
+          this.updateStreamingMessage(
+            aiId,
+            chunk.data.content || accumulated,
+            true,
+          );
           // Update metadata with stop reason
           this.messages = this.messages.map((m) =>
             m.id === aiId
-              ? { ...m, metadata: { ...m.metadata, stop_reason: chunk.data.stopReason as Message["metadata"] extends { stop_reason?: infer S } ? S : never } }
+              ? {
+                  ...m,
+                  metadata: {
+                    ...m.metadata,
+                    stop_reason: chunk.data
+                      .stopReason as Message["metadata"] extends {
+                      stop_reason?: infer S;
+                    }
+                      ? S
+                      : never,
+                  },
+                }
               : m,
           );
           break;
@@ -738,7 +781,11 @@ class AppState {
                   ...m,
                   content: chunk.data.error,
                   is_streaming: false,
-                  metadata: { ...m.metadata, stop_reason: "error" as const, error_type: chunk.data.errorType },
+                  metadata: {
+                    ...m.metadata,
+                    stop_reason: "error" as const,
+                    error_type: chunk.data.errorType,
+                  },
                 }
               : m,
           );
@@ -757,9 +804,24 @@ class AppState {
       );
     } catch (err) {
       console.error("startChat invoke failed:", err);
+      const errorContent =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Failed to start generation.";
       this.messages = this.messages.map((m) =>
         m.id === aiId
-          ? { ...m, content: "Failed to start generation.", is_streaming: false, metadata: { ...m.metadata, stop_reason: "error" as const, error_type: "provider_error" } }
+          ? {
+              ...m,
+              content: errorContent,
+              is_streaming: false,
+              metadata: {
+                ...m.metadata,
+                stop_reason: "error" as const,
+                error_type: "provider_error",
+              },
+            }
           : m,
       );
       this.is_generating = false;
@@ -780,7 +842,9 @@ class AppState {
     if (!this.active_conversation_id) return;
 
     // Remove the last AI message from local state
-    const lastAiIdx = this.messages.findLastIndex((m) => m.role === "assistant" && m.metadata?.stop_reason !== "error");
+    const lastAiIdx = this.messages.findLastIndex(
+      (m) => m.role === "assistant" && m.metadata?.stop_reason !== "error",
+    );
     if (lastAiIdx === -1) return;
 
     this.messages = this.messages.filter((_, i) => i !== lastAiIdx);
@@ -812,10 +876,25 @@ class AppState {
           this.updateStreamingMessage(aiId, accumulated);
           break;
         case "complete":
-          this.updateStreamingMessage(aiId, chunk.data.content || accumulated, true);
+          this.updateStreamingMessage(
+            aiId,
+            chunk.data.content || accumulated,
+            true,
+          );
           this.messages = this.messages.map((m) =>
             m.id === aiId
-              ? { ...m, metadata: { ...m.metadata, stop_reason: chunk.data.stopReason as Message["metadata"] extends { stop_reason?: infer S } ? S : never } }
+              ? {
+                  ...m,
+                  metadata: {
+                    ...m.metadata,
+                    stop_reason: chunk.data
+                      .stopReason as Message["metadata"] extends {
+                      stop_reason?: infer S;
+                    }
+                      ? S
+                      : never,
+                  },
+                }
               : m,
           );
           break;
@@ -826,7 +905,11 @@ class AppState {
                   ...m,
                   content: chunk.data.error,
                   is_streaming: false,
-                  metadata: { ...m.metadata, stop_reason: "error" as const, error_type: chunk.data.errorType },
+                  metadata: {
+                    ...m.metadata,
+                    stop_reason: "error" as const,
+                    error_type: chunk.data.errorType,
+                  },
                 }
               : m,
           );
@@ -839,6 +922,26 @@ class AppState {
       await apiRegenerate(this.active_conversation_id, onEvent);
     } catch (err) {
       console.error("regenerate failed:", err);
+      const errorContent =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Regeneration failed.";
+      this.messages = this.messages.map((m) =>
+        m.id === aiId
+          ? {
+              ...m,
+              content: errorContent,
+              is_streaming: false,
+              metadata: {
+                ...m.metadata,
+                stop_reason: "error" as const,
+                error_type: "provider_error",
+              },
+            }
+          : m,
+      );
       this.is_generating = false;
     }
   }
@@ -886,10 +989,25 @@ class AppState {
           this.updateStreamingMessage(aiId, accumulated);
           break;
         case "complete":
-          this.updateStreamingMessage(aiId, chunk.data.content || accumulated, true);
+          this.updateStreamingMessage(
+            aiId,
+            chunk.data.content || accumulated,
+            true,
+          );
           this.messages = this.messages.map((m) =>
             m.id === aiId
-              ? { ...m, metadata: { ...m.metadata, stop_reason: chunk.data.stopReason as Message["metadata"] extends { stop_reason?: infer S } ? S : never } }
+              ? {
+                  ...m,
+                  metadata: {
+                    ...m.metadata,
+                    stop_reason: chunk.data
+                      .stopReason as Message["metadata"] extends {
+                      stop_reason?: infer S;
+                    }
+                      ? S
+                      : never,
+                  },
+                }
               : m,
           );
           break;
@@ -900,7 +1018,11 @@ class AppState {
                   ...m,
                   content: chunk.data.error,
                   is_streaming: false,
-                  metadata: { ...m.metadata, stop_reason: "error" as const, error_type: chunk.data.errorType },
+                  metadata: {
+                    ...m.metadata,
+                    stop_reason: "error" as const,
+                    error_type: chunk.data.errorType,
+                  },
                 }
               : m,
           );
@@ -913,6 +1035,26 @@ class AppState {
       await apiEditAndResend(messageId, newContent, onEvent);
     } catch (err) {
       console.error("editResend failed:", err);
+      const errorContent =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Edit & resend failed.";
+      this.messages = this.messages.map((m) =>
+        m.id === aiId
+          ? {
+              ...m,
+              content: errorContent,
+              is_streaming: false,
+              metadata: {
+                ...m.metadata,
+                stop_reason: "error" as const,
+                error_type: "provider_error",
+              },
+            }
+          : m,
+      );
       this.is_generating = false;
     }
   }
