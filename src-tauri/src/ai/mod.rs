@@ -30,6 +30,7 @@ pub struct BudgetInfo {
     pub truncated_count: usize,
 }
 
+
 /// A chunk of data from a streaming AI response.
 /// Serialized via Tauri Channel to the frontend using tagged enum pattern.
 #[derive(Clone, Serialize)]
