@@ -201,7 +201,7 @@ impl AiService {
                 let client = Self::build_openai_client(api_key, base_url)?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Anthropic => {
@@ -211,7 +211,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Ollama => {
@@ -223,7 +223,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Gemini => {
@@ -233,7 +233,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Cohere => {
@@ -243,7 +243,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Mistral => {
@@ -253,7 +253,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Groq => {
@@ -263,7 +263,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::DeepSeek => {
@@ -273,7 +273,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::OpenRouter => {
@@ -283,7 +283,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Xai => {
@@ -293,7 +293,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Perplexity => {
@@ -303,7 +303,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::Together => {
@@ -313,7 +313,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::AzureOpenAI => {
@@ -326,7 +326,7 @@ impl AiService {
                     .completions_api();
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::HuggingFace => {
@@ -336,7 +336,7 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
             ProviderType::CustomOpenAICompatible => {
@@ -349,7 +349,7 @@ impl AiService {
                     .completions_api();
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel
+                    prompt, history, channel, message_id, cancel, budget.clone()
                 );
             }
         }
