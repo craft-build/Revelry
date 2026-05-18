@@ -305,3 +305,16 @@ export async function editAndResend(
     channel: onEvent,
   });
 }
+
+// ── Card I/O ────────────────────────────────────────────────────────────────
+
+export async function importCard(filePath: string): Promise<CharacterCard> {
+  return invoke<CharacterCard>("import_card", { filePath });
+}
+
+export async function exportCard(
+  characterId: string,
+  savePath: string,
+): Promise<void> {
+  return invoke<void>("export_card", { characterId, savePath });
+}
