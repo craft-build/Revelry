@@ -257,7 +257,7 @@ Plans:
 
 **Wave 2** _(autonomous — Shiki preload + frontend card UI, blocked on Wave 1)_
 
-- [ ] 07-03: Shiki Preloading in Root Layout _(blocked on 07-01)_
+- [x] 07-03: Shiki Preloading in Root Layout ✓ 2026-05-18 _(was blocked on 07-01)_
 - [ ] 07-04: Wire Card Import/Export to Frontend UI _(blocked on 07-02)_
       **UI hint**: yes
 
