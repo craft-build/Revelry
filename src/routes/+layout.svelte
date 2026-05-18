@@ -5,6 +5,7 @@
 	import AppHeader from '$lib/components/layout/AppHeader.svelte';
 	import ConversationSidebar from '$lib/components/layout/ConversationSidebar.svelte';
 	import { page } from '$app/state';
+	import { createHighlighter } from 'shiki';
 	import { AlertTriangle, RefreshCw } from '@lucide/svelte';
 
 	let { children } = $props();
@@ -21,6 +22,29 @@
 			}
 		};
 		window.addEventListener('keydown', onkey);
+
+		// Preload Shiki syntax highlighting engine (used by MarkdownRenderer)
+		createHighlighter({
+			themes: ['vitesse-dark'],
+			langs: [
+				'javascript',
+				'typescript',
+				'python',
+				'rust',
+				'json',
+				'html',
+				'css',
+				'bash',
+				'markdown'
+			]
+		})
+			.then(() => {
+				// Shiki engine cached internally — MarkdownRenderer will reuse it
+			})
+			.catch((err: unknown) => {
+				console.warn('Shiki preload failed (non-critical):', err);
+			});
+
 		return () => window.removeEventListener('keydown', onkey);
 	});
 
