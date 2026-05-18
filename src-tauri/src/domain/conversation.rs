@@ -146,11 +146,7 @@ pub struct MessageBranch {
 
 impl MessageBranch {
     /// Creates a new branch with a generated UUID v4 id and current timestamp.
-    pub fn new(
-        conversation_id: String,
-        parent_message_id: String,
-        label: String,
-    ) -> Self {
+    pub fn new(conversation_id: String, parent_message_id: String, label: String) -> Self {
         let now = Utc::now();
         Self {
             id: Uuid::new_v4().to_string(),
@@ -336,8 +332,7 @@ mod tests {
             "Branch 1".to_string(),
         );
         let json = serde_json::to_string(&branch).expect("serialize failed");
-        let deserialized: MessageBranch =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let deserialized: MessageBranch = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(branch, deserialized);
     }
 
@@ -354,8 +349,7 @@ mod tests {
             rank: -1.5,
         };
         let json = serde_json::to_string(&result).expect("serialize failed");
-        let deserialized: SearchResult =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let deserialized: SearchResult = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(result, deserialized);
     }
 }

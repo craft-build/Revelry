@@ -390,3 +390,11 @@
     }
   }
 }
+
+/* FTS5 search highlight */
+mark {
+  background: oklch(from var(--color-accent) l c h / 0.2);
+  color: var(--color-accent);
+  border-radius: 2px;
+  padding: 0 2px;
+}

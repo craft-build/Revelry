@@ -359,8 +359,6 @@ export async function deleteBranch(branchId: string): Promise<void> {
 	return invoke<void>("delete_branch", { branchId });
 }
 
-export async function searchMessages(
-	query: string,
-): Promise<SearchResult[]> {
+export async function searchMessages(query: string): Promise<SearchResult[]> {
 	return invoke<SearchResult[]>("search_messages", { query });
 }

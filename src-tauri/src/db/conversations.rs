@@ -289,9 +289,7 @@ pub fn load_all_branches_for_conversation(
 pub fn delete_branch_by_id(conn: &Connection, branch_id: &str) -> Result<()> {
     // Get conversation_id BEFORE deleting (needed for preview update)
     let conv_id: Option<String> = conn
-        .prepare_cached(
-            "SELECT conversation_id FROM message_branches WHERE id = ?1",
-        )?
+        .prepare_cached("SELECT conversation_id FROM message_branches WHERE id = ?1")?
         .query_row(params![branch_id], |row| row.get(0))
         .ok();
 
@@ -317,9 +315,7 @@ pub fn delete_branch_by_id(conn: &Connection, branch_id: &str) -> Result<()> {
 /// Counts the number of branches for a conversation (for auto-labeling).
 pub fn count_branches_for_conversation(conn: &Connection, conversation_id: &str) -> Result<i64> {
     let count: i64 = conn
-        .prepare_cached(
-            "SELECT COUNT(*) FROM message_branches WHERE conversation_id = ?1",
-        )?
+        .prepare_cached("SELECT COUNT(*) FROM message_branches WHERE conversation_id = ?1")?
         .query_row(params![conversation_id], |row| row.get(0))?;
     Ok(count)
 }
@@ -364,10 +360,7 @@ pub fn search_messages(conn: &Connection, query: &str) -> Result<Vec<SearchResul
     }
 
     // Also search conversation titles via LIKE
-    let like_pattern = format!(
-        "%{}%",
-        query.replace('%', "\\%").replace('_', "\\_")
-    );
+    let like_pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
     let mut title_stmt = conn.prepare_cached(
         "SELECT id as conversation_id, title as conversation_title,
                 character_id, 'title' as match_type,
@@ -569,7 +562,8 @@ mod tests {
             start_conversation(&conn, &character.id).expect("Start conversation should succeed");
 
         // The initial message from start_conversation
-        let initial_messages = load_messages(&conn, &conversation.id, None).expect("Load should succeed");
+        let initial_messages =
+            load_messages(&conn, &conversation.id, None).expect("Load should succeed");
         let next_sort_order = initial_messages.len() as i32;
 
         // Save a user message
@@ -840,12 +834,15 @@ mod tests {
         let messages = load_messages(&conn, &conversation.id, None).expect("Load should succeed");
         let initial_msg_id = &messages[0].id;
 
-        let branch =
-            MessageBranch::new(conversation.id.clone(), initial_msg_id.clone(), "Branch 1".to_string());
+        let branch = MessageBranch::new(
+            conversation.id.clone(),
+            initial_msg_id.clone(),
+            "Branch 1".to_string(),
+        );
         create_branch(&conn, &branch).expect("Create branch should succeed");
 
-        let loaded = load_branches_for_message(&conn, initial_msg_id)
-            .expect("Load branches should succeed");
+        let loaded =
+            load_branches_for_message(&conn, initial_msg_id).expect("Load branches should succeed");
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].id, branch.id);
         assert_eq!(loaded[0].label, "Branch 1");
@@ -865,8 +862,11 @@ mod tests {
         let initial_msg_id = &messages[0].id;
 
         // Create a branch from the initial message
-        let branch =
-            MessageBranch::new(conversation.id.clone(), initial_msg_id.clone(), "Branch 1".to_string());
+        let branch = MessageBranch::new(
+            conversation.id.clone(),
+            initial_msg_id.clone(),
+            "Branch 1".to_string(),
+        );
         create_branch(&conn, &branch).expect("Create branch should succeed");
 
         // Save a message on the branch
@@ -899,7 +899,9 @@ mod tests {
         let branch_messages = load_messages(&conn, &conversation.id, Some(&branch.id))
             .expect("Load branch should succeed");
         assert_eq!(branch_messages.len(), 3); // shared root + branch_msg
-        assert!(branch_messages.iter().any(|m| m.branch_id.as_deref() == Some(branch.id.as_str())));
+        assert!(branch_messages
+            .iter()
+            .any(|m| m.branch_id.as_deref() == Some(branch.id.as_str())));
     }
 
     #[test]

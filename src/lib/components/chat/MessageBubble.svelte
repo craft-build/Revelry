@@ -1,19 +1,24 @@
 <script lang="ts">
-	import type { Message, CharacterCard, UserPersona } from '$lib/types';
+	import type { Message, CharacterCard, UserPersona, MessageBranch } from '$lib/types';
 	import { Avatar } from '$lib/components/ui';
-	import { Pencil, RotateCcw, Copy, Trash2, AlertTriangle, Loader2 } from '@lucide/svelte';
+	import { Pencil, RotateCcw, Copy, Trash2, AlertTriangle, Loader2, GitBranch } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 	import { app } from '$lib/stores/app.svelte';
 	import { MarkdownRenderer } from '$lib/components/chat';
+	import BranchBadge from './BranchBadge.svelte';
+	import BranchPopover from './BranchPopover.svelte';
 
 	interface Props {
 		message: Message;
 		character: CharacterCard | undefined;
 		persona: UserPersona | undefined;
 		isLastAiMessage?: boolean;
+		branchesAtMessage?: MessageBranch[];
 	}
 
-	let { message, character, persona, isLastAiMessage = false }: Props = $props();
+	let { message, character, persona, isLastAiMessage = false, branchesAtMessage = [] }: Props = $props();
+
+	let branchPopoverOpen = $state(false);
 
 	let isUser = $derived(message.role === 'user');
 	let isError = $derived(message.metadata?.stop_reason === 'error');
@@ -165,6 +170,24 @@
 			{/if}
 		</div>
 
+		<!-- Branch badge (when branches exist at this fork point) -->
+		{#if branchesAtMessage.length > 0}
+			<div class={cn('flex items-center gap-1 px-1', isUser ? 'flex-row-reverse' : 'flex-row')}>
+				<BranchPopover
+					branches={branchesAtMessage}
+					activeBranchId={app.active_branch_id}
+					messages={app.messages}
+					bind:open={branchPopoverOpen}
+					onopenchange={(v) => branchPopoverOpen = v}
+				>
+					<BranchBadge
+						branches={branchesAtMessage}
+						activeBranchId={app.active_branch_id}
+					/>
+				</BranchPopover>
+			</div>
+		{/if}
+
 		<!-- Bubble -->
 		{#if isError}
 			{@const errorInfo = getErrorDisplay(message.metadata?.error_type as string, message.content)}
@@ -291,6 +314,15 @@
 					onclick={() => navigator.clipboard.writeText(message.content)}
 				>
 					<Copy class="size-3" />
+				</button>
+				<!-- Branch from here: on all messages -->
+				<button
+					type="button"
+					onclick={() => app.forkFromMessage(message.id, !isUser)}
+					class="inline-flex size-6 items-center justify-center rounded-(--radius-sm) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
+					aria-label="Branch from here"
+				>
+					<GitBranch class="size-3" />
 				</button>
 				<!-- Edit: only on user messages -->
 				{#if isUser}
