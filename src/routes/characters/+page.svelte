@@ -6,7 +6,7 @@
 	import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 	import PersonaCard from '$lib/components/personas/PersonaCard.svelte';
 	import { LorebookCard, LorebookEditor } from '$lib/components/lorebooks';
-	import { CharacterEditorDialog, DeleteConfirmationDialog } from '$lib/components/characters';
+	import { CharacterEditorDialog, DeleteConfirmationDialog, ImportErrorDialog } from '$lib/components/characters';
 	import { PersonaEditorDialog } from '$lib/components/personas';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -40,6 +40,11 @@
 	let deleting_entity_type = $state<'character' | 'persona' | 'lorebook'>('character');
 	let is_deleting = $state(false);
 
+	// ── Import state ─────────────────────────────────────────────────────
+	let import_error_open = $state(false);
+	let import_error_message = $state('');
+	let is_importing = $state(false);
+
 	// ── Persona editor state ────────────────────────────────────────────
 	let persona_editor_open = $state(false);
 	let persona_editor_mode = $state<'create' | 'edit'>('create');
@@ -49,6 +54,41 @@
 		editor_mode = 'create';
 		editing_character = undefined;
 		editor_open = true;
+	}
+
+	async function handleImport() {
+		if (is_importing) return;
+		is_importing = true;
+		try {
+			const importedCharacter = await app.importCharacterFromFile();
+			// Open the character editor in "create" mode, pre-filled with imported data
+			editor_mode = 'create';
+			editing_character = importedCharacter;
+			editor_open = true;
+		} catch (err) {
+			// User cancelled file dialog — not an error
+			if (err instanceof Error && err.message === 'cancelled') {
+				return;
+			}
+			// Show import error dialog
+			import_error_message =
+				err instanceof Error
+					? err.message
+					: typeof err === 'string'
+						? err
+						: 'Could not read the character card.';
+			import_error_open = true;
+		} finally {
+			is_importing = false;
+		}
+	}
+
+	async function handleExport(id: string) {
+		try {
+			await app.exportCharacter(id);
+		} catch (err) {
+			console.error('Failed to export character:', err);
+		}
 	}
 
 	function openEditEditor(id: string) {
@@ -163,9 +203,14 @@
 			</div>
 
 			<div class="flex items-center gap-2">
-				<Button variant="secondary" size="sm">
-					<Upload class="size-3.5" />
-					Import card
+				<Button variant="secondary" size="sm" onclick={handleImport} disabled={is_importing}>
+					{#if is_importing}
+						<span class="size-3.5 animate-spin rounded-full border-2 border-(--color-subtle) border-t-transparent"></span>
+						Importing…
+					{:else}
+						<Upload class="size-3.5" />
+						Import card
+					{/if}
 				</Button>
 				<Button variant="primary" size="sm" onclick={() => tab === 'personas' ? openPersonaCreateEditor() : tab === 'lorebooks' ? openLorebookCreateEditor() : openCreateEditor()}>
 					<Plus class="size-3.5" />
@@ -260,7 +305,7 @@
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
 							{#each app.filtered_characters as character (character.id)}
-								<CharacterCard {character} onedit={openEditEditor} ondelete={openDeleteDialog} />
+								<CharacterCard {character} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} />
 							{/each}
 						</div>
 					{/if}
@@ -351,6 +396,12 @@
 	bind:open={lorebook_editor_open}
 	mode={lorebook_editor_mode}
 	lorebook={editing_lorebook}
+/>
+
+<!-- Import error dialog -->
+<ImportErrorDialog
+	bind:open={import_error_open}
+	message={import_error_message}
 />
 
 <!-- Delete confirmation dialog -->
