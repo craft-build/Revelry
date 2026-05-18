@@ -2,6 +2,8 @@ import type {
 	CharacterCard,
 	Conversation,
 	Message,
+	MessageBranch,
+	SearchResult,
 	UserPersona,
 	Provider,
 	GenerationPreset,
@@ -42,6 +44,12 @@ import {
 	regenerate as apiRegenerate,
 	editAndResend as apiEditAndResend,
 	deleteMessage as apiDeleteMessage,
+	getMessages as apiGetMessages,
+	forkConversation as apiForkConversation,
+	getBranchesForMessage as apiGetBranchesForMessage,
+	getBranchesForConversation as apiGetBranchesForConversation,
+	deleteBranch as apiDeleteBranch,
+	searchMessages as apiSearchMessages,
 	saveMessage as apiSaveMessage,
 	importCard as apiImportCard,
 	exportCard as apiExportCard,
@@ -82,6 +90,12 @@ class AppState {
 	keyring_available = $state<boolean>(true);
 	focusProviderSelector = $state<boolean>(false);
 
+	// ── Branch state ───────────────────────────────────────────────────────
+	active_branch_id = $state<string | null>(null);
+	branches = $state<MessageBranch[]>([]);
+	search_results = $state<SearchResult[]>([]);
+	is_searching = $state<boolean>(false);
+
 	// ── Derived ────────────────────────────────────────────────────────────
 	get active_conversation(): Conversation | undefined {
 		return this.conversations.find((c) => c.id === this.active_conversation_id);
@@ -104,6 +118,11 @@ class AppState {
 		const conv = this.active_conversation;
 		if (!conv?.provider_id) return undefined;
 		return this.providers.find((p) => p.id === conv.provider_id);
+	}
+
+	get active_branch(): MessageBranch | undefined {
+		if (!this.active_branch_id) return undefined;
+		return this.branches.find((b) => b.id === this.active_branch_id);
 	}
 
 	/** Effective context window size for the active conversation.
@@ -237,15 +256,20 @@ class AppState {
 		}
 	}
 
-	openConversation(id: string, messages: Message[]) {
+	openConversation(id: string, messages: Message[], branchId?: string | null) {
 		this.active_conversation_id = id;
 		this.messages = messages;
+		this.active_branch_id = branchId ?? null;
+		// Load branches for this conversation
+		this.loadBranchesForConversation(id);
 	}
 
 	closeConversation() {
 		this.active_conversation_id = null;
 		this.messages = [];
 		this.context_budget = null;
+		this.active_branch_id = null;
+		this.branches = [];
 	}
 
 	appendMessage(message: Message) {
@@ -319,6 +343,113 @@ class AppState {
 	}
 
 	// ── Conversation actions ────────────────────────────────────────────────
+
+	/** Load all branches for a conversation. */
+	async loadBranchesForConversation(conversationId: string): Promise<void> {
+		try {
+			this.branches = await apiGetBranchesForConversation(conversationId);
+		} catch (err) {
+			console.error("Failed to load branches:", err);
+			this.branches = [];
+		}
+	}
+
+	/** Switch to a different branch. Reloads messages for that branch. */
+	async switchBranch(branchId: string | null): Promise<void> {
+		if (!this.active_conversation_id) return;
+		this.active_branch_id = branchId;
+		try {
+			const messages = await apiGetMessages(
+				this.active_conversation_id,
+				branchId,
+			);
+			this.messages = messages;
+		} catch (err) {
+			console.error("Failed to switch branch:", err);
+		}
+	}
+
+	/** Fork from a specific message, creating a new branch. */
+	async forkFromMessage(
+		messageId: string,
+		isAiMessage: boolean,
+	): Promise<void> {
+		if (!this.active_conversation_id) return;
+		try {
+			const branch = await apiForkConversation(
+				this.active_conversation_id,
+				messageId,
+			);
+			this.branches = [...this.branches, branch];
+			this.active_branch_id = branch.id;
+			// Load messages for the new branch
+			const messages = await apiGetMessages(
+				this.active_conversation_id,
+				branch.id,
+			);
+			this.messages = messages;
+
+			// If forking from an AI message, auto-regenerate on the new branch
+			if (isAiMessage) {
+				await this.regenerate();
+			}
+		} catch (err) {
+			console.error("Failed to create branch:", err);
+			throw err;
+		}
+	}
+
+	/** Delete a branch. If it's the active branch, switch to Main. */
+	async deleteBranchAction(branchId: string): Promise<void> {
+		try {
+			await apiDeleteBranch(branchId);
+			this.branches = this.branches.filter((b) => b.id !== branchId);
+			if (this.active_branch_id === branchId) {
+				this.active_branch_id = null;
+				// Reload root messages
+				if (this.active_conversation_id) {
+					const messages = await apiGetMessages(
+						this.active_conversation_id,
+						null,
+					);
+					this.messages = messages;
+				}
+			}
+		} catch (err) {
+			console.error("Failed to delete branch:", err);
+			throw err;
+		}
+	}
+
+	/** Search across all conversations and messages via backend FTS5. */
+	async searchMessagesAction(query: string): Promise<void> {
+		if (!query.trim()) {
+			this.search_results = [];
+			return;
+		}
+		this.is_searching = true;
+		try {
+			this.search_results = await apiSearchMessages(query.trim());
+		} catch (err) {
+			console.error("Search failed:", err);
+			this.search_results = [];
+		} finally {
+			this.is_searching = false;
+		}
+	}
+
+	/** Navigate to a search result's conversation and optionally switch branch. */
+	async navigateToSearchResult(result: SearchResult): Promise<void> {
+		const messages = await apiGetMessages(
+			result.conversation_id,
+			result.branch_id ?? null,
+		);
+		this.openConversation(
+			result.conversation_id,
+			messages,
+			result.branch_id ?? null,
+		);
+	}
 
 	async startConversation(characterId: string): Promise<Conversation> {
 		const conversation = await apiStartConversation(characterId);

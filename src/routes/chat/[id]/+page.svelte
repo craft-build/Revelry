@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { app } from '$lib/stores/app.svelte';
+	import type { MessageBranch } from '$lib/types';
 	import { getMessages } from '$lib/data/api';
 	import ChatHeader from '$lib/components/chat/ChatHeader.svelte';
 	import MessageBubble from '$lib/components/chat/MessageBubble.svelte';
@@ -47,6 +48,19 @@
 			.filter((m) => m.role === 'assistant' && m.metadata?.stop_reason !== 'error')
 			.at(-1)?.id,
 	);
+
+	// Map parent_message_id -> branches for passing to MessageBubble
+	let branchesByParentId = $derived(
+		(() => {
+			const map = new Map<string, MessageBranch[]>();
+			for (const branch of app.branches) {
+				const existing = map.get(branch.parent_message_id) ?? [];
+				existing.push(branch);
+				map.set(branch.parent_message_id, existing);
+			}
+			return map;
+		})(),
+	);
 </script>
 
 <svelte:head>
@@ -64,12 +78,15 @@
 			</div>
 		{:else}
 			{#each app.messages as message (message.id)}
-				<MessageBubble
-					{message}
-					character={app.active_character}
-					persona={app.active_persona}
-					isLastAiMessage={message.id === lastAiMessageId}
-				/>
+				<div id="message-{message.id}" data-message-id={message.id}>
+					<MessageBubble
+						{message}
+						character={app.active_character}
+						persona={app.active_persona}
+						isLastAiMessage={message.id === lastAiMessageId}
+						branchesAtMessage={branchesByParentId.get(message.id) ?? []}
+					/>
+				</div>
 			{/each}
 		{/if}
 	</div>
