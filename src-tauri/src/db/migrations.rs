@@ -241,6 +241,57 @@ pub fn get_migrations() -> Migrations<'static> {
              DROP TABLE IF EXISTS lorebooks;"
         ),
 
+        // Phase 8: message branching + FTS5 full-text search
+        M::up(
+            "
+            -- Message branches table (conversation forking)
+            CREATE TABLE message_branches (
+                id TEXT PRIMARY KEY,
+                conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+                parent_message_id TEXT NOT NULL,
+                label TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX idx_message_branches_parent ON message_branches(parent_message_id);
+            CREATE INDEX idx_message_branches_conv ON message_branches(conversation_id);
+
+            -- Add branch_id column to messages (nullable FK to message_branches)
+            ALTER TABLE messages ADD COLUMN branch_id TEXT REFERENCES message_branches(id) ON DELETE CASCADE;
+            CREATE INDEX idx_messages_conv_branch ON messages(conversation_id, branch_id);
+
+            -- FTS5 virtual table for message content search
+            CREATE VIRTUAL TABLE messages_fts USING fts5(
+                content,
+                content=messages,
+                content_rowid=rowid
+            );
+
+            -- FTS5 sync triggers
+            CREATE TRIGGER messages_ai AFTER INSERT ON messages BEGIN
+                INSERT INTO messages_fts(rowid, content) VALUES (new.rowid, new.content);
+            END;
+
+            CREATE TRIGGER messages_ad AFTER DELETE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
+            END;
+
+            CREATE TRIGGER messages_au AFTER UPDATE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
+                INSERT INTO messages_fts(rowid, content) VALUES (new.rowid, new.content);
+            END;
+            "
+        )
+        .down(
+            "DROP TRIGGER IF EXISTS messages_au;
+             DROP TRIGGER IF EXISTS messages_ad;
+             DROP TRIGGER IF EXISTS messages_ai;
+             DROP TABLE IF EXISTS messages_fts;
+             DROP INDEX IF EXISTS idx_messages_conv_branch;
+             DROP INDEX IF EXISTS idx_message_branches_conv;
+             DROP INDEX IF EXISTS idx_message_branches_parent;
+             DROP TABLE IF EXISTS message_branches;"
+        ),
+
         // Phase 4: provider models + conversation model_name
         M::up(
             "
@@ -538,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn test_messages_no_branch_id() {
+    fn test_messages_has_branch_id() {
         let conn = setup_test_db();
         let columns: Vec<String> = conn
             .prepare("SELECT * FROM messages")
@@ -548,8 +599,8 @@ mod tests {
             .map(|s| s.to_string())
             .collect();
         assert!(
-            !columns.contains(&"branch_id".to_string()),
-            "messages should NOT have 'branch_id' column (deferred to Phase 8)"
+            columns.contains(&"branch_id".to_string()),
+            "messages should have 'branch_id' column (Phase 8)"
         );
         let expected = [
             "id",
@@ -558,6 +609,7 @@ mod tests {
             "content",
             "sort_order",
             "timestamp",
+            "branch_id",
         ];
         for col in &expected {
             assert!(
@@ -569,7 +621,7 @@ mod tests {
     }
 
     #[test]
-    fn test_no_message_branches_table() {
+    fn test_message_branches_table_exists() {
         let conn = setup_test_db();
         let result: bool = conn
             .query_row(
@@ -579,8 +631,24 @@ mod tests {
             )
             .expect("Failed to query sqlite_master");
         assert!(
-            !result,
-            "message_branches table should NOT exist in Phase 2"
+            result,
+            "message_branches table should exist after Phase 8 migration"
+        );
+    }
+
+    #[test]
+    fn test_messages_fts_exists() {
+        let conn = setup_test_db();
+        let result: bool = conn
+            .query_row(
+                "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='messages_fts')",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query sqlite_master");
+        assert!(
+            result,
+            "messages_fts virtual table should exist after Phase 8 migration"
         );
     }
 

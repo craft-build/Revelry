@@ -79,7 +79,7 @@ impl FromStr for MessageRole {
 }
 
 /// A single message within a conversation.
-/// Phase 2 — no branch_id (deferred to Phase 8).
+/// Phase 8 — includes branch_id for conversation forking.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Message {
     pub id: String,
@@ -88,6 +88,8 @@ pub struct Message {
     pub content: String,
     pub sort_order: i32,
     pub timestamp: DateTime<Utc>,
+    /// Branch this message belongs to. None = Main/root path.
+    pub branch_id: Option<String>,
 }
 
 impl Message {
@@ -101,6 +103,7 @@ impl Message {
             content,
             sort_order: 0,
             timestamp: now,
+            branch_id: None,
         }
     }
 
@@ -119,8 +122,58 @@ impl Message {
             content,
             sort_order,
             timestamp: now,
+            branch_id: None,
         }
     }
+
+    /// Builder method to set branch_id.
+    pub fn with_branch_id(mut self, branch_id: Option<String>) -> Self {
+        self.branch_id = branch_id;
+        self
+    }
+}
+
+/// A branch in a conversation, created when a user forks from a message.
+/// Tracks which message the branch diverges from and a human-readable label.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct MessageBranch {
+    pub id: String,
+    pub conversation_id: String,
+    pub parent_message_id: String,
+    pub label: String,
+    pub created_at: DateTime<Utc>,
+}
+
+impl MessageBranch {
+    /// Creates a new branch with a generated UUID v4 id and current timestamp.
+    pub fn new(
+        conversation_id: String,
+        parent_message_id: String,
+        label: String,
+    ) -> Self {
+        let now = Utc::now();
+        Self {
+            id: Uuid::new_v4().to_string(),
+            conversation_id,
+            parent_message_id,
+            label,
+            created_at: now,
+        }
+    }
+}
+
+/// A search result from FTS5 message search or conversation title search.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct SearchResult {
+    pub conversation_id: String,
+    pub conversation_title: String,
+    pub character_id: String,
+    /// Either "title" or "message"
+    pub match_type: String,
+    pub message_snippet: Option<String>,
+    pub message_id: Option<String>,
+    pub branch_id: Option<String>,
+    pub rank: f64,
 }
 
 #[cfg(test)]
@@ -184,6 +237,9 @@ mod tests {
         // Timestamp should be set
         let now = Utc::now();
         assert!(msg.timestamp <= now);
+
+        // branch_id should be None by default
+        assert!(msg.branch_id.is_none());
     }
 
     #[test]
@@ -197,6 +253,19 @@ mod tests {
 
         assert_eq!(msg.role, MessageRole::Assistant);
         assert_eq!(msg.sort_order, 5);
+        assert!(msg.branch_id.is_none());
+    }
+
+    #[test]
+    fn test_message_with_branch_id() {
+        let msg = Message::new(
+            "conv-1".to_string(),
+            MessageRole::User,
+            "Hello!".to_string(),
+        )
+        .with_branch_id(Some("branch-1".to_string()));
+
+        assert_eq!(msg.branch_id, Some("branch-1".to_string()));
     }
 
     #[test]
@@ -240,5 +309,53 @@ mod tests {
         let json = serde_json::to_string(&msg).expect("serialize failed");
         let deserialized: Message = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(msg, deserialized);
+    }
+
+    #[test]
+    fn test_message_branch_new() {
+        let branch = MessageBranch::new(
+            "conv-1".to_string(),
+            "msg-1".to_string(),
+            "Branch 1".to_string(),
+        );
+
+        assert!(!branch.id.is_empty());
+        assert!(Uuid::parse_str(&branch.id).is_ok());
+        assert_eq!(branch.conversation_id, "conv-1");
+        assert_eq!(branch.parent_message_id, "msg-1");
+        assert_eq!(branch.label, "Branch 1");
+        let now = Utc::now();
+        assert!(branch.created_at <= now);
+    }
+
+    #[test]
+    fn test_serde_roundtrip_message_branch() {
+        let branch = MessageBranch::new(
+            "conv-1".to_string(),
+            "msg-1".to_string(),
+            "Branch 1".to_string(),
+        );
+        let json = serde_json::to_string(&branch).expect("serialize failed");
+        let deserialized: MessageBranch =
+            serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(branch, deserialized);
+    }
+
+    #[test]
+    fn test_serde_roundtrip_search_result() {
+        let result = SearchResult {
+            conversation_id: "conv-1".to_string(),
+            conversation_title: "Chat with Aria".to_string(),
+            character_id: "char-1".to_string(),
+            match_type: "message".to_string(),
+            message_snippet: Some("Hello <mark>world</mark>".to_string()),
+            message_id: Some("msg-1".to_string()),
+            branch_id: None,
+            rank: -1.5,
+        };
+        let json = serde_json::to_string(&result).expect("serialize failed");
+        let deserialized: SearchResult =
+            serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(result, deserialized);
     }
 }

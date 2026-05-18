@@ -167,7 +167,7 @@ pub fn search_characters(conn: &Connection, query: &str) -> Result<Vec<Character
 /// Sanitizes a query string for FTS5 MATCH.
 /// Wraps the query in double quotes after escaping internal quotes,
 /// preventing FTS5 operator injection.
-fn sanitize_fts_query(query: &str) -> String {
+pub(crate) fn sanitize_fts_query(query: &str) -> String {
     // Escape double quotes by doubling them
     let escaped = query.replace('"', "\"\"");
     // Wrap in double quotes for phrase matching

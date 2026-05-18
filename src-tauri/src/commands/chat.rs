@@ -239,6 +239,7 @@ pub async fn start_chat(
         content: content.clone(),
         sort_order,
         timestamp: chrono::Utc::now(),
+        branch_id: None,
     };
     {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();

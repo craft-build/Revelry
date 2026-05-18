@@ -157,6 +157,7 @@ mod tests {
             content: content.to_string(),
             sort_order: 0,
             timestamp: Utc::now(),
+            branch_id: None,
         }
     }
 

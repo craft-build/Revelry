@@ -342,7 +342,7 @@ impl DbWorker {
                 conversation_id,
                 reply,
             } => {
-                let result = conversations::load_messages(conn, &conversation_id);
+                let result = conversations::load_messages(conn, &conversation_id, None);
                 let _ = reply.send(result);
             }
             DbCommand::SaveMessage { message, reply } => {

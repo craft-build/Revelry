@@ -1,5 +1,5 @@
 use crate::domain::character::CharacterCardV2;
-use crate::domain::conversation::{Conversation, Message, MessageRole};
+use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
 use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{Lorebook, LorebookActivation, LorebookEntry, LorebookPosition};
 use crate::domain::persona::Persona;
@@ -131,7 +131,7 @@ pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
 }
 
 /// Converts a database row into a Message.
-/// Phase 2: no branch_id. Role is parsed via MessageRole::from_str().
+/// Phase 8: includes branch_id. Role is parsed via MessageRole::from_str().
 /// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
 pub fn row_to_message(row: &Row) -> rusqlite::Result<Message> {
     let timestamp_str: String = row.get("timestamp")?;
@@ -156,6 +156,21 @@ pub fn row_to_message(row: &Row) -> rusqlite::Result<Message> {
         content: row.get("content")?,
         sort_order: row.get("sort_order")?,
         timestamp,
+        branch_id: row.get("branch_id")?,
+    })
+}
+
+/// Converts a database row into a MessageBranch.
+pub fn row_to_message_branch(row: &Row) -> rusqlite::Result<MessageBranch> {
+    let created_at_str: String = row.get("created_at")?;
+    let created_at = parse_timestamp(&created_at_str)?;
+
+    Ok(MessageBranch {
+        id: row.get("id")?,
+        conversation_id: row.get("conversation_id")?,
+        parent_message_id: row.get("parent_message_id")?,
+        label: row.get("label")?,
+        created_at,
     })
 }
 
