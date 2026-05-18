@@ -4,7 +4,15 @@ plan: 01
 subsystem:
   - ai
   - prompt-engine
-tags: [tiktoken-rs, prompt-assembly, token-counting, budget-aware, template-variables, persona-compression]
+tags:
+  [
+    tiktoken-rs,
+    prompt-assembly,
+    token-counting,
+    budget-aware,
+    template-variables,
+    persona-compression,
+  ]
 
 # Dependency graph
 requires:
@@ -20,7 +28,13 @@ affects: [06-02, 06-03, 06-04, 09-power-features]
 # Tech tracking
 tech-stack:
   added: [tiktoken-rs 0.11]
-  patterns: [budget-aware-prompt-assembly, 5-layer-priority-queue, persona-compression-tiers, lazy-bpe-initialization]
+  patterns:
+    [
+      budget-aware-prompt-assembly,
+      5-layer-priority-queue,
+      persona-compression-tiers,
+      lazy-bpe-initialization,
+    ]
 
 key-files:
   created:

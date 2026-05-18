@@ -54,6 +54,7 @@ completed: 2026-05-16
 - **Files modified:** 3
 
 ## Accomplishments
+
 - Extended StreamChunk complete variant with tokensUsed, tokensLimit, truncatedCount fields
 - Added ContextBudget interface and wired it into AppState as reactive state
 - Updated all three streaming handlers (startChat, regenerate, editResend) to extract budget from complete events
@@ -71,11 +72,13 @@ Each task was committed atomically:
 **Plan metadata:** pending (docs: complete plan)
 
 ## Files Created/Modified
+
 - `src/lib/types/index.ts` - Extended StreamChunk complete variant with budget fields; added ContextBudget interface
 - `src/lib/stores/app.svelte.ts` - Added context_budget state, updateContextBudget action, and budget extraction in all three streaming handlers
 - `src/lib/components/chat/MessageInput.svelte` - Replaced estimateTokens with real backend data; added three-tier color coding
 
 ## Decisions Made
+
 - Fallback to 8192 context limit when no budget data is available from backend (graceful degradation)
 - Kept estimateTokens() in utils per UI-SPEC decision #3 (not removed)
 
@@ -84,15 +87,19 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 None
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Context bar now reads real backend budget data from StreamChunk::Complete events
 - Ready for plan 06-04 (integrate prompt engine into streaming chat flow)
 
 ---
-*Phase: 06-smart-prompts*
-*Completed: 2026-05-16*
+
+_Phase: 06-smart-prompts_
+_Completed: 2026-05-16_

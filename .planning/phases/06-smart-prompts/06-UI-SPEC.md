@@ -57,13 +57,13 @@ Exceptions: none
 
 **Phase 6 role breakdown by element:**
 
-| Element                                  | Size    | Weight | Font Family | Notes                                  |
-| ---------------------------------------- | ------- | ------ | ----------- | -------------------------------------- |
-| Context bar token count (e.g., "4,200")  | 10px    | 400    | Geist sans  | Existing — unchanged                   |
-| Context bar limit (e.g., "/ 128,000")    | 10px    | 400    | Geist sans  | Existing — unchanged                   |
-| Context bar label text ("tok")           | 10px    | 400    | Geist sans  | Existing — unchanged                   |
-| Budget overflow error bubble text        | 15px    | 400    | Geist sans  | Same as Phase 5 error bubble text      |
-| Budget overflow error heading            | 12px    | 600    | Geist sans  | Same as Phase 5 error label            |
+| Element                                 | Size | Weight | Font Family | Notes                             |
+| --------------------------------------- | ---- | ------ | ----------- | --------------------------------- |
+| Context bar token count (e.g., "4,200") | 10px | 400    | Geist sans  | Existing — unchanged              |
+| Context bar limit (e.g., "/ 128,000")   | 10px | 400    | Geist sans  | Existing — unchanged              |
+| Context bar label text ("tok")          | 10px | 400    | Geist sans  | Existing — unchanged              |
+| Budget overflow error bubble text       | 15px | 400    | Geist sans  | Same as Phase 5 error bubble text |
+| Budget overflow error heading           | 12px | 600    | Geist sans  | Same as Phase 5 error label       |
 
 No new typographic declarations in Phase 6.
 
@@ -79,11 +79,11 @@ All colors defined as OKLCH values in `src/app.css` @theme block. Dark theme onl
 
 The existing progress bar fill color changes dynamically based on context utilization percentage. This replaces the current static `--color-accent` fill:
 
-| Utilization    | Bar Fill Color                | Tailwind Token          | Visual Effect                  |
-| -------------- | ----------------------------- | ----------------------- | ------------------------------ |
-| < 80%          | `oklch(0.72 0.15 155)`       | `--color-success`       | Green — healthy budget         |
-| 80% – 95%      | `oklch(0.78 0.14 80)`        | `--color-warning`       | Yellow — approaching limit     |
-| > 95%          | `oklch(0.66 0.18 25)`        | `--color-destructive`   | Red — budget critical          |
+| Utilization | Bar Fill Color         | Tailwind Token        | Visual Effect              |
+| ----------- | ---------------------- | --------------------- | -------------------------- |
+| < 80%       | `oklch(0.72 0.15 155)` | `--color-success`     | Green — healthy budget     |
+| 80% – 95%   | `oklch(0.78 0.14 80)`  | `--color-warning`     | Yellow — approaching limit |
+| > 95%       | `oklch(0.66 0.18 25)`  | `--color-destructive` | Red — budget critical      |
 
 All three tokens already exist in `src/app.css` @theme block. No new color tokens.
 
@@ -113,12 +113,12 @@ No new empty states in Phase 6.
 
 When the PromptEngine cannot assemble a prompt even with maximum compression (e.g., sticky layer alone exceeds context window), an inline error bubble appears in the chat flow. This uses the **exact same error bubble visual contract from Phase 5** (see `05-UI-SPEC.md` § Error States) with:
 
-| Element                     | Copy                                                                                           |
-| --------------------------- | ---------------------------------------------------------------------------------------------- |
-| Error bubble heading        | "Generation failed"                                                                            |
-| Error bubble body           | "Context budget exceeded. The system prompt is too large for this model's context window."     |
-| Action link (Retry)         | "Retry"                                                                                        |
-| Action link (Switch model)  | "Switch model"                                                                                 |
+| Element                    | Copy                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| Error bubble heading       | "Generation failed"                                                                        |
+| Error bubble body          | "Context budget exceeded. The system prompt is too large for this model's context window." |
+| Action link (Retry)        | "Retry"                                                                                    |
+| Action link (Switch model) | "Switch model"                                                                             |
 
 The error type for this case is `context_budget_exceeded` — distinct from Phase 5's `context_length_exceeded` (which is a provider API rejection). Phase 6's budget overflow is caught **before** the API call.
 
@@ -140,11 +140,11 @@ None.
 
 ### Modified Existing Components
 
-| Component                    | Change                       | What Changes                                                                                                                                                                                                                                                                                                                                                                    |
-| ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MessageInput.svelte`        | Context bar data source      | (1) Replace `usedContext` derived calculation (sum of `estimateTokens()` + hardcoded 8192) with data from `app.context_budget` (tokens_used, tokens_limit from backend StreamChunk response). (2) Replace static `contextLimit = 8192` with model-specific limit from backend. (3) Replace static `--color-accent` bar fill with three-tier semantic color: success (<80%), warning (80–95%), destructive (>95%). (4) Keep existing layout, sizing, typography — no structural changes. |
-| `AppState` (`app.svelte.ts`) | New state field              | Add `context_budget` reactive field: `{ tokens_used: number; tokens_limit: number; truncated_count: number }` with `$state`. Updated from StreamChunk response data after each generation completes (D-02, D-03). Add `updateContextBudget(budget)` action.                                                                                                                   |
-| `types/index.ts`             | New type                     | Add `ContextBudget` interface: `{ tokens_used: number; tokens_limit: number; truncated_count: number }`. Potentially extend `StreamChunk` "complete" variant to include budget data.                                                                                                                                                                                          |
+| Component                    | Change                  | What Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MessageInput.svelte`        | Context bar data source | (1) Replace `usedContext` derived calculation (sum of `estimateTokens()` + hardcoded 8192) with data from `app.context_budget` (tokens_used, tokens_limit from backend StreamChunk response). (2) Replace static `contextLimit = 8192` with model-specific limit from backend. (3) Replace static `--color-accent` bar fill with three-tier semantic color: success (<80%), warning (80–95%), destructive (>95%). (4) Keep existing layout, sizing, typography — no structural changes. |
+| `AppState` (`app.svelte.ts`) | New state field         | Add `context_budget` reactive field: `{ tokens_used: number; tokens_limit: number; truncated_count: number }` with `$state`. Updated from StreamChunk response data after each generation completes (D-02, D-03). Add `updateContextBudget(budget)` action.                                                                                                                                                                                                                             |
+| `types/index.ts`             | New type                | Add `ContextBudget` interface: `{ tokens_used: number; tokens_limit: number; truncated_count: number }`. Potentially extend `StreamChunk` "complete" variant to include budget data.                                                                                                                                                                                                                                                                                                    |
 
 ### What Does NOT Change
 
@@ -167,13 +167,13 @@ None.
 
 The context bar is **read-only** and updates at these moments:
 
-| Event                                  | Bar Update                                                                |
-| -------------------------------------- | ------------------------------------------------------------------------- |
+| Event                                       | Bar Update                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
 | Generation completes (StreamChunk.Complete) | `app.context_budget` updated from response data. Bar reflects new values. |
-| Regeneration completes                 | Same as above — budget recalculated for the regenerated prompt.           |
-| Edit/resend completes                  | Same as above — budget recalculated for the truncated+resent prompt.      |
-| Between generations                    | Bar shows last known value. No real-time keystroke-level recalculation.   |
-| App startup / conversation opened      | Bar shows default state: `tokens_used: 0, tokens_limit: <model limit>`.   |
+| Regeneration completes                      | Same as above — budget recalculated for the regenerated prompt.           |
+| Edit/resend completes                       | Same as above — budget recalculated for the truncated+resent prompt.      |
+| Between generations                         | Bar shows last known value. No real-time keystroke-level recalculation.   |
+| App startup / conversation opened           | Bar shows default state: `tokens_used: 0, tokens_limit: <model limit>`.   |
 
 **Bar does NOT update on every keystroke.** This is a deliberate decision from D-03 — real-time token counting requires a backend call per keystroke, which is expensive and unnecessary. The user sees budget pressure after each generation, which is when it matters.
 
@@ -181,11 +181,11 @@ The context bar is **read-only** and updates at these moments:
 
 The context bar has three visual states determined by `contextPct = (tokens_used / tokens_limit) * 100`:
 
-| State    | Utilization | Bar Fill          | Bar Background              | Text Color              |
-| -------- | ----------- | ----------------- | --------------------------- | ----------------------- |
-| Healthy  | < 80%       | `--color-success` | `--color-surface-elevated`  | `--color-subtle`        |
-| Warning  | 80% – 95%   | `--color-warning` | `--color-surface-elevated`  | `--color-subtle`        |
-| Critical | > 95%       | `--color-destructive` | `--color-surface-elevated` | `--color-subtle`       |
+| State    | Utilization | Bar Fill              | Bar Background             | Text Color       |
+| -------- | ----------- | --------------------- | -------------------------- | ---------------- |
+| Healthy  | < 80%       | `--color-success`     | `--color-surface-elevated` | `--color-subtle` |
+| Warning  | 80% – 95%   | `--color-warning`     | `--color-surface-elevated` | `--color-subtle` |
+| Critical | > 95%       | `--color-destructive` | `--color-surface-elevated` | `--color-subtle` |
 
 All text in the context bar row remains `text-(--color-subtle)` regardless of state. Only the progress bar fill color changes.
 
@@ -201,22 +201,22 @@ Phase 6 does not introduce any new user interactions. All interactions (send, st
 
 ### Existing Patterns That Change Behavior (Not UI)
 
-| Pattern               | Behavioral Change                                                                                                    | Visual Change |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------- |
-| Send message          | Backend now uses PromptEngine with budget-aware assembly (character + persona + history within token limit)           | None          |
-| Regenerate            | PromptEngine reassembles prompt from scratch for the regenerated response                                            | None          |
-| Edit & resend         | Truncated messages are removed from prompt history; PromptEngine reassembles with the edited context                 | None          |
-| Context bar display   | Shows real token counts from backend instead of `estimateTokens()` heuristic. Color shifts based on utilization.     | Color only    |
+| Pattern             | Behavioral Change                                                                                                | Visual Change |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- |
+| Send message        | Backend now uses PromptEngine with budget-aware assembly (character + persona + history within token limit)      | None          |
+| Regenerate          | PromptEngine reassembles prompt from scratch for the regenerated response                                        | None          |
+| Edit & resend       | Truncated messages are removed from prompt history; PromptEngine reassembles with the edited context             | None          |
+| Context bar display | Shows real token counts from backend instead of `estimateTokens()` heuristic. Color shifts based on utilization. | Color only    |
 
 ### Deferred Interactions (Not in Phase 6)
 
-| Pattern                              | Deferred To | Reason                                      |
-| ------------------------------------ | ----------- | ------------------------------------------- |
-| Lorebook injection in prompt         | Phase 9     | Not in scope                                |
-| Per-conversation generation presets  | Phase 9+    | Preset picker deferred                      |
-| Context window size override UI      | Phase 10    | Settings UI enhancement                     |
-| Message branching / forking          | Phase 8     | Branch navigation UI is a separate phase    |
-| Markdown rendering                   | Phase 7     | Current naive rendering continues           |
+| Pattern                             | Deferred To | Reason                                   |
+| ----------------------------------- | ----------- | ---------------------------------------- |
+| Lorebook injection in prompt        | Phase 9     | Not in scope                             |
+| Per-conversation generation presets | Phase 9+    | Preset picker deferred                   |
+| Context window size override UI     | Phase 10    | Settings UI enhancement                  |
+| Message branching / forking         | Phase 8     | Branch navigation UI is a separate phase |
+| Markdown rendering                  | Phase 7     | Current naive rendering continues        |
 
 ---
 

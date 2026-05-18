@@ -282,7 +282,11 @@ mod tests {
         // UUID v4 id should be valid and non-empty
         assert!(!character.id.is_empty());
         let parsed = Uuid::parse_str(&character.id);
-        assert!(parsed.is_ok(), "id should be valid UUID v4, got: {}", character.id);
+        assert!(
+            parsed.is_ok(),
+            "id should be valid UUID v4, got: {}",
+            character.id
+        );
 
         // Name should match
         assert_eq!(character.name, "Test Character");
@@ -320,14 +324,18 @@ mod tests {
         let deserialized: CharacterCardV2 =
             serde_json::from_str(&json).expect("deserialize failed");
 
-        assert_eq!(character, deserialized, "roundtrip should preserve all fields");
+        assert_eq!(
+            character, deserialized,
+            "roundtrip should preserve all fields"
+        );
     }
 
     #[test]
     fn test_defaults_on_partial_json() {
         // Partial JSON with only the required name field should deserialize with defaults
         let json = r#"{"id": "test-id", "name": "Partial", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}"#;
-        let character: CharacterCardV2 = serde_json::from_str(json).expect("partial JSON should deserialize");
+        let character: CharacterCardV2 =
+            serde_json::from_str(json).expect("partial JSON should deserialize");
 
         assert_eq!(character.id, "test-id");
         assert_eq!(character.name, "Partial");
@@ -345,8 +353,14 @@ mod tests {
     #[test]
     fn test_lorebook_defaults() {
         let character = CharacterCardV2::new("Lorebook Test".to_string());
-        assert_eq!(character.lorebook_scan_depth, 2, "lorebook_scan_depth should default to 2");
-        assert_eq!(character.lorebook_recursive_depth, 2, "lorebook_recursive_depth should default to 2");
+        assert_eq!(
+            character.lorebook_scan_depth, 2,
+            "lorebook_scan_depth should default to 2"
+        );
+        assert_eq!(
+            character.lorebook_recursive_depth, 2,
+            "lorebook_recursive_depth should default to 2"
+        );
     }
 
     #[test]

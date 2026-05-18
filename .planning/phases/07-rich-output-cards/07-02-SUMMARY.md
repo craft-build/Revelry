@@ -58,6 +58,7 @@ completed: 2026-05-18
 - **Files modified:** 8
 
 ## Accomplishments
+
 - Ported full card_io.rs service from gtk_ref with V2 spec, flat V2, and V1 import support
 - Added W++ field normalization that extracts personality, dialogue, and scenario from description
 - Created import_card and export_card Tauri commands with avatar handling
@@ -77,6 +78,7 @@ Each task was committed atomically:
 **Plan metadata:** pending (will be committed with state updates)
 
 ## Files Created/Modified
+
 - `src-tauri/Cargo.toml` - Added png 0.18, base64 0.22, regex 1 dependencies
 - `src-tauri/src/domain/character.rs` - Added CharaCardV2Spec, CharaCardV2SpecData, CharacterV1 types with conversion impls
 - `src-tauri/src/domain/mod.rs` - Expanded re-exports to include all card import types
@@ -87,6 +89,7 @@ Each task was committed atomically:
 - `src-tauri/src/lib.rs` - Registered import_card and export_card in invoke_handler
 
 ## Decisions Made
+
 - Used Utc::now() for timestamps (not gtk_ref's Local::now().naive_local()) for consistency with existing domain types
 - Import types are Deserialize-only — they're never serialized back (import-only pipeline)
 - export_card reuses DbWorker LoadCharacters pattern for DB access consistency
@@ -96,16 +99,20 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 None.
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Card I/O backend fully operational, ready for frontend wiring
 - Next plan (07-03) should wire the SvelteKit frontend to use import_card/export_card Tauri commands
 - The card_io service handles V2 spec, flat V2, and V1 formats with automatic field normalization
 
 ---
-*Phase: 07-rich-output-cards*
-*Completed: 2026-05-18*
+
+_Phase: 07-rich-output-cards_
+_Completed: 2026-05-18_

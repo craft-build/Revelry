@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use std::io::Cursor;
 
-use crate::domain::character::{CharacterCardV2, CharaCardV2Spec, CharacterV1};
+use crate::domain::character::{CharaCardV2Spec, CharacterCardV2, CharacterV1};
 
 /// Maximum allowed JSON payload size (10 MB).
 const MAX_JSON_SIZE: usize = 10 * 1024 * 1024;
@@ -64,9 +64,12 @@ pub fn import_from_png(png_bytes: &[u8]) -> Result<(CharacterCardV2, Option<Vec<
     // The PNG spec allows tEXt chunks after IDAT. Many character card PNGs
     // place the "chara" tEXt chunk after the image data. We must consume the
     // image data and then read remaining chunks before checking text metadata.
-    let mut img_data = vec![0u8; reader
-        .output_buffer_size()
-        .ok_or_else(|| anyhow!("Cannot determine PNG output buffer size"))?];
+    let mut img_data = vec![
+        0u8;
+        reader
+            .output_buffer_size()
+            .ok_or_else(|| anyhow!("Cannot determine PNG output buffer size"))?
+    ];
     reader.next_frame(&mut img_data)?;
     reader.finish()?;
 
@@ -97,10 +100,7 @@ pub fn import_from_png(png_bytes: &[u8]) -> Result<(CharacterCardV2, Option<Vec<
 ///
 /// If avatar_bytes is provided, the PNG is read and the tEXt chunk is added.
 /// If no avatar is provided, a minimal 1x1 PNG is created with the metadata.
-pub fn export_to_png(
-    character: &CharacterCardV2,
-    avatar_bytes: Option<&[u8]>,
-) -> Result<Vec<u8>> {
+pub fn export_to_png(character: &CharacterCardV2, avatar_bytes: Option<&[u8]>) -> Result<Vec<u8>> {
     // Serialize character to JSON and base64-encode
     let json = serde_json::to_string(character)?;
     let encoded = BASE64.encode(json.as_bytes());
@@ -157,10 +157,7 @@ pub fn export_to_png(
 /// - Genre/Tags/Scenario metadata like `[Genre: ...; Scenario: ...]` → `scenario`
 fn normalize_card_fields(card: &mut CharacterCardV2) {
     // Only redistribute if the target fields are empty
-    if !card.personality.is_empty()
-        && !card.mes_example.is_empty()
-        && !card.scenario.is_empty()
-    {
+    if !card.personality.is_empty() && !card.mes_example.is_empty() && !card.scenario.is_empty() {
         return;
     }
 
@@ -245,9 +242,10 @@ fn normalize_card_fields(card: &mut CharacterCardV2) {
 
     // Extract genre/tags/scenario metadata that wasn't inside dialogue
     if card.scenario.is_empty() && scenario_parts.is_empty() {
-        let meta_re =
-            regex::Regex::new(r"\[Genre:\s*([^;\]]+)(?:;\s*Tags:\s*([^;\]]+))?(?:;\s*Scenario:\s*([^\]]+))?\]")
-                .unwrap();
+        let meta_re = regex::Regex::new(
+            r"\[Genre:\s*([^;\]]+)(?:;\s*Tags:\s*([^;\]]+))?(?:;\s*Scenario:\s*([^\]]+))?\]",
+        )
+        .unwrap();
         if let Some(cap) = meta_re.captures(&remaining_desc) {
             let full_match = cap.get(0).unwrap().as_str();
             if let Some(scenario) = cap.get(3) {

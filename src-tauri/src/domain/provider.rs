@@ -180,11 +180,13 @@ mod tests {
         // Verify snake_case serde produces "openai" not "OpenAI"
         let pt = ProviderType::OpenAI;
         let json = serde_json::to_string(&pt).expect("serialize failed");
-        assert_eq!(json, "\"openai\"", "ProviderType::OpenAI should serialize as \"openai\"");
+        assert_eq!(
+            json, "\"openai\"",
+            "ProviderType::OpenAI should serialize as \"openai\""
+        );
 
         // Verify round-trip
-        let deserialized: ProviderType =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let deserialized: ProviderType = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(pt, deserialized);
     }
 
@@ -211,7 +213,11 @@ mod tests {
             let json = serde_json::to_string(variant).expect("serialize failed");
             let deserialized: ProviderType =
                 serde_json::from_str(&json).expect("deserialize failed");
-            assert_eq!(variant, &deserialized, "serde roundtrip failed for {:?}", variant);
+            assert_eq!(
+                variant, &deserialized,
+                "serde roundtrip failed for {:?}",
+                variant
+            );
         }
     }
 
@@ -220,7 +226,10 @@ mod tests {
         assert!(ProviderType::OpenAI.requires_api_key());
         assert!(ProviderType::Anthropic.requires_api_key());
         assert!(ProviderType::CustomOpenAICompatible.requires_api_key());
-        assert!(!ProviderType::Ollama.requires_api_key(), "Ollama should NOT require API key");
+        assert!(
+            !ProviderType::Ollama.requires_api_key(),
+            "Ollama should NOT require API key"
+        );
     }
 
     #[test]
@@ -229,9 +238,16 @@ mod tests {
         assert!(!config.id.is_empty());
         assert!(Uuid::parse_str(&config.id).is_ok());
         assert!(config.enabled);
-        assert_eq!(config.base_url, Some("https://api.openai.com/v1".to_string()));
+        assert_eq!(
+            config.base_url,
+            Some("https://api.openai.com/v1".to_string())
+        );
         assert_eq!(config.model_name, "gpt-4o-mini");
-        assert_eq!(config.models.len(), 1, "new provider should have 1 default model");
+        assert_eq!(
+            config.models.len(),
+            1,
+            "new provider should have 1 default model"
+        );
         assert_eq!(config.models[0].name, "gpt-4o-mini");
         assert!(config.models[0].enabled);
         assert!(config.default_params.is_none());
@@ -241,8 +257,7 @@ mod tests {
     fn test_provider_config_serde_roundtrip() {
         let config = ProviderConfig::new("Test Provider".to_string(), ProviderType::Anthropic);
         let json = serde_json::to_string(&config).expect("serialize failed");
-        let deserialized: ProviderConfig =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let deserialized: ProviderConfig = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(config.id, deserialized.id);
         assert_eq!(config.name, deserialized.name);
         assert_eq!(config.provider_type, deserialized.provider_type);

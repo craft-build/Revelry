@@ -4636,11 +4636,14 @@ name = "revelry"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "chrono",
  "dirs",
  "futures",
  "keyring",
  "keyring-core",
+ "png 0.18.1",
+ "regex",
  "rig-core",
  "rusqlite",
  "rusqlite_migration",

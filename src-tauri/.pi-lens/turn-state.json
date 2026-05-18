@@ -34,11 +34,11 @@
       "modifiedRanges": [
         {
           "start": 3,
-          "end": 3
+          "end": 4
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-16T02:17:06.426Z"
+      "lastEdit": "2026-05-18T19:20:45.878Z"
     },
     "src/lib.rs": {
       "modifiedRanges": [
@@ -49,10 +49,14 @@
         {
           "start": 77,
           "end": 80
+        },
+        {
+          "start": 83,
+          "end": 84
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-16T02:18:11.339Z"
+      "lastEdit": "2026-05-18T19:20:52.580Z"
     },
     "src/ai/mod.rs": {
       "modifiedRanges": [
@@ -149,10 +153,70 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-16T04:46:50.650Z"
+    },
+    "Cargo.toml": {
+      "modifiedRanges": [
+        {
+          "start": 39,
+          "end": 41
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-18T19:18:19.559Z"
+    },
+    "src/domain/character.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 378
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-18T19:23:35.524Z"
+    },
+    "src/domain/mod.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 16
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-18T19:23:35.801Z"
+    },
+    "src/service/card_io.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 284
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-18T19:23:35.820Z"
+    },
+    "src/service/mod.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 10
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-18T19:23:35.844Z"
+    },
+    "src/commands/card_io.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 117
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-18T19:20:40.471Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-16T04:59:15.671Z",
-  "sessionId": "lens-mp7uobfh-5764b562"
+  "lastUpdated": "2026-05-18T19:23:35.844Z",
+  "sessionId": "lens-mpbl6brn-4bbb2e26"
 }

@@ -58,6 +58,7 @@ completed: 2026-05-16
 - **Files modified:** 3
 
 ## Accomplishments
+
 - PromptEngine now drives prompt assembly for start_chat, regenerate, and edit_and_resend
 - Budget info (tokens_used, tokens_limit, truncated_count) flows from PromptEngine through to StreamChunk::Complete
 - ChatContext shared helper eliminates duplicated DB loading across three commands
@@ -75,11 +76,13 @@ Each task was committed atomically:
 _Note: Combined into single commit due to tool persistence issues requiring rewrite_
 
 ## Files Created/Modified
+
 - `src-tauri/src/ai/mod.rs` - Added BudgetInfo struct, extended StreamChunk::Complete, changed stream_chat to accept Vec<Message>, threaded budget through pipeline
 - `src-tauri/src/commands/chat.rs` - Added ChatContext, load_chat_context, assemble_prompt; rewrote all three commands
 - `src-tauri/src/service/prompt.rs` - Added tokens_used field to AssembledPrompt
 
 ## Decisions Made
+
 - BudgetInfo derives Copy (all usize fields) to avoid ownership issues in tokio::select!
 - stream_chat accepts pre-built Vec<Message> so PromptEngine controls conversion
 - Fallback prompt in assemble_prompt for no-character case
@@ -89,6 +92,7 @@ _Note: Combined into single commit due to tool persistence issues requiring rewr
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Edit tool persistence failure**
+
 - **Found during:** Task 1 and Task 2
 - **Issue:** The edit tool reported successful replacements but changes were not persisted to disk on multiple occasions
 - **Fix:** Used python3 scripts via bash and heredoc-based file writing to ensure changes were persisted
@@ -102,16 +106,20 @@ _Note: Combined into single commit due to tool persistence issues requiring rewr
 **Impact on plan:** Tool workaround only. All planned changes implemented correctly.
 
 ## Issues Encountered
+
 - Pre-existing test failure in db::models::tests::test_row_to_character (unrelated to this plan)
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Ready for plan 06-03 (wire token count display to real data in message input)
 - Budget info now available in StreamChunk::Complete for frontend consumption
 - tokens_used tracked in AssembledPrompt for accurate context utilization
 
 ---
-*Phase: 06-smart-prompts*
-*Completed: 2026-05-16*
+
+_Phase: 06-smart-prompts_
+_Completed: 2026-05-16_

@@ -16,7 +16,12 @@ affects: [08-conversation-branching, chat-ui]
 
 tech-stack:
   added: [marked@18, dompurify@3, shiki@4]
-  patterns: [conditional markdown rendering, DOMPurify sanitization gate, Shiki async preloading]
+  patterns:
+    [
+      conditional markdown rendering,
+      DOMPurify sanitization gate,
+      Shiki async preloading,
+    ]
 
 key-files:
   created:
@@ -56,6 +61,7 @@ completed: 2026-05-18
 - **Files modified:** 5
 
 ## Accomplishments
+
 - Full GFM markdown pipeline: marked parsing → DOMPurify sanitization → Shiki code highlighting
 - Conditional rendering in MessageBubble: raw text for streaming/user, rich markdown for completed AI messages
 - Comprehensive `.prose-markdown` prose styles covering all GFM elements (headings, lists, tables, blockquotes, code, etc.)
@@ -74,6 +80,7 @@ Each task was committed atomically:
 **Plan metadata:** pending
 
 ## Files Created/Modified
+
 - `package.json` — Added marked@18, dompurify@3, shiki@4 dependencies
 - `src/app.css` — Added @layer components block with .prose-markdown GFM prose styles (~220 lines)
 - `src/lib/components/chat/MarkdownRenderer.svelte` — New component: GFM parsing, sanitization, Shiki highlighting
@@ -81,6 +88,7 @@ Each task was committed atomically:
 - `src/lib/components/chat/MessageBubble.svelte` — Removed renderInlineMarkdown, added conditional rendering
 
 ## Decisions Made
+
 - Used marked@18 (installed version) instead of planned marked@15 — API compatible, no code changes needed
 - Used shiki@4 (installed version) instead of planned shiki@3 — API compatible, createHighlighter still works
 - Kept DOMPurify import as default export — works correctly in browser context (SSR disabled)
@@ -90,16 +98,20 @@ Each task was committed atomically:
 None - plan executed exactly as written. Minor version differences (marked@18 vs @15, shiki@4 vs @3) had no API impact.
 
 ## Issues Encountered
+
 None.
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Markdown rendering pipeline complete, ready for plan 07-02 (card import/export backend)
 - MessageBubble conditionally renders markdown for completed AI messages
 - Shiki preloads 9 common languages on mount
 
 ---
-*Phase: 07-rich-output-cards*
-*Completed: 2026-05-18*
+
+_Phase: 07-rich-output-cards_
+_Completed: 2026-05-18_

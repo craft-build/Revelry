@@ -134,7 +134,11 @@ mod tests {
         // UUID v4 id should be valid and non-empty
         assert!(!conv.id.is_empty());
         let parsed = Uuid::parse_str(&conv.id);
-        assert!(parsed.is_ok(), "id should be valid UUID v4, got: {}", conv.id);
+        assert!(
+            parsed.is_ok(),
+            "id should be valid UUID v4, got: {}",
+            conv.id
+        );
 
         // Character ID should match
         assert_eq!(conv.character_id, "char-1");
@@ -207,8 +211,14 @@ mod tests {
         assert_eq!(MessageRole::from_str("user").unwrap(), MessageRole::User);
         assert_eq!(MessageRole::from_str("USER").unwrap(), MessageRole::User);
         assert_eq!(MessageRole::from_str("User").unwrap(), MessageRole::User);
-        assert_eq!(MessageRole::from_str("assistant").unwrap(), MessageRole::Assistant);
-        assert_eq!(MessageRole::from_str("system").unwrap(), MessageRole::System);
+        assert_eq!(
+            MessageRole::from_str("assistant").unwrap(),
+            MessageRole::Assistant
+        );
+        assert_eq!(
+            MessageRole::from_str("system").unwrap(),
+            MessageRole::System
+        );
         assert!(MessageRole::from_str("unknown").is_err());
     }
 

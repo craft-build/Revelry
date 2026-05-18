@@ -44,7 +44,11 @@ impl TokenCountService {
     /// 3. Look up active model name in built-in defaults table
     /// 4. Fall back to DEFAULT_CONTEXT_WINDOW
     /// Per D-02.
-    pub fn resolve_context_window_size(&self, provider: &ProviderConfig, active_model_name: &str) -> i64 {
+    pub fn resolve_context_window_size(
+        &self,
+        provider: &ProviderConfig,
+        active_model_name: &str,
+    ) -> i64 {
         // Tier 1: Provider-level user override
         if let Some(size) = provider.context_window_size {
             if size > 0 {
@@ -89,9 +93,14 @@ impl TokenCountService {
 
     /// Lazily initializes and returns a reference to the cached BPE tokenizer.
     fn get_bpe(&self) -> std::sync::MutexGuard<'_, Option<CoreBPE>> {
-        let mut guard = self.bpe.lock().expect("TokenCountService bpe mutex poisoned");
+        let mut guard = self
+            .bpe
+            .lock()
+            .expect("TokenCountService bpe mutex poisoned");
         if guard.is_none() {
-            *guard = Some(tiktoken_rs::cl100k_base().expect("Failed to initialize cl100k_base tokenizer"));
+            *guard = Some(
+                tiktoken_rs::cl100k_base().expect("Failed to initialize cl100k_base tokenizer"),
+            );
         }
         guard
     }
@@ -100,7 +109,10 @@ impl TokenCountService {
 /// Helper to count tokens using a MutexGuard<Option<CoreBPE>>.
 /// The guard is always Some after initialization, so we unwrap the Option.
 fn count_with_guard(guard: &std::sync::MutexGuard<'_, Option<CoreBPE>>, text: &str) -> usize {
-    guard.as_ref().expect("BPE should be initialized").count_with_special_tokens(text)
+    guard
+        .as_ref()
+        .expect("BPE should be initialized")
+        .count_with_special_tokens(text)
 }
 
 impl Default for TokenCountService {
@@ -153,7 +165,10 @@ mod tests {
         let service = TokenCountService::new();
         let count = service.count_tokens("hello world");
         // cl100k_base: "hello world" = 2 tokens, with 10% margin: 2 + 0 = 2
-        assert!(count > 0, "Token count should be positive for non-empty text");
+        assert!(
+            count > 0,
+            "Token count should be positive for non-empty text"
+        );
         assert_eq!(count, 2, "hello world should be 2 tokens with 10% margin");
     }
 
@@ -185,16 +200,23 @@ mod tests {
         // ProviderType::OpenAI defaults to model_name "gpt-4o-mini"
         // "gpt-4o-mini" contains "gpt-4o" → should match 128000
         let size = service.resolve_context_window_size(&provider, &provider.model_name);
-        assert_eq!(size, 128000, "Should return built-in default for known model");
+        assert_eq!(
+            size, 128000,
+            "Should return built-in default for known model"
+        );
     }
 
     #[test]
     fn test_resolve_context_window_unknown_model() {
         let service = TokenCountService::new();
-        let mut provider = ProviderConfig::new("Test".to_string(), ProviderType::CustomOpenAICompatible);
+        let mut provider =
+            ProviderConfig::new("Test".to_string(), ProviderType::CustomOpenAICompatible);
         provider.model_name = "some-unknown-model-v1".to_string();
         let size = service.resolve_context_window_size(&provider, &provider.model_name);
-        assert_eq!(size, DEFAULT_CONTEXT_WINDOW, "Should fall back to DEFAULT for unknown model");
+        assert_eq!(
+            size, DEFAULT_CONTEXT_WINDOW,
+            "Should fall back to DEFAULT for unknown model"
+        );
     }
 
     #[test]
@@ -218,6 +240,9 @@ mod tests {
     fn test_provider_config_has_context_window_size() {
         let provider = ProviderConfig::new("Test".to_string(), ProviderType::OpenAI);
         // context_window_size should be None by default (new field)
-        assert!(provider.context_window_size.is_none(), "context_window_size should default to None");
+        assert!(
+            provider.context_window_size.is_none(),
+            "context_window_size should default to None"
+        );
     }
 }

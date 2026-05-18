@@ -331,7 +331,10 @@ mod tests {
         let block_full = build_persona_block_compressed(&persona, PersonaCompressionTier::Full);
         let block_uncompressed = build_persona_block(&persona);
 
-        assert_eq!(block_full, block_uncompressed, "Full tier should match uncompressed persona block");
+        assert_eq!(
+            block_full, block_uncompressed,
+            "Full tier should match uncompressed persona block"
+        );
     }
 
     #[test]
@@ -346,10 +349,19 @@ mod tests {
         assert!(block.contains("Name: Alice"));
         assert!(block.contains("Personality: Bold and charismatic"));
         assert!(block.contains("Appearance: Red hair"));
-        assert!(!block.contains("Background:"), "Trimmed should not include Background");
+        assert!(
+            !block.contains("Background:"),
+            "Trimmed should not include Background"
+        );
         assert!(!block.contains("Role:"), "Trimmed should not include Role");
-        assert!(!block.contains("Relationships:"), "Trimmed should not include Relationships");
-        assert!(!block.contains("Speech Style:"), "Trimmed should not include Speech Style");
+        assert!(
+            !block.contains("Relationships:"),
+            "Trimmed should not include Relationships"
+        );
+        assert!(
+            !block.contains("Speech Style:"),
+            "Trimmed should not include Speech Style"
+        );
     }
 
     #[test]
@@ -363,8 +375,14 @@ mod tests {
         assert!(block.contains("You are interacting with {{user}}, who is:"));
         assert!(block.contains("Name: Alice"));
         assert!(block.contains("Personality: Bold and charismatic"));
-        assert!(!block.contains("Appearance:"), "Minimal should not include Appearance");
-        assert!(!block.contains("Background:"), "Minimal should not include Background");
+        assert!(
+            !block.contains("Appearance:"),
+            "Minimal should not include Appearance"
+        );
+        assert!(
+            !block.contains("Background:"),
+            "Minimal should not include Background"
+        );
     }
 
     #[test]
@@ -376,8 +394,14 @@ mod tests {
 
         assert!(block.contains("You are interacting with {{user}}, who is:"));
         assert!(block.contains("Name: Alice"));
-        assert!(!block.contains("Personality:"), "Essential should not include Personality");
-        assert!(!block.contains("Appearance:"), "Essential should not include Appearance");
+        assert!(
+            !block.contains("Personality:"),
+            "Essential should not include Personality"
+        );
+        assert!(
+            !block.contains("Appearance:"),
+            "Essential should not include Appearance"
+        );
     }
 
     #[test]

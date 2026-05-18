@@ -5,7 +5,7 @@ pub mod lorebook;
 pub mod persona;
 pub mod provider;
 
-pub use character::{CharacterCardV2, CharacterV1, CharaCardV2Spec, CharaCardV2SpecData};
+pub use character::{CharaCardV2Spec, CharaCardV2SpecData, CharacterCardV2, CharacterV1};
 pub use conversation::{Conversation, Message};
 pub use generation::GenerationPreset;
 // LorebookActivation, LorebookEntry, LorebookPosition re-exported for public API surface

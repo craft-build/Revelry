@@ -250,7 +250,7 @@
 					message.is_streaming && 'streaming-caret'
 				)}
 			>
-				{#if message.is_streaming || isUser}
+				{#if message.is_streaming}
 					<p class="whitespace-pre-wrap break-words">
 						{message.content}
 					</p>

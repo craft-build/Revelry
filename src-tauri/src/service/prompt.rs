@@ -33,7 +33,11 @@ impl PromptEngine {
     ///
     /// This method does NOT enforce a budget — it includes all content without truncation.
     /// For budget-aware assembly, use `assemble_with_budget`.
-    pub fn assemble(character: &CharacterCardV2, persona: Option<&Persona>, messages: &[Message]) -> AssembledPrompt {
+    pub fn assemble(
+        character: &CharacterCardV2,
+        persona: Option<&Persona>,
+        messages: &[Message],
+    ) -> AssembledPrompt {
         let preamble = build_system_prompt_with_persona(character, persona);
         let chat_history = build_chat_history(messages);
 
@@ -49,7 +53,10 @@ impl PromptEngine {
 
     /// Assembles a prompt for the first message (no chat history).
     /// Used when starting a new conversation.
-    pub fn assemble_initial(character: &CharacterCardV2, persona: Option<&Persona>) -> AssembledPrompt {
+    pub fn assemble_initial(
+        character: &CharacterCardV2,
+        persona: Option<&Persona>,
+    ) -> AssembledPrompt {
         let preamble = build_system_prompt_with_persona(character, persona);
 
         AssembledPrompt {
@@ -111,11 +118,8 @@ impl PromptEngine {
         let remaining_for_history = budget.saturating_sub(tokens_used);
 
         // Count history tokens and truncate oldest messages if needed
-        let truncated_history = truncate_history_oldest_first(
-            &history_messages,
-            remaining_for_history,
-            token_service,
-        );
+        let truncated_history =
+            truncate_history_oldest_first(&history_messages, remaining_for_history, token_service);
         let truncated_messages = truncated_history.truncated_count;
 
         let chat_history = build_chat_history(&truncated_history.messages);
@@ -123,7 +127,8 @@ impl PromptEngine {
 
         // ── Layer 5: Post-history instructions (placed after history, dropped if no room) ──
         let post_history = if !character.post_history_instructions.is_empty() {
-            let post_history_text = format!("Instructions: {}", character.post_history_instructions);
+            let post_history_text =
+                format!("Instructions: {}", character.post_history_instructions);
             let post_history_tokens = token_service.count_tokens(&post_history_text);
             if tokens_used + post_history_tokens <= budget {
                 tokens_used += post_history_tokens;
@@ -170,7 +175,11 @@ impl PromptEngine {
 
 /// Selects the best persona compression tier based on remaining budget.
 /// Tries Full → Trimmed → Minimal → Essential progressively per D-06.
-fn select_persona_tier(persona: &Persona, remaining_budget: usize, token_service: &TokenCountService) -> String {
+fn select_persona_tier(
+    persona: &Persona,
+    remaining_budget: usize,
+    token_service: &TokenCountService,
+) -> String {
     let tiers = [
         PersonaCompressionTier::Full,
         PersonaCompressionTier::Trimmed,
@@ -265,7 +274,10 @@ fn truncate_history_oldest_first(
 
 /// Builds the system prompt from character data, optionally including a persona block.
 /// Template variables ({{user}}, {{char}}, {{persona.*}}) are resolved in the final output.
-fn build_system_prompt_with_persona(character: &CharacterCardV2, persona: Option<&Persona>) -> String {
+fn build_system_prompt_with_persona(
+    character: &CharacterCardV2,
+    persona: Option<&Persona>,
+) -> String {
     let mut parts = Vec::new();
 
     // 1. Character system prompt
@@ -323,10 +335,7 @@ fn build_system_prompt(character: &CharacterCardV2) -> String {
 
     if parts.is_empty() {
         // Fallback: use the character name as minimal context
-        format!(
-            "You are {}. Respond in character.",
-            character.name
-        )
+        format!("You are {}. Respond in character.", character.name)
     } else {
         parts.join("\n\n")
     }
@@ -338,15 +347,9 @@ fn build_chat_history(messages: &[Message]) -> Vec<rig_core::completion::Message
         .iter()
         .filter(|m| !m.content.is_empty()) // Skip empty messages
         .map(|msg| match msg.role {
-            MessageRole::User => {
-                rig_core::completion::Message::user(&msg.content)
-            }
-            MessageRole::Assistant => {
-                rig_core::completion::Message::assistant(&msg.content)
-            }
-            MessageRole::System => {
-                rig_core::completion::Message::system(&msg.content)
-            }
+            MessageRole::User => rig_core::completion::Message::user(&msg.content),
+            MessageRole::Assistant => rig_core::completion::Message::assistant(&msg.content),
+            MessageRole::System => rig_core::completion::Message::system(&msg.content),
         })
         .collect()
 }
@@ -414,9 +417,13 @@ mod tests {
         let persona = Persona::new("Alice".to_string(), "Bold and charismatic".to_string());
         let prompt = PromptEngine::assemble_initial(&character, Some(&persona));
 
-        assert!(prompt.preamble.contains("You are interacting with Alice, who is:"));
+        assert!(prompt
+            .preamble
+            .contains("You are interacting with Alice, who is:"));
         assert!(prompt.preamble.contains("Name: Alice"));
-        assert!(prompt.preamble.contains("Personality: Bold and charismatic"));
+        assert!(prompt
+            .preamble
+            .contains("Personality: Bold and charismatic"));
     }
 
     #[test]
@@ -424,14 +431,16 @@ mod tests {
         let mut character = make_test_character();
         character.system_prompt = "You are {{user}}'s assistant.".to_string();
         let persona = Persona::new("Alice".to_string(), "Friendly".to_string());
-        let messages = vec![
-            make_test_message(MessageRole::User, "Hello!"),
-        ];
+        let messages = vec![make_test_message(MessageRole::User, "Hello!")];
 
         let prompt = PromptEngine::assemble(&character, Some(&persona), &messages);
 
         // {{user}} in the character's system_prompt should be resolved
-        assert!(prompt.preamble.contains("You are Alice's assistant."), "Expected Alice in system prompt, got: {}", prompt.preamble);
+        assert!(
+            prompt.preamble.contains("You are Alice's assistant."),
+            "Expected Alice in system prompt, got: {}",
+            prompt.preamble
+        );
     }
 
     #[test]
@@ -527,8 +536,14 @@ mod tests {
             context_window,
         );
 
-        assert!(prompt.context_utilization > 0.0, "context_utilization should be > 0 when there is content");
-        assert!(prompt.context_utilization <= 1.0, "context_utilization should be <= 1.0");
+        assert!(
+            prompt.context_utilization > 0.0,
+            "context_utilization should be > 0 when there is content"
+        );
+        assert!(
+            prompt.context_utilization <= 1.0,
+            "context_utilization should be <= 1.0"
+        );
     }
 
     #[test]
@@ -537,18 +552,21 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "Hello!")];
         let token_svc = token_service();
 
-        let prompt = PromptEngine::assemble_with_budget(
-            &character,
-            None,
-            &messages,
-            &[],
-            &token_svc,
-            8192,
-        );
+        let prompt =
+            PromptEngine::assemble_with_budget(&character, None, &messages, &[], &token_svc, 8192);
 
-        assert!(prompt.preamble.contains("helpful assistant"), "System prompt should always be included");
-        assert!(prompt.preamble.contains("Personality:"), "Personality should always be included");
-        assert!(prompt.preamble.contains("Scenario:"), "Scenario should always be included");
+        assert!(
+            prompt.preamble.contains("helpful assistant"),
+            "System prompt should always be included"
+        );
+        assert!(
+            prompt.preamble.contains("Personality:"),
+            "Personality should always be included"
+        );
+        assert!(
+            prompt.preamble.contains("Scenario:"),
+            "Scenario should always be included"
+        );
     }
 
     #[test]
@@ -572,18 +590,30 @@ mod tests {
 
         assert!(prompt.preamble.contains("Name: Alice"));
         assert!(prompt.preamble.contains("Personality: Bold"));
-        assert!(prompt.preamble.contains("Appearance: Red hair"), "Full tier should include Appearance");
-        assert!(prompt.preamble.contains("Background: A wandering mage"), "Full tier should include Background");
+        assert!(
+            prompt.preamble.contains("Appearance: Red hair"),
+            "Full tier should include Appearance"
+        );
+        assert!(
+            prompt.preamble.contains("Background: A wandering mage"),
+            "Full tier should include Background"
+        );
     }
 
     #[test]
     fn test_history_truncated_oldest_first() {
         let character = make_test_character();
         let messages: Vec<DomainMessage> = (0..50)
-            .map(|i| make_test_message(
-                if i % 2 == 0 { MessageRole::User } else { MessageRole::Assistant },
-                &format!("Message number {} with some content to consume tokens", i),
-            ))
+            .map(|i| {
+                make_test_message(
+                    if i % 2 == 0 {
+                        MessageRole::User
+                    } else {
+                        MessageRole::Assistant
+                    },
+                    &format!("Message number {} with some content to consume tokens", i),
+                )
+            })
             .collect();
         let token_svc = token_service();
 
@@ -596,35 +626,47 @@ mod tests {
             500, // Small budget — should truncate
         );
 
-        assert!(prompt.truncated_messages > 0, "Should truncate messages when budget is tight");
-        assert!(prompt.chat_history.len() < messages.len(), "Chat history should be shorter than original");
+        assert!(
+            prompt.truncated_messages > 0,
+            "Should truncate messages when budget is tight"
+        );
+        assert!(
+            prompt.chat_history.len() < messages.len(),
+            "Chat history should be shorter than original"
+        );
         // Most recent messages should be preserved
-        assert!(!prompt.chat_history.is_empty(), "Should keep at least some messages");
+        assert!(
+            !prompt.chat_history.is_empty(),
+            "Should keep at least some messages"
+        );
     }
 
     #[test]
     fn test_assemble_with_budget_returns_truncated_count() {
         let character = make_test_character();
         let messages: Vec<DomainMessage> = (0..20)
-            .map(|i| make_test_message(
-                if i % 2 == 0 { MessageRole::User } else { MessageRole::Assistant },
-                &format!("This is message {} with enough text to use tokens", i),
-            ))
+            .map(|i| {
+                make_test_message(
+                    if i % 2 == 0 {
+                        MessageRole::User
+                    } else {
+                        MessageRole::Assistant
+                    },
+                    &format!("This is message {} with enough text to use tokens", i),
+                )
+            })
             .collect();
         let token_svc = token_service();
 
-        let prompt = PromptEngine::assemble_with_budget(
-            &character,
-            None,
-            &messages,
-            &[],
-            &token_svc,
-            300,
-        );
+        let prompt =
+            PromptEngine::assemble_with_budget(&character, None, &messages, &[], &token_svc, 300);
 
         // truncated_messages should be tracked
         let total = prompt.chat_history.len() + prompt.truncated_messages;
-        assert!(total <= messages.len(), "Truncated + kept should not exceed total");
+        assert!(
+            total <= messages.len(),
+            "Truncated + kept should not exceed total"
+        );
     }
 
     #[test]
@@ -633,17 +675,14 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "Hello!")];
         let token_svc = token_service();
 
-        let prompt = PromptEngine::assemble_with_budget(
-            &character,
-            None,
-            &messages,
-            &[],
-            &token_svc,
-            8192,
-        );
+        let prompt =
+            PromptEngine::assemble_with_budget(&character, None, &messages, &[], &token_svc, 8192);
 
         // Post-history instructions should appear in the preamble
-        assert!(prompt.preamble.contains("Stay in character"), "Post-history instructions should be included");
+        assert!(
+            prompt.preamble.contains("Stay in character"),
+            "Post-history instructions should be included"
+        );
     }
 
     #[test]
