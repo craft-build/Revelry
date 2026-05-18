@@ -80,6 +80,8 @@ pub fn run() {
             commands::chat::stop_generation,
             commands::chat::regenerate,
             commands::chat::edit_and_resend,
+            commands::card_io::import_card,
+            commands::card_io::export_card,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
