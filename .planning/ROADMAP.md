@@ -253,7 +253,7 @@ Plans:
 **Wave 1** _(autonomous — markdown + card I/O backend, parallel)_
 
 - [x] 07-01: Frontend Markdown Rendering Pipeline (marked + DOMPurify + Shiki) ✓ 2026-05-18
-- [ ] 07-02: Port Card I/O Backend from gtk_ref/ (PNG tEXt chunk read/write)
+- [x] 07-02: Port Card I/O Backend from gtk_ref/ (PNG tEXt chunk read/write)
 
 **Wave 2** _(autonomous — Shiki preload + frontend card UI, blocked on Wave 1)_
 
