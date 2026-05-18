@@ -118,6 +118,159 @@ impl CharacterCardV2 {
     }
 }
 
+/// Wrapper for the Character Card V2 spec format used in PNG tEXt chunks.
+/// The spec format nests character data under a "data" key:
+/// `{ "spec": "chara_card_v2", "spec_version": "2.0", "data": { ... } }`
+#[derive(Clone, Debug, Deserialize)]
+pub struct CharaCardV2Spec {
+    #[serde(default)]
+    pub spec: String,
+    #[serde(default)]
+    pub spec_version: String,
+    pub data: CharaCardV2SpecData,
+}
+
+/// The character data payload inside a CharaCardV2Spec.
+/// Field names match the official V2 spec.
+#[derive(Clone, Debug, Deserialize)]
+pub struct CharaCardV2SpecData {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub personality: String,
+    #[serde(default)]
+    pub scenario: String,
+    #[serde(default)]
+    pub first_mes: String,
+    #[serde(default)]
+    pub mes_example: String,
+    #[serde(default)]
+    pub system_prompt: String,
+    #[serde(default)]
+    pub post_history_instructions: String,
+    #[serde(default)]
+    pub alternate_greetings: Vec<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub creator: String,
+    #[serde(default, rename = "character_version")]
+    pub character_version: String,
+    #[serde(default)]
+    pub creator_notes: String,
+    #[serde(default)]
+    pub character_book: serde_json::Value,
+    #[serde(default)]
+    pub extensions: serde_json::Value,
+}
+
+impl CharaCardV2Spec {
+    pub fn to_domain(&self) -> CharacterCardV2 {
+        let now = Utc::now();
+        CharacterCardV2 {
+            id: Uuid::new_v4().to_string(),
+            name: self.data.name.clone(),
+            description: self.data.description.clone(),
+            personality: self.data.personality.clone(),
+            scenario: self.data.scenario.clone(),
+            first_mes: self.data.first_mes.clone(),
+            mes_example: self.data.mes_example.clone(),
+            system_prompt: self.data.system_prompt.clone(),
+            post_history_instructions: self.data.post_history_instructions.clone(),
+            alternate_greetings: self.data.alternate_greetings.clone(),
+            tags: self.data.tags.clone(),
+            creator: if self.data.creator.is_empty() {
+                "Unknown".to_string()
+            } else {
+                self.data.creator.clone()
+            },
+            character_version: if self.data.character_version.is_empty() {
+                "2.0".to_string()
+            } else {
+                self.data.character_version.clone()
+            },
+            avatar_path: None,
+            extensions: self.data.extensions.clone(),
+            creator_notes: self.data.creator_notes.clone(),
+            character_book: self.data.character_book.clone(),
+            default_persona_id: None,
+            default_preset_id: None,
+            lorebook_scan_depth: 2,
+            lorebook_recursive_depth: 2,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+/// CharacterV1 format for importing older character cards.
+/// Maps old field names (char_name, char_persona, etc.) to the V2 equivalents.
+#[derive(Clone, Debug, Deserialize)]
+pub struct CharacterV1 {
+    pub char_name: String,
+    #[serde(default)]
+    pub char_persona: String,
+    #[serde(default)]
+    pub char_greeting: String,
+    #[serde(default)]
+    pub world_scenario: String,
+    #[serde(default)]
+    pub example_dialogue: String,
+    #[serde(default)]
+    pub creator_notes: String,
+    #[serde(default)]
+    pub tags: String,
+    #[serde(default)]
+    pub creator: String,
+    #[serde(default)]
+    pub character_version: String,
+}
+
+impl CharacterV1 {
+    pub fn to_v2(&self) -> CharacterCardV2 {
+        let now = Utc::now();
+        CharacterCardV2 {
+            id: Uuid::new_v4().to_string(),
+            name: self.char_name.clone(),
+            description: String::new(),
+            personality: self.char_persona.clone(),
+            scenario: self.world_scenario.clone(),
+            first_mes: self.char_greeting.clone(),
+            mes_example: self.example_dialogue.clone(),
+            system_prompt: String::new(),
+            post_history_instructions: String::new(),
+            alternate_greetings: Vec::new(),
+            tags: if self.tags.is_empty() {
+                Vec::new()
+            } else {
+                self.tags
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            },
+            creator: if self.creator.is_empty() {
+                "Unknown".to_string()
+            } else {
+                self.creator.clone()
+            },
+            character_version: "2.0".to_string(),
+            avatar_path: None,
+            extensions: serde_json::json!({}),
+            creator_notes: self.creator_notes.clone(),
+            character_book: serde_json::json!({}),
+            default_persona_id: None,
+            default_preset_id: None,
+            lorebook_scan_depth: 2,
+            lorebook_recursive_depth: 2,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
