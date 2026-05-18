@@ -276,10 +276,10 @@ Plans:
 
 Plans:
 
-- [ ] 08-01: Extend message schema for tree structure (parent/child)
-- [ ] 08-02: Implement conversation forking and branch navigation
-- [ ] 08-03: Implement FTS5 full-text search across conversations
-- [ ] 08-04: Build branch navigation and search UI
+- [ ] 08-01: Schema + Domain + DB Functions (Backend Foundation)
+- [ ] 08-02: DbCommand Wiring + Tauri Commands + Frontend Types + API (IPC Layer)
+- [ ] 08-03: Frontend State + Branch-Aware Loading (State Layer)
+- [ ] 08-04: UI Components (Visual Layer)
       **UI hint**: yes
 
 ### Phase 9: Power Features
