@@ -52,9 +52,10 @@ async fn load_chat_context(
     let messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-            conversation_id: conversation_id.to_string(),
-            reply: reply_tx,
-        })
+                    conversation_id: conversation_id.to_string(),
+                    branch_id: None,
+                    reply: reply_tx,
+                })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -326,9 +327,10 @@ pub async fn regenerate(
     let messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-            conversation_id: conversation_id.clone(),
-            reply: reply_tx,
-        })
+                    conversation_id: conversation_id.clone(),
+                    branch_id: None,
+                    reply: reply_tx,
+                })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -365,9 +367,10 @@ pub async fn regenerate(
     let updated_messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-            conversation_id: conversation_id.clone(),
-            reply: reply_tx,
-        })
+                    conversation_id: conversation_id.clone(),
+                    branch_id: None,
+                    reply: reply_tx,
+                })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -427,9 +430,10 @@ pub async fn edit_and_resend(
     let sort_order = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-            conversation_id: conversation_id.clone(),
-            reply: reply_tx,
-        })
+                    conversation_id: conversation_id.clone(),
+                    branch_id: None,
+                    reply: reply_tx,
+                })
         .map_err(|e| e.to_string())?;
         let msgs = reply_rx
             .await
@@ -460,10 +464,11 @@ pub async fn edit_and_resend(
     {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::DeleteMessagesAfterSortOrder {
-            conversation_id: conversation_id.clone(),
-            sort_order,
-            reply: reply_tx,
-        })
+                    conversation_id: conversation_id.clone(),
+                    sort_order,
+                    branch_id: None,
+                    reply: reply_tx,
+                })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -481,9 +486,10 @@ pub async fn edit_and_resend(
     let updated_messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-            conversation_id: conversation_id.clone(),
-            reply: reply_tx,
-        })
+                    conversation_id: conversation_id.clone(),
+                    branch_id: None,
+                    reply: reply_tx,
+                })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await

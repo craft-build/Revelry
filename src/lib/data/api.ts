@@ -10,6 +10,8 @@ import type {
 	CharacterCard,
 	Conversation,
 	Message,
+	MessageBranch,
+	SearchResult,
 	UserPersona,
 	Provider,
 	ProviderModelEntry,
@@ -84,8 +86,14 @@ export async function searchConversations(
 
 // ── Messages ──────────────────────────────────────────────────────────────────
 
-export async function getMessages(conversationId: string): Promise<Message[]> {
-	return invoke<Message[]>("get_messages", { conversationId });
+export async function getMessages(
+	conversationId: string,
+	branchId?: string | null,
+): Promise<Message[]> {
+	return invoke<Message[]>("get_messages", {
+		conversationId,
+		branchId: branchId ?? null,
+	});
 }
 
 export async function saveMessage(message: Message): Promise<void> {
@@ -317,4 +325,42 @@ export async function exportCard(
 	savePath: string,
 ): Promise<void> {
 	return invoke<void>("export_card", { characterId, savePath });
+}
+
+// ── Branches ────────────────────────────────────────────────────────────────────
+
+export async function forkConversation(
+	conversationId: string,
+	parentMessageId: string,
+): Promise<MessageBranch> {
+	return invoke<MessageBranch>("fork_conversation", {
+		conversationId,
+		parentMessageId,
+	});
+}
+
+export async function getBranchesForMessage(
+	parentMessageId: string,
+): Promise<MessageBranch[]> {
+	return invoke<MessageBranch[]>("get_branches_for_message", {
+		parentMessageId,
+	});
+}
+
+export async function getBranchesForConversation(
+	conversationId: string,
+): Promise<MessageBranch[]> {
+	return invoke<MessageBranch[]>("get_branches_for_conversation", {
+		conversationId,
+	});
+}
+
+export async function deleteBranch(branchId: string): Promise<void> {
+	return invoke<void>("delete_branch", { branchId });
+}
+
+export async function searchMessages(
+	query: string,
+): Promise<SearchResult[]> {
+	return invoke<SearchResult[]>("search_messages", { query });
 }

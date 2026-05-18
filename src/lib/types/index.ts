@@ -102,6 +102,8 @@ export interface Message {
   content: string;
   sort_order: number;
   timestamp: string;
+  /** Branch this message belongs to. null = Main/root path. */
+  branch_id?: string | null;
   /** UI-only: true while tokens are still streaming in */
   is_streaming?: boolean;
   /** UI-only: token count estimate for display */
@@ -159,6 +161,27 @@ export interface Conversation {
   last_message_preview: string;
   created_at: string;
   updated_at: string;
+}
+
+/** A branch in a conversation, created when a user forks from a message. */
+export interface MessageBranch {
+  id: string;
+  conversation_id: string;
+  parent_message_id: string;
+  label: string;
+  created_at: string;
+}
+
+/** A search result from FTS5 message search or conversation title search. */
+export interface SearchResult {
+  conversation_id: string;
+  conversation_title: string;
+  character_id: string;
+  match_type: "title" | "message";
+  message_snippet?: string;
+  message_id?: string;
+  branch_id?: string;
+  rank: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

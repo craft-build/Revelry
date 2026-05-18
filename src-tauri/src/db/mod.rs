@@ -9,7 +9,7 @@ pub mod providers;
 pub mod regex_scripts;
 
 use crate::domain::character::CharacterCardV2;
-use crate::domain::conversation::{Conversation, Message};
+use crate::domain::conversation::{Conversation, Message, MessageBranch, SearchResult};
 use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{Lorebook, LorebookEntry};
 use crate::domain::persona::Persona;
@@ -88,6 +88,7 @@ pub enum DbCommand {
     // Message operations
     LoadMessages {
         conversation_id: String,
+        branch_id: Option<String>,
         reply: oneshot::Sender<anyhow::Result<Vec<Message>>>,
     },
     SaveMessage {
@@ -101,12 +102,39 @@ pub enum DbCommand {
     DeleteMessagesAfterSortOrder {
         conversation_id: String,
         sort_order: i32,
+        branch_id: Option<String>,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
     UpdateMessageContent {
         id: String,
         content: String,
         reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // Branch operations
+    CreateBranch {
+        branch: MessageBranch,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    LoadBranchesForMessage {
+        parent_message_id: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<MessageBranch>>>,
+    },
+    LoadAllBranches {
+        conversation_id: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<MessageBranch>>>,
+    },
+    DeleteBranch {
+        branch_id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    CountBranches {
+        conversation_id: String,
+        reply: oneshot::Sender<anyhow::Result<i64>>,
+    },
+    SearchMessages {
+        query: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<SearchResult>>>,
     },
 
     // Preset operations
@@ -340,9 +368,11 @@ impl DbWorker {
             }
             DbCommand::LoadMessages {
                 conversation_id,
+                branch_id,
                 reply,
             } => {
-                let result = conversations::load_messages(conn, &conversation_id, None);
+                let result =
+                    conversations::load_messages(conn, &conversation_id, branch_id.as_deref());
                 let _ = reply.send(result);
             }
             DbCommand::SaveMessage { message, reply } => {
@@ -356,12 +386,14 @@ impl DbWorker {
             DbCommand::DeleteMessagesAfterSortOrder {
                 conversation_id,
                 sort_order,
+                branch_id,
                 reply,
             } => {
-                let result = conversations::delete_messages_after_sort_order(
+                let result = conversations::delete_messages_after_sort_order_branch(
                     conn,
                     &conversation_id,
                     sort_order,
+                    branch_id.as_deref(),
                 );
                 let _ = reply.send(result);
             }
@@ -471,6 +503,42 @@ impl DbWorker {
             }
             DbCommand::DeleteProvider { id, reply } => {
                 let result = providers::delete_provider(conn, &id);
+                let _ = reply.send(result);
+            }
+
+            // Branch operations
+            DbCommand::CreateBranch { branch, reply } => {
+                let result = conversations::create_branch(conn, &branch);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadBranchesForMessage {
+                parent_message_id,
+                reply,
+            } => {
+                let result = conversations::load_branches_for_message(conn, &parent_message_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadAllBranches {
+                conversation_id,
+                reply,
+            } => {
+                let result =
+                    conversations::load_all_branches_for_conversation(conn, &conversation_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteBranch { branch_id, reply } => {
+                let result = conversations::delete_branch_by_id(conn, &branch_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::CountBranches {
+                conversation_id,
+                reply,
+            } => {
+                let result = conversations::count_branches_for_conversation(conn, &conversation_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::SearchMessages { query, reply } => {
+                let result = conversations::search_messages(conn, &query);
                 let _ = reply.send(result);
             }
         }
