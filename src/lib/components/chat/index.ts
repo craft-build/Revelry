@@ -1,1 +1,1 @@
-export { default as MarkdownRenderer } from './MarkdownRenderer.svelte';
+export { default as MarkdownRenderer } from "./MarkdownRenderer.svelte";
