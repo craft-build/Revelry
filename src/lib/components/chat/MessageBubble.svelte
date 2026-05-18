@@ -4,6 +4,7 @@
 	import { Pencil, RotateCcw, Copy, Trash2, AlertTriangle, Loader2 } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 	import { app } from '$lib/stores/app.svelte';
+	import { MarkdownRenderer } from '$lib/components/chat';
 
 	interface Props {
 		message: Message;
@@ -84,20 +85,7 @@
 		}
 	}
 
-	/**
-	 * Naive italic-asterisk rendering — *narration* stays italic,
-	 * regular speech stays upright. The real app uses pulldown-cmark
-	 * via the backend bridge.
-	 */
-	function renderInlineMarkdown(text: string): string {
-		const escaped = text
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
-		return escaped
-			.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-			.replace(/\*([^*]+?)\*/g, '<em class="text-[--color-muted]">$1</em>');
-	}
+
 
 	function handleSaveResend() {
 		if (editContent.trim() === '' || isSaving) return;
@@ -262,10 +250,13 @@
 					message.is_streaming && 'streaming-caret'
 				)}
 			>
-				<p class="whitespace-pre-wrap break-words">
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html renderInlineMarkdown(message.content)}
-				</p>
+				{#if message.is_streaming || isUser}
+					<p class="whitespace-pre-wrap break-words">
+						{message.content}
+					</p>
+				{:else}
+					<MarkdownRenderer content={message.content} />
+				{/if}
 
 				<!-- Stop reason badges -->
 				{#if showStopReasonBadge}
