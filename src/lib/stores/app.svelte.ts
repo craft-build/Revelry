@@ -43,7 +43,10 @@ import {
   editAndResend as apiEditAndResend,
   deleteMessage as apiDeleteMessage,
   saveMessage as apiSaveMessage,
+  importCard as apiImportCard,
+  exportCard as apiExportCard,
 } from "$lib/data/api";
+import { open, save } from "@tauri-apps/plugin-dialog";
 
 /**
  * Root application state. Mirrors the AppModel/ChatModel/CharacterModel/SettingsModel
@@ -588,6 +591,42 @@ class AppState {
     }
   }
 
+  // ── Card import/export ────────────────────────────────────────────────
+
+  /** Open a file picker for card import, parse the file via backend,
+   *  and return the character data for the editor to consume. */
+  async importCharacterFromFile(): Promise<CharacterCard> {
+    const filePath = await open({
+      multiple: false,
+      filters: [{ name: "Character Cards", extensions: ["png", "json"] }],
+    });
+
+    if (!filePath) {
+      throw new Error("cancelled");
+    }
+
+    // open() returns string | string[] | null. With multiple: false, it's string | null.
+    const path = typeof filePath === "string" ? filePath : filePath;
+
+    return await apiImportCard(path);
+  }
+
+  /** Export a character card as a TavernAI V2 PNG file.
+   *  Opens a native save dialog and writes the file via backend. */
+  async exportCharacter(id: string): Promise<void> {
+    const character = this.characters.find((c) => c.id === id);
+    if (!character) throw new Error("Character not found");
+
+    const savePath = await save({
+      defaultPath: `${character.name}.png`,
+      filters: [{ name: "PNG Image", extensions: ["png"] }],
+    });
+
+    if (!savePath) return; // User cancelled
+
+    await apiExportCard(id, savePath);
+  }
+
   // ── Provider CRUD ──────────────────────────────────────────────────────
 
   async createProvider(
@@ -797,7 +836,7 @@ class AppState {
           accumulated += chunk.data.content;
           this.updateStreamingMessage(aiId, accumulated);
           break;
-        case "complete":
+        case "complete": {
           this.updateStreamingMessage(
             aiId,
             chunk.data.content || accumulated,
@@ -838,6 +877,7 @@ class AppState {
             );
           }
           break;
+        }
         case "error":
           this.messages = this.messages.map((m) =>
             m.id === aiId
@@ -940,7 +980,7 @@ class AppState {
           accumulated += chunk.data.content;
           this.updateStreamingMessage(aiId, accumulated);
           break;
-        case "complete":
+        case "complete": {
           this.updateStreamingMessage(
             aiId,
             chunk.data.content || accumulated,
@@ -980,6 +1020,7 @@ class AppState {
             );
           }
           break;
+        }
         case "error":
           this.messages = this.messages.map((m) =>
             m.id === aiId
@@ -1073,7 +1114,7 @@ class AppState {
           accumulated += chunk.data.content;
           this.updateStreamingMessage(aiId, accumulated);
           break;
-        case "complete":
+        case "complete": {
           this.updateStreamingMessage(
             aiId,
             chunk.data.content || accumulated,
@@ -1113,6 +1154,7 @@ class AppState {
             );
           }
           break;
+        }
         case "error":
           this.messages = this.messages.map((m) =>
             m.id === aiId
