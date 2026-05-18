@@ -18,8 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Editors** - Create and edit characters, personas, and lorebooks ✅ 2026-05-12
 - [x] **Phase 4: Provider Setup** - Users configure AI providers with API keys stored in OS keychain ✅ 2026-05-13
 - [x] **Phase 5: Live Conversations** - Real AI streaming replaces mock responses; users chat with AI through characters ✅ 2026-05-16
-- [ ] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting
-- [ ] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export
+- [x] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting ✅ 2026-05-16
+- [x] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export ✅ 2026-05-18
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
 - [ ] **Phase 9: Power Features** - Lorebook context injection and regex scripting
 - [ ] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements
@@ -258,7 +258,7 @@ Plans:
 **Wave 2** _(autonomous — Shiki preload + frontend card UI, blocked on Wave 1)_
 
 - [x] 07-03: Shiki Preloading in Root Layout ✓ 2026-05-18 _(was blocked on 07-01)_
-- [ ] 07-04: Wire Card Import/Export to Frontend UI _(blocked on 07-02)_
+- [x] 07-04: Wire Card Import/Export to Frontend UI ✓ 2026-05-18 _(was blocked on 07-02)_
       **UI hint**: yes
 
 ### Phase 8: Advanced Conversations
@@ -368,7 +368,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Provider Setup              | 2/2            | Complete    | 2026-05-13 |
 | 5. Live Conversations          | 5/5            | Complete    | 2026-05-16 |
 | 6. Smart Prompts               | 3/4            | In Progress | 2026-05-16 |
-| 7. Rich Output & Cards         | 0/4            | In Progress | -          |
+| 7. Rich Output & Cards         | 4/4            | Complete    | 2026-05-18 |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 0/5            | Not started | -          |
 | 10. Theme & Polish             | 0/2            | Not started | -          |
