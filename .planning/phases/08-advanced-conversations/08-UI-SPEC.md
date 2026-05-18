@@ -15,14 +15,14 @@ created: 2026-05-18
 
 ## Design System
 
-| Property          | Value                                       |
-| ----------------- | ------------------------------------------- |
-| Tool              | none (SvelteKit — shadcn gate not applicable) |
-| Preset            | not applicable                              |
+| Property          | Value                                                              |
+| ----------------- | ------------------------------------------------------------------ |
+| Tool              | none (SvelteKit — shadcn gate not applicable)                      |
+| Preset            | not applicable                                                     |
 | Component library | bits-ui 2.x (Popover, Dialog, DropdownMenu, Tooltip, Avatar, Tabs) |
-| Icon library      | @lucide/svelte                              |
-| Font              | Geist (sans), Fraunces (display/serif), Geist Mono (mono) |
-| Styling           | Tailwind CSS v4 with OKLCH color tokens     |
+| Icon library      | @lucide/svelte                                                     |
+| Font              | Geist (sans), Fraunces (display/serif), Geist Mono (mono)          |
+| Styling           | Tailwind CSS v4 with OKLCH color tokens                            |
 
 ---
 
@@ -58,12 +58,12 @@ Exceptions: none
 
 Reuses existing scale. No new sizes or weights.
 
-| Role    | Size  | Weight | Line Height | Usage in This Phase                                |
-| ------- | ----- | ------ | ----------- | -------------------------------------------------- |
-| Body    | 15px  | 400    | 1.6         | Branch popover item preview text                   |
-| Label   | 12px  | 500    | 1.4         | Branch badge ("2/3"), search result snippet        |
-| Heading | 14px  | 600    | 1.2         | Branch label in popover, "Active" indicator        |
-| Display | 11px  | 400    | 1.3         | Timestamps, muted metadata in branch popover       |
+| Role    | Size | Weight | Line Height | Usage in This Phase                          |
+| ------- | ---- | ------ | ----------- | -------------------------------------------- |
+| Body    | 15px | 400    | 1.6         | Branch popover item preview text             |
+| Label   | 12px | 500    | 1.4         | Branch badge ("2/3"), search result snippet  |
+| Heading | 14px | 600    | 1.2         | Branch label in popover, "Active" indicator  |
+| Display | 11px | 400    | 1.3         | Timestamps, muted metadata in branch popover |
 
 ---
 
@@ -71,12 +71,12 @@ Reuses existing scale. No new sizes or weights.
 
 All colors reference existing OKLCH tokens. No new tokens.
 
-| Role            | Token                    | Usage                                         |
-| --------------- | ------------------------ | --------------------------------------------- |
-| Dominant (60%)  | `--color-background`     | Chat view background (unchanged)              |
-| Secondary (30%) | `--color-surface`        | Sidebar, branch popover background            |
-| Accent (10%)    | `--color-accent`         | Branch badge text, active branch indicator, search match highlight (`<mark>` background) |
-| Destructive     | `--color-destructive`    | "Delete branch" action in popover             |
+| Role            | Token                 | Usage                                                                                    |
+| --------------- | --------------------- | ---------------------------------------------------------------------------------------- |
+| Dominant (60%)  | `--color-background`  | Chat view background (unchanged)                                                         |
+| Secondary (30%) | `--color-surface`     | Sidebar, branch popover background                                                       |
+| Accent (10%)    | `--color-accent`      | Branch badge text, active branch indicator, search match highlight (`<mark>` background) |
+| Destructive     | `--color-destructive` | "Delete branch" action in popover                                                        |
 
 ### Accent reserved for (this phase only)
 
@@ -91,20 +91,20 @@ All colors reference existing OKLCH tokens. No new tokens.
 
 ### New Components
 
-| Component | Location | bits-ui Primitive | Description |
-|-----------|----------|-------------------|-------------|
-| BranchBadge | `src/lib/components/chat/BranchBadge.svelte` | none (plain `<button>`) | Small pill badge ("2/3") on forked messages. Clickable, triggers popover. |
-| BranchPopover | `src/lib/components/chat/BranchPopover.svelte` | `Popover` from bits-ui | Popover listing all branches at a fork point. Shows label, preview snippet, active state. Includes delete action per branch. |
-| SearchMessagePreview | inline in ConversationSidebar | none | Second line in sidebar conversation entry showing matching message snippet with `<mark>` highlights. |
+| Component            | Location                                       | bits-ui Primitive       | Description                                                                                                                  |
+| -------------------- | ---------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| BranchBadge          | `src/lib/components/chat/BranchBadge.svelte`   | none (plain `<button>`) | Small pill badge ("2/3") on forked messages. Clickable, triggers popover.                                                    |
+| BranchPopover        | `src/lib/components/chat/BranchPopover.svelte` | `Popover` from bits-ui  | Popover listing all branches at a fork point. Shows label, preview snippet, active state. Includes delete action per branch. |
+| SearchMessagePreview | inline in ConversationSidebar                  | none                    | Second line in sidebar conversation entry showing matching message snippet with `<mark>` highlights.                         |
 
 ### Modified Components
 
-| Component | File | Changes |
-|-----------|------|---------|
-| MessageBubble | `src/lib/components/chat/MessageBubble.svelte` | Add GitBranch icon to hover actions row ("Branch from here"). Add BranchBadge + BranchPopover for messages with sibling branches. Add `branch_id` prop awareness. |
+| Component           | File                                                   | Changes                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MessageBubble       | `src/lib/components/chat/MessageBubble.svelte`         | Add GitBranch icon to hover actions row ("Branch from here"). Add BranchBadge + BranchPopover for messages with sibling branches. Add `branch_id` prop awareness.                                    |
 | ConversationSidebar | `src/lib/components/layout/ConversationSidebar.svelte` | Replace client-side `filtered` with backend `search_messages` invoke. When results include message matches, render snippet line below conversation preview. Clicking navigates + scrolls to message. |
-| AppState | `src/lib/stores/app.svelte.ts` | Add `active_branch_id`, `branchSearchResults`, `searchMessages()` action, `switchBranch()` action, `forkFromMessage()` action. |
-| Types | `src/lib/types/index.ts` | Add `MessageBranch` type. Add `branch_id?: string \| null` to `Message` interface. Add `SearchResult` type (conversation info + matching message snippet + branch_id). |
+| AppState            | `src/lib/stores/app.svelte.ts`                         | Add `active_branch_id`, `branchSearchResults`, `searchMessages()` action, `switchBranch()` action, `forkFromMessage()` action.                                                                       |
+| Types               | `src/lib/types/index.ts`                               | Add `MessageBranch` type. Add `branch_id?: string \| null` to `Message` interface. Add `SearchResult` type (conversation info + matching message snippet + branch_id).                               |
 
 ---
 
@@ -115,12 +115,14 @@ All colors reference existing OKLCH tokens. No new tokens.
 **Where:** On any message that has sibling branches at its position.
 
 **Visual:**
+
 - Small pill badge positioned to the left of the message bubble (for AI messages) or right (for user messages)
 - Shows current branch position: "1/3" (active branch index / total branches)
 - Styling: `text-[10px] font-medium px-1.5 py-0.5 rounded-(--radius-sm) border border-(--color-accent)/30 text-(--color-accent) bg-(--color-accent)/10`
 - Always visible on branched messages (not hover-dependent) — the user needs to know alternatives exist at a glance
 
 **Interaction:**
+
 - Click on badge opens BranchPopover anchored to the badge
 - Badge is a `<button>` with `aria-label="View branches (1 of 3)"`
 
@@ -129,6 +131,7 @@ All colors reference existing OKLCH tokens. No new tokens.
 **Where:** Anchored to BranchBadge on click.
 
 **Visual:**
+
 - Follows existing Popover pattern from PersonaSwitcher/ProviderModelSelector
 - Width: `w-72` (matches PersonaSwitcher)
 - Background: `bg-(--color-surface-elevated)` with `border border-(--color-border)` and `shadow-xl`
@@ -148,6 +151,7 @@ All colors reference existing OKLCH tokens. No new tokens.
   - Main branch (root) cannot be deleted — no delete icon shown
 
 **Interaction:**
+
 - Click a branch → `app.switchBranch(branch_id)` → chat view updates to show messages from that branch from the fork point onward
 - Shared history (before fork) always visible regardless of active branch
 - Popover closes on branch selection
@@ -157,6 +161,7 @@ All colors reference existing OKLCH tokens. No new tokens.
 **Where:** In the hover actions row on MessageBubble (alongside Edit, Copy, Regenerate, Delete).
 
 **Visual:**
+
 - GitBranch icon from @lucide/svelte
 - Same styling as existing action buttons: `size-6 rounded-(--radius-sm) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)`
 - Position: after Copy, before Edit (for AI messages); after Copy, before Edit (for user messages)
@@ -164,6 +169,7 @@ All colors reference existing OKLCH tokens. No new tokens.
 - Visible on ALL messages (user and AI), not just the last message
 
 **Interaction:**
+
 - Click triggers `app.forkFromMessage(message.id)`
 - If message is AI: creates new branch and auto-generates a new AI response on that branch (like regenerate but branching)
 - If message is user: creates new empty branch starting after that message, user types next input
@@ -175,10 +181,12 @@ All colors reference existing OKLCH tokens. No new tokens.
 **Where:** Replaces the existing client-side LIKE filter in ConversationSidebar.
 
 **Visual — search input:**
+
 - Unchanged from current design (Search icon + Input)
 - Debounced: 300ms after user stops typing
 
 **Visual — results:**
+
 - When search query is empty: show all conversations (current behavior, no change)
 - When search returns conversation title matches: show conversation entries as today (no change)
 - When search returns message content matches: show conversation entry with an additional line below the existing preview:
@@ -191,6 +199,7 @@ All colors reference existing OKLCH tokens. No new tokens.
 - No results state: "No conversations match." (existing copy, unchanged)
 
 **Interaction:**
+
 - Clicking a result navigates to `/chat/{conversation_id}`
 - If the match is on a specific branch, auto-switch to that branch via `app.switchBranch(branch_id)` after navigation
 - After navigation, scroll to the matching message in the chat view
@@ -200,21 +209,21 @@ All colors reference existing OKLCH tokens. No new tokens.
 
 ## Copywriting Contract
 
-| Element | Copy |
-| ------- | ---- |
-| Branch action tooltip | "Branch from here" |
-| Branch popover header | "BRANCHES" (uppercase, per existing section header pattern) |
-| Branch popover empty state | N/A (branches always exist when popover is open) |
-| Default branch label (root) | "Main" |
-| Auto-generated branch labels | "Branch 1", "Branch 2", "Branch 3", etc. |
-| Branch badge aria-label | "View branches ({current} of {total})" |
-| Delete branch confirm | "Delete this branch?" with inline "Delete" / "Cancel" buttons |
-| Delete branch confirm (destructive) | "This cannot be undone." as muted subtext |
-| Sidebar search placeholder | "Search conversations" (unchanged) |
-| Sidebar no results | "No conversations match." (unchanged) |
-| Error: fork failed | "Failed to create branch. Try again." |
-| Error: branch switch failed | "Failed to switch branches. Try again." |
-| Error: search failed | "Search unavailable. Showing all conversations." (fallback to unfiltered list) |
+| Element                             | Copy                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------ |
+| Branch action tooltip               | "Branch from here"                                                             |
+| Branch popover header               | "BRANCHES" (uppercase, per existing section header pattern)                    |
+| Branch popover empty state          | N/A (branches always exist when popover is open)                               |
+| Default branch label (root)         | "Main"                                                                         |
+| Auto-generated branch labels        | "Branch 1", "Branch 2", "Branch 3", etc.                                       |
+| Branch badge aria-label             | "View branches ({current} of {total})"                                         |
+| Delete branch confirm               | "Delete this branch?" with inline "Delete" / "Cancel" buttons                  |
+| Delete branch confirm (destructive) | "This cannot be undone." as muted subtext                                      |
+| Sidebar search placeholder          | "Search conversations" (unchanged)                                             |
+| Sidebar no results                  | "No conversations match." (unchanged)                                          |
+| Error: fork failed                  | "Failed to create branch. Try again."                                          |
+| Error: branch switch failed         | "Failed to switch branches. Try again."                                        |
+| Error: search failed                | "Search unavailable. Showing all conversations." (fallback to unfiltered list) |
 
 ---
 
@@ -222,20 +231,20 @@ All colors reference existing OKLCH tokens. No new tokens.
 
 ### New AppState fields
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `active_branch_id` | `string \| null` | `null` | Currently viewed branch for active conversation. `null` = Main/root branch |
-| `branch_search_results` | `SearchResult[]` | `[]` | FTS5 search results from backend |
-| `is_searching` | `boolean` | `false` | Whether a search request is in-flight |
+| Field                   | Type             | Default | Description                                                                |
+| ----------------------- | ---------------- | ------- | -------------------------------------------------------------------------- |
+| `active_branch_id`      | `string \| null` | `null`  | Currently viewed branch for active conversation. `null` = Main/root branch |
+| `branch_search_results` | `SearchResult[]` | `[]`    | FTS5 search results from backend                                           |
+| `is_searching`          | `boolean`        | `false` | Whether a search request is in-flight                                      |
 
 ### New AppState actions
 
-| Method | Parameters | Behavior |
-|--------|-----------|----------|
-| `searchMessages(query)` | `query: string` | Calls `invoke('search_messages', { query })`. Sets `branch_search_results`. Falls back to unfiltered list on error. |
-| `switchBranch(branchId)` | `branchId: string \| null` | Sets `active_branch_id`. Reloads messages for active conversation with branch filter. Scrolls to fork point. |
-| `forkFromMessage(messageId)` | `messageId: string` | Calls `invoke('fork_conversation', { messageId })`. Creates branch. Sets as active. If AI message, triggers regeneration on new branch. |
-| `deleteBranch(branchId)` | `branchId: string` | Calls `invoke('delete_branch', { branchId })`. If deleting active branch, switches to Main. Removes branch from state. |
+| Method                       | Parameters                 | Behavior                                                                                                                                |
+| ---------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `searchMessages(query)`      | `query: string`            | Calls `invoke('search_messages', { query })`. Sets `branch_search_results`. Falls back to unfiltered list on error.                     |
+| `switchBranch(branchId)`     | `branchId: string \| null` | Sets `active_branch_id`. Reloads messages for active conversation with branch filter. Scrolls to fork point.                            |
+| `forkFromMessage(messageId)` | `messageId: string`        | Calls `invoke('fork_conversation', { messageId })`. Creates branch. Sets as active. If AI message, triggers regeneration on new branch. |
+| `deleteBranch(branchId)`     | `branchId: string`         | Calls `invoke('delete_branch', { branchId })`. If deleting active branch, switches to Main. Removes branch from state.                  |
 
 ### New types
 
@@ -252,8 +261,8 @@ interface SearchResult {
   conversation_id: string;
   conversation_title: string;
   character_id: string;
-  match_type: 'title' | 'message';
-  message_snippet?: string;    // HTML with <mark> tags from FTS5 snippet()
+  match_type: "title" | "message";
+  message_snippet?: string; // HTML with <mark> tags from FTS5 snippet()
   message_id?: string;
   branch_id?: string;
   rank: number;
@@ -271,11 +280,11 @@ branch_id?: string | null;  // null = Main/root path
 
 ## Registry Safety
 
-| Registry | Blocks Used | Safety Gate |
-|----------|-------------|-------------|
-| shadcn | N/A (Svelte project) | not applicable |
-| bits-ui | Popover (existing) | already in project, no new primitives needed |
-| @lucide/svelte | GitBranch (new icon) | official library, no vetting required |
+| Registry       | Blocks Used          | Safety Gate                                  |
+| -------------- | -------------------- | -------------------------------------------- |
+| shadcn         | N/A (Svelte project) | not applicable                               |
+| bits-ui        | Popover (existing)   | already in project, no new primitives needed |
+| @lucide/svelte | GitBranch (new icon) | official library, no vetting required        |
 
 Third-party registries: none
 
@@ -296,11 +305,11 @@ Third-party registries: none
 
 ## Pre-Populated From
 
-| Source | Decisions Used |
-|--------|----------------|
-| 08-CONTEXT.md | 17 decisions (D-01 through D-17) — all branching/search behavior, data model, UI patterns |
-| app.css | All color tokens, spacing, typography, radii — no new tokens needed |
-| PersonaSwitcher.svelte | Popover pattern (structure, styling, active indicator) |
-| ConversationSidebar.svelte | Search UI, conversation list, empty states |
-| MessageBubble.svelte | Hover actions row pattern, badge sizing |
-| User input | 0 (all questions answered by upstream artifacts) |
+| Source                     | Decisions Used                                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| 08-CONTEXT.md              | 17 decisions (D-01 through D-17) — all branching/search behavior, data model, UI patterns |
+| app.css                    | All color tokens, spacing, typography, radii — no new tokens needed                       |
+| PersonaSwitcher.svelte     | Popover pattern (structure, styling, active indicator)                                    |
+| ConversationSidebar.svelte | Search UI, conversation list, empty states                                                |
+| MessageBubble.svelte       | Hover actions row pattern, badge sizing                                                   |
+| User input                 | 0 (all questions answered by upstream artifacts)                                          |
