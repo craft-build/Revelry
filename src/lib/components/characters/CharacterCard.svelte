@@ -1,16 +1,17 @@
 <script lang="ts">
 	import type { CharacterCard } from '$lib/types';
 	import { Avatar, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
-	import { MessageSquare, Pencil, Trash2 } from '@lucide/svelte';
+	import { MessageSquare, Pencil, Trash2, Download } from '@lucide/svelte';
 
 	interface Props {
 		character: CharacterCard;
 		onchat?: (id: string) => void;
 		onedit?: (id: string) => void;
 		ondelete?: (id: string) => void;
+		onexport?: (id: string) => void;
 	}
 
-	let { character, onchat, onedit, ondelete }: Props = $props();
+	let { character, onchat, onedit, ondelete, onexport }: Props = $props();
 </script>
 
 <article
@@ -57,6 +58,10 @@
 			<KebabMenuItem onclick={() => onedit?.(character.id)}>
 				<Pencil class="size-3.5" />
 				Edit
+			</KebabMenuItem>
+			<KebabMenuItem onclick={() => onexport?.(character.id)}>
+				<Download class="size-3.5" />
+				Export
 			</KebabMenuItem>
 			<KebabMenuSeparator />
 			<KebabMenuItem destructive onclick={() => ondelete?.(character.id)}>
