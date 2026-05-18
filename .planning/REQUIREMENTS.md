@@ -26,8 +26,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CHAR-03**: User can edit an existing character's fields
 - [x] **CHAR-04**: User can delete a character
 - [x] **CHAR-05**: User can assign an avatar to a character (upload image or default initials)
-- [ ] **CHAR-06**: User can import a character card from a TavernAI V2 PNG file
-- [ ] **CHAR-07**: User can export a character card as a TavernAI V2 PNG file
+- [x] **CHAR-06**: User can import a character card from a TavernAI V2 PNG file
+- [x] **CHAR-07**: User can export a character card as a TavernAI V2 PNG file
 
 ### Personas
 
@@ -156,8 +156,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAR-03     | Phase 3  | Done     |
 | CHAR-04     | Phase 3  | Done     |
 | CHAR-05     | Phase 3  | Done     |
-| CHAR-06     | Phase 7  | Pending  |
-| CHAR-07     | Phase 7  | Pending  |
+| CHAR-06     | Phase 7  | Complete |
+| CHAR-07     | Phase 7  | Complete |
 | PERS-01     | Phase 2  | Done     |
 | PERS-02     | Phase 3  | Done     |
 | PERS-03     | Phase 3  | Done     |
