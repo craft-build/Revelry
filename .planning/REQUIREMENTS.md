@@ -55,7 +55,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **CHAT-03**: User can regenerate the last AI response
 - [ ] **CHAT-04**: User can edit a sent message and resend from that point
 - [x] **CHAT-05**: User can send messages via Enter (or Ctrl+Enter based on settings)
-- [ ] **CHAT-06**: AI responses are rendered as formatted markdown (bold, italic, code blocks, lists, headers)
+- [x] **CHAT-06**: AI responses are rendered as formatted markdown (bold, italic, code blocks, lists, headers) ✓ 07-01
 
 ### Prompt Engineering
 
@@ -176,7 +176,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAT-03     | Phase 5  | Pending  |
 | CHAT-04     | Phase 5  | Pending  |
 | CHAT-05     | Phase 1  | Done     |
-| CHAT-06     | Phase 7  | Pending  |
+| CHAT-06     | Phase 7  | Complete |
 | PRMP-01     | Phase 6  | Pending  |
 | PRMP-02     | Phase 6  | Pending  |
 | PRMP-03     | Phase 6  | Pending  |
