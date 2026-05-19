@@ -77,7 +77,9 @@ pub fn delete_conversation(conn: &Connection, id: &str) -> Result<()> {
 /// Loads messages for a conversation, ordered by sort_order ascending.
 /// Phase 8: branch-aware filtering.
 /// When branch_id is None: loads root messages (branch_id IS NULL).
-/// When branch_id is Some: loads root messages + messages in that branch.
+/// When branch_id is Some: loads root messages up to (and including) the fork point,
+/// plus all messages in that branch. This prevents "leaking" main-branch messages
+/// that were created after the fork.
 pub fn load_messages(
     conn: &Connection,
     conversation_id: &str,
@@ -86,12 +88,42 @@ pub fn load_messages(
     let mut result = Vec::new();
     match branch_id {
         Some(bid) => {
-            let mut stmt = conn.prepare_cached(
-                "SELECT id, conversation_id, role, content, sort_order, timestamp, branch_id
-                 FROM messages WHERE conversation_id = ?1 AND (branch_id IS NULL OR branch_id = ?2) ORDER BY sort_order ASC",
-            )?;
-            for msg in stmt.query_map(params![conversation_id, bid], |row| row_to_message(row))? {
-                result.push(msg?);
+            // Find the fork point: the parent message's sort_order
+            let fork_sort_order: Option<i32> = conn.query_row(
+                "SELECT m.sort_order FROM message_branches b
+                 JOIN messages m ON m.id = b.parent_message_id
+                 WHERE b.id = ?1",
+                params![bid],
+                |row| row.get(0),
+            ).ok();
+
+            // Return main-branch messages up to (and including) the fork point,
+            // plus all messages in the requested branch.
+            match fork_sort_order {
+                Some(fork_order) => {
+                    let sql = "SELECT id, conversation_id, role, content, sort_order, timestamp, branch_id
+                               FROM messages WHERE conversation_id = ?1
+                               AND ((branch_id IS NULL AND sort_order <= ?3) OR branch_id = ?2)
+                               ORDER BY sort_order ASC";
+
+                    let mut stmt = conn.prepare_cached(sql)?;
+                    for msg in stmt.query_map(params![conversation_id, bid, fork_order], |row| row_to_message(row))? {
+                        result.push(msg?);
+                    }
+                }
+                None => {
+                    // Fallback: if branch exists but parent message was deleted,
+                    // return all main-branch + branch messages (same as before)
+                    let sql = "SELECT id, conversation_id, role, content, sort_order, timestamp, branch_id
+                               FROM messages WHERE conversation_id = ?1
+                               AND (branch_id IS NULL OR branch_id = ?2)
+                               ORDER BY sort_order ASC";
+
+                    let mut stmt = conn.prepare_cached(sql)?;
+                    for msg in stmt.query_map(params![conversation_id, bid], |row| row_to_message(row))? {
+                        result.push(msg?);
+                    }
+                }
             }
         }
         None => {
@@ -144,39 +176,10 @@ pub fn delete_message(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
-/// Deletes all messages with sort_order greater than the given value.
+/// Branch-aware delete of messages after a sort_order threshold.
+/// Only deletes messages matching the given branch_id (or NULL for root).
 /// Used by edit/resend to truncate the conversation from the edit point.
 /// Also updates the conversation's last_message_preview to the latest remaining message.
-pub fn delete_messages_after_sort_order(
-    conn: &Connection,
-    conversation_id: &str,
-    sort_order: i32,
-) -> Result<()> {
-    conn.prepare_cached("DELETE FROM messages WHERE conversation_id = ?1 AND sort_order > ?2")?
-        .execute(params![conversation_id, sort_order])?;
-
-    // Update conversation's last_message_preview to the latest remaining message
-    let now = Utc::now();
-    let preview: Option<String> = conn
-        .prepare_cached(
-            "SELECT content FROM messages WHERE conversation_id = ?1 ORDER BY sort_order DESC LIMIT 1",
-        )?
-        .query_row(params![conversation_id], |row| row.get(0))
-        .ok();
-
-    conn.prepare_cached(
-        "UPDATE conversations SET updated_at = ?1, last_message_preview = ?2 WHERE id = ?3",
-    )?
-    .execute(params![
-        now.to_rfc3339(),
-        preview.unwrap_or_default(),
-        conversation_id
-    ])?;
-
-    Ok(())
-}
-
-/// Updates a message's content by ID.
 /// Used by edit/resend to update the edited message before re-streaming.
 pub fn update_message_content(conn: &Connection, id: &str, content: &str) -> Result<()> {
     conn.prepare_cached("UPDATE messages SET content = ?1 WHERE id = ?2")?
@@ -392,8 +395,7 @@ pub fn search_messages(conn: &Connection, query: &str) -> Result<Vec<SearchResul
     Ok(result)
 }
 
-/// Branch-aware version of delete_messages_after_sort_order.
-/// Only deletes messages matching the given branch_id (or NULL for root).
+/// Branch-aware delete of messages after a sort_order threshold.
 pub fn delete_messages_after_sort_order_branch(
     conn: &Connection,
     conversation_id: &str,
@@ -749,7 +751,7 @@ mod tests {
         assert_eq!(messages.len(), 4);
 
         // Delete messages after sort_order 1 (the user message at position 1)
-        delete_messages_after_sort_order(&conn, &conversation.id, 1)
+        delete_messages_after_sort_order_branch(&conn, &conversation.id, 1, None)
             .expect("Delete should succeed");
 
         // Verify only initial + user_msg remain (sort_order 0 and 1)
@@ -894,14 +896,118 @@ mod tests {
         assert_eq!(root_messages.len(), 2); // initial + root_msg
         assert!(root_messages.iter().all(|m| m.branch_id.is_none()));
 
-        // Load branch messages: sees shared root (NULL) + branch messages
-        // = initial (NULL) + root_msg (NULL) + branch_msg (branch)
+        // Load branch messages: sees root messages up to fork point + branch messages
+        // = initial (NULL, sort_order=0 <= fork sort_order=0) + branch_msg (branch)
+        // root_msg is excluded because it's on the main branch AFTER the fork point
         let branch_messages = load_messages(&conn, &conversation.id, Some(&branch.id))
             .expect("Load branch should succeed");
-        assert_eq!(branch_messages.len(), 3); // shared root + branch_msg
+        assert_eq!(branch_messages.len(), 2); // fork-point root msg + branch_msg
         assert!(branch_messages
             .iter()
             .any(|m| m.branch_id.as_deref() == Some(branch.id.as_str())));
+        // root_msg should NOT appear in branch view
+        assert!(branch_messages.iter().all(|m| m.id != root_msg.id));
+    }
+
+    #[test]
+    fn test_load_messages_branch_no_leak() {
+        // Regression test: messages on the main branch after the fork point
+        // should NOT appear when loading a branch view.
+        let conn = setup_test_db();
+        let character = make_test_character("Aria");
+        insert_character(&conn, &character).expect("Insert character should succeed");
+
+        let conversation =
+            start_conversation(&conn, &character.id).expect("Start conversation should succeed");
+
+        let messages = load_messages(&conn, &conversation.id, None).expect("Load should succeed");
+        // initial message at sort_order=0 from first_mes
+        let initial_msg_id = &messages[0].id;
+
+        // Add more main-branch messages BEFORE the fork (sort_order 1, 2)
+        let root_msg_1 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "User before fork".to_string(),
+            1,
+        );
+        save_message(&conn, &root_msg_1).expect("Save should succeed");
+
+        let root_msg_2 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::Assistant,
+            "AI before fork".to_string(),
+            2,
+        );
+        save_message(&conn, &root_msg_2).expect("Save should succeed");
+
+        // Fork at root_msg_2 (sort_order=2)
+        let branch = MessageBranch::new(
+            conversation.id.clone(),
+            root_msg_2.id.clone(),
+            "Alternate path".to_string(),
+        );
+        create_branch(&conn, &branch).expect("Create branch should succeed");
+
+        // Add messages on the branch (sort_order 3, 4)
+        let branch_msg_1 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "User on branch".to_string(),
+            3,
+        )
+        .with_branch_id(Some(branch.id.clone()));
+        save_message(&conn, &branch_msg_1).expect("Save should succeed");
+
+        let branch_msg_2 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::Assistant,
+            "AI on branch".to_string(),
+            4,
+        )
+        .with_branch_id(Some(branch.id.clone()));
+        save_message(&conn, &branch_msg_2).expect("Save should succeed");
+
+        // Add messages on the main branch AFTER the fork (sort_order 3, 4)
+        let root_msg_3 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "User on main after fork".to_string(),
+            3,
+        );
+        save_message(&conn, &root_msg_3).expect("Save should succeed");
+
+        let root_msg_4 = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::Assistant,
+            "AI on main after fork".to_string(),
+            4,
+        );
+        save_message(&conn, &root_msg_4).expect("Save should succeed");
+
+        // Main branch view: should see ALL 5 main-branch messages (initial + 4 root)
+        let main_messages =
+            load_messages(&conn, &conversation.id, None).expect("Load main should succeed");
+        assert_eq!(main_messages.len(), 5);
+        assert!(main_messages.iter().all(|m| m.branch_id.is_none()));
+
+        // Branch view: should see initial (0) + root_msg_1 (1) + root_msg_2 (2) + branch_msg_1 (3) + branch_msg_2 (4)
+        // = 5 messages, but NOT root_msg_3 or root_msg_4 (main-branch after fork)
+        let branch_messages = load_messages(&conn, &conversation.id, Some(&branch.id))
+            .expect("Load branch should succeed");
+        assert_eq!(branch_messages.len(), 5); // 3 pre-fork root + 2 branch
+
+        // Verify no post-fork main-branch messages leaked in
+        assert!(branch_messages.iter().all(|m| m.id != root_msg_3.id));
+        assert!(branch_messages.iter().all(|m| m.id != root_msg_4.id));
+
+        // Verify branch messages ARE present
+        assert!(branch_messages
+            .iter()
+            .any(|m| m.id == branch_msg_1.id));
+        assert!(branch_messages
+            .iter()
+            .any(|m| m.id == branch_msg_2.id));
     }
 
     #[test]

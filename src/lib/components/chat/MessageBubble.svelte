@@ -183,6 +183,7 @@
 					<BranchBadge
 						branches={branchesAtMessage}
 						activeBranchId={app.active_branch_id}
+						parentMessageId={message.id}
 					/>
 				</BranchPopover>
 			</div>

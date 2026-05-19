@@ -1,15 +1,18 @@
 <script lang="ts">
 	import type { MessageBranch } from '$lib/types';
+	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
+	import { app } from '$lib/stores/app.svelte';
 
 	interface Props {
 		branches: MessageBranch[];
 		activeBranchId: string | null;
+		parentMessageId: string;
 		class?: string;
 		onclick?: () => void;
 	}
 
-	let { branches, activeBranchId, class: className, onclick }: Props = $props();
+	let { branches, activeBranchId, parentMessageId, class: className, onclick }: Props = $props();
 
 	// Calculate position: 1-based index of active branch among all branches at this fork point
 	// "Main" is included as position 1 when branch_id is null
@@ -21,18 +24,48 @@
 	);
 
 	let label = $derived(`${activeIndex}/${totalBranches}`);
+
+	function handlePrev(e: MouseEvent) {
+		e.stopPropagation();
+		app.cycleBranchAtForkPoint(parentMessageId, 'prev');
+	}
+
+	function handleNext(e: MouseEvent) {
+		e.stopPropagation();
+		app.cycleBranchAtForkPoint(parentMessageId, 'next');
+	}
 </script>
 
-<button
-	type="button"
+<div
 	class={cn(
-		'text-[10px] font-medium px-1.5 py-0.5 rounded-(--radius-sm)',
-		'border border-(--color-accent)/30 text-(--color-accent) bg-(--color-accent)/10',
-		'hover:bg-(--color-accent)/20 transition-colors cursor-pointer',
+		'inline-flex items-center gap-0.5 rounded-(--radius-sm)',
+		'border border-(--color-accent)/30 bg-(--color-accent)/10',
+		'text-(--color-accent) transition-colors',
 		className,
 	)}
-	aria-label="View branches ({activeIndex} of {totalBranches})"
-	{onclick}
 >
-	{label}
-</button>
+	<button
+		type="button"
+		onclick={handlePrev}
+		class="inline-flex size-5 items-center justify-center rounded-l-(--radius-sm) hover:bg-(--color-accent)/20 transition-colors cursor-pointer"
+		aria-label="Previous branch"
+	>
+		<ChevronLeft class="size-3" />
+	</button>
+	<button
+		type="button"
+		class="text-[10px] font-medium px-1 py-0.5 hover:bg-(--color-accent)/20 transition-colors cursor-pointer"
+		aria-label="View branches ({activeIndex} of {totalBranches})"
+		{onclick}
+	>
+		{label}
+	</button>
+	<button
+		type="button"
+		onclick={handleNext}
+		class="inline-flex size-5 items-center justify-center rounded-r-(--radius-sm) hover:bg-(--color-accent)/20 transition-colors cursor-pointer"
+		aria-label="Next branch"
+	>
+		<ChevronRight class="size-3" />
+	</button>
+</div>

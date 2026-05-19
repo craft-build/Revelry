@@ -120,11 +120,13 @@
 						</div>
 					</div>
 				{:else}
-					<button
-						type="button"
+					<div
+						role="button"
+						tabindex="0"
 						onclick={() => handleSelect(branch.id)}
+						onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(branch.id); } }}
 						class={cn(
-							'group flex w-full items-center gap-2 rounded-(--radius-md) px-2 py-1.5 text-left',
+							'group flex w-full items-center gap-2 rounded-(--radius-md) px-2 py-1.5 text-left cursor-pointer',
 							activeBranchId === branch.id
 								? 'bg-(--color-surface) border-l-2 border-(--color-accent)'
 								: 'hover:bg-(--color-surface-hover)',
@@ -146,7 +148,7 @@
 								<Trash2 class="size-3" />
 							</button>
 						{/if}
-					</button>
+					</div>
 				{/if}
 			{/each}
 		</Popover.Content>

@@ -16,12 +16,16 @@
 	let scrollEl: HTMLDivElement | undefined = $state();
 
 	// Hydrate the active conversation when the route id changes.
+	// Preserve the current branch if the conversation hasn't changed.
 	$effect(() => {
-		getMessages(data.id).then((msgs) => {
-			app.openConversation(data.id, msgs);
+		const convId = data.id;
+		const currentBranchId =
+			app.active_conversation_id === convId ? app.active_branch_id : null;
+		getMessages(convId, currentBranchId).then((msgs) => {
+			app.openConversation(convId, msgs, currentBranchId);
 		}).catch((err) => {
 			console.error('Failed to load messages:', err);
-			app.openConversation(data.id, []);
+			app.openConversation(convId, [], null);
 		});
 	});
 
@@ -43,8 +47,28 @@
 		app.stopGeneration();
 	}
 
+	// Client-side branch filter — safety net to hide messages that don't belong
+	// to the active branch. The backend should already return the correct subset,
+	// but this catches any leaked main-branch messages after a fork point.
+	let visibleMessages = $derived(() => {
+		const branchId = app.active_branch_id;
+		if (!branchId) return app.messages;
+
+		// When on a non-Main branch, show:
+		// 1. Messages with branch_id matching the active branch
+		// 2. Messages with no branch_id that are BEFORE any branch-specific message
+		//    (i.e., shared history up to the fork point)
+		const branchMessages = app.messages.filter((m) => m.branch_id === branchId);
+		if (branchMessages.length === 0) return app.messages;
+
+		const forkSortOrder = Math.min(...branchMessages.map((m) => m.sort_order));
+		return app.messages.filter(
+			(m) => m.branch_id === branchId || (!m.branch_id && m.sort_order < forkSortOrder),
+		);
+	});
+
 	let lastAiMessageId = $derived(
-		app.messages
+		visibleMessages()
 			.filter((m) => m.role === 'assistant' && m.metadata?.stop_reason !== 'error')
 			.at(-1)?.id,
 	);
@@ -72,12 +96,12 @@
 <!-- Message list -->
 <div bind:this={scrollEl} class="flex-1 overflow-y-auto px-6 py-6">
 	<div class="mx-auto flex max-w-[80ch] flex-col gap-5">
-		{#if app.messages.length === 0}
+		{#if visibleMessages().length === 0}
 			<div class="py-20 text-center text-sm text-(--color-muted)">
 				No messages yet. Send something to begin.
 			</div>
 		{:else}
-			{#each app.messages as message (message.id)}
+			{#each visibleMessages() as message (message.id)}
 				<div id="message-{message.id}" data-message-id={message.id}>
 					<MessageBubble
 						{message}

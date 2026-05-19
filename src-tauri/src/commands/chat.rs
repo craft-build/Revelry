@@ -32,6 +32,7 @@ async fn load_chat_context(
     db: &State<'_, DbWorker>,
     channel: &Channel<StreamChunk>,
     conversation_id: &str,
+    branch_id: Option<String>,
 ) -> Result<Option<ChatContext>, String> {
     // 1. Load conversation
     let conversation = {
@@ -53,7 +54,7 @@ async fn load_chat_context(
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
                     conversation_id: conversation_id.to_string(),
-                    branch_id: None,
+                    branch_id: branch_id.clone(),
                     reply: reply_tx,
                 })
         .map_err(|e| e.to_string())?;
@@ -223,6 +224,7 @@ pub async fn start_chat(
     message_id: String,
     sort_order: i32,
     ai_message_id: String,
+    branch_id: Option<String>,
 ) -> Result<(), String> {
     // 1. Cancel any existing stream
     {
@@ -240,7 +242,7 @@ pub async fn start_chat(
         content: content.clone(),
         sort_order,
         timestamp: chrono::Utc::now(),
-        branch_id: None,
+        branch_id: branch_id.clone(),
     };
     {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
@@ -256,7 +258,7 @@ pub async fn start_chat(
     }
 
     // 3. Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id).await? {
+    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id).await? {
         Some(c) => c,
         None => return Ok(()), // Error already sent via channel
     };
@@ -314,6 +316,7 @@ pub async fn regenerate(
     channel: Channel<StreamChunk>,
     conversation_id: String,
     ai_message_id: String,
+    branch_id: Option<String>,
 ) -> Result<(), String> {
     // Cancel any existing stream
     {
@@ -328,7 +331,7 @@ pub async fn regenerate(
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
                     conversation_id: conversation_id.clone(),
-                    branch_id: None,
+                    branch_id: branch_id.clone(),
                     reply: reply_tx,
                 })
         .map_err(|e| e.to_string())?;
@@ -358,7 +361,7 @@ pub async fn regenerate(
     }
 
     // Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id).await? {
+    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id.clone()).await? {
         Some(c) => c,
         None => return Ok(()),
     };
@@ -368,7 +371,7 @@ pub async fn regenerate(
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
                     conversation_id: conversation_id.clone(),
-                    branch_id: None,
+                    branch_id: branch_id.clone(),
                     reply: reply_tx,
                 })
         .map_err(|e| e.to_string())?;
@@ -417,6 +420,7 @@ pub async fn edit_and_resend(
     new_content: String,
     conversation_id: String,
     ai_message_id: String,
+    branch_id: Option<String>,
 ) -> Result<(), String> {
     // Cancel any existing stream
     {
@@ -431,7 +435,7 @@ pub async fn edit_and_resend(
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
                     conversation_id: conversation_id.clone(),
-                    branch_id: None,
+                    branch_id: branch_id.clone(),
                     reply: reply_tx,
                 })
         .map_err(|e| e.to_string())?;
@@ -466,7 +470,7 @@ pub async fn edit_and_resend(
         db.send(DbCommand::DeleteMessagesAfterSortOrder {
                     conversation_id: conversation_id.clone(),
                     sort_order,
-                    branch_id: None,
+                    branch_id: branch_id.clone(),
                     reply: reply_tx,
                 })
         .map_err(|e| e.to_string())?;
@@ -477,7 +481,7 @@ pub async fn edit_and_resend(
     }
 
     // 4. Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id).await? {
+    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id.clone()).await? {
         Some(c) => c,
         None => return Ok(()),
     };
@@ -487,7 +491,7 @@ pub async fn edit_and_resend(
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
                     conversation_id: conversation_id.clone(),
-                    branch_id: None,
+                    branch_id: branch_id.clone(),
                     reply: reply_tx,
                 })
         .map_err(|e| e.to_string())?;

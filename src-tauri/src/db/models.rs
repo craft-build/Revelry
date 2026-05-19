@@ -371,8 +371,8 @@ mod tests {
         assert_eq!(loaded.name, "Mapper Test");
         assert!(loaded.alternate_greetings.is_empty());
         assert!(loaded.tags.is_empty());
-        assert_eq!(loaded.extensions, serde_json::Value::Null);
-        assert_eq!(loaded.character_book, serde_json::Value::Null);
+        assert_eq!(loaded.extensions, serde_json::json!({}));
+        assert_eq!(loaded.character_book, serde_json::json!({}));
     }
 
     #[test]

@@ -123,6 +123,7 @@
 								type="button"
 								onclick={() => {
 									app.navigateToSearchResult(firstResult);
+									goto('/chat/' + firstResult.conversation_id);
 									search = '';
 									requestAnimationFrame(() => {
 										if (firstResult.message_id) {
