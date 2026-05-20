@@ -3,44 +3,86 @@
 
 # Technology Stack
 
-The technology choices for Revelry are driven by three core requirements: native GNOME desktop integration with authentic HIG compliance, a single-language pure Rust codebase that eliminates IPC bridge complexity, and the rig framework's multi-provider AI inference support. The following stack represents the optimal intersection of these requirements.
+The technology choices for Revelry are driven by three core requirements: a cross-platform native desktop shell with minimal resource consumption, a modern reactive frontend framework for rapid UI iteration, and the rig framework's multi-provider AI inference support. The following stack represents the actual implementation, a Tauri v2 shell embedding a SvelteKit SPA with a Rust backend.
 
-## 5.1 Framework: GTK4 + libadwaita + Relm4
+## Frontend Framework: SvelteKit 2 + Svelte 5
 
-The UI is built using GTK4 with libadwaita, providing native GNOME widgets and automatic HIG compliance. Relm4 serves as the declarative UI framework on top of gtk-rs, implementing the Elm Architecture (Model-Update-View) with Rust's type system. The view! macro provides declarative UI definition that maps naturally to GNOME's design system, while the message-passing architecture ensures clean separation between UI logic and business logic. Relm4's AsyncComponent support handles the async operations needed for AI inference without blocking the UI thread.
+The UI is built using SvelteKit 2.x with Svelte 5's runes mode, providing a component-based reactive UI without virtual DOM overhead. Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`) replace the legacy reactive statements and stores, offering fine-grained reactivity with a clean mental model. The app is built as a single-page application using `@sveltejs/adapter-static` with SSR disabled (`ssr: false`), producing static files served by the Tauri webview.
 
-Unlike a Tauri-based approach that renders UI in a WebView (essentially a mini browser), GTK4 renders native platform widgets. This means native Adwaita theming, proper accessibility support through ATK/AT-SPI, native input method support, and the visual behavior that GNOME users expect. The gtk4 crate (v0.9.x) provides near-complete coverage of the GTK4 C API, and the libadwaita crate (v0.7.x) provides all Adwaita widgets including AdwApplicationWindow, AdwHeaderBar, AdwAvatar, AdwNavigationView, AdwOverlaySplitView, AdwPreferencesWindow, AdwToastOverlay, and AdwClamp.
+Vite 8.x handles the frontend build, providing fast hot module replacement during development and optimized production builds. Bun is the package manager, chosen for speed and compatibility with the Node.js ecosystem. TypeScript with `strict: true` provides type safety across the frontend codebase.
 
-## 5.2 AI Inference: rig Framework
+## UI Components: bits-ui + Tailwind CSS v4
 
-The rig crate (v0.36.0) provides the AI inference layer, offering native client implementations for over twenty providers through a unified abstraction. This is a significant upgrade from the original Tauri design's approach of manually constructing OpenAI-compatible HTTP requests with reqwest. Rig handles provider-specific authentication, request formatting, SSE streaming, and response parsing for each provider, eliminating the need to maintain custom HTTP adapters.
+The component layer uses bits-ui 2.x, a headless UI primitive library for Svelte (the Svelte equivalent of Radix UI/shadcn). Headless primitives provide full keyboard navigation, ARIA attributes, and screen reader support without imposing visual styles, giving complete control over the component aesthetic. Components include Dialog, Select, Tooltip, and other interactive patterns.
 
-Rig's agent abstraction combines a completion model with a system prompt (preamble), dynamic context (for RAG), and tool definitions. The builder pattern allows constructing agents declaratively, and the Prompt trait provides both single-shot and streaming completion. The streaming API integrates with futures::Stream for ergonomic token-by-token consumption, which feeds into the GTK4 UI through glib::MainContext channels for smooth typewriter-style rendering. Rig also provides structured output extraction through the Extractor pattern, which uses schemars for type-safe JSON deserialization of AI responses.
+Styling is handled by Tailwind CSS v4 with the `@tailwindcss/vite` plugin, using OKLCH color tokens defined in a `@theme { }` block. This provides perceptual uniformity across dark and light themes. Additional styling tools include:
 
-## 5.3 State Management: Relm4 Model/Message Architecture
+- **tailwind-variants** (`tv()`) for component variant definitions (e.g., `buttonVariants` with variant and size options)
+- **clsx + tailwind-merge** combined into a `cn()` utility for conflict-free class merging
+- **@lucide/svelte** for the icon library
 
-State management in Revelry follows the Elm Architecture through Relm4's Model and Message traits. The application model is a single Rust struct containing all application state, and state changes occur exclusively through message dispatch. This architecture provides deterministic state transitions, easy debugging through message logging, and automatic UI reactivity through Relm4's view! macro. Unlike Zustand in a Tauri application, which requires IPC calls to persist state to the Rust backend, Revelry's model updates happen in-process with direct access to the SQLite database and rig clients.
+## State Management: Svelte 5 Runes (AppState)
 
-## 5.4 Database: SQLite via rusqlite
+All application state lives in a single reactive class (`AppState`) in `src/lib/stores/app.svelte.ts`, following an Elm-inspired single source of truth pattern. Svelte 5 runes provide the reactivity:
 
-All persistent data is stored in a local SQLite database managed through the rusqlite crate with the bundled feature for zero-configuration deployment. SQLite operations run on background threads using std::thread, communicating results back to the UI thread through glib::MainContext channels. This pattern keeps the GTK main loop responsive even during heavy database operations like full-text search across large conversation histories. The database schema supports the full feature set including branching conversations, lorebooks, user personas, and provider configurations.
+- `$state()` for reactive state fields (characters, conversations, messages, UI state)
+- `get` accessors for derived values (active conversation, filtered characters, default persona)
+- Methods for state mutations (openConversation, appendMessage, updateStreamingMessage)
 
-## 5.5 Markdown Rendering: pulldown-cmark + Pango
+No legacy Svelte stores (`writable`, `readable`, `derived` from `svelte/store`) are used. The state class is a plain TypeScript class compiled with Svelte's rune preprocessor (the `.svelte.ts` file extension enables rune support). Components import the singleton `app` instance and read/write state directly.
 
-GTK4 does not include a native Markdown widget. Revelry implements Markdown rendering by parsing content with pulldown-cmark (a mature CommonMark parser) and rendering the resulting AST as Pango markup within GtkLabel widgets. Pango supports bold, italic, spans with custom colors, and nested formatting, covering the subset of Markdown most relevant to AI chat responses. For more complex content (tables, code blocks), the renderer falls back to GtkTextView with text tag-based formatting. This approach avoids the overhead of embedding a WebView solely for Markdown rendering while providing readable, well-formatted AI responses.
+## Backend Runtime: Tauri v2 + Rust
 
-## 5.6 Technology Summary
+The desktop shell is provided by Tauri v2, which embeds the SvelteKit SPA in a native webview window. The Rust backend runs in Tauri's app thread and is exposed to the frontend via `#[tauri::command]` IPC handlers:
 
-| **Layer** | **Technology** | **Version** | **Purpose** |
+- **Synchronous calls:** `invoke('command_name', { args })` for request/response operations
+- **Streaming:** `Channel<T>` for token-by-token AI response streaming
+
+The backend is organized into layered modules:
+
+- `commands/` — Tauri IPC handlers (app_settings, avatars, card_io, characters, chat, conversations, keywords, lorebooks, personas, presets, providers, regex)
+- `service/` — Business logic (card_io, lorebook, prompt, regex, template, token_count)
+- `db/` — SQLite access layer with migrations (app_settings, characters, conversations, generation, lorebook, models, personas, providers, regex_scripts)
+- `domain/` — Data types (character, conversation, generation, lorebook, persona, provider, regex_script)
+- `ai/` — AI provider integration via rig-core
+- `secrets/` — OS keychain access via keyring v4
+
+SQLite persistence uses rusqlite 0.31 with the `bundled` feature for zero-configuration static compilation. A background thread `DbWorker` handles all database operations to avoid blocking the Tauri main thread.
+
+## AI Integration: rig-core 0.37
+
+The rig-core crate (v0.37) provides the AI inference layer, offering native client implementations for over twenty providers through a unified builder pattern API. Each provider client is constructed using a builder pattern with provider-specific configuration. The streaming API integrates with Tauri's `Channel<T>` for token-by-token delivery to the frontend.
+
+Supported providers include: OpenAI, Anthropic, Ollama, Gemini, Cohere, Mistral, DeepSeek, Groq, Azure OpenAI, OpenRouter, Together AI, HuggingFace, Perplexity, xAI (Grok), and custom OpenAI-compatible endpoints (LM Studio, vLLM, LocalAI, etc.).
+
+## Markdown Rendering: marked + DOMPurify + Shiki
+
+Markdown rendering in chat messages uses a web-based pipeline rather than native text rendering:
+
+- **marked v18** — GitHub Flavored Markdown parsing
+- **DOMPurify v3** — HTML sanitization to prevent XSS from untrusted content
+- **Shiki v4** — Syntax highlighting with the vitesse-dark theme
+
+During streaming, raw text is displayed directly. When the AI response completes, the `MarkdownRenderer` component renders the full markdown with syntax highlighting. This conditional approach avoids rendering overhead during the streaming phase.
+
+## Secrets: keyring v4
+
+API keys are stored in the operating system's native credential store through the keyring crate (v4.0): macOS Keychain Services, Windows Credential Manager, or Linux Secret Service API. The keyring integration uses `use_native_store(true)` for initialization and `release_store()` for clean shutdown. Keys are loaded into memory only when needed and dropped immediately after use.
+
+## Technology Summary
+
+| Layer | Technology | Version | Purpose |
 |---|---|---|---|
-| UI Framework | GTK4 + libadwaita | 4.x / 1.x | Native GNOME widgets and HIG compliance |
-| Declarative UI | Relm4 | 0.10+ | Elm Architecture for Rust + GTK4 |
-| AI Inference | rig-core | 0.36+ | Multi-provider LLM abstraction (20+ providers) |
-| Async Runtime | tokio | 1.x | Async runtime for rig and HTTP operations |
-| Database | rusqlite (bundled) | 0.31+ | Local persistent SQLite storage |
-| Secret Storage | keyring | 3.x | OS keychain access (GNOME Keyring, etc.) |
-| Markdown | pulldown-cmark | 0.10+ | CommonMark parsing for AI response rendering |
-| HTTP Client | reqwest (via rig) | 0.13+ | Async HTTP with SSE streaming |
-| Thread Bridge | glib::MainContext channels | --- | tokio ↔ GTK main loop communication |
-| Encryption | ring | 0.17+ | AES-256-GCM for optional vault mode |
-| Token Counting | tiktoken-rs | --- | BPE tokenization for context window management |
+| Shell | Tauri | 2.x | Native desktop webview |
+| Frontend | SvelteKit + Svelte | 2.x / 5.x | UI framework (runes mode) |
+| Bundler | Vite | 8.x | Frontend build |
+| Styling | Tailwind CSS | 4.x | Utility-first CSS with OKLCH tokens |
+| Components | bits-ui | 2.x | Headless UI primitives |
+| Icons | @lucide/svelte | 1.x | Icon library |
+| Markdown | marked + DOMPurify + Shiki | 18 / 3 / 4 | GFM rendering + syntax highlighting |
+| Backend | Rust + Tauri | stable / 2.x | Native backend |
+| Database | SQLite (rusqlite bundled) | 0.31 | Local persistence |
+| AI | rig-core | 0.37 | Multi-provider LLM integration |
+| Secrets | keyring | 4.0 | OS-native keychain |
+| Token Counting | tiktoken-rs | 0.11 | BPE tokenization for context window management |
+| Package Manager | Bun | latest | Frontend dependency management |
