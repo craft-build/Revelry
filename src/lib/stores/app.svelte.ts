@@ -8,6 +8,9 @@ import type {
   Provider,
   GenerationPreset,
   Lorebook,
+  LorebookActivationDetail,
+  RegexScript,
+  RegexTestResult,
   StreamChunk,
   ContextBudget,
 } from "$lib/types";
@@ -39,6 +42,13 @@ import {
   assignLorebookToCharacter as apiAssignLorebookToCharacter,
   removeLorebookFromCharacter as apiRemoveLorebookFromCharacter,
   getCharacterLorebooks as apiGetCharacterLorebooks,
+  getConversationLorebooks as apiGetConversationLorebooks,
+  assignLorebookToConversation as apiAssignLorebookToConversation,
+  removeLorebookFromConversation as apiRemoveLorebookFromConversation,
+  getRegexScripts as apiGetRegexScripts,
+  saveRegexScript as apiSaveRegexScript,
+  deleteRegexScript as apiDeleteRegexScript,
+  applySingleRegex as apiApplySingleRegex,
   startChat as apiStartChat,
   stopGeneration as apiStopGeneration,
   regenerate as apiRegenerate,
@@ -46,7 +56,6 @@ import {
   deleteMessage as apiDeleteMessage,
   getMessages as apiGetMessages,
   forkConversation as apiForkConversation,
-  getBranchesForMessage as apiGetBranchesForMessage,
   getBranchesForConversation as apiGetBranchesForConversation,
   deleteBranch as apiDeleteBranch,
   searchMessages as apiSearchMessages,
@@ -95,6 +104,13 @@ class AppState {
   branches = $state<MessageBranch[]>([]);
   search_results = $state<SearchResult[]>([]);
   is_searching = $state<boolean>(false);
+
+  // ── Regex & lorebook state ───────────────────────────────────────────────
+  regex_scripts = $state<Map<string, RegexScript[]>>(new Map());
+  conversation_lorebooks = $state<Lorebook[]>([]);
+  character_lorebooks = $state<Lorebook[]>([]);
+  lorebook_detail_open = $state<boolean>(false);
+  lorebook_details = $state<LorebookActivationDetail[]>([]);
 
   // ── Derived ────────────────────────────────────────────────────────────
   get active_conversation(): Conversation | undefined {
@@ -262,6 +278,12 @@ class AppState {
     this.active_branch_id = branchId ?? null;
     // Load branches for this conversation
     this.loadBranchesForConversation(id);
+    this.loadConversationLorebooks(id);
+    // Load character lorebooks and regex scripts when opening conversation
+    if (this.active_character) {
+      this.loadCharacterLorebooks(this.active_character.id);
+      this.loadRegexScripts(this.active_character.id);
+    }
   }
 
   closeConversation() {
@@ -270,6 +292,10 @@ class AppState {
     this.context_budget = null;
     this.active_branch_id = null;
     this.branches = [];
+    this.conversation_lorebooks = [];
+    this.character_lorebooks = [];
+    this.lorebook_details = [];
+    this.lorebook_detail_open = false;
   }
 
   appendMessage(message: Message) {
@@ -740,6 +766,116 @@ class AppState {
     }
   }
 
+  // ── Regex scripts ────────────────────────────────────────────────────
+
+  async loadRegexScripts(characterId: string): Promise<void> {
+    if (this.regex_scripts.has(characterId)) return; // cached
+    try {
+      const scripts = await apiGetRegexScripts(characterId);
+      this.regex_scripts.set(characterId, scripts);
+      // Trigger reactivity by creating new Map
+      this.regex_scripts = new Map(this.regex_scripts);
+    } catch (err) {
+      console.error("Failed to load regex scripts:", err);
+    }
+  }
+
+  async saveRegexScript(script: RegexScript): Promise<RegexScript> {
+    try {
+      const saved = await apiSaveRegexScript(script);
+      const charScripts = this.regex_scripts.get(saved.character_id) ?? [];
+      const updated = charScripts.map((s) => (s.id === saved.id ? saved : s));
+      if (!charScripts.find((s) => s.id === saved.id)) {
+        updated.push(saved);
+      }
+      this.regex_scripts.set(saved.character_id, updated);
+      this.regex_scripts = new Map(this.regex_scripts);
+      return saved;
+    } catch (err) {
+      console.error("Failed to save regex script:", err);
+      throw err;
+    }
+  }
+
+  async deleteRegexScript(id: string, characterId: string): Promise<void> {
+    try {
+      await apiDeleteRegexScript(id);
+      const charScripts = this.regex_scripts.get(characterId) ?? [];
+      this.regex_scripts.set(
+        characterId,
+        charScripts.filter((s) => s.id !== id),
+      );
+      this.regex_scripts = new Map(this.regex_scripts);
+    } catch (err) {
+      console.error("Failed to delete regex script:", err);
+      throw err;
+    }
+  }
+
+  async testRegexPattern(
+    pattern: string,
+    replacePattern: string,
+    flags: string,
+    sampleText: string,
+  ): Promise<RegexTestResult> {
+    return await apiApplySingleRegex(pattern, replacePattern, flags, sampleText);
+  }
+
+  // ── Conversation lorebooks ──────────────────────────────────────────
+
+  async loadConversationLorebooks(conversationId: string): Promise<void> {
+    try {
+      this.conversation_lorebooks =
+        await apiGetConversationLorebooks(conversationId);
+    } catch (err) {
+      console.error("Failed to load conversation lorebooks:", err);
+      this.conversation_lorebooks = [];
+    }
+  }
+
+  async loadCharacterLorebooks(characterId: string): Promise<void> {
+    try {
+      this.character_lorebooks =
+        await apiGetCharacterLorebooks(characterId);
+    } catch (err) {
+      console.error("Failed to load character lorebooks:", err);
+      this.character_lorebooks = [];
+    }
+  }
+
+  async toggleConversationLorebook(
+    conversationId: string,
+    lorebookId: string,
+  ): Promise<void> {
+    const isAssigned = this.conversation_lorebooks.some(
+      (l) => l.id === lorebookId,
+    );
+    try {
+      if (isAssigned) {
+        await apiRemoveLorebookFromConversation(conversationId, lorebookId);
+        this.conversation_lorebooks = this.conversation_lorebooks.filter(
+          (l) => l.id !== lorebookId,
+        );
+      } else {
+        const sortOrder = this.conversation_lorebooks.length;
+        await apiAssignLorebookToConversation(
+          conversationId,
+          lorebookId,
+          sortOrder,
+        );
+        const lorebook = this.lorebooks.find((l) => l.id === lorebookId);
+        if (lorebook) {
+          this.conversation_lorebooks = [
+            ...this.conversation_lorebooks,
+            lorebook,
+          ];
+        }
+      }
+    } catch (err) {
+      console.error("Failed to toggle conversation lorebook:", err);
+    }
+  }
+
   // ── Avatar upload ──────────────────────────────────────────────────────
 
   async uploadAvatar(id: string, sourcePath: string): Promise<string> {
@@ -1028,6 +1164,10 @@ class AppState {
             tokensLimit: chunk.data.tokensLimit,
             truncatedCount: chunk.data.truncatedCount,
           });
+          // Update lorebook details from complete event
+          if (chunk.data.lorebookDetails) {
+            this.lorebook_details = chunk.data.lorebookDetails;
+          }
           // Persist the completed AI message to the database
           const completedMsg = this.messages.find((m) => m.id === aiId);
           if (completedMsg) {
@@ -1173,6 +1313,10 @@ class AppState {
             tokensLimit: chunk.data.tokensLimit,
             truncatedCount: chunk.data.truncatedCount,
           });
+          // Update lorebook details from complete event
+          if (chunk.data.lorebookDetails) {
+            this.lorebook_details = chunk.data.lorebookDetails;
+          }
           // Persist the regenerated AI message to the database
           const regeneratedMsg = this.messages.find((m) => m.id === aiId);
           if (regeneratedMsg) {
@@ -1313,6 +1457,10 @@ class AppState {
             tokensLimit: chunk.data.tokensLimit,
             truncatedCount: chunk.data.truncatedCount,
           });
+          // Update lorebook details from complete event
+          if (chunk.data.lorebookDetails) {
+            this.lorebook_details = chunk.data.lorebookDetails;
+          }
           // Persist the edited AI message to the database
           const editedMsg = this.messages.find((m) => m.id === aiId);
           if (editedMsg) {

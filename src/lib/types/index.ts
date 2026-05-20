@@ -148,6 +148,7 @@ export type StreamChunk =
 				tokensUsed: number;
 				tokensLimit: number;
 				truncatedCount: number;
+				lorebookDetails?: LorebookActivationDetail[];
 			};
 	  }
 	| { event: "error"; data: { error: string; errorType: string } };

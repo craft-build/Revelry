@@ -99,27 +99,9 @@
     },
     {
       "type": "export",
-      "name": "getRegexScripts",
+      "name": "getBranchesForMessage",
       "file": "src/lib/data/api.ts",
-      "line": 376
-    },
-    {
-      "type": "export",
-      "name": "saveRegexScript",
-      "file": "src/lib/data/api.ts",
-      "line": 382
-    },
-    {
-      "type": "export",
-      "name": "deleteRegexScript",
-      "file": "src/lib/data/api.ts",
-      "line": 388
-    },
-    {
-      "type": "export",
-      "name": "applySingleRegex",
-      "file": "src/lib/data/api.ts",
-      "line": 392
+      "line": 350
     },
     {
       "type": "export",
@@ -129,33 +111,9 @@
     },
     {
       "type": "export",
-      "name": "getConversationLorebooks",
-      "file": "src/lib/data/api.ts",
-      "line": 415
-    },
-    {
-      "type": "export",
-      "name": "assignLorebookToConversation",
-      "file": "src/lib/data/api.ts",
-      "line": 423
-    },
-    {
-      "type": "export",
-      "name": "removeLorebookFromConversation",
-      "file": "src/lib/data/api.ts",
-      "line": 435
-    },
-    {
-      "type": "export",
       "name": "estimateTokens",
       "file": "src/lib/utils/index.ts",
       "line": 36
-    },
-    {
-      "type": "export",
-      "name": "LorebookActivationDetail",
-      "file": "src/lib/types/index.ts",
-      "line": 79
     },
     {
       "type": "export",
@@ -173,25 +131,25 @@
       "type": "export",
       "name": "GenerationParams",
       "file": "src/lib/types/index.ts",
-      "line": 244
+      "line": 245
     },
     {
       "type": "export",
       "name": "PromptPreset",
       "file": "src/lib/types/index.ts",
-      "line": 269
+      "line": 270
     },
     {
       "type": "export",
       "name": "PrimaryView",
       "file": "src/lib/types/index.ts",
-      "line": 275
+      "line": 276
     },
     {
       "type": "export",
       "name": "CharactersTab",
       "file": "src/lib/types/index.ts",
-      "line": 276
+      "line": 277
     }
   ],
   "unusedExports": [
@@ -251,27 +209,9 @@
     },
     {
       "type": "export",
-      "name": "getRegexScripts",
+      "name": "getBranchesForMessage",
       "file": "src/lib/data/api.ts",
-      "line": 376
-    },
-    {
-      "type": "export",
-      "name": "saveRegexScript",
-      "file": "src/lib/data/api.ts",
-      "line": 382
-    },
-    {
-      "type": "export",
-      "name": "deleteRegexScript",
-      "file": "src/lib/data/api.ts",
-      "line": 388
-    },
-    {
-      "type": "export",
-      "name": "applySingleRegex",
-      "file": "src/lib/data/api.ts",
-      "line": 392
+      "line": 350
     },
     {
       "type": "export",
@@ -281,33 +221,9 @@
     },
     {
       "type": "export",
-      "name": "getConversationLorebooks",
-      "file": "src/lib/data/api.ts",
-      "line": 415
-    },
-    {
-      "type": "export",
-      "name": "assignLorebookToConversation",
-      "file": "src/lib/data/api.ts",
-      "line": 423
-    },
-    {
-      "type": "export",
-      "name": "removeLorebookFromConversation",
-      "file": "src/lib/data/api.ts",
-      "line": 435
-    },
-    {
-      "type": "export",
       "name": "estimateTokens",
       "file": "src/lib/utils/index.ts",
       "line": 36
-    },
-    {
-      "type": "export",
-      "name": "LorebookActivationDetail",
-      "file": "src/lib/types/index.ts",
-      "line": 79
     },
     {
       "type": "export",
@@ -325,25 +241,25 @@
       "type": "export",
       "name": "GenerationParams",
       "file": "src/lib/types/index.ts",
-      "line": 244
+      "line": 245
     },
     {
       "type": "export",
       "name": "PromptPreset",
       "file": "src/lib/types/index.ts",
-      "line": 269
+      "line": 270
     },
     {
       "type": "export",
       "name": "PrimaryView",
       "file": "src/lib/types/index.ts",
-      "line": 275
+      "line": 276
     },
     {
       "type": "export",
       "name": "CharactersTab",
       "file": "src/lib/types/index.ts",
-      "line": 276
+      "line": 277
     }
   ],
   "unusedFiles": [],
@@ -392,5 +308,5 @@
     }
   ],
   "unlistedDeps": [],
-  "summary": "Found 32 issues"
+  "summary": "Found 25 issues"
 }
