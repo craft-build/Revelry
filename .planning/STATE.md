@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-05-20T02:24:26Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-05-20T02:33:57.243Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 11
   completed_phases: 7
   total_plans: 31
-  completed_plans: 29
-  percent: 94
+  completed_plans: 31
+  percent: 97
 ---
 
 # Project State
@@ -29,7 +29,7 @@ Phase: 09 of 9 (power features)
 Status: Executing Phase 09
 Last activity: 2026-05-20
 
-Progress: [█████████░] 94%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -89,6 +89,9 @@ Recent decisions affecting current work:
 - LorebookActivation role filtering: CharacterOnly/UserOnly scan only matching role messages (09-01)
 - conversation_lorebooks junction mirrors character_lorebooks pattern (09-01)
 - Free functions in service/lorebook.rs for consistency with gtk_ref port (09-01)
+- Depth-based lorebook entries injected AFTER truncation to prevent silent removal by budget (09-02)
+- Lorebook budget fraction is 25% of context window as constant, not yet user-configurable (09-02)
+- LorebookActivationDetail uses lorebook_id as fallback name when DB access unavailable (09-02)
 
 ### Pending Todos
 
@@ -108,6 +111,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-20T02:24:26Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-05-20T02:35:00Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None

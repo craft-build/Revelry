@@ -79,7 +79,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **LORB-01**: User can create lorebook entries with keywords, content, and activation strategy (constant, keyword-triggered)
 - [ ] **LORB-02**: User can edit lorebook entries
 - [ ] **LORB-03**: User can delete lorebook entries
-- [ ] **LORB-04**: User can assign lorebooks to characters and conversations
+- [x] **LORB-04**: User can assign lorebooks to characters and conversations
 - [x] **LORB-05**: User can set ordering and token budget allocation for lorebook entries
 - [ ] **LORB-06**: User can test keyword activation by entering sample text in the lorebook editor
 
@@ -191,7 +191,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LORB-01     | Phase 9  | Complete |
 | LORB-02     | Phase 9  | Pending  |
 | LORB-03     | Phase 9  | Pending  |
-| LORB-04     | Phase 9  | Pending  |
+| LORB-04     | Phase 9  | Complete |
 | LORB-05     | Phase 9  | Complete |
 | LORB-06     | Phase 3  | Done     |
 | REGX-01     | Phase 9  | Complete |
