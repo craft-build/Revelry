@@ -51,13 +51,13 @@ All new elements use existing component primitives and Tailwind v4 `-(--token)` 
 
 Uses existing 8-point scale. No exceptions for this phase.
 
-| Token | Value | Usage                                          |
-| ----- | ----- | ---------------------------------------------- |
-| xs    | 4px   | Theme toggle button inner padding, icon gaps   |
-| sm    | 8px   | Toggle group gap, appearance section elements  |
-| md    | 16px  | Section padding, appearance card body          |
-| lg    | 24px  | Section breaks, card padding                   |
-| xl    | 32px  | Layout gaps                                    |
+| Token | Value | Usage                                         |
+| ----- | ----- | --------------------------------------------- |
+| xs    | 4px   | Theme toggle button inner padding, icon gaps  |
+| sm    | 8px   | Toggle group gap, appearance section elements |
+| md    | 16px  | Section padding, appearance card body         |
+| lg    | 24px  | Section breaks, card padding                  |
+| xl    | 32px  | Layout gaps                                   |
 
 Exceptions: none
 
@@ -79,20 +79,20 @@ Full visual audit of spacing consistency across all components. Known areas to v
 
 Reuses existing scale. No new sizes or weights.
 
-| Role    | Size    | Weight | Line Height | Usage in This Phase                                  |
-| ------- | ------- | ------ | ----------- | ---------------------------------------------------- |
-| Body    | 15px    | 400    | 1.6         | Theme toggle description, appearance section text    |
-| Label   | 12-13px | 400    | 1.4         | Toggle button labels ("System", "Light", "Dark")     |
-| Heading | 13px    | 600    | 1.2         | Appearance section header ("Theme")                  |
+| Role    | Size    | Weight | Line Height | Usage in This Phase                                     |
+| ------- | ------- | ------ | ----------- | ------------------------------------------------------- |
+| Body    | 15px    | 400    | 1.6         | Theme toggle description, appearance section text       |
+| Label   | 12-13px | 400    | 1.4         | Toggle button labels ("System", "Light", "Dark")        |
+| Heading | 13px    | 600    | 1.2         | Appearance section header ("Theme")                     |
 | Display | 10-11px | 400    | 1.3         | Toggle group annotation ("Follows your system setting") |
 
 New text styles introduced:
 
-| Element                     | Style                                                                                                |
-| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Element                     | Style                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Toggle button label         | `text-sm font-medium` — active button uses `text-(--color-foreground)`, inactive uses `text-(--color-muted)` |
-| Toggle group annotation     | `text-xs text-(--color-subtle)` — appears below toggle, changes based on selection                   |
-| Appearance section subtitle | `text-sm text-(--color-muted) mt-1` — section description under heading (matches existing pattern)   |
+| Toggle group annotation     | `text-xs text-(--color-subtle)` — appears below toggle, changes based on selection                           |
+| Appearance section subtitle | `text-sm text-(--color-muted) mt-1` — section description under heading (matches existing pattern)           |
 
 ---
 
@@ -104,34 +104,34 @@ All tokens defined in OKLCH. Light theme uses cool-toned palette in the 270 hue 
 
 The `.light` selector block overrides every token from `@theme`:
 
-| Token                       | Dark Value (existing)        | Light Value (new)               | Rationale                                                          |
-| --------------------------- | ---------------------------- | ------------------------------- | ------------------------------------------------------------------ |
-| `--color-background`        | `oklch(0.16 0.005 270)`     | `oklch(0.97 0.003 270)`        | Soft off-white canvas, not stark white                             |
-| `--color-surface`           | `oklch(0.19 0.006 270)`     | `oklch(0.96 0.004 270)`        | Cards, panels — barely distinguishable from background             |
-| `--color-surface-elevated`  | `oklch(0.22 0.008 270)`     | `oklch(0.94 0.005 270)`        | Elevated surfaces (popovers, dropdowns, selected items)            |
-| `--color-surface-hover`     | `oklch(0.24 0.009 270)`     | `oklch(0.92 0.006 270)`        | Hover state — slightly darker step                                |
-| `--color-surface-input`     | `oklch(0.21 0.007 270)`     | `oklch(0.95 0.004 270)`        | Input backgrounds — between surface and elevated                   |
-| `--color-foreground`        | `oklch(0.96 0.005 270)`     | `oklch(0.18 0.01 270)`         | Primary text — deep cool dark                                      |
-| `--color-muted`             | `oklch(0.65 0.012 270)`     | `oklch(0.50 0.01 270)`         | Secondary text — distinct from foreground but readable              |
-| `--color-subtle`            | `oklch(0.45 0.01 270)`      | `oklch(0.38 0.008 270)`        | Tertiary text — labels, timestamps, metadata                       |
-| `--color-border`            | `oklch(0.28 0.008 270)`     | `oklch(0.88 0.005 270)`        | Subtle borders                                                     |
-| `--color-border-strong`     | `oklch(0.36 0.01 270)`      | `oklch(0.78 0.008 270)`        | Emphasized borders — blockquotes, dividers                         |
-| `--color-accent`            | `oklch(0.78 0.13 195)`      | `oklch(0.55 0.13 195)`         | Teal accent — same hue, darker for light backgrounds (D-04)        |
-| `--color-accent-fg`         | `oklch(0.18 0.02 200)`      | `oklch(0.97 0.01 195)`         | Text on accent backgrounds — light for readability                 |
-| `--color-accent-muted`      | `oklch(0.32 0.06 195)`      | `oklch(0.88 0.05 195)`         | Accent at low emphasis — selection highlights, chip backgrounds     |
-| `--color-destructive`       | `oklch(0.66 0.18 25)`       | `oklch(0.55 0.20 25)`          | Destructive actions — slightly darker for light bg                 |
-| `--color-warning`           | `oklch(0.78 0.14 80)`       | `oklch(0.68 0.16 80)`          | Warning — adjusted for contrast on light surfaces                  |
-| `--color-success`           | `oklch(0.72 0.15 155)`      | `oklch(0.55 0.15 155)`         | Success — darker for readability on light bg                       |
-| `--color-bubble-user`       | `oklch(0.26 0.02 220)`      | `oklch(0.93 0.008 220)`        | User message bubble — cool blue-grey tint                          |
-| `--color-bubble-character`  | `oklch(0.21 0.007 270)`     | `oklch(0.96 0.004 270)`        | Character message bubble — nearly same as surface                  |
+| Token                      | Dark Value (existing)   | Light Value (new)       | Rationale                                                       |
+| -------------------------- | ----------------------- | ----------------------- | --------------------------------------------------------------- |
+| `--color-background`       | `oklch(0.16 0.005 270)` | `oklch(0.97 0.003 270)` | Soft off-white canvas, not stark white                          |
+| `--color-surface`          | `oklch(0.19 0.006 270)` | `oklch(0.96 0.004 270)` | Cards, panels — barely distinguishable from background          |
+| `--color-surface-elevated` | `oklch(0.22 0.008 270)` | `oklch(0.94 0.005 270)` | Elevated surfaces (popovers, dropdowns, selected items)         |
+| `--color-surface-hover`    | `oklch(0.24 0.009 270)` | `oklch(0.92 0.006 270)` | Hover state — slightly darker step                              |
+| `--color-surface-input`    | `oklch(0.21 0.007 270)` | `oklch(0.95 0.004 270)` | Input backgrounds — between surface and elevated                |
+| `--color-foreground`       | `oklch(0.96 0.005 270)` | `oklch(0.18 0.01 270)`  | Primary text — deep cool dark                                   |
+| `--color-muted`            | `oklch(0.65 0.012 270)` | `oklch(0.50 0.01 270)`  | Secondary text — distinct from foreground but readable          |
+| `--color-subtle`           | `oklch(0.45 0.01 270)`  | `oklch(0.38 0.008 270)` | Tertiary text — labels, timestamps, metadata                    |
+| `--color-border`           | `oklch(0.28 0.008 270)` | `oklch(0.88 0.005 270)` | Subtle borders                                                  |
+| `--color-border-strong`    | `oklch(0.36 0.01 270)`  | `oklch(0.78 0.008 270)` | Emphasized borders — blockquotes, dividers                      |
+| `--color-accent`           | `oklch(0.78 0.13 195)`  | `oklch(0.55 0.13 195)`  | Teal accent — same hue, darker for light backgrounds (D-04)     |
+| `--color-accent-fg`        | `oklch(0.18 0.02 200)`  | `oklch(0.97 0.01 195)`  | Text on accent backgrounds — light for readability              |
+| `--color-accent-muted`     | `oklch(0.32 0.06 195)`  | `oklch(0.88 0.05 195)`  | Accent at low emphasis — selection highlights, chip backgrounds |
+| `--color-destructive`      | `oklch(0.66 0.18 25)`   | `oklch(0.55 0.20 25)`   | Destructive actions — slightly darker for light bg              |
+| `--color-warning`          | `oklch(0.78 0.14 80)`   | `oklch(0.68 0.16 80)`   | Warning — adjusted for contrast on light surfaces               |
+| `--color-success`          | `oklch(0.72 0.15 155)`  | `oklch(0.55 0.15 155)`  | Success — darker for readability on light bg                    |
+| `--color-bubble-user`      | `oklch(0.26 0.02 220)`  | `oklch(0.93 0.008 220)` | User message bubble — cool blue-grey tint                       |
+| `--color-bubble-character` | `oklch(0.21 0.007 270)` | `oklch(0.96 0.004 270)` | Character message bubble — nearly same as surface               |
 
 ### Color Usage Split
 
-| Role            | Token(s)                                       | Usage                                         |
-| --------------- | ---------------------------------------------- | --------------------------------------------- |
-| Dominant (60%)  | `--color-background`, `--color-surface`        | App canvas, card backgrounds, panels          |
-| Secondary (30%) | `--color-surface-elevated`, `--color-surface-hover`, `--color-surface-input` | Popovers, dropdowns, hover states, inputs |
-| Accent (10%)    | `--color-accent`, `--color-accent-fg`, `--color-accent-muted` | Toggle active state, links, interactive highlights |
+| Role            | Token(s)                                                                     | Usage                                              |
+| --------------- | ---------------------------------------------------------------------------- | -------------------------------------------------- |
+| Dominant (60%)  | `--color-background`, `--color-surface`                                      | App canvas, card backgrounds, panels               |
+| Secondary (30%) | `--color-surface-elevated`, `--color-surface-hover`, `--color-surface-input` | Popovers, dropdowns, hover states, inputs          |
+| Accent (10%)    | `--color-accent`, `--color-accent-fg`, `--color-accent-muted`                | Toggle active state, links, interactive highlights |
 
 ### Accent reserved for (this phase only)
 
@@ -149,41 +149,41 @@ The `.light` selector block overrides every token from `@theme`:
 
 ### Focal Points
 
-| Surface                    | Focal Point                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Theme toggle               | Active button in the three-way group — must clearly indicate current selection at a glance           |
-| Settings Appearance card   | The entire card is the focal surface — toggle is the single interactive element in this section      |
-| Light theme overall feel   | The light/dark transition itself — switching should feel like "same app, different lighting" (D-01)  |
+| Surface                  | Focal Point                                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------------- |
+| Theme toggle             | Active button in the three-way group — must clearly indicate current selection at a glance          |
+| Settings Appearance card | The entire card is the focal surface — toggle is the single interactive element in this section     |
+| Light theme overall feel | The light/dark transition itself — switching should feel like "same app, different lighting" (D-01) |
 
 ### New Components
 
-| Component    | Location                                        | bits-ui Primitive | Description                                                                                                    |
-| ------------ | ----------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| ThemeToggle  | `src/lib/components/settings/ThemeToggle.svelte` | none (plain HTML) | Three-way segmented button group: System / Light / Dark. Active state highlighted. Emits theme change to AppState. |
+| Component   | Location                                         | bits-ui Primitive | Description                                                                                                        |
+| ----------- | ------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| ThemeToggle | `src/lib/components/settings/ThemeToggle.svelte` | none (plain HTML) | Three-way segmented button group: System / Light / Dark. Active state highlighted. Emits theme change to AppState. |
 
 ### New CSS Block
 
-| Block             | Location         | Description                                                                                                                       |
-| ----------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `.light` selector | `src/app.css`    | Overrides all `@theme` color tokens. Placed after `@theme {}` block. Selector: `html.light { ... }`. Contains all 17 color token overrides listed above. |
+| Block             | Location      | Description                                                                                                                                              |
+| ----------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.light` selector | `src/app.css` | Overrides all `@theme` color tokens. Placed after `@theme {}` block. Selector: `html.light { ... }`. Contains all 17 color token overrides listed above. |
 
 ### New Inline Script
 
-| Script               | Location         | Description                                                                                                                                                                |
-| -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Flash prevention     | `src/app.html`   | Inline `<script>` in `<head>` that reads `localStorage.getItem('revelry-theme')` and sets class on `<html>` element before body renders. No external dependencies. Must run before any CSS paints. |
+| Script           | Location       | Description                                                                                                                                                                                        |
+| ---------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flash prevention | `src/app.html` | Inline `<script>` in `<head>` that reads `localStorage.getItem('revelry-theme')` and sets class on `<html>` element before body renders. No external dependencies. Must run before any CSS paints. |
 
 ### Modified Components
 
-| Component             | File                                                    | Changes                                                                                                                                               |
-| --------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Settings page         | `src/routes/settings/+page.svelte`                      | Replace stub content in `appearance` section with ThemeToggle component + description text.                                                           |
-| AppState              | `src/lib/stores/app.svelte.ts`                          | Add `theme` field (`$state<'system' \| 'light' \| 'dark'>`), `resolved_theme` getter, `setTheme()` action with localStorage + backend persistence.    |
-| app.html              | `src/app.html`                                          | Remove hardcoded `class="dark"` from `<html>`. Add inline `<script>` in `<head>` that reads localStorage and sets `.light` or `.dark` class immediately. |
-| MarkdownRenderer      | `src/lib/components/chat/MarkdownRenderer.svelte`       | Accept `theme` prop or read from AppState. Select `vitesse-dark` or `vitesse-light` based on resolved theme.                                           |
-| +layout.svelte        | `src/routes/+layout.svelte`                             | Shiki preloader loads both `vitesse-dark` and `vitesse-light` themes. Passes appropriate highlighter based on resolved theme.                          |
-| Types                 | `src/lib/types/index.ts`                                | No new types needed — theme is a string literal (`'system' \| 'light' \| 'dark'`).                                                                    |
-| API                   | `src/lib/data/api.ts`                                   | Add `getAppSetting(key)` and `setAppSetting(key, value)` wrappers.                                                                                    |
+| Component        | File                                              | Changes                                                                                                                                                  |
+| ---------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Settings page    | `src/routes/settings/+page.svelte`                | Replace stub content in `appearance` section with ThemeToggle component + description text.                                                              |
+| AppState         | `src/lib/stores/app.svelte.ts`                    | Add `theme` field (`$state<'system' \| 'light' \| 'dark'>`), `resolved_theme` getter, `setTheme()` action with localStorage + backend persistence.       |
+| app.html         | `src/app.html`                                    | Remove hardcoded `class="dark"` from `<html>`. Add inline `<script>` in `<head>` that reads localStorage and sets `.light` or `.dark` class immediately. |
+| MarkdownRenderer | `src/lib/components/chat/MarkdownRenderer.svelte` | Accept `theme` prop or read from AppState. Select `vitesse-dark` or `vitesse-light` based on resolved theme.                                             |
+| +layout.svelte   | `src/routes/+layout.svelte`                       | Shiki preloader loads both `vitesse-dark` and `vitesse-light` themes. Passes appropriate highlighter based on resolved theme.                            |
+| Types            | `src/lib/types/index.ts`                          | No new types needed — theme is a string literal (`'system' \| 'light' \| 'dark'`).                                                                       |
+| API              | `src/lib/data/api.ts`                             | Add `getAppSetting(key)` and `setAppSetting(key, value)` wrappers.                                                                                       |
 
 ---
 
@@ -238,18 +238,20 @@ The `.light` selector block overrides every token from `@theme`:
 
 ```html
 <script>
-  (function() {
+  (function () {
     try {
-      var theme = localStorage.getItem('revelry-theme') || 'system';
+      var theme = localStorage.getItem("revelry-theme") || "system";
       var resolved;
-      if (theme === 'system') {
-        resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      if (theme === "system") {
+        resolved = window.matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark";
       } else {
         resolved = theme;
       }
       document.documentElement.classList.add(resolved);
     } catch (e) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     }
   })();
 </script>
@@ -286,17 +288,17 @@ The `.light` selector block overrides every token from `@theme`:
 
 **Transition targets and specifications:**
 
-| Target                  | Property          | Duration | Easing            | Implementation                                    |
-| ----------------------- | ----------------- | -------- | ----------------- | ------------------------------------------------- |
-| Sidebar open/close      | `transform` or `width` | 200ms | `cubic-bezier(0.4, 0, 0.2, 1)` | CSS transition on sidebar container width/margin |
-| Message appear          | `opacity` + `transform` | 150ms | `ease-out` | Svelte `transition:fade` or `transition:slide` on new MessageBubble mount |
-| Route cross-fade        | `opacity`         | 150ms   | `ease-out`        | Svelte `transition:fade` on route outlet          |
-| Hover states (all)      | `background-color` | 150ms | `ease-out`        | CSS `transition-colors` (most already have this)  |
-| Focus rings             | `outline`         | 100ms   | `ease-out`        | Existing `:focus-visible` — verify consistency    |
-| Theme switch            | `color`, `background-color`, `border-color` | 150ms | `ease-out` | Global `transition-colors` on body/container      |
-| Popover open/close      | `opacity` + `scale` | 150ms | `cubic-bezier(0.16, 1, 0.3, 1)` | Svelte transition or CSS animation on Popover     |
-| Dialog open/close       | `opacity` + `scale` | 200ms | `cubic-bezier(0.16, 1, 0.3, 1)` | bits-ui Dialog transition (if customizable)       |
-| Streaming caret blink   | `opacity`         | 1000ms  | `steps(2)`        | Existing — no change                              |
+| Target                | Property                                    | Duration | Easing                          | Implementation                                                            |
+| --------------------- | ------------------------------------------- | -------- | ------------------------------- | ------------------------------------------------------------------------- |
+| Sidebar open/close    | `transform` or `width`                      | 200ms    | `cubic-bezier(0.4, 0, 0.2, 1)`  | CSS transition on sidebar container width/margin                          |
+| Message appear        | `opacity` + `transform`                     | 150ms    | `ease-out`                      | Svelte `transition:fade` or `transition:slide` on new MessageBubble mount |
+| Route cross-fade      | `opacity`                                   | 150ms    | `ease-out`                      | Svelte `transition:fade` on route outlet                                  |
+| Hover states (all)    | `background-color`                          | 150ms    | `ease-out`                      | CSS `transition-colors` (most already have this)                          |
+| Focus rings           | `outline`                                   | 100ms    | `ease-out`                      | Existing `:focus-visible` — verify consistency                            |
+| Theme switch          | `color`, `background-color`, `border-color` | 150ms    | `ease-out`                      | Global `transition-colors` on body/container                              |
+| Popover open/close    | `opacity` + `scale`                         | 150ms    | `cubic-bezier(0.16, 1, 0.3, 1)` | Svelte transition or CSS animation on Popover                             |
+| Dialog open/close     | `opacity` + `scale`                         | 200ms    | `cubic-bezier(0.16, 1, 0.3, 1)` | bits-ui Dialog transition (if customizable)                               |
+| Streaming caret blink | `opacity`                                   | 1000ms   | `steps(2)`                      | Existing — no change                                                      |
 
 **Hover state audit targets:**
 
@@ -322,24 +324,24 @@ The `.light` selector block overrides every token from `@theme`:
 
 ## Copywriting Contract
 
-| Element                                   | Copy                                                                           |
-| ----------------------------------------- | ------------------------------------------------------------------------------ |
-| Appearance section header                 | "Appearance" (existing, from settings nav)                                     |
-| Appearance section description            | "Theme, density, and reading comfort." (existing)                              |
-| Theme sub-header                          | "Theme"                                                                        |
-| Theme description                         | "Choose how Revelry looks. System follows your OS preference."                 |
-| Toggle button — System                    | "System"                                                                       |
-| Toggle button — Light                     | "Light"                                                                        |
-| Toggle button — Dark                      | "Dark"                                                                         |
-| Annotation — System active                | "Following your system preference ({resolved})" — e.g. "(dark)" or "(light)"   |
-| Annotation — Light active                 | "Light theme active"                                                           |
-| Annotation — Dark active                  | "Dark theme active"                                                            |
-| Error — theme persist failed              | "Failed to save theme preference. It will reset on next launch."               |
-| Error — backend unavailable               | Theme still works (localStorage fallback) — no error shown to user             |
-| Aria label — theme toggle group           | "Theme preference"                                                             |
-| Aria label — System button                | "Follow system preference"                                                     |
-| Aria label — Light button                 | "Light theme"                                                                  |
-| Aria label — Dark button                  | "Dark theme"                                                                   |
+| Element                         | Copy                                                                         |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| Appearance section header       | "Appearance" (existing, from settings nav)                                   |
+| Appearance section description  | "Theme, density, and reading comfort." (existing)                            |
+| Theme sub-header                | "Theme"                                                                      |
+| Theme description               | "Choose how Revelry looks. System follows your OS preference."               |
+| Toggle button — System          | "System"                                                                     |
+| Toggle button — Light           | "Light"                                                                      |
+| Toggle button — Dark            | "Dark"                                                                       |
+| Annotation — System active      | "Following your system preference ({resolved})" — e.g. "(dark)" or "(light)" |
+| Annotation — Light active       | "Light theme active"                                                         |
+| Annotation — Dark active        | "Dark theme active"                                                          |
+| Error — theme persist failed    | "Failed to save theme preference. It will reset on next launch."             |
+| Error — backend unavailable     | Theme still works (localStorage fallback) — no error shown to user           |
+| Aria label — theme toggle group | "Theme preference"                                                           |
+| Aria label — System button      | "Follow system preference"                                                   |
+| Aria label — Light button       | "Light theme"                                                                |
+| Aria label — Dark button        | "Dark theme"                                                                 |
 
 ---
 
@@ -347,20 +349,20 @@ The `.light` selector block overrides every token from `@theme`:
 
 ### New AppState Fields
 
-| Field     | Type                               | Default    | Description                                                                                     |
-| --------- | ---------------------------------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| `theme`   | `$state<'system' \| 'light' \| 'dark'>` | `'system'` | User's theme preference. Persisted to localStorage immediately and backend asynchronously.      |
+| Field   | Type                                    | Default    | Description                                                                                |
+| ------- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
+| `theme` | `$state<'system' \| 'light' \| 'dark'>` | `'system'` | User's theme preference. Persisted to localStorage immediately and backend asynchronously. |
 
 ### New AppState Getters
 
-| Getter           | Returns             | Logic                                                                                             |
-| ---------------- | ------------------- | ------------------------------------------------------------------------------------------------- |
+| Getter           | Returns             | Logic                                                                                                                                                          |
+| ---------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `resolved_theme` | `'light' \| 'dark'` | If `theme === 'system'`, reads `window.matchMedia('(prefers-color-scheme: dark)')` → `'dark'` if true, `'light'` if false. Otherwise returns `theme` directly. |
 
 ### New AppState Actions
 
-| Method            | Parameters                         | Behavior                                                                                                            |
-| ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Method            | Parameters                             | Behavior                                                                                                                                                                                                                 |
+| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `setTheme(theme)` | `theme: 'system' \| 'light' \| 'dark'` | 1. Set `this.theme = theme`. 2. `localStorage.setItem('revelry-theme', theme)`. 3. Update `<html>` class to `resolved_theme`. 4. Call `invoke('set_app_setting', { key: 'theme', value: theme })` (async, non-blocking). |
 
 ### Hydration Changes
@@ -393,11 +395,11 @@ Uses existing `app_settings` table (key TEXT PRIMARY KEY, value TEXT NOT NULL) f
 
 ## Registry Safety
 
-| Registry       | Blocks Used                                   | Safety Gate            |
-| -------------- | --------------------------------------------- | ---------------------- |
-| shadcn         | N/A (Svelte project)                          | not applicable         |
-| bits-ui        | none (new components use plain HTML)          | not applicable         |
-| @lucide/svelte | Sun, Moon, Monitor (all existing in project)  | official library, no vetting required |
+| Registry       | Blocks Used                                  | Safety Gate                           |
+| -------------- | -------------------------------------------- | ------------------------------------- |
+| shadcn         | N/A (Svelte project)                         | not applicable                        |
+| bits-ui        | none (new components use plain HTML)         | not applicable                        |
+| @lucide/svelte | Sun, Moon, Monitor (all existing in project) | official library, no vetting required |
 
 Third-party registries: none
 
@@ -418,12 +420,12 @@ Third-party registries: none
 
 ## Pre-Populated From
 
-| Source                        | Decisions Used                                                                                   |
-| ----------------------------- | ------------------------------------------------------------------------------------------------ |
-| 10-CONTEXT.md                 | 17 decisions (D-01 through D-17) — all design contract questions answered upstream                |
-| app.css                       | All 17 dark color tokens, typography, radii — light counterparts derived from these values        |
-| app.html                      | Current hardcoded `class="dark"` — flash prevention script replaces this                          |
-| settings/+page.svelte         | Appearance section stub location, existing card pattern, section layout                           |
-| 09-UI-SPEC.md                 | Structural template for interaction contracts, copywriting contract format                        |
-| REQUIREMENTS.md               | SETT-01 (toggle dark/light), SETT-02 (system preference with override)                            |
-| User input                    | 0 (all questions answered by CONTEXT.md decisions)                                                |
+| Source                | Decisions Used                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| 10-CONTEXT.md         | 17 decisions (D-01 through D-17) — all design contract questions answered upstream         |
+| app.css               | All 17 dark color tokens, typography, radii — light counterparts derived from these values |
+| app.html              | Current hardcoded `class="dark"` — flash prevention script replaces this                   |
+| settings/+page.svelte | Appearance section stub location, existing card pattern, section layout                    |
+| 09-UI-SPEC.md         | Structural template for interaction contracts, copywriting contract format                 |
+| REQUIREMENTS.md       | SETT-01 (toggle dark/light), SETT-02 (system preference with override)                     |
+| User input            | 0 (all questions answered by CONTEXT.md decisions)                                         |
