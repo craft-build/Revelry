@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
 - [x] **Phase 9: Power Features** - Lorebook context injection and regex scripting ✅ 2026-05-19
 - [x] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements ✅ 2026-05-19 (completed 2026-05-20)
-- [ ] **Phase 11: Spec Update & Distribution** - Updated design doc and cross-platform builds
+- [x] **Phase 11: Spec Update & Distribution** - Updated design doc and cross-platform builds (completed 2026-05-20)
 
 ## Phase Details
 
@@ -339,7 +339,7 @@ Plans:
 
 Plans:
 
-- [ ] 11-01: Update design specification (GTK4/GNOME → SvelteKit/Tauri)
+- [x] 11-01: Update design specification (GTK4/GNOME → SvelteKit/Tauri)
 - [x] 11-02: Cross-platform build testing and fixes
 - [ ] 11-03: Distribution packaging (DMG/AppImage/MSI)
 
@@ -360,4 +360,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 5/5            | Complete    | 2026-05-19 |
 | 10. Theme & Polish             | 1/1            | Complete    | 2026-05-20 |
-| 11. Spec Update & Distribution | 1/2 | In Progress|  |
+| 11. Spec Update & Distribution | 2/2 | Complete   | 2026-05-20 |

@@ -99,7 +99,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design Document
 
-- [ ] **DOC-01**: Design specification (docs/) is updated to replace GTK4/GNOME references with SvelteKit/Tauri equivalents
+- [x] **DOC-01**: Design specification (docs/) is updated to replace GTK4/GNOME references with SvelteKit/Tauri equivalents
 
 ### Distribution
 
@@ -202,7 +202,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETT-01     | Phase 10 | Pending  |
 | SETT-02     | Phase 10 | Pending  |
 | SETT-03     | Phase 1  | Done     |
-| DOC-01      | Phase 11 | Pending  |
+| DOC-01      | Phase 11 | Complete |
 | DIST-01     | Phase 11 | Complete |
 | DIST-02     | Phase 11 | Complete |
 | DIST-03     | Phase 11 | Complete |
