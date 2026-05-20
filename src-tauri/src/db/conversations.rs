@@ -22,8 +22,8 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
     // Insert the conversation
     conn.prepare_cached(
         "INSERT INTO conversations (id, character_id, provider_id, model_name, creator_persona_id,
-         generation_preset_id, title, last_message_preview, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+         generation_preset_id, override_max_tokens, title, last_message_preview, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
     )?
     .execute(params![
         &conversation.id,
@@ -32,6 +32,7 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
         &conversation.model_name,
         &conversation.creator_persona_id,
         &conversation.generation_preset_id,
+        &conversation.override_max_tokens,
         &conversation.title,
         &conversation.last_message_preview,
         conversation.created_at.to_rfc3339(),
@@ -56,7 +57,7 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
 pub fn load_conversations(conn: &Connection) -> Result<Vec<Conversation>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, character_id, provider_id, model_name, creator_persona_id, generation_preset_id,
-         title, last_message_preview, created_at, updated_at
+         override_max_tokens, title, last_message_preview, created_at, updated_at
          FROM conversations ORDER BY updated_at DESC",
     )?;
     let conversations = stmt.query_map([], |row| row_to_conversation(row))?;
@@ -240,6 +241,27 @@ pub fn update_conversation_provider(
     .execute(params![
         provider_id,
         model_name,
+        now.to_rfc3339(),
+        conversation_id
+    ])?;
+    Ok(())
+}
+
+/// Updates the generation_preset_id, override_max_tokens, and updated_at for a conversation.
+/// This is used by the generation settings panel in the chat view.
+pub fn update_conversation_generation(
+    conn: &Connection,
+    conversation_id: &str,
+    generation_preset_id: Option<&str>,
+    override_max_tokens: Option<i64>,
+) -> Result<()> {
+    let now = Utc::now();
+    conn.prepare_cached(
+        "UPDATE conversations SET generation_preset_id = ?1, override_max_tokens = ?2, updated_at = ?3 WHERE id = ?4",
+    )?
+    .execute(params![
+        generation_preset_id,
+        override_max_tokens,
         now.to_rfc3339(),
         conversation_id
     ])?;

@@ -6,6 +6,7 @@
 	import ChatHeader from '$lib/components/chat/ChatHeader.svelte';
 	import MessageBubble from '$lib/components/chat/MessageBubble.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
+	import GenerationPanel from '$lib/components/chat/GenerationPanel.svelte';
 
 	interface Props {
 		data: { id: string };
@@ -93,27 +94,32 @@
 
 <ChatHeader />
 
-<!-- Message list -->
-<div bind:this={scrollEl} class="flex-1 overflow-y-auto px-6 py-6">
-	<div class="mx-auto flex max-w-[80ch] flex-col gap-5">
-		{#if visibleMessages().length === 0}
-			<div class="py-20 text-center text-sm text-(--color-muted)">
-				No messages yet. Send something to begin.
-			</div>
-		{:else}
-			{#each visibleMessages() as message (message.id)}
-				<div id="message-{message.id}" data-message-id={message.id}>
-					<MessageBubble
-						{message}
-						character={app.active_character}
-						persona={app.active_persona}
-						isLastAiMessage={message.id === lastAiMessageId}
-						branchesAtMessage={branchesByParentId.get(message.id) ?? []}
-					/>
+<!-- Message list + Generation panel -->
+<div class="flex min-h-0 flex-1">
+	<div bind:this={scrollEl} class="flex-1 overflow-y-auto px-6 py-6">
+		<div class="mx-auto flex max-w-[80ch] flex-col gap-5">
+			{#if visibleMessages().length === 0}
+				<div class="py-20 text-center text-sm text-(--color-muted)">
+					No messages yet. Send something to begin.
 				</div>
-			{/each}
-		{/if}
+			{:else}
+				{#each visibleMessages() as message (message.id)}
+					<div id="message-{message.id}" data-message-id={message.id}>
+						<MessageBubble
+							{message}
+							character={app.active_character}
+							persona={app.active_persona}
+							isLastAiMessage={message.id === lastAiMessageId}
+							branchesAtMessage={branchesByParentId.get(message.id) ?? []}
+						/>
+					</div>
+				{/each}
+			{/if}
+		</div>
 	</div>
+	{#if app.generation_panel_open}
+		<GenerationPanel />
+	{/if}
 </div>
 
 <MessageInput onsend={handleSend} oncancel={handleCancel} />

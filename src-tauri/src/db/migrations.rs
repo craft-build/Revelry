@@ -344,6 +344,18 @@ pub fn get_migrations() -> Migrations<'static> {
             ALTER TABLE lorebook_entries DROP COLUMN token_budget;
             "
         ),
+
+        // Phase 10: per-conversation max output token override
+        M::up(
+            "
+            ALTER TABLE conversations ADD COLUMN override_max_tokens INTEGER;
+            "
+        )
+        .down(
+            "
+            ALTER TABLE conversations DROP COLUMN override_max_tokens;
+            "
+        ),
     ])
 }
 

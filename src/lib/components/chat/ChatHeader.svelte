@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { app } from '$lib/stores/app.svelte';
 	import { Avatar, Tooltip } from '$lib/components/ui';
-	import { GitBranch, MoreHorizontal } from '@lucide/svelte';
+	import { GitBranch, SlidersHorizontal } from '@lucide/svelte';
 	import { Popover } from 'bits-ui';
 	import { Check, Trash2 } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
@@ -213,13 +213,19 @@
 
 		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
 
-		<Tooltip text="More">
+		<Tooltip text="Generation settings">
 			<button
 				type="button"
-				class="inline-flex size-8 items-center justify-center rounded-(--radius-md) text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-				aria-label="More options"
+				onclick={() => (app.generation_panel_open = !app.generation_panel_open)}
+				class={cn(
+					'inline-flex size-8 items-center justify-center rounded-(--radius-md) transition-colors',
+					app.generation_panel_open
+						? 'bg-(--color-accent)/10 text-(--color-accent)'
+						: 'text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
+				)}
+				aria-label="Generation settings"
 			>
-				<MoreHorizontal class="size-4" />
+				<SlidersHorizontal class="size-4" />
 			</button>
 		</Tooltip>
 	</div>

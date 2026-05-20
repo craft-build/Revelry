@@ -1,6 +1,7 @@
 use crate::db::models::row_to_generation_preset;
 use crate::domain::generation::GenerationPreset;
 use anyhow::Result;
+use chrono::Utc;
 use rusqlite::{params, Connection};
 
 /// Seeds built-in presets (Creative, Balanced, Precise) using INSERT OR IGNORE.
@@ -49,6 +50,75 @@ pub fn load_presets(conn: &Connection) -> Result<Vec<GenerationPreset>> {
         result.push(preset?);
     }
     Ok(result)
+}
+
+/// Inserts a new user-created preset into the database.
+/// Returns the inserted preset.
+pub fn insert_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()> {
+    let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
+    conn.prepare_cached(
+        "INSERT INTO generation_presets
+         (id, name, is_builtin, temperature, top_p, max_tokens, frequency_penalty,
+          presence_penalty, stop_sequences, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+    )?
+    .execute(params![
+        preset.id,
+        preset.name,
+        preset.is_builtin as i32,
+        preset.temperature,
+        preset.top_p,
+        preset.max_tokens,
+        preset.frequency_penalty,
+        preset.presence_penalty,
+        stop_sequences_str,
+        preset.created_at.to_rfc3339(),
+        preset.updated_at.to_rfc3339(),
+    ])?;
+    Ok(())
+}
+
+/// Updates an existing user-created preset. Rejects built-in presets.
+pub fn update_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()> {
+    if preset.is_builtin {
+        anyhow::bail!("Cannot modify built-in preset '{}'", preset.name);
+    }
+    let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
+    let now = Utc::now();
+    let rows = conn.prepare_cached(
+        "UPDATE generation_presets SET
+         name = ?1, temperature = ?2, top_p = ?3, max_tokens = ?4,
+         frequency_penalty = ?5, presence_penalty = ?6, stop_sequences = ?7,
+         updated_at = ?8
+         WHERE id = ?9 AND is_builtin = 0",
+    )?
+    .execute(params![
+        preset.name,
+        preset.temperature,
+        preset.top_p,
+        preset.max_tokens,
+        preset.frequency_penalty,
+        preset.presence_penalty,
+        stop_sequences_str,
+        now.to_rfc3339(),
+        preset.id,
+    ])?;
+    if rows == 0 {
+        anyhow::bail!("Preset not found or is built-in: {}", preset.id);
+    }
+    Ok(())
+}
+
+/// Deletes a user-created preset by id. Rejects built-in presets.
+pub fn delete_preset(conn: &Connection, id: &str) -> Result<()> {
+    let rows = conn.prepare_cached(
+        "DELETE FROM generation_presets WHERE id = ?1 AND is_builtin = 0",
+    )?
+    .execute(params![id])?;
+    if rows == 0 {
+        anyhow::bail!("Preset not found or is built-in: {}", id);
+    }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -18,6 +18,9 @@ pub struct Conversation {
     /// Per-conversation preset override per D-03. Resolved via hierarchy:
     /// conversation → character → global → none (provider defaults).
     pub generation_preset_id: Option<String>,
+    /// Per-conversation max output token override. Takes precedence over preset and provider defaults.
+    /// None = use preset/provider default.
+    pub override_max_tokens: Option<i64>,
     /// Display title for the conversation (may be auto-generated or user-set).
     pub title: String,
     /// Truncated preview of the last message for list display.
@@ -38,6 +41,7 @@ impl Conversation {
             model_name: None,
             creator_persona_id: None,
             generation_preset_id: None,
+            override_max_tokens: None,
             title: String::new(),
             last_message_preview: String::new(),
             created_at: now,

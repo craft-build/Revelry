@@ -1,8 +1,9 @@
 <script lang="ts">
-	import type { Provider } from '$lib/types';
+	import type { Provider, GenerationPreset } from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
 	import { Button, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
 	import { ProviderEditorDialog, KeyringUnavailableBanner } from '$lib/components/providers';
+	import PresetEditorDialog from '$lib/components/settings/PresetEditorDialog.svelte';
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
 	import ThemeToggle from '$lib/components/settings/ThemeToggle.svelte';
 	import {
@@ -14,8 +15,10 @@
 		Info,
 		Plus,
 		Check,
-		X
+		X,
+		Trash2
 	} from '@lucide/svelte';
+	import { page } from '$app/stores';
 
 	const sections = [
 		{ id: 'providers', label: 'AI Providers', icon: Cpu },
@@ -33,6 +36,22 @@
 	let delete_open = $state(false);
 	let delete_target = $state<string | null>(null);
 	let delete_loading = $state(false);
+
+	// Preset editor state
+	let preset_editor_open = $state(false);
+	let preset_editor_mode = $state<'create' | 'edit' | 'view'>('create');
+	let preset_editor_preset = $state<GenerationPreset | undefined>(undefined);
+	let preset_delete_open = $state(false);
+	let preset_delete_target = $state<string | null>(null);
+	let preset_delete_loading = $state(false);
+
+	// Auto-navigate from URL param ?section=generation
+	$effect(() => {
+		const section = $page.url.searchParams.get('section');
+		if (section && sections.some((s) => s.id === section)) {
+			active = section;
+		}
+	});
 </script>
 
 <svelte:head>
@@ -221,9 +240,59 @@
 									temp {preset.temperature} · top_p {preset.top_p} · {preset.max_tokens} tok{preset.stop_sequences.length ? ` · stops: ${preset.stop_sequences.length}` : ''}
 								</div>
 							</div>
-							<Button variant="ghost" size="sm">Edit</Button>
+							<div class="flex items-center gap-1">
+								{#if preset.is_builtin}
+									<Button
+										variant="ghost"
+										size="sm"
+										onclick={() => {
+											preset_editor_mode = 'view';
+											preset_editor_preset = preset;
+											preset_editor_open = true;
+										}}
+									>
+										View
+									</Button>
+								{:else}
+									<Button
+										variant="ghost"
+										size="sm"
+										onclick={() => {
+											preset_editor_mode = 'edit';
+											preset_editor_preset = preset;
+											preset_editor_open = true;
+										}}
+									>
+										Edit
+									</Button>
+									<button
+										type="button"
+										onclick={() => {
+											preset_delete_target = preset.id;
+											preset_delete_open = true;
+										}}
+										class="inline-flex size-7 items-center justify-center rounded-(--radius-md) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-destructive)"
+										aria-label="Delete preset"
+									>
+										<Trash2 class="size-3.5" />
+									</button>
+								{/if}
+							</div>
 						</div>
 					{/each}
+
+					<button
+						type="button"
+						onclick={() => {
+							preset_editor_mode = 'create';
+							preset_editor_preset = undefined;
+							preset_editor_open = true;
+						}}
+						class="inline-flex items-center justify-center gap-2 rounded-(--radius-md) border border-dashed border-(--color-border) px-4 py-3 text-sm text-(--color-muted) hover:border-(--color-border-strong) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
+					>
+						<Plus class="size-4" />
+						Add preset
+					</button>
 				</div>
 			{:else if active === 'appearance'}
 				<header class="mb-6">
@@ -318,6 +387,34 @@
 			} finally {
 				delete_loading = false;
 				delete_target = null;
+			}
+		}
+	}}
+/>
+
+<PresetEditorDialog
+	bind:open={preset_editor_open}
+	mode={preset_editor_mode}
+	preset={preset_editor_preset}
+/>
+
+<DeleteConfirmationDialog
+	bind:open={preset_delete_open}
+	title={preset_delete_target ? `Delete ${app.presets.find((p) => p.id === preset_delete_target)?.name ?? 'preset'}?` : 'Delete preset?'}
+	description="This will permanently remove this preset. Conversations using this preset will fall back to provider defaults. This cannot be undone."
+	confirm_label="Delete"
+	loading={preset_delete_loading}
+	onconfirm={async () => {
+		if (preset_delete_target) {
+			preset_delete_loading = true;
+			try {
+				await app.deletePreset(preset_delete_target);
+				preset_delete_open = false;
+			} catch (err) {
+				console.error('Failed to delete preset:', err);
+			} finally {
+				preset_delete_loading = false;
+				preset_delete_target = null;
 			}
 		}
 	}}

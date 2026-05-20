@@ -13,7 +13,9 @@ pub struct GenerationPreset {
     pub is_builtin: bool,
     pub temperature: f64,
     pub top_p: f64,
-    /// 0 = no limit
+    /// Target response length in tokens (0 = no instruction).
+    /// This is injected as a prompt directive ("Keep your response around N tokens"),
+    /// NOT as the API's max_tokens parameter (which would hard-truncate mid-sentence).
     pub max_tokens: i64,
     pub frequency_penalty: f64,
     pub presence_penalty: f64,
@@ -95,6 +97,11 @@ impl GenerationPreset {
             created_at: now,
             updated_at: now,
         }
+    }
+
+    /// Returns true if this preset can be edited or deleted (i.e., is not built-in).
+    pub fn is_editable(&self) -> bool {
+        !self.is_builtin
     }
 }
 

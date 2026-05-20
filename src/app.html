@@ -8,7 +8,8 @@
           var theme = localStorage.getItem("revelry-theme") || "system";
           var resolved;
           if (theme === "system") {
-            resolved = window.matchMedia("(prefers-color-scheme: light)").matches
+            resolved = window.matchMedia("(prefers-color-scheme: light)")
+              .matches
               ? "light"
               : "dark";
           } else {

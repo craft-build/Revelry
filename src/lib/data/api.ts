@@ -136,6 +136,26 @@ export async function getPresets(): Promise<GenerationPreset[]> {
 	return invoke<GenerationPreset[]>("get_presets");
 }
 
+export async function savePreset(preset: GenerationPreset): Promise<GenerationPreset> {
+	return invoke<GenerationPreset>("save_preset", { preset });
+}
+
+export async function deletePreset(id: string): Promise<void> {
+	return invoke<void>("delete_preset", { id });
+}
+
+export async function updateConversationGeneration(
+	conversationId: string,
+	generationPresetId: string | null,
+	overrideMaxTokens: number | null,
+): Promise<void> {
+	return invoke<void>("update_conversation_generation", {
+		conversationId,
+		generationPresetId,
+		overrideMaxTokens,
+	});
+}
+
 // ── Lorebooks ──────────────────────────────────────────────────────────────────
 
 export async function getLorebooks(): Promise<Lorebook[]> {

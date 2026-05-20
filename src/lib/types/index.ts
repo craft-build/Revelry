@@ -171,6 +171,8 @@ export interface Conversation {
 	creator_persona_id?: string;
 	/** Per-conversation preset override per D-03. */
 	generation_preset_id?: string;
+	/** Per-conversation max output token override. Takes precedence over preset and provider defaults. */
+	override_max_tokens?: number | null;
 	/** Display title for the conversation. */
 	title: string;
 	/** Truncated preview of the last message for list display. */

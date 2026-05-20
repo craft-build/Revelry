@@ -26,6 +26,9 @@ import {
 	startConversation as apiStartConversation,
 	deleteConversation as apiDeleteConversation,
 	getPresets as apiGetPresets,
+	savePreset as apiSavePreset,
+	deletePreset as apiDeletePreset,
+	updateConversationGeneration as apiUpdateConversationGeneration,
 	updateConversationPersona as apiUpdateConversationPersona,
 	updateConversationProvider as apiUpdateConversationProvider,
 	getLorebooks as apiGetLorebooks,
@@ -117,6 +120,9 @@ class AppState {
 	lorebook_detail_open = $state<boolean>(false);
 	lorebook_details = $state<LorebookActivationDetail[]>([]);
 
+	// ── Generation panel state ────────────────────────────────────────────────
+	generation_panel_open = $state<boolean>(false);
+
 	// ── Derived ────────────────────────────────────────────────────────────
 	get active_conversation(): Conversation | undefined {
 		return this.conversations.find((c) => c.id === this.active_conversation_id);
@@ -161,6 +167,24 @@ class AppState {
 		if (modelEntry?.context_window_size) return modelEntry.context_window_size;
 		if (provider.context_window_size) return provider.context_window_size;
 		return 8192;
+	}
+
+	get active_preset(): GenerationPreset | undefined {
+		const conv = this.active_conversation;
+		if (!conv?.generation_preset_id) return undefined;
+		return this.presets.find((p) => p.id === conv.generation_preset_id);
+	}
+
+	/** Effective target response length for the active conversation (in tokens).
+	 *  This is a soft instruction, NOT an API hard cap.
+	 *  Resolution order: override_max_tokens → active_preset.max_tokens → 0 (no instruction) */
+	get effective_max_tokens(): number {
+		const conv = this.active_conversation;
+		if (conv?.override_max_tokens && conv.override_max_tokens > 0)
+			return conv.override_max_tokens;
+		const preset = this.active_preset;
+		if (preset && preset.max_tokens > 0) return preset.max_tokens;
+		return 0;
 	}
 
 	get resolved_theme(): "light" | "dark" {
@@ -371,6 +395,39 @@ class AppState {
 
 	toggleSidebar() {
 		this.sidebar_open = !this.sidebar_open;
+	}
+
+	async savePreset(preset: GenerationPreset): Promise<GenerationPreset> {
+		const saved = await apiSavePreset(preset);
+		const idx = this.presets.findIndex((p) => p.id === saved.id);
+		if (idx >= 0) {
+			this.presets[idx] = saved;
+		} else {
+			this.presets.push(saved);
+		}
+		return saved;
+	}
+
+	async deletePreset(id: string): Promise<void> {
+		await apiDeletePreset(id);
+		this.presets = this.presets.filter((p) => p.id !== id);
+	}
+
+	async updateConversationGeneration(
+		presetId: string | null,
+		overrideMaxTokens: number | null,
+	): Promise<void> {
+		const conv = this.active_conversation;
+		if (!conv) return;
+		await apiUpdateConversationGeneration(conv.id, presetId, overrideMaxTokens);
+		const idx = this.conversations.findIndex((c) => c.id === conv.id);
+		if (idx >= 0) {
+			this.conversations[idx] = {
+				...this.conversations[idx],
+				generation_preset_id: presetId ?? undefined,
+				override_max_tokens: overrideMaxTokens,
+			};
+		}
 	}
 
 	async setTheme(theme: "system" | "light" | "dark") {

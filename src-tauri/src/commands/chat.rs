@@ -34,6 +34,63 @@ struct ChatContext {
     conversation_lorebook_ids: Vec<String>,
     /// Regex scripts for the character.
     regex_scripts: Vec<RegexScript>,
+    /// Generation preset assigned to the conversation (if any).
+    generation_preset: Option<crate::domain::generation::GenerationPreset>,
+    /// Per-conversation max output token override.
+    override_max_tokens: Option<i64>,
+}
+
+/// Resolves generation parameters from provider defaults → preset → per-conversation override.
+/// Note: `max_tokens` is NOT set from the user's response-length preference — it stays at the
+/// provider default so the API never hard-truncates mid-sentence. The user's desired response
+/// length is injected as a prompt instruction instead (see `assemble_prompt`).
+fn resolve_generation_params(
+    provider: &crate::domain::provider::ProviderConfig,
+    preset: Option<&crate::domain::generation::GenerationPreset>,
+    _override_max_tokens: Option<i64>,
+) -> GenerationParams {
+    // Step 1: Start from provider defaults (this sets API max_tokens as a safety ceiling)
+    let mut params = AiService::from_provider_config(provider);
+
+    // Step 2: Apply preset overrides for sampling params (temperature, top_p, penalties)
+    //         but NOT max_tokens — that's a prompt instruction, not an API cap.
+    if let Some(p) = preset {
+        params.temperature = Some(p.temperature);
+        params.top_p = Some(p.top_p);
+        // max_tokens intentionally NOT applied from preset to API
+        params.frequency_penalty = Some(p.frequency_penalty);
+        params.presence_penalty = Some(p.presence_penalty);
+        if !p.stop_sequences.is_empty() {
+            params.stop_sequences = Some(p.stop_sequences.clone());
+        }
+    }
+
+    // Step 3: Per-conversation override_max_tokens is also a prompt instruction, not an API cap.
+    // No changes to params.max_tokens here.
+
+    params
+}
+
+/// Resolves the target response length (in tokens) for prompt injection.
+/// Returns None if no preference is set (no instruction will be injected).
+/// Resolution order: override_max_tokens → preset.max_tokens → None
+fn resolve_target_response_length(
+    preset: Option<&crate::domain::generation::GenerationPreset>,
+    override_max_tokens: Option<i64>,
+) -> Option<u64> {
+    // Per-conversation override takes highest precedence
+    if let Some(override_val) = override_max_tokens {
+        if override_val > 0 {
+            return Some(override_val as u64);
+        }
+    }
+    // Then preset
+    if let Some(p) = preset {
+        if p.max_tokens > 0 {
+            return Some(p.max_tokens as u64);
+        }
+    }
+    None
 }
 
 /// Loads all context needed for prompt assembly and streaming.
@@ -221,6 +278,21 @@ async fn load_chat_context(
         Vec::new()
     };
 
+    // 11. Load generation preset if assigned to the conversation
+    let generation_preset = match &conversation.generation_preset_id {
+        Some(pid) => {
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::LoadPresets { reply: reply_tx })
+                .map_err(|e| e.to_string())?;
+            let presets = reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?;
+            presets.into_iter().find(|p| p.id == *pid)
+        }
+        None => None,
+    };
+
     Ok(Some(ChatContext {
         character,
         persona,
@@ -232,14 +304,19 @@ async fn load_chat_context(
         character_lorebook_ids,
         conversation_lorebook_ids,
         regex_scripts,
+        generation_preset,
+        override_max_tokens: conversation.override_max_tokens,
     }))
 }
 
 /// Assembles a prompt using PromptEngine with budget awareness.
+/// If `target_response_length` is Some, a response-length instruction is appended to the
+/// system prompt preamble (e.g., "Keep your response around 300 tokens.").
 /// Returns (system_prompt, chat_history_messages, budget_info, lorebook_details).
 fn assemble_prompt(
     ctx: &ChatContext,
     messages: &[DomainMessage],
+    target_response_length: Option<u64>,
 ) -> (String, Vec<rig_core::completion::Message>, BudgetInfo, Vec<LorebookActivationDetail>) {
     let token_svc = TokenCountService::new();
     let context_window = token_svc.resolve_context_window_size(&ctx.provider, &ctx.active_model_name);
@@ -297,7 +374,16 @@ fn assemble_prompt(
         truncated_count: assembled.truncated_messages,
     };
 
-    (assembled.preamble, assembled.chat_history, budget, lorebook_details)
+    let mut preamble = assembled.preamble;
+
+    // Inject response-length instruction as a post-history directive.
+    // This tells the AI to aim for a target length without hard-truncating via the API.
+    if let Some(target) = target_response_length {
+        let length_instruction = format!("\n\nKeep your response around {} tokens.", target);
+        preamble.push_str(&length_instruction);
+    }
+
+    (preamble, assembled.chat_history, budget, lorebook_details)
 }
 
 #[tauri::command]
@@ -352,10 +438,11 @@ pub async fn start_chat(
     // 4. Append user message and assemble prompt
     let mut all_messages = ctx.messages.clone();
     all_messages.push(user_message);
-    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &all_messages);
+    let target_length = resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &all_messages, target_length);
 
     // 5. Resolve generation params and start streaming
-    let params = AiService::from_provider_config(&ctx.provider);
+    let params = resolve_generation_params(&ctx.provider, ctx.generation_preset.as_ref(), ctx.override_max_tokens);
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
@@ -471,10 +558,11 @@ pub async fn regenerate(
     };
 
     // Assemble prompt
-    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages);
+    let target_length = resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages, target_length);
 
     // Resolve generation params and start streaming
-    let params = AiService::from_provider_config(&ctx.provider);
+    let params = resolve_generation_params(&ctx.provider, ctx.generation_preset.as_ref(), ctx.override_max_tokens);
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
@@ -594,10 +682,11 @@ pub async fn edit_and_resend(
     };
 
     // 6. Assemble prompt
-    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages);
+    let target_length = resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages, target_length);
 
     // 7. Resolve generation params and start streaming
-    let params = AiService::from_provider_config(&ctx.provider);
+    let params = resolve_generation_params(&ctx.provider, ctx.generation_preset.as_ref(), ctx.override_max_tokens);
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {

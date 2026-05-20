@@ -124,6 +124,7 @@ pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
         model_name: row.get("model_name")?,
         creator_persona_id: row.get("creator_persona_id")?,
         generation_preset_id: row.get("generation_preset_id")?,
+        override_max_tokens: row.get("override_max_tokens")?,
         title: row.get("title")?,
         last_message_preview: row.get("last_message_preview")?,
         created_at,

@@ -225,3 +225,24 @@ pub async fn search_messages(
         .map_err(|e| format!("DB worker dropped: {}", e))?
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn update_conversation_generation(
+    db: State<'_, DbWorker>,
+    conversation_id: String,
+    generation_preset_id: Option<String>,
+    override_max_tokens: Option<i64>,
+) -> Result<(), String> {
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::UpdateConversationGeneration {
+        conversation_id,
+        generation_preset_id,
+        override_max_tokens,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())
+}

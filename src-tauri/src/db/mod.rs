@@ -143,6 +143,22 @@ pub enum DbCommand {
     LoadPresets {
         reply: oneshot::Sender<anyhow::Result<Vec<GenerationPreset>>>,
     },
+    SavePreset {
+        preset: GenerationPreset,
+        reply: oneshot::Sender<anyhow::Result<GenerationPreset>>,
+    },
+    DeletePreset {
+        id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // Conversation generation settings update
+    UpdateConversationGeneration {
+        conversation_id: String,
+        generation_preset_id: Option<String>,
+        override_max_tokens: Option<i64>,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
 
     // Lorebook operations
     LoadLorebooks {
@@ -453,6 +469,36 @@ impl DbWorker {
             }
             DbCommand::LoadPresets { reply } => {
                 let result = generation::load_presets(conn);
+                let _ = reply.send(result);
+            }
+            DbCommand::SavePreset { preset, reply } => {
+                let result = if generation::load_presets(conn)
+                    .unwrap_or_default()
+                    .iter()
+                    .any(|p| p.id == preset.id)
+                {
+                    generation::update_preset(conn, &preset).map(|_| preset.clone())
+                } else {
+                    generation::insert_preset(conn, &preset).map(|_| preset.clone())
+                };
+                let _ = reply.send(result);
+            }
+            DbCommand::DeletePreset { id, reply } => {
+                let result = generation::delete_preset(conn, &id);
+                let _ = reply.send(result);
+            }
+            DbCommand::UpdateConversationGeneration {
+                conversation_id,
+                generation_preset_id,
+                override_max_tokens,
+                reply,
+            } => {
+                let result = conversations::update_conversation_generation(
+                    conn,
+                    &conversation_id,
+                    generation_preset_id.as_deref(),
+                    override_max_tokens,
+                );
                 let _ = reply.send(result);
             }
 
