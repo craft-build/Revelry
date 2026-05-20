@@ -111,18 +111,6 @@
     },
     {
       "type": "export",
-      "name": "getAppSetting",
-      "file": "src/lib/data/api.ts",
-      "line": 447
-    },
-    {
-      "type": "export",
-      "name": "setAppSetting",
-      "file": "src/lib/data/api.ts",
-      "line": 451
-    },
-    {
-      "type": "export",
       "name": "estimateTokens",
       "file": "src/lib/utils/index.ts",
       "line": 36
@@ -233,18 +221,6 @@
     },
     {
       "type": "export",
-      "name": "getAppSetting",
-      "file": "src/lib/data/api.ts",
-      "line": 447
-    },
-    {
-      "type": "export",
-      "name": "setAppSetting",
-      "file": "src/lib/data/api.ts",
-      "line": 451
-    },
-    {
-      "type": "export",
       "name": "estimateTokens",
       "file": "src/lib/utils/index.ts",
       "line": 36
@@ -332,5 +308,5 @@
     }
   ],
   "unlistedDeps": [],
-  "summary": "Found 27 issues"
+  "summary": "Found 25 issues"
 }

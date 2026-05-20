@@ -62,6 +62,8 @@ import {
 	saveMessage as apiSaveMessage,
 	importCard as apiImportCard,
 	exportCard as apiExportCard,
+	getAppSetting as apiGetAppSetting,
+	setAppSetting as apiSetAppSetting,
 } from "$lib/data/api";
 import { open, save } from "@tauri-apps/plugin-dialog";
 
@@ -98,6 +100,9 @@ class AppState {
 	character_search_query = $state<string>("");
 	keyring_available = $state<boolean>(true);
 	focusProviderSelector = $state<boolean>(false);
+
+	// ── Theme state ──────────────────────────────────────────────────────────
+	theme = $state<"system" | "light" | "dark">("system");
 
 	// ── Branch state ───────────────────────────────────────────────────────
 	active_branch_id = $state<string | null>(null);
@@ -156,6 +161,16 @@ class AppState {
 		if (modelEntry?.context_window_size) return modelEntry.context_window_size;
 		if (provider.context_window_size) return provider.context_window_size;
 		return 8192;
+	}
+
+	get resolved_theme(): "light" | "dark" {
+		if (this.theme === "system") {
+			if (typeof window === "undefined") return "dark";
+			return window.matchMedia("(prefers-color-scheme: light)").matches
+				? "light"
+				: "dark";
+		}
+		return this.theme;
 	}
 
 	get filtered_characters(): CharacterCard[] {
@@ -262,6 +277,23 @@ class AppState {
 						? firstError.reason
 						: (firstError.reason?.message ?? "Failed to load application data");
 			}
+
+			// Load theme preference from backend
+			try {
+				const savedTheme = await apiGetAppSetting("theme");
+				if (
+					savedTheme === "system" ||
+					savedTheme === "light" ||
+					savedTheme === "dark"
+				) {
+					this.theme = savedTheme;
+				}
+			} catch (err) {
+				// Theme loading is non-critical, localStorage already handled by flash-prevention script
+				console.warn("Failed to load theme from backend:", err);
+			}
+			// Sync <html> class with resolved theme
+			document.documentElement.className = this.resolved_theme;
 		} catch (err) {
 			this.init_error =
 				err instanceof Error
@@ -339,6 +371,18 @@ class AppState {
 
 	toggleSidebar() {
 		this.sidebar_open = !this.sidebar_open;
+	}
+
+	async setTheme(theme: "system" | "light" | "dark") {
+		this.theme = theme;
+		localStorage.setItem("revelry-theme", theme);
+		document.documentElement.className = this.resolved_theme;
+		// Async backend persist — non-blocking, localStorage is the primary store
+		try {
+			await apiSetAppSetting("theme", theme);
+		} catch (err) {
+			console.error("Theme persist failed:", err);
+		}
 	}
 
 	async switchPersona(persona_id: string) {

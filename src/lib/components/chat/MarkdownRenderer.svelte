@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
-	import { createHighlighter, type Highlighter } from 'shiki';
 	import { onMount } from 'svelte';
+	import { getShikiHighlighter } from '$lib/shiki.svelte';
+	import { app } from '$lib/stores/app.svelte';
 
 	interface Props {
 		content: string;
@@ -11,26 +12,13 @@
 	let { content }: Props = $props();
 
 	let renderedHtml = $state<string>('');
-	let highlighter = $state<Highlighter | null>(null);
+	let highlighter = $state<Awaited<ReturnType<typeof getShikiHighlighter>> | null>(null);
 	let containerEl: HTMLDivElement | undefined = $state();
 
 	// Preload highlighter with common languages
 	onMount(async () => {
 		try {
-			highlighter = await createHighlighter({
-				themes: ['vitesse-dark'],
-				langs: [
-					'javascript',
-					'typescript',
-					'python',
-					'rust',
-					'json',
-					'html',
-					'css',
-					'bash',
-					'markdown'
-				]
-			});
+			highlighter = await getShikiHighlighter();
 		} catch (err) {
 			console.warn('Failed to load Shiki highlighter:', err);
 		}
@@ -47,11 +35,13 @@
 		renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
 			if (lang && hl) {
 				try {
+					const shikiTheme =
+						app.resolved_theme === 'light' ? 'vitesse-light' : 'vitesse-dark';
 					if (
 						hl.getLoadedLanguages().includes(lang) &&
-						hl.getLoadedThemes().includes('vitesse-dark')
+						hl.getLoadedThemes().includes(shikiTheme)
 					) {
-						const highlighted = hl.codeToHtml(text, { lang, theme: 'vitesse-dark' });
+						const highlighted = hl.codeToHtml(text, { lang, theme: shikiTheme });
 						return `<div class="relative"><span class="lang-label">${lang}</span>${highlighted}</div>`;
 					}
 				} catch {

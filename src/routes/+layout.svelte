@@ -5,7 +5,7 @@
 	import AppHeader from '$lib/components/layout/AppHeader.svelte';
 	import ConversationSidebar from '$lib/components/layout/ConversationSidebar.svelte';
 	import { page } from '$app/state';
-	import { createHighlighter } from 'shiki';
+	import { getShikiHighlighter } from '$lib/shiki.svelte';
 	import { AlertTriangle, RefreshCw } from '@lucide/svelte';
 
 	let { children } = $props();
@@ -23,29 +23,24 @@
 		};
 		window.addEventListener('keydown', onkey);
 
-		// Preload Shiki syntax highlighting engine (used by MarkdownRenderer)
-		createHighlighter({
-			themes: ['vitesse-dark'],
-			langs: [
-				'javascript',
-				'typescript',
-				'python',
-				'rust',
-				'json',
-				'html',
-				'css',
-				'bash',
-				'markdown'
-			]
-		})
-			.then(() => {
-				// Shiki engine cached internally — MarkdownRenderer will reuse it
-			})
-			.catch((err: unknown) => {
-				console.warn('Shiki preload failed (non-critical):', err);
-			});
+		// Preload Shiki syntax highlighting with both themes
+		getShikiHighlighter().catch((err: unknown) => {
+			console.warn('Shiki preload failed (non-critical):', err);
+		});
 
-		return () => window.removeEventListener('keydown', onkey);
+		// Listen for OS theme preference changes
+		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const onMediaChange = () => {
+			if (app.theme === 'system') {
+				document.documentElement.className = app.resolved_theme;
+			}
+		};
+		mediaQuery.addEventListener('change', onMediaChange);
+
+		return () => {
+			window.removeEventListener('keydown', onkey);
+			mediaQuery.removeEventListener('change', onMediaChange);
+		};
 	});
 
 	// Show conversation sidebar only on chat routes (Adwaita-style: sidebar
@@ -59,7 +54,7 @@
 	}
 </script>
 
-<div class="surface-grain flex h-dvh flex-col bg-(--color-background) text-(--color-foreground)">
+<div class="surface-grain flex h-dvh flex-col bg-(--color-background) text-(--color-foreground) transition-colors duration-150">
 	{#if app.is_loading}
 		<!-- Skeleton loading state -->
 		<div class="flex h-dvh flex-col">

@@ -1,4 +1,4 @@
 {
-  "signature": "src/lib/data/api.ts::ℹ️ Advisory — no action required this turn:\n⚠️ Newly unused exports in modified files — check if callers need updating (Knip):\n  src/lib/data/api.ts:447 — getAppSetting\n  src/lib/data/api.ts:451 — setAppSetting\n",
+  "signature": "src/lib/components/chat/MarkdownRenderer.svelte|src/routes/+layout.svelte::Unresolved from this turn — src/lib/components/chat/MarkdownRenderer.svelte:\n🔴 STOP — 1 issue(s) must be fixed:\n  L39: Property 'resolved_theme' does not exist on type 'AppState'.\n    💡 Fix: LSP quick fixes: Remove unused declaration for: 'resolved_theme'; Declare property 'resolved_theme'; Add index signature for property 'resolved_theme'",
   "sessionId": "lens-mpdm0ifo-def2b98f"
 }
