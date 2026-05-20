@@ -72,12 +72,12 @@ pub fn delete_lorebook(conn: &Connection, id: &str) -> Result<()> {
 
 // ── LorebookEntry CRUD ─────────────────────────────────────────────────────
 
-/// Loads all entries for a given lorebook, ordered by created_at ascending.
+/// Loads all entries for a given lorebook, ordered by sort_order then created_at ascending.
 pub fn load_lorebook_entries(conn: &Connection, lorebook_id: &str) -> Result<Vec<LorebookEntry>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, lorebook_id, keys, secondary_keys, content, position, depth,
-         activation_state, extensions, created_at, updated_at
-         FROM lorebook_entries WHERE lorebook_id = ?1 ORDER BY created_at ASC",
+         activation_state, token_budget, sort_order, enabled, extensions, created_at, updated_at
+         FROM lorebook_entries WHERE lorebook_id = ?1 ORDER BY sort_order ASC, created_at ASC",
     )?;
     let entries = stmt.query_map(params![lorebook_id], |row| row_to_lorebook_entry(row))?;
     let mut result = Vec::new();
@@ -95,8 +95,9 @@ pub fn insert_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
 
     conn.prepare_cached(
         "INSERT INTO lorebook_entries (id, lorebook_id, keys, secondary_keys, content,
-         position, depth, activation_state, extensions, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+         position, depth, activation_state, token_budget, sort_order, enabled, extensions,
+         created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
     )?
     .execute(params![
         entry.id,
@@ -107,6 +108,9 @@ pub fn insert_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
         entry.position.to_string(),
         entry.depth,
         entry.activation_state.to_string(),
+        entry.token_budget,
+        entry.sort_order,
+        entry.enabled as i32,
         extensions_str,
         entry.created_at.to_rfc3339(),
         entry.updated_at.to_rfc3339(),
@@ -122,8 +126,9 @@ pub fn update_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
 
     conn.prepare_cached(
         "UPDATE lorebook_entries SET keys = ?1, secondary_keys = ?2, content = ?3,
-         position = ?4, depth = ?5, activation_state = ?6, extensions = ?7,
-         updated_at = ?8 WHERE id = ?9",
+         position = ?4, depth = ?5, activation_state = ?6, token_budget = ?7,
+         sort_order = ?8, enabled = ?9, extensions = ?10,
+         updated_at = ?11 WHERE id = ?12",
     )?
     .execute(params![
         keys_str,
@@ -132,6 +137,9 @@ pub fn update_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
         entry.position.to_string(),
         entry.depth,
         entry.activation_state.to_string(),
+        entry.token_budget,
+        entry.sort_order,
+        entry.enabled as i32,
         extensions_str,
         entry.updated_at.to_rfc3339(),
         entry.id,
@@ -193,6 +201,92 @@ pub fn load_lorebooks_for_character(
         .query_map(params![character_id], |row| row_to_lorebook(row))?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(lorebooks)
+}
+
+// ── Conversation-Lorebook junction ──────────────────────────────────────────
+
+/// Assigns a lorebook to a conversation with a given sort_order.
+/// Idempotent — will silently succeed if the assignment already exists.
+pub fn assign_lorebook_to_conversation(
+    conn: &Connection,
+    conversation_id: &str,
+    lorebook_id: &str,
+    sort_order: i32,
+) -> Result<()> {
+    conn.prepare_cached(
+        "INSERT OR IGNORE INTO conversation_lorebooks (conversation_id, lorebook_id, sort_order)
+         VALUES (?1, ?2, ?3)",
+    )?
+    .execute(params![conversation_id, lorebook_id, sort_order])?;
+    Ok(())
+}
+
+/// Removes a lorebook assignment from a conversation.
+pub fn remove_lorebook_from_conversation(
+    conn: &Connection,
+    conversation_id: &str,
+    lorebook_id: &str,
+) -> Result<()> {
+    conn.prepare_cached(
+        "DELETE FROM conversation_lorebooks WHERE conversation_id = ?1 AND lorebook_id = ?2",
+    )?
+    .execute(params![conversation_id, lorebook_id])?;
+    Ok(())
+}
+
+/// Loads all lorebooks assigned to a conversation, ordered by sort_order.
+pub fn load_lorebooks_for_conversation(
+    conn: &Connection,
+    conversation_id: &str,
+) -> Result<Vec<Lorebook>> {
+    let mut stmt = conn.prepare_cached(
+        "SELECT l.id, l.name, l.description, l.created_at, l.updated_at
+         FROM lorebooks l
+         INNER JOIN conversation_lorebooks cl ON cl.lorebook_id = l.id
+         WHERE cl.conversation_id = ?1
+         ORDER BY cl.sort_order ASC",
+    )?;
+    let lorebooks = stmt
+        .query_map(params![conversation_id], |row| row_to_lorebook(row))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(lorebooks)
+}
+
+// ── Bulk entry loading ───────────────────────────────────────────────────────
+
+/// Loads all entries belonging to any of the given lorebook IDs.
+/// Used by ChatContext to gather all entries for multiple lorebooks at once.
+pub fn load_entries_for_lorebooks(
+    conn: &Connection,
+    lorebook_ids: &[String],
+) -> Result<Vec<LorebookEntry>> {
+    if lorebook_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Build dynamic placeholders: WHERE lorebook_id IN (?1, ?2, ...)
+    let placeholders: Vec<String> = lorebook_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT id, lorebook_id, keys, secondary_keys, content, position, depth,
+         activation_state, token_budget, sort_order, enabled, extensions, created_at, updated_at
+         FROM lorebook_entries WHERE lorebook_id IN ({}) ORDER BY sort_order ASC, created_at ASC",
+        placeholders.join(", ")
+    );
+
+    let params: Vec<&dyn rusqlite::types::ToSql> = lorebook_ids
+        .iter()
+        .map(|id| id as &dyn rusqlite::types::ToSql)
+        .collect();
+
+    let mut stmt = conn.prepare(&sql)?;
+    let entries = stmt
+        .query_map(params.as_slice(), |row| row_to_lorebook_entry(row))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(entries)
 }
 
 #[cfg(test)]
@@ -422,5 +516,116 @@ mod tests {
             empty.is_empty(),
             "Unassigned character should have no lorebooks"
         );
+    }
+
+    #[test]
+    fn test_insert_and_load_entry_with_new_fields() {
+        let conn = setup_test_db();
+        let lorebook = Lorebook::new("New Fields".to_string());
+        insert_lorebook(&conn, &lorebook).expect("Insert lorebook should succeed");
+
+        let mut entry = LorebookEntry::new(lorebook.id.clone());
+        entry.token_budget = Some(50);
+        entry.sort_order = 3;
+        entry.enabled = false;
+        insert_lorebook_entry(&conn, &entry).expect("Insert entry should succeed");
+
+        let loaded =
+            load_lorebook_entries(&conn, &lorebook.id).expect("Load entries should succeed");
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].token_budget, Some(50));
+        assert_eq!(loaded[0].sort_order, 3);
+        assert!(!loaded[0].enabled);
+    }
+
+    #[test]
+    fn test_entry_defaults_when_new_fields_absent() {
+        let conn = setup_test_db();
+        let lorebook = Lorebook::new("Defaults".to_string());
+        insert_lorebook(&conn, &lorebook).expect("Insert lorebook should succeed");
+
+        // Insert via raw SQL simulating pre-migration data (only old columns)
+        conn.execute(
+            "INSERT INTO lorebook_entries (id, lorebook_id, keys, secondary_keys, content,
+             position, depth, activation_state, extensions, created_at, updated_at)
+             VALUES ('raw-entry', ?1, '[]', '[]', 'Raw content', 'after_char', 4, 'always', 'null', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            params![lorebook.id],
+        ).expect("Raw insert should succeed");
+
+        let loaded =
+            load_lorebook_entries(&conn, &lorebook.id).expect("Load entries should succeed");
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].token_budget, None);
+        assert_eq!(loaded[0].sort_order, 0);
+        assert!(loaded[0].enabled);
+    }
+
+    #[test]
+    fn test_conversation_lorebooks_assign_and_load() {
+        let conn = setup_test_db();
+        let character = CharacterCardV2::new("Conv Lorebook Test".to_string());
+        crate::db::characters::insert_character(&conn, &character)
+            .expect("Insert character should succeed");
+
+        let conversation = crate::db::conversations::start_conversation(&conn, &character.id)
+            .expect("Start conversation should succeed");
+
+        let lorebook = Lorebook::new("Conv Lorebook".to_string());
+        insert_lorebook(&conn, &lorebook).expect("Insert lorebook should succeed");
+
+        assign_lorebook_to_conversation(&conn, &conversation.id, &lorebook.id, 0)
+            .expect("Assign should succeed");
+
+        let loaded = load_lorebooks_for_conversation(&conn, &conversation.id)
+            .expect("Load should succeed");
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].id, lorebook.id);
+    }
+
+    #[test]
+    fn test_conversation_lorebooks_remove() {
+        let conn = setup_test_db();
+        let character = CharacterCardV2::new("Conv Remove Test".to_string());
+        crate::db::characters::insert_character(&conn, &character)
+            .expect("Insert character should succeed");
+
+        let conversation = crate::db::conversations::start_conversation(&conn, &character.id)
+            .expect("Start conversation should succeed");
+
+        let lorebook = Lorebook::new("To Remove".to_string());
+        insert_lorebook(&conn, &lorebook).expect("Insert lorebook should succeed");
+
+        assign_lorebook_to_conversation(&conn, &conversation.id, &lorebook.id, 0)
+            .expect("Assign should succeed");
+
+        remove_lorebook_from_conversation(&conn, &conversation.id, &lorebook.id)
+            .expect("Remove should succeed");
+
+        let loaded = load_lorebooks_for_conversation(&conn, &conversation.id)
+            .expect("Load should succeed");
+        assert!(loaded.is_empty());
+    }
+
+    #[test]
+    fn test_load_entries_for_lorebooks() {
+        let conn = setup_test_db();
+        let lb1 = Lorebook::new("LB1".to_string());
+        let lb2 = Lorebook::new("LB2".to_string());
+        insert_lorebook(&conn, &lb1).expect("Insert lb1 should succeed");
+        insert_lorebook(&conn, &lb2).expect("Insert lb2 should succeed");
+
+        let mut entry1 = LorebookEntry::new(lb1.id.clone());
+        entry1.keys = vec!["fire".to_string()];
+        entry1.content = "Fire content.".to_string();
+        insert_lorebook_entry(&conn, &entry1).expect("Insert entry1 should succeed");
+
+        let mut entry2 = LorebookEntry::new(lb2.id.clone());
+        entry2.keys = vec!["ice".to_string()];
+        entry2.content = "Ice content.".to_string();
+        insert_lorebook_entry(&conn, &entry2).expect("Insert entry2 should succeed");
+
+        let entries = load_entries_for_lorebooks(&conn, &[lb1.id.clone(), lb2.id.clone()])
+            .expect("Load entries for lorebooks should succeed");
+        assert_eq!(entries.len(), 2);
     }
 }
