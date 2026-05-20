@@ -53,6 +53,7 @@ completed: 2026-05-20
 - **Files modified:** 2
 
 ## Accomplishments
+
 - ChatContext loads regex_scripts via DbCommand::LoadRegexScripts for the character
 - AiService::stream_chat accepts regex_scripts and lorebook_details parameters
 - Regex transforms applied before StreamChunk::Complete using apply_regex_scripts pipe chain
@@ -68,10 +69,12 @@ Code changes were committed as part of prior plan (09-02) which bundled the Chat
 **Plan metadata:** Pending (docs)
 
 ## Files Created/Modified
+
 - `src-tauri/src/commands/chat.rs` - Added regex_scripts field to ChatContext, loading in load_chat_context(), updated assemble_prompt return, updated all 3 call sites
 - `src-tauri/src/ai/mod.rs` - Extended stream_chat/run_stream/stream_with_agent signatures, added LorebookActivationDetail import, added lorebook_details to StreamChunk::Complete, applied regex transforms before completion
 
 ## Decisions Made
+
 - Regex transforms applied server-side on stream completion (not mid-stream) — consistent with cross-cutting constraint #4
 - LorebookActivationDetail included in Complete chunk to prepare for frontend context bar (Plan 09-05)
 - Empty lorebook_details serialized with skip_serializing_if to keep payload lean
@@ -81,6 +84,7 @@ Code changes were committed as part of prior plan (09-02) which bundled the Chat
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] LorebookActivationDetail already existed in codebase**
+
 - **Found during:** Task 1 (reading source files before editing)
 - **Issue:** Plan references LorebookActivationDetail as "from Plan 09-02 Task 2" — it was already created by the 09-02 parallel agent
 - **Fix:** Used existing type directly instead of creating it; also found AssembledPrompt already had lorebook_details field
@@ -89,6 +93,7 @@ Code changes were committed as part of prior plan (09-02) which bundled the Chat
 - **Committed in:** c15d287 (prior commit)
 
 **2. [Rule 3 - Blocking] Code changes already committed under 09-02**
+
 - **Found during:** Task 1 (after making edits, found working tree clean)
 - **Issue:** The 09-02 commit (c15d287) bundled both lorebook and regex integration into ChatContext as a single atomic change
 - **Fix:** Verified all acceptance criteria met against committed code; no additional commit needed
@@ -102,16 +107,20 @@ Code changes were committed as part of prior plan (09-02) which bundled the Chat
 **Impact on plan:** Zero impact — all acceptance criteria verified against committed code. The code was atomically bundled with 09-02 to avoid intermediate broken states.
 
 ## Issues Encountered
+
 None — all changes verified against existing committed code.
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - Regex pipeline fully wired: load → apply on completion → send transformed content
 - LorebookActivationDetail in Complete payload ready for frontend context bar (Plan 09-05)
 - Ready for Plan 09-05: Wire context bar with live budget and lorebook details
 
 ---
-*Phase: 09-power-features*
-*Completed: 2026-05-20*
+
+_Phase: 09-power-features_
+_Completed: 2026-05-20_

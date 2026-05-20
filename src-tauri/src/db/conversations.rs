@@ -89,13 +89,15 @@ pub fn load_messages(
     match branch_id {
         Some(bid) => {
             // Find the fork point: the parent message's sort_order
-            let fork_sort_order: Option<i32> = conn.query_row(
-                "SELECT m.sort_order FROM message_branches b
+            let fork_sort_order: Option<i32> = conn
+                .query_row(
+                    "SELECT m.sort_order FROM message_branches b
                  JOIN messages m ON m.id = b.parent_message_id
                  WHERE b.id = ?1",
-                params![bid],
-                |row| row.get(0),
-            ).ok();
+                    params![bid],
+                    |row| row.get(0),
+                )
+                .ok();
 
             // Return main-branch messages up to (and including) the fork point,
             // plus all messages in the requested branch.
@@ -107,7 +109,9 @@ pub fn load_messages(
                                ORDER BY sort_order ASC";
 
                     let mut stmt = conn.prepare_cached(sql)?;
-                    for msg in stmt.query_map(params![conversation_id, bid, fork_order], |row| row_to_message(row))? {
+                    for msg in stmt.query_map(params![conversation_id, bid, fork_order], |row| {
+                        row_to_message(row)
+                    })? {
                         result.push(msg?);
                     }
                 }
@@ -120,7 +124,9 @@ pub fn load_messages(
                                ORDER BY sort_order ASC";
 
                     let mut stmt = conn.prepare_cached(sql)?;
-                    for msg in stmt.query_map(params![conversation_id, bid], |row| row_to_message(row))? {
+                    for msg in
+                        stmt.query_map(params![conversation_id, bid], |row| row_to_message(row))?
+                    {
                         result.push(msg?);
                     }
                 }
@@ -1002,12 +1008,8 @@ mod tests {
         assert!(branch_messages.iter().all(|m| m.id != root_msg_4.id));
 
         // Verify branch messages ARE present
-        assert!(branch_messages
-            .iter()
-            .any(|m| m.id == branch_msg_1.id));
-        assert!(branch_messages
-            .iter()
-            .any(|m| m.id == branch_msg_2.id));
+        assert!(branch_messages.iter().any(|m| m.id == branch_msg_1.id));
+        assert!(branch_messages.iter().any(|m| m.id == branch_msg_2.id));
     }
 
     #[test]

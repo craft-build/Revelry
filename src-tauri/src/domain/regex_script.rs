@@ -167,13 +167,9 @@ mod tests {
         let script = RegexScript::new("char-1".to_string(), "Roundtrip Test".to_string());
 
         let json = serde_json::to_string(&script).expect("serialize failed");
-        let deserialized: RegexScript =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let deserialized: RegexScript = serde_json::from_str(&json).expect("deserialize failed");
 
-        assert_eq!(
-            script, deserialized,
-            "roundtrip should preserve all fields"
-        );
+        assert_eq!(script, deserialized, "roundtrip should preserve all fields");
     }
 
     #[test]
@@ -232,16 +228,17 @@ mod tests {
 
     #[test]
     fn test_to_extensions_json() {
-        let scripts = vec![
-            RegexScript::new("char-1".to_string(), "Test".to_string()),
-        ];
+        let scripts = vec![RegexScript::new("char-1".to_string(), "Test".to_string())];
 
         let json = RegexScript::to_extensions_json(&scripts);
         let arr = json.as_array().expect("should be array");
         assert_eq!(arr.len(), 1);
         let entry = &arr[0];
         assert_eq!(entry["scriptName"], "Test");
-        assert!(entry.get("findRegex").is_some(), "should have findRegex key");
+        assert!(
+            entry.get("findRegex").is_some(),
+            "should have findRegex key"
+        );
         assert!(
             entry.get("replaceString").is_some(),
             "should have replaceString key"
@@ -275,7 +272,10 @@ mod tests {
 
         let scripts = RegexScript::from_extensions_json(&json, "char-1");
         let exported = RegexScript::to_extensions_json(&scripts);
-        let reimported = RegexScript::from_extensions_json(&serde_json::json!({"regex_scripts": exported}), "char-1");
+        let reimported = RegexScript::from_extensions_json(
+            &serde_json::json!({"regex_scripts": exported}),
+            "char-1",
+        );
 
         assert_eq!(reimported.len(), 1);
         assert_eq!(reimported[0].name, "Script A");

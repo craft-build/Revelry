@@ -576,8 +576,8 @@ mod tests {
         assign_lorebook_to_conversation(&conn, &conversation.id, &lorebook.id, 0)
             .expect("Assign should succeed");
 
-        let loaded = load_lorebooks_for_conversation(&conn, &conversation.id)
-            .expect("Load should succeed");
+        let loaded =
+            load_lorebooks_for_conversation(&conn, &conversation.id).expect("Load should succeed");
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].id, lorebook.id);
     }
@@ -601,8 +601,8 @@ mod tests {
         remove_lorebook_from_conversation(&conn, &conversation.id, &lorebook.id)
             .expect("Remove should succeed");
 
-        let loaded = load_lorebooks_for_conversation(&conn, &conversation.id)
-            .expect("Load should succeed");
+        let loaded =
+            load_lorebooks_for_conversation(&conn, &conversation.id).expect("Load should succeed");
         assert!(loaded.is_empty());
     }
 

@@ -16,7 +16,8 @@ affects: [prompt-engine, card-io, chat]
 
 tech-stack:
   added: []
-  patterns: [validate-before-save, pipe-chain-application, size-limit-redos-protection]
+  patterns:
+    [validate-before-save, pipe-chain-application, size-limit-redos-protection]
 
 key-files:
   created:
@@ -61,6 +62,7 @@ completed: 2026-05-20
 - **Files modified:** 10
 
 ## Accomplishments
+
 - RegexScript domain model with from_extensions_json/to_extensions_json for SillyTavern card import/export
 - DB CRUD operations for regex scripts with enabled stored as INTEGER
 - RegexService with ReDoS-safe pattern validation (size_limit 1M), flags whitelist, pipe-chain application
@@ -80,6 +82,7 @@ Each task was committed atomically:
 **Plan metadata:** pending (docs)
 
 ## Files Created/Modified
+
 - `src-tauri/src/domain/regex_script.rs` - RegexScript model with SillyTavern compat
 - `src-tauri/src/domain/mod.rs` - Added regex_script module
 - `src-tauri/src/db/regex_scripts.rs` - Full CRUD operations
@@ -92,6 +95,7 @@ Each task was committed atomically:
 - `src-tauri/src/lib.rs` - Registered 5 regex commands in invoke_handler
 
 ## Decisions Made
+
 - Used `DateTime<Utc>` with `.to_rfc3339()` instead of gtk_ref's `NaiveDateTime` (Tauri project convention)
 - `from_extensions_json` signature follows plan spec `(value: &Value, character_id: &str)` not gtk_ref's reversed order
 - `to_extensions_json` is a static method `fn(scripts: &[Self]) -> Value` producing the full array, not per-instance `&self -> Value`
@@ -102,15 +106,19 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 None
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - REGX-01, REGX-02, REGX-03, REGX-05 complete; REGX-04 (regex applied to AI output before display) requires PromptEngine integration
 - Ready for next plan in Phase 9
 
 ---
-*Phase: 09-power-features*
-*Completed: 2026-05-20*
+
+_Phase: 09-power-features_
+_Completed: 2026-05-20_

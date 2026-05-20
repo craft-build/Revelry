@@ -20,13 +20,6 @@
       "file": "gtk_ref/src/ui/chat/mod.rs",
       "line": 557,
       "column": 43
-    },
-    {
-      "type": "TODO",
-      "message": "Phase 9 — activate lorebook entries with lorebook::activate_lorebook_entries()",
-      "file": "src-tauri/src/service/prompt.rs",
-      "line": 93,
-      "column": 11
     }
   ]
 }

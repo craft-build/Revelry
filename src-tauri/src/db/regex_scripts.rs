@@ -124,8 +124,10 @@ mod tests {
         let conn = setup_test_db();
         let char1 = CharacterCardV2::new("Char 1".to_string());
         let char2 = CharacterCardV2::new("Char 2".to_string());
-        crate::db::characters::insert_character(&conn, &char1).expect("Insert char1 should succeed");
-        crate::db::characters::insert_character(&conn, &char2).expect("Insert char2 should succeed");
+        crate::db::characters::insert_character(&conn, &char1)
+            .expect("Insert char1 should succeed");
+        crate::db::characters::insert_character(&conn, &char2)
+            .expect("Insert char2 should succeed");
 
         let s1 = make_script(&char1.id, "Char1 Script", 0, true);
         let s2 = make_script(&char2.id, "Char2 Script", 0, true);
@@ -191,6 +193,9 @@ mod tests {
 
         let loaded = load_regex_scripts(&conn, &character.id).expect("Load should succeed");
         assert_eq!(loaded.len(), 1);
-        assert!(!loaded[0].enabled, "enabled should be false when stored as INTEGER 0");
+        assert!(
+            !loaded[0].enabled,
+            "enabled should be false when stored as INTEGER 0"
+        );
     }
 }

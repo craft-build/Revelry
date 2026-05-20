@@ -58,10 +58,7 @@ pub fn apply_regex_scripts(text: &str, scripts: &[RegexScript]) -> String {
             Err(_) => {
                 // Skip scripts with invalid patterns at runtime
                 // (should have been caught at save time, but be safe)
-                tracing::warn!(
-                    "Skipping regex script '{}' — invalid pattern",
-                    script.name
-                );
+                tracing::warn!("Skipping regex script '{}' — invalid pattern", script.name);
             }
         }
     }
@@ -249,9 +246,6 @@ mod tests {
             make_script("Step 2", "bar", "baz", "g", 2, true),
         ];
         let result = apply_regex_scripts("foo", &scripts);
-        assert_eq!(
-            result, "baz",
-            "Pipe chain should transform foo→bar→baz"
-        );
+        assert_eq!(result, "baz", "Pipe chain should transform foo→bar→baz");
     }
 }

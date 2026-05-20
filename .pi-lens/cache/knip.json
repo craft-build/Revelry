@@ -2,31 +2,6 @@
   "success": true,
   "issues": [
     {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-check-update.js",
-      "file": ".pi/gsd/hooks/gsd-check-update.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-context-monitor.js",
-      "file": ".pi/gsd/hooks/gsd-context-monitor.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-prompt-guard.js",
-      "file": ".pi/gsd/hooks/gsd-prompt-guard.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-statusline.js",
-      "file": ".pi/gsd/hooks/gsd-statusline.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-workflow-guard.js",
-      "file": ".pi/gsd/hooks/gsd-workflow-guard.js"
-    },
-    {
       "type": "dependency",
       "name": "@tauri-apps/plugin-fs",
       "file": "package.json",
@@ -96,31 +71,79 @@
       "type": "export",
       "name": "searchCharacters",
       "file": "src/lib/data/api.ts",
-      "line": 39
+      "line": 43
     },
     {
       "type": "export",
       "name": "searchPersonas",
       "file": "src/lib/data/api.ts",
-      "line": 59
+      "line": 63
     },
     {
       "type": "export",
       "name": "searchConversations",
       "file": "src/lib/data/api.ts",
-      "line": 79
+      "line": 83
     },
     {
       "type": "export",
       "name": "getLorebook",
       "file": "src/lib/data/api.ts",
-      "line": 135
+      "line": 145
     },
     {
       "type": "export",
       "name": "hasApiKey",
       "file": "src/lib/data/api.ts",
-      "line": 245
+      "line": 255
+    },
+    {
+      "type": "export",
+      "name": "getRegexScripts",
+      "file": "src/lib/data/api.ts",
+      "line": 376
+    },
+    {
+      "type": "export",
+      "name": "saveRegexScript",
+      "file": "src/lib/data/api.ts",
+      "line": 382
+    },
+    {
+      "type": "export",
+      "name": "deleteRegexScript",
+      "file": "src/lib/data/api.ts",
+      "line": 388
+    },
+    {
+      "type": "export",
+      "name": "applySingleRegex",
+      "file": "src/lib/data/api.ts",
+      "line": 392
+    },
+    {
+      "type": "export",
+      "name": "validateRegexPattern",
+      "file": "src/lib/data/api.ts",
+      "line": 406
+    },
+    {
+      "type": "export",
+      "name": "getConversationLorebooks",
+      "file": "src/lib/data/api.ts",
+      "line": 415
+    },
+    {
+      "type": "export",
+      "name": "assignLorebookToConversation",
+      "file": "src/lib/data/api.ts",
+      "line": 423
+    },
+    {
+      "type": "export",
+      "name": "removeLorebookFromConversation",
+      "file": "src/lib/data/api.ts",
+      "line": 435
     },
     {
       "type": "export",
@@ -130,39 +153,45 @@
     },
     {
       "type": "export",
+      "name": "LorebookActivationDetail",
+      "file": "src/lib/types/index.ts",
+      "line": 79
+    },
+    {
+      "type": "export",
       "name": "MessageRole",
       "file": "src/lib/types/index.ts",
-      "line": 96
+      "line": 110
     },
     {
       "type": "export",
       "name": "MessageMetadata",
       "file": "src/lib/types/index.ts",
-      "line": 113
+      "line": 129
     },
     {
       "type": "export",
       "name": "GenerationParams",
       "file": "src/lib/types/index.ts",
-      "line": 206
+      "line": 244
     },
     {
       "type": "export",
       "name": "PromptPreset",
       "file": "src/lib/types/index.ts",
-      "line": 231
+      "line": 269
     },
     {
       "type": "export",
       "name": "PrimaryView",
       "file": "src/lib/types/index.ts",
-      "line": 237
+      "line": 275
     },
     {
       "type": "export",
       "name": "CharactersTab",
       "file": "src/lib/types/index.ts",
-      "line": 238
+      "line": 276
     }
   ],
   "unusedExports": [
@@ -194,31 +223,79 @@
       "type": "export",
       "name": "searchCharacters",
       "file": "src/lib/data/api.ts",
-      "line": 39
+      "line": 43
     },
     {
       "type": "export",
       "name": "searchPersonas",
       "file": "src/lib/data/api.ts",
-      "line": 59
+      "line": 63
     },
     {
       "type": "export",
       "name": "searchConversations",
       "file": "src/lib/data/api.ts",
-      "line": 79
+      "line": 83
     },
     {
       "type": "export",
       "name": "getLorebook",
       "file": "src/lib/data/api.ts",
-      "line": 135
+      "line": 145
     },
     {
       "type": "export",
       "name": "hasApiKey",
       "file": "src/lib/data/api.ts",
-      "line": 245
+      "line": 255
+    },
+    {
+      "type": "export",
+      "name": "getRegexScripts",
+      "file": "src/lib/data/api.ts",
+      "line": 376
+    },
+    {
+      "type": "export",
+      "name": "saveRegexScript",
+      "file": "src/lib/data/api.ts",
+      "line": 382
+    },
+    {
+      "type": "export",
+      "name": "deleteRegexScript",
+      "file": "src/lib/data/api.ts",
+      "line": 388
+    },
+    {
+      "type": "export",
+      "name": "applySingleRegex",
+      "file": "src/lib/data/api.ts",
+      "line": 392
+    },
+    {
+      "type": "export",
+      "name": "validateRegexPattern",
+      "file": "src/lib/data/api.ts",
+      "line": 406
+    },
+    {
+      "type": "export",
+      "name": "getConversationLorebooks",
+      "file": "src/lib/data/api.ts",
+      "line": 415
+    },
+    {
+      "type": "export",
+      "name": "assignLorebookToConversation",
+      "file": "src/lib/data/api.ts",
+      "line": 423
+    },
+    {
+      "type": "export",
+      "name": "removeLorebookFromConversation",
+      "file": "src/lib/data/api.ts",
+      "line": 435
     },
     {
       "type": "export",
@@ -228,68 +305,48 @@
     },
     {
       "type": "export",
+      "name": "LorebookActivationDetail",
+      "file": "src/lib/types/index.ts",
+      "line": 79
+    },
+    {
+      "type": "export",
       "name": "MessageRole",
       "file": "src/lib/types/index.ts",
-      "line": 96
+      "line": 110
     },
     {
       "type": "export",
       "name": "MessageMetadata",
       "file": "src/lib/types/index.ts",
-      "line": 113
+      "line": 129
     },
     {
       "type": "export",
       "name": "GenerationParams",
       "file": "src/lib/types/index.ts",
-      "line": 206
+      "line": 244
     },
     {
       "type": "export",
       "name": "PromptPreset",
       "file": "src/lib/types/index.ts",
-      "line": 231
+      "line": 269
     },
     {
       "type": "export",
       "name": "PrimaryView",
       "file": "src/lib/types/index.ts",
-      "line": 237
+      "line": 275
     },
     {
       "type": "export",
       "name": "CharactersTab",
       "file": "src/lib/types/index.ts",
-      "line": 238
+      "line": 276
     }
   ],
-  "unusedFiles": [
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-check-update.js",
-      "file": ".pi/gsd/hooks/gsd-check-update.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-context-monitor.js",
-      "file": ".pi/gsd/hooks/gsd-context-monitor.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-prompt-guard.js",
-      "file": ".pi/gsd/hooks/gsd-prompt-guard.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-statusline.js",
-      "file": ".pi/gsd/hooks/gsd-statusline.js"
-    },
-    {
-      "type": "file",
-      "name": ".pi/gsd/hooks/gsd-workflow-guard.js",
-      "file": ".pi/gsd/hooks/gsd-workflow-guard.js"
-    }
-  ],
+  "unusedFiles": [],
   "unusedDeps": [
     {
       "type": "dependency",
@@ -335,5 +392,5 @@
     }
   ],
   "unlistedDeps": [],
-  "summary": "Found 28 issues"
+  "summary": "Found 32 issues"
 }

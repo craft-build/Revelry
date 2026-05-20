@@ -2,7 +2,17 @@
 phase: 09-power-features
 plan: 01
 subsystem: lorebook, database, service
-tags: [lorebook, sqlite, migration, activation, injection, token-budget, keywords, recursive]
+tags:
+  [
+    lorebook,
+    sqlite,
+    migration,
+    activation,
+    injection,
+    token-budget,
+    keywords,
+    recursive,
+  ]
 
 requires:
   - phase: 03
@@ -70,6 +80,7 @@ completed: 2026-05-20
 - **Files modified:** 9
 
 ## Accomplishments
+
 - Extended LorebookEntry domain model with token_budget, sort_order, enabled fields
 - Added Phase 9 migration creating conversation_lorebooks junction table and new lorebook_entries columns
 - Ported full LorebookService from gtk_ref with LorebookActivation role filtering enhancement
@@ -87,6 +98,7 @@ Each task was committed atomically:
 6. **Task 6: Update frontend TypeScript types** - `1392f16` (feat)
 
 ## Files Created/Modified
+
 - `src-tauri/src/service/lorebook.rs` - LorebookService with activation, injection, budget enforcement
 - `src-tauri/src/domain/lorebook.rs` - LorebookEntry with token_budget, sort_order, enabled
 - `src-tauri/src/db/migrations.rs` - Phase 9 migration
@@ -98,6 +110,7 @@ Each task was committed atomically:
 - `src/lib/components/lorebooks/LorebookEditor.svelte` - Updated entry creation with new fields
 
 ## Decisions Made
+
 - Used free functions in service/lorebook.rs (not struct-based) for consistency with gtk_ref port
 - inject_lorebook_entries returns (preamble_before_char, preamble_after_char) tuple for clean PromptEngine integration
 - LorebookActivation role filtering scans only messages of matching role, enhancing gtk_ref's simple enabled bool
@@ -108,17 +121,21 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
+
 None
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - LorebookService activation and injection ready for PromptEngine integration (replace TODO in assemble_with_budget)
 - conversation_lorebooks junction ready for Tauri command exposure
 - Frontend types ready for lorebook editor enhancements (sort_order, enabled toggles, token_budget input)
 - RegexScript types defined for Phase 9 regex service port
 
 ---
-*Phase: 09-power-features*
-*Completed: 2026-05-20*
+
+_Phase: 09-power-features_
+_Completed: 2026-05-20_

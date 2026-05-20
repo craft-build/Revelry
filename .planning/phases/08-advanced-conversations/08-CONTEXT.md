@@ -62,6 +62,7 @@ NOT in scope: lorebook injection (Phase 9), regex scripts (Phase 9), theme toggl
 </decisions>
 
 <canonical_refs>
+
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
@@ -105,6 +106,7 @@ NOT in scope: lorebook injection (Phase 9), regex scripts (Phase 9), theme toggl
 </canonical_refs>
 
 <code_context>
+
 ## Existing Code Insights
 
 ### Reusable Assets
@@ -165,5 +167,5 @@ None — discussion stayed within phase scope.
 
 ---
 
-*Phase: 08-advanced-conversations*
-*Context gathered: 2026-05-18*
+_Phase: 08-advanced-conversations_
+_Context gathered: 2026-05-18_

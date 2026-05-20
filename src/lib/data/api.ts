@@ -19,6 +19,8 @@ import type {
   Lorebook,
   LorebookEntry,
   KeywordTestResult,
+  RegexScript,
+  RegexTestResult,
   StreamChunk,
 } from "$lib/types";
 
@@ -367,4 +369,75 @@ export async function deleteBranch(branchId: string): Promise<void> {
 
 export async function searchMessages(query: string): Promise<SearchResult[]> {
   return invoke<SearchResult[]>("search_messages", { query });
+}
+
+// ── Regex scripts ──────────────────────────────────────────────────────────────
+
+export async function getRegexScripts(
+  characterId: string,
+): Promise<RegexScript[]> {
+  return invoke<RegexScript[]>("get_regex_scripts", { characterId });
+}
+
+export async function saveRegexScript(
+  script: RegexScript,
+): Promise<RegexScript> {
+  return invoke<RegexScript>("save_regex_script", { script });
+}
+
+export async function deleteRegexScript(id: string): Promise<void> {
+  return invoke<void>("delete_regex_script", { id });
+}
+
+export async function applySingleRegex(
+  pattern: string,
+  replacePattern: string,
+  flags: string,
+  sampleText: string,
+): Promise<RegexTestResult> {
+  return invoke<RegexTestResult>("apply_single_regex", {
+    pattern,
+    replacePattern,
+    flags,
+    sampleText,
+  });
+}
+
+export async function validateRegexPattern(
+  pattern: string,
+  flags: string,
+): Promise<void> {
+  return invoke<void>("validate_regex_pattern", { pattern, flags });
+}
+
+// ── Conversation-lorebook junction ────────────────────────────────────────────
+
+export async function getConversationLorebooks(
+  conversationId: string,
+): Promise<Lorebook[]> {
+  return invoke<Lorebook[]>("get_conversation_lorebooks", {
+    conversationId,
+  });
+}
+
+export async function assignLorebookToConversation(
+  conversationId: string,
+  lorebookId: string,
+  sortOrder: number,
+): Promise<void> {
+  return invoke<void>("assign_lorebook_to_conversation", {
+    conversationId,
+    lorebookId,
+    sortOrder,
+  });
+}
+
+export async function removeLorebookFromConversation(
+  conversationId: string,
+  lorebookId: string,
+): Promise<void> {
+  return invoke<void>("remove_lorebook_from_conversation", {
+    conversationId,
+    lorebookId,
+  });
 }

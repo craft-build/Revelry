@@ -4,11 +4,11 @@
       "modifiedRanges": [
         {
           "start": 1,
-          "end": 629
+          "end": 737
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-16T02:28:05.418Z"
+      "lastEdit": "2026-05-20T02:20:43.077Z"
     },
     "src/db/conversations.rs": {
       "modifiedRanges": [
@@ -25,20 +25,28 @@
         {
           "start": 1,
           "end": 608
+        },
+        {
+          "start": 621,
+          "end": 622
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-16T04:52:57.985Z"
+      "lastEdit": "2026-05-20T02:29:37.326Z"
     },
     "src/commands/mod.rs": {
       "modifiedRanges": [
         {
           "start": 3,
           "end": 4
+        },
+        {
+          "start": 11,
+          "end": 11
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-18T19:20:45.878Z"
+      "lastEdit": "2026-05-20T02:19:06.743Z"
     },
     "src/lib.rs": {
       "modifiedRanges": [
@@ -47,19 +55,35 @@
           "end": 38
         },
         {
+          "start": 73,
+          "end": 75
+        },
+        {
           "start": 77,
           "end": 80
         },
         {
           "start": 83,
           "end": 84
+        },
+        {
+          "start": 90,
+          "end": 94
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-18T19:20:52.580Z"
+      "lastEdit": "2026-05-20T02:31:47.579Z"
     },
     "src/ai/mod.rs": {
       "modifiedRanges": [
+        {
+          "start": 2,
+          "end": 2
+        },
+        {
+          "start": 4,
+          "end": 4
+        },
         {
           "start": 25,
           "end": 41
@@ -67,6 +91,10 @@
         {
           "start": 43,
           "end": 45
+        },
+        {
+          "start": 49,
+          "end": 50
         },
         {
           "start": 95,
@@ -77,8 +105,16 @@
           "end": 107
         },
         {
+          "start": 111,
+          "end": 111
+        },
+        {
           "start": 118,
-          "end": 118
+          "end": 119
+        },
+        {
+          "start": 123,
+          "end": 123
         },
         {
           "start": 130,
@@ -89,7 +125,7 @@
           "end": 136
         },
         {
-          "start": 144,
+          "start": 142,
           "end": 154
         },
         {
@@ -97,24 +133,136 @@
           "end": 156
         },
         {
+          "start": 168,
+          "end": 169
+        },
+        {
           "start": 171,
           "end": 171
         },
         {
-          "start": 208,
+          "start": 207,
           "end": 208
+        },
+        {
+          "start": 218,
+          "end": 219
+        },
+        {
+          "start": 228,
+          "end": 230
+        },
+        {
+          "start": 240,
+          "end": 240
+        },
+        {
+          "start": 242,
+          "end": 243
+        },
+        {
+          "start": 250,
+          "end": 250
+        },
+        {
+          "start": 253,
+          "end": 254
+        },
+        {
+          "start": 260,
+          "end": 260
+        },
+        {
+          "start": 264,
+          "end": 265
+        },
+        {
+          "start": 270,
+          "end": 270
+        },
+        {
+          "start": 275,
+          "end": 276
+        },
+        {
+          "start": 280,
+          "end": 280
+        },
+        {
+          "start": 286,
+          "end": 287
+        },
+        {
+          "start": 290,
+          "end": 290
+        },
+        {
+          "start": 297,
+          "end": 298
+        },
+        {
+          "start": 300,
+          "end": 300
+        },
+        {
+          "start": 308,
+          "end": 310
+        },
+        {
+          "start": 319,
+          "end": 320
+        },
+        {
+          "start": 330,
+          "end": 331
+        },
+        {
+          "start": 341,
+          "end": 343
+        },
+        {
+          "start": 353,
+          "end": 353
+        },
+        {
+          "start": 355,
+          "end": 356
+        },
+        {
+          "start": 366,
+          "end": 367
+        },
+        {
+          "start": 380,
+          "end": 381
         },
         {
           "start": 438,
           "end": 438
         },
         {
-          "start": 456,
+          "start": 454,
           "end": 458
+        },
+        {
+          "start": 476,
+          "end": 476
         },
         {
           "start": 481,
           "end": 483
+        },
+        {
+          "start": 494,
+          "end": 502
+        },
+        {
+          "start": 505,
+          "end": 505
+        },
+        {
+          "start": 510,
+          "end": 510
         },
         {
           "start": 693,
@@ -127,32 +275,28 @@
         {
           "start": 717,
           "end": 719
+        },
+        {
+          "start": 738,
+          "end": 738
+        },
+        {
+          "start": 748,
+          "end": 752
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-16T04:59:15.671Z"
+      "lastEdit": "2026-05-20T02:31:18.299Z"
     },
     "src/service/prompt.rs": {
       "modifiedRanges": [
         {
-          "start": 16,
-          "end": 17
-        },
-        {
-          "start": 44,
-          "end": 44
-        },
-        {
-          "start": 59,
-          "end": 59
-        },
-        {
-          "start": 164,
-          "end": 164
+          "start": 1,
+          "end": 811
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-16T04:46:50.650Z"
+      "lastEdit": "2026-05-20T02:34:03.128Z"
     },
     "Cargo.toml": {
       "modifiedRanges": [
@@ -182,7 +326,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-18T19:23:35.801Z"
+      "lastEdit": "2026-05-20T02:15:53.924Z"
     },
     "src/service/card_io.rs": {
       "modifiedRanges": [
@@ -202,7 +346,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-18T19:23:35.844Z"
+      "lastEdit": "2026-05-20T02:21:38.320Z"
     },
     "src/commands/card_io.rs": {
       "modifiedRanges": [
@@ -223,10 +367,178 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-18T21:41:19.398Z"
+    },
+    "src/domain/regex_script.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 291
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:20:24.862Z"
+    },
+    "src/domain/lorebook.rs": {
+      "modifiedRanges": [
+        {
+          "start": 126,
+          "end": 131
+        },
+        {
+          "start": 142,
+          "end": 149
+        },
+        {
+          "start": 164,
+          "end": 166
+        },
+        {
+          "start": 174,
+          "end": 185
+        },
+        {
+          "start": 201,
+          "end": 203
+        },
+        {
+          "start": 271,
+          "end": 273
+        },
+        {
+          "start": 280,
+          "end": 308
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:27:38.368Z"
+    },
+    "src/db/regex_scripts.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 202
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:20:25.164Z"
+    },
+    "src/db/models.rs": {
+      "modifiedRanges": [
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 334,
+          "end": 336
+        },
+        {
+          "start": 340,
+          "end": 362
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:17:11.362Z"
+    },
+    "src/db/migrations.rs": {
+      "modifiedRanges": [
+        {
+          "start": 315,
+          "end": 346
+        },
+        {
+          "start": 909,
+          "end": 994
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:18:03.065Z"
+    },
+    "src/service/regex.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 258
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:20:25.242Z"
+    },
+    "src/commands/regex.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 99
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:19:03.031Z"
+    },
+    "src/db/lorebook.rs": {
+      "modifiedRanges": [
+        {
+          "start": 75,
+          "end": 75
+        },
+        {
+          "start": 79,
+          "end": 80
+        },
+        {
+          "start": 98,
+          "end": 100
+        },
+        {
+          "start": 111,
+          "end": 113
+        },
+        {
+          "start": 125,
+          "end": 126
+        },
+        {
+          "start": 129,
+          "end": 131
+        },
+        {
+          "start": 140,
+          "end": 142
+        },
+        {
+          "start": 206,
+          "end": 291
+        },
+        {
+          "start": 520,
+          "end": 632
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:20:15.488Z"
+    },
+    "src/service/lorebook.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 972
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:25:43.466Z"
+    },
+    "src/commands/lorebooks.rs": {
+      "modifiedRanges": [
+        {
+          "start": 172,
+          "end": 230
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:31:42.934Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-18T21:41:19.633Z",
-  "sessionId": "lens-mpbl6brn-4bbb2e26"
+  "lastUpdated": "2026-05-20T02:34:03.128Z",
+  "sessionId": "lens-mpdfxwoz-d9609ead"
 }

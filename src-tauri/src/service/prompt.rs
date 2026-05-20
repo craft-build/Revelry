@@ -104,8 +104,7 @@ impl PromptEngine {
         let scan_depth = character.lorebook_scan_depth;
         let max_recursive_depth = character.lorebook_recursive_depth;
         let lorebook_budget_fraction = 0.25; // 25% of context window for lorebook
-        let lorebook_token_budget =
-            (budget as f64 * lorebook_budget_fraction) as i64;
+        let lorebook_token_budget = (budget as f64 * lorebook_budget_fraction) as i64;
 
         let activated_entries = crate::service::lorebook::activate_lorebook_entries(
             lorebook_entries,
@@ -154,13 +153,12 @@ impl PromptEngine {
         tokens_used += truncated_history.tokens_used;
 
         // Apply lorebook injection via service function
-        let (preamble_before, preamble_after) =
-            crate::service::lorebook::inject_lorebook_entries(
-                &sticky_prompt, // preamble_before_char (BeforeChar content appended before this)
-                "",             // preamble_after_char (AfterChar content appended after this; persona added separately)
-                &activated_entries,
-                &mut chat_history,
-            );
+        let (preamble_before, preamble_after) = crate::service::lorebook::inject_lorebook_entries(
+            &sticky_prompt, // preamble_before_char (BeforeChar content appended before this)
+            "", // preamble_after_char (AfterChar content appended after this; persona added separately)
+            &activated_entries,
+            &mut chat_history,
+        );
 
         // ── Layer 5: Post-history instructions (placed after history, dropped if no room) ──
         let post_history = if !character.post_history_instructions.is_empty() {
@@ -800,7 +798,8 @@ mod tests {
             "Activated lorebook content should appear in the preamble"
         );
         assert_eq!(
-            prompt.lorebook_details.len(), 1,
+            prompt.lorebook_details.len(),
+            1,
             "lorebook_details should contain one entry"
         );
         assert_eq!(

@@ -1,7 +1,7 @@
 {
   "version": "v1",
-  "timestamp": 1778897658820,
-  "ruleHash": "8b2786c40b1c2145",
+  "timestamp": 1779243349577,
+  "ruleHash": "c212458bb40d86e6",
   "queries": [
     {
       "id": "rust-clone-in-loop",
@@ -10,7 +10,10 @@
       "language": "rust",
       "message": "clone() in loop may hurt performance — consider borrowing or moving",
       "query": "  (for_expression\n    body: (block\n      (call_expression\n        function: (field_expression\n          field: (field_identifier) @METHOD)\n        (#eq? @METHOD \"clone\")) @CALL))",
-      "metavars": ["METHOD", "CALL"],
+      "metavars": [
+        "METHOD",
+        "CALL"
+      ],
       "defect_class": "safety",
       "inline_tier": "warning"
     },
@@ -21,7 +24,9 @@
       "language": "rust",
       "message": "expect() panics with a message — use ? or match for recoverable error handling",
       "query": "  (call_expression\n    function: (field_expression\n      field: (field_identifier) @METHOD)\n    (#eq? @METHOD \"expect\"))",
-      "metavars": ["METHOD"],
+      "metavars": [
+        "METHOD"
+      ],
       "defect_class": "correctness",
       "inline_tier": "warning"
     },
@@ -32,7 +37,11 @@
       "language": "rust",
       "message": "Lock guard may be held across await — release lock before awaiting other work",
       "query": "  (block\n    (let_declaration\n      pattern: (identifier) @GUARD\n      value: (await_expression\n        expression: (call_expression\n          function: (field_expression\n            field: (field_identifier) @LOCKFN))))\n    (_)*\n    (await_expression) @LATER_AWAIT)\n  (#eq? @LOCKFN \"lock\")",
-      "metavars": ["GUARD", "LOCKFN", "LATER_AWAIT"],
+      "metavars": [
+        "GUARD",
+        "LOCKFN",
+        "LATER_AWAIT"
+      ],
       "defect_class": "async-misuse",
       "inline_tier": "blocking"
     },
@@ -43,7 +52,10 @@
       "language": "rust",
       "message": "todo!() / unimplemented!() stub — function was scaffolded but never completed",
       "query": "  (macro_invocation\n    macro: (identifier) @MACRO\n    (#match? @MACRO \"^(todo|unimplemented)$\")) @CALL",
-      "metavars": ["MACRO", "CALL"],
+      "metavars": [
+        "MACRO",
+        "CALL"
+      ],
       "defect_class": "correctness",
       "inline_tier": "blocking"
     },
@@ -54,7 +66,9 @@
       "language": "rust",
       "message": "unsafe block — requires manual verification of memory safety invariants",
       "query": "  (unsafe_block) @BLOCK",
-      "metavars": ["BLOCK"],
+      "metavars": [
+        "BLOCK"
+      ],
       "defect_class": "memory-safety",
       "inline_tier": "warning"
     },
@@ -65,7 +79,9 @@
       "language": "rust",
       "message": "unwrap() can panic — use ? or match for proper error handling",
       "query": "  (call_expression\n    function: (field_expression\n      field: (field_identifier) @METHOD)\n    (#eq? @METHOD \"unwrap\"))",
-      "metavars": ["METHOD"],
+      "metavars": [
+        "METHOD"
+      ],
       "defect_class": "correctness",
       "inline_tier": "blocking"
     }
