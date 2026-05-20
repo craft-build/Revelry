@@ -1,5 +1,7 @@
 use crate::domain::conversation::{Message as DomainMessage, MessageRole};
+use crate::domain::lorebook::LorebookActivationDetail;
 use crate::domain::provider::{ProviderConfig, ProviderType};
+use crate::domain::regex_script::RegexScript;
 
 use futures::StreamExt;
 use rig_core::agent::{Agent, MultiTurnStreamItem};
@@ -44,6 +46,8 @@ pub enum StreamChunk {
         tokens_used: usize,
         tokens_limit: usize,
         truncated_count: usize,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        lorebook_details: Vec<LorebookActivationDetail>,
     },
     Error { error: String, error_type: String },
 }
@@ -104,7 +108,7 @@ pub struct AiService;
 /// Helper macro to build a rig agent from a provider client with consistent parameter handling.
 /// Each provider arm follows the same pattern: client → agent(model) → preamble → params → build.
 macro_rules! build_agent_and_stream {
-    ($client:expr, $model_name:expr, $system_prompt:expr, $params:expr, $additional:expr, $prompt:expr, $history:expr, $channel:expr, $message_id:expr, $cancel:expr, $budget:expr) => {{
+    ($client:expr, $model_name:expr, $system_prompt:expr, $params:expr, $additional:expr, $prompt:expr, $history:expr, $channel:expr, $message_id:expr, $cancel:expr, $budget:expr, $regex_scripts:expr, $lorebook_details:expr) => {{
         let mut builder = $client.agent($model_name).preamble($system_prompt);
         if let Some(temp) = $params.temperature {
             builder = builder.temperature(temp);
@@ -116,7 +120,7 @@ macro_rules! build_agent_and_stream {
             builder = builder.additional_params(serde_json::Value::Object($additional.clone()));
         }
         let agent = builder.build();
-        AiService::stream_with_agent(&agent, $prompt, $history, $channel, $message_id, $cancel, $budget)
+        AiService::stream_with_agent(&agent, $prompt, $history, $channel, $message_id, $cancel, $budget, $regex_scripts, $lorebook_details)
             .await;
     }};
 }
@@ -135,6 +139,8 @@ impl AiService {
         channel: Channel<StreamChunk>,
         cancel: CancellationToken,
         budget: BudgetInfo,
+        regex_scripts: Vec<RegexScript>,
+        lorebook_details: Vec<LorebookActivationDetail>,
     ) {
         let provider_type = provider.provider_type.clone();
         let base_url = provider.base_url.clone();
@@ -159,6 +165,8 @@ impl AiService {
                 &message_id,
                 &cancel,
                 budget,
+                regex_scripts,
+                lorebook_details,
             )
             .await
             {
@@ -196,6 +204,8 @@ impl AiService {
         message_id: &str,
         cancel: &CancellationToken,
         budget: BudgetInfo,
+        regex_scripts: Vec<RegexScript>,
+        lorebook_details: Vec<LorebookActivationDetail>,
     ) -> Result<(), String> {
         // Build provider-specific additional_params JSON (D-02)
         let additional = Self::build_additional_params(provider_type, params);
@@ -205,7 +215,8 @@ impl AiService {
                 let client = Self::build_openai_client(api_key, base_url)?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Anthropic => {
@@ -215,7 +226,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Ollama => {
@@ -227,7 +239,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Gemini => {
@@ -237,7 +250,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Cohere => {
@@ -247,7 +261,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Mistral => {
@@ -257,7 +272,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Groq => {
@@ -267,7 +283,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::DeepSeek => {
@@ -277,7 +294,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::OpenRouter => {
@@ -287,7 +305,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Xai => {
@@ -297,7 +316,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Perplexity => {
@@ -307,7 +327,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::Together => {
@@ -317,7 +338,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::AzureOpenAI => {
@@ -330,7 +352,8 @@ impl AiService {
                     .completions_api();
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::HuggingFace => {
@@ -340,7 +363,8 @@ impl AiService {
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
             ProviderType::CustomOpenAICompatible => {
@@ -353,7 +377,8 @@ impl AiService {
                     .completions_api();
                 build_agent_and_stream!(
                     client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone()
+                    prompt, history, channel, message_id, cancel, budget.clone(),
+                    regex_scripts.clone(), lorebook_details.clone()
                 );
             }
         }
@@ -426,6 +451,8 @@ impl AiService {
         message_id: &str,
         cancel: &CancellationToken,
         budget: BudgetInfo,
+        regex_scripts: Vec<RegexScript>,
+        lorebook_details: Vec<LorebookActivationDetail>,
     ) where
         M: CompletionModel + 'static,
         M::StreamingResponse: GetTokenUsage,
@@ -446,6 +473,7 @@ impl AiService {
                     tokens_used: budget.tokens_used,
                     tokens_limit: budget.tokens_limit,
                     truncated_count: budget.truncated_count,
+                    lorebook_details: Vec::new(),
                 });
             }
             _ = async {
@@ -464,13 +492,22 @@ impl AiService {
                             }
                         }
                         Ok(MultiTurnStreamItem::FinalResponse(res)) => {
+                            // Apply regex transforms to the completed content
+                            let raw_content = res.response().to_string();
+                            let transformed_content = if !regex_scripts.is_empty() {
+                                crate::service::regex::apply_regex_scripts(&raw_content, &regex_scripts)
+                            } else {
+                                raw_content
+                            };
+
                             let _ = channel_clone.send(StreamChunk::Complete {
                                 message_id: msg_id.clone(),
-                                content: res.response().to_string(),
+                                content: transformed_content,
                                 stop_reason: "end".to_string(),
                                 tokens_used: budget.tokens_used,
                                 tokens_limit: budget.tokens_limit,
                                 truncated_count: budget.truncated_count,
+                                lorebook_details,
                             });
                             break;
                         }
@@ -698,6 +735,7 @@ mod tests {
             tokens_used: 4200,
             tokens_limit: 128000,
             truncated_count: 2,
+            lorebook_details: Vec::new(),
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
         let parsed: serde_json::Value =
@@ -707,6 +745,11 @@ mod tests {
         assert_eq!(parsed["data"]["tokensUsed"], 4200);
         assert_eq!(parsed["data"]["tokensLimit"], 128000);
         assert_eq!(parsed["data"]["truncatedCount"], 2);
+        // Empty lorebook_details should be skipped by serde skip_serializing_if
+        assert!(
+            parsed["data"].get("lorebookDetails").is_none()
+                || parsed["data"]["lorebookDetails"].as_array().unwrap().is_empty()
+        );
     }
 
     #[test]

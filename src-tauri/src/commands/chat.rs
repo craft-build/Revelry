@@ -6,6 +6,8 @@ use tokio_util::sync::CancellationToken;
 use crate::ai::{AiService, BudgetInfo, GenerationParams, StreamChunk};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::conversation::{Message as DomainMessage, MessageRole};
+use crate::domain::lorebook::LorebookActivationDetail;
+use crate::domain::regex_script::RegexScript;
 use crate::service::prompt::PromptEngine;
 use crate::service::token_count::TokenCountService;
 
@@ -24,6 +26,14 @@ struct ChatContext {
     active_model_name: String,
     messages: Vec<DomainMessage>,
     api_key: String,
+    /// Lorebook entries from character + conversation assigned lorebooks.
+    lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry>,
+    /// IDs of lorebooks assigned to the character.
+    character_lorebook_ids: Vec<String>,
+    /// IDs of lorebooks assigned to the conversation.
+    conversation_lorebook_ids: Vec<String>,
+    /// Regex scripts for the character.
+    regex_scripts: Vec<RegexScript>,
 }
 
 /// Loads all context needed for prompt assembly and streaming.
@@ -142,6 +152,75 @@ async fn load_chat_context(
         }
     };
 
+    // 7. Load character-assigned lorebooks
+    let character_lorebooks: Vec<crate::domain::lorebook::Lorebook> = if let Some(ref ch) = character {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadCharacterLorebooks {
+            character_id: ch.id.clone(),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?
+    } else {
+        Vec::new()
+    };
+    let character_lorebook_ids: Vec<String> = character_lorebooks.iter().map(|lb| lb.id.clone()).collect();
+
+    // 8. Load conversation-assigned lorebooks
+    let conversation_lorebooks: Vec<crate::domain::lorebook::Lorebook> = {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadConversationLorebooks {
+            conversation_id: conversation_id.to_string(),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?
+    };
+    let conversation_lorebook_ids: Vec<String> = conversation_lorebooks.iter().map(|lb| lb.id.clone()).collect();
+
+    // 9. Load entries for all assigned lorebooks (character + conversation)
+    let all_lorebook_ids: Vec<String> = character_lorebook_ids
+        .iter()
+        .chain(conversation_lorebook_ids.iter())
+        .cloned()
+        .collect();
+    let lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry> = if !all_lorebook_ids.is_empty() {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadLorebookEntriesForLorebooks {
+            lorebook_ids: all_lorebook_ids,
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?
+    } else {
+        Vec::new()
+    };
+
+    // 10. Load regex scripts for the character
+    let regex_scripts: Vec<RegexScript> = if let Some(ref ch) = character {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::LoadRegexScripts {
+            character_id: ch.id.clone(),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?
+    } else {
+        Vec::new()
+    };
+
     Ok(Some(ChatContext {
         character,
         persona,
@@ -149,15 +228,19 @@ async fn load_chat_context(
         active_model_name: conversation.model_name.as_deref().unwrap_or(&provider.model_name).to_string(),
         messages,
         api_key,
+        lorebook_entries,
+        character_lorebook_ids,
+        conversation_lorebook_ids,
+        regex_scripts,
     }))
 }
 
 /// Assembles a prompt using PromptEngine with budget awareness.
-/// Returns (system_prompt, chat_history_messages, budget_info).
+/// Returns (system_prompt, chat_history_messages, budget_info, lorebook_details).
 fn assemble_prompt(
     ctx: &ChatContext,
     messages: &[DomainMessage],
-) -> (String, Vec<rig_core::completion::Message>, BudgetInfo) {
+) -> (String, Vec<rig_core::completion::Message>, BudgetInfo, Vec<LorebookActivationDetail>) {
     let token_svc = TokenCountService::new();
     let context_window = token_svc.resolve_context_window_size(&ctx.provider, &ctx.active_model_name);
 
@@ -166,7 +249,7 @@ fn assemble_prompt(
             ch,
             ctx.persona.as_ref(),
             messages,
-            &[], // No lorebook entries yet (Phase 9)
+            &ctx.lorebook_entries,
             &token_svc,
             context_window,
         ),
@@ -201,9 +284,12 @@ fn assemble_prompt(
                 tokens_used,
                 truncated_messages: 0,
                 active_lorebook_count: 0,
+                lorebook_details: Vec::new(),
             }
         }
     };
+
+    let lorebook_details = assembled.lorebook_details;
 
     let budget = BudgetInfo {
         tokens_used: assembled.tokens_used,
@@ -211,7 +297,7 @@ fn assemble_prompt(
         truncated_count: assembled.truncated_messages,
     };
 
-    (assembled.preamble, assembled.chat_history, budget)
+    (assembled.preamble, assembled.chat_history, budget, lorebook_details)
 }
 
 #[tauri::command]
@@ -266,10 +352,11 @@ pub async fn start_chat(
     // 4. Append user message and assemble prompt
     let mut all_messages = ctx.messages.clone();
     all_messages.push(user_message);
-    let (system_prompt, chat_history, budget) = assemble_prompt(&ctx, &all_messages);
+    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &all_messages);
 
     // 5. Resolve generation params and start streaming
     let params = AiService::from_provider_config(&ctx.provider);
+    let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
@@ -289,6 +376,8 @@ pub async fn start_chat(
             channel,
             cancel_token,
             budget,
+            regex_scripts,
+            lorebook_details,
         );
     });
 
@@ -382,10 +471,11 @@ pub async fn regenerate(
     };
 
     // Assemble prompt
-    let (system_prompt, chat_history, budget) = assemble_prompt(&ctx, &updated_messages);
+    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages);
 
     // Resolve generation params and start streaming
     let params = AiService::from_provider_config(&ctx.provider);
+    let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
@@ -405,6 +495,8 @@ pub async fn regenerate(
             channel,
             cancel_token,
             budget,
+            regex_scripts,
+            lorebook_details,
         );
     });
 
@@ -502,10 +594,11 @@ pub async fn edit_and_resend(
     };
 
     // 6. Assemble prompt
-    let (system_prompt, chat_history, budget) = assemble_prompt(&ctx, &updated_messages);
+    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages);
 
     // 7. Resolve generation params and start streaming
     let params = AiService::from_provider_config(&ctx.provider);
+    let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
@@ -525,6 +618,8 @@ pub async fn edit_and_resend(
             channel,
             cancel_token,
             budget,
+            regex_scripts,
+            lorebook_details,
         );
     });
 

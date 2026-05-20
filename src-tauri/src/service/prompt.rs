@@ -1,6 +1,6 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Message, MessageRole};
-use crate::domain::lorebook::LorebookEntry;
+use crate::domain::lorebook::{LorebookActivationDetail, LorebookEntry};
 use crate::domain::persona::Persona;
 use crate::service::template::{self, PersonaCompressionTier};
 use crate::service::token_count::TokenCountService;
@@ -19,6 +19,8 @@ pub struct AssembledPrompt {
     pub truncated_messages: usize,
     /// Number of lorebook entries activated and injected.
     pub active_lorebook_count: usize,
+    /// Details of activated lorebook entries for the Complete chunk payload.
+    pub lorebook_details: Vec<LorebookActivationDetail>,
 }
 
 /// Engine for assembling prompts from character and conversation data.
@@ -48,6 +50,7 @@ impl PromptEngine {
             tokens_used: 0,
             truncated_messages: 0,
             active_lorebook_count: 0,
+            lorebook_details: Vec::new(),
         }
     }
 
@@ -66,6 +69,7 @@ impl PromptEngine {
             tokens_used: 0,
             truncated_messages: 0,
             active_lorebook_count: 0,
+            lorebook_details: Vec::new(),
         }
     }
 
@@ -96,10 +100,29 @@ impl PromptEngine {
         let sticky_tokens = token_service.count_tokens(&sticky_prompt);
         tokens_used += sticky_tokens;
 
-        // ── Layer 2: Lorebook layer (Phase 9 — skipped for now) ──
-        // TODO: Phase 9 — activate lorebook entries with lorebook::activate_lorebook_entries()
-        let active_lorebook_count = 0;
-        let _ = lorebook_entries; // Suppress unused warning
+        // ── Layer 2: Lorebook layer ──
+        let scan_depth = character.lorebook_scan_depth;
+        let max_recursive_depth = character.lorebook_recursive_depth;
+        let lorebook_budget_fraction = 0.25; // 25% of context window for lorebook
+        let lorebook_token_budget =
+            (budget as f64 * lorebook_budget_fraction) as i64;
+
+        let activated_entries = crate::service::lorebook::activate_lorebook_entries(
+            lorebook_entries,
+            messages,
+            scan_depth,
+            max_recursive_depth,
+            lorebook_token_budget,
+            token_service,
+        );
+        let active_lorebook_count = activated_entries.len();
+
+        // Count lorebook tokens
+        let lorebook_tokens: usize = activated_entries
+            .iter()
+            .map(|e| token_service.count_tokens(&e.injected_content))
+            .sum();
+        tokens_used += lorebook_tokens;
 
         // ── Layer 3: Persona layer (compressed when budget is tight, per D-06) ──
         let persona_block = if let Some(p) = persona {
@@ -113,6 +136,10 @@ impl PromptEngine {
         };
 
         // ── Layer 4: History layer (oldest truncated first, per D-05) ──
+        // Truncate BEFORE injecting depth-based lorebook entries.
+        // This prevents depth-injected system messages at old positions from
+        // being silently removed by budget truncation. Depth offsets are
+        // relative to the truncated history length (matching SillyTavern/gtk_ref).
         let history_messages: Vec<Message> = messages.to_vec();
 
         let remaining_for_history = budget.saturating_sub(tokens_used);
@@ -122,8 +149,18 @@ impl PromptEngine {
             truncate_history_oldest_first(&history_messages, remaining_for_history, token_service);
         let truncated_messages = truncated_history.truncated_count;
 
-        let chat_history = build_chat_history(&truncated_history.messages);
+        // Build chat history from truncated messages, then inject lorebook entries
+        let mut chat_history = build_chat_history(&truncated_history.messages);
         tokens_used += truncated_history.tokens_used;
+
+        // Apply lorebook injection via service function
+        let (preamble_before, preamble_after) =
+            crate::service::lorebook::inject_lorebook_entries(
+                &sticky_prompt, // preamble_before_char (BeforeChar content appended before this)
+                "",             // preamble_after_char (AfterChar content appended after this; persona added separately)
+                &activated_entries,
+                &mut chat_history,
+            );
 
         // ── Layer 5: Post-history instructions (placed after history, dropped if no room) ──
         let post_history = if !character.post_history_instructions.is_empty() {
@@ -141,9 +178,13 @@ impl PromptEngine {
         };
 
         // ── Build final preamble ──
+        // Lorebook BeforeChar entries go before sticky prompt, AfterChar goes after
         let mut preamble_parts = Vec::new();
-        if !sticky_prompt.is_empty() {
-            preamble_parts.push(sticky_prompt);
+        if !preamble_before.is_empty() {
+            preamble_parts.push(preamble_before);
+        }
+        if !preamble_after.is_empty() {
+            preamble_parts.push(preamble_after);
         }
         if !persona_block.is_empty() {
             preamble_parts.push(persona_block);
@@ -154,6 +195,28 @@ impl PromptEngine {
 
         let raw_preamble = preamble_parts.join("\n\n");
         let preamble = template::resolve_variables(&raw_preamble, persona, character);
+
+        // Build lorebook activation details for the Complete chunk
+        // Note: lorebook_name resolution requires DB access which isn't available here.
+        // The lorebook_names map would need to be passed from ChatContext.
+        // For now, we populate what we can from the activated entries themselves.
+        let lorebook_details: Vec<LorebookActivationDetail> = activated_entries
+            .iter()
+            .map(|e| LorebookActivationDetail {
+                lorebook_name: e.entry.lorebook_id.clone(), // ID used as fallback name
+                entry_name: e.entry.keys.first().cloned().unwrap_or_default(),
+                content_snippet: e.injected_content.chars().take(30).collect(),
+                token_cost: token_service.count_tokens(&e.injected_content),
+                matched_keys: Some(
+                    e.entry
+                        .keys
+                        .iter()
+                        .chain(e.entry.secondary_keys.iter())
+                        .cloned()
+                        .collect(),
+                ),
+            })
+            .collect();
 
         // Calculate context utilization
         let context_utilization = if budget > 0 {
@@ -169,6 +232,7 @@ impl PromptEngine {
             tokens_used,
             truncated_messages,
             active_lorebook_count,
+            lorebook_details,
         }
     }
 }
@@ -702,4 +766,46 @@ mod tests {
     }
 
     // Phase 9: add lorebook activation tests
+
+    #[test]
+    fn test_assemble_with_budget_lorebook_entries_activated() {
+        let mut character = make_test_character();
+        character.lorebook_scan_depth = 2;
+        character.lorebook_recursive_depth = 2;
+
+        let mut entry = crate::domain::lorebook::LorebookEntry::new("lorebook-1".to_string());
+        entry.keys = vec!["dragon".to_string()];
+        entry.content = "Dragons are ancient creatures of immense power.".to_string();
+        entry.position = crate::domain::lorebook::LorebookPosition::AfterChar;
+        entry.enabled = true;
+
+        let messages = vec![make_test_message(MessageRole::User, "I saw a dragon!")];
+        let token_svc = token_service();
+
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[entry.clone()],
+            &token_svc,
+            8192,
+        );
+
+        assert_eq!(
+            prompt.active_lorebook_count, 1,
+            "One lorebook entry should be activated when keyword matches"
+        );
+        assert!(
+            prompt.preamble.contains("Dragons are ancient"),
+            "Activated lorebook content should appear in the preamble"
+        );
+        assert_eq!(
+            prompt.lorebook_details.len(), 1,
+            "lorebook_details should contain one entry"
+        );
+        assert_eq!(
+            prompt.lorebook_details[0].entry_name, "dragon",
+            "entry_name should be the first key"
+        );
+    }
 }

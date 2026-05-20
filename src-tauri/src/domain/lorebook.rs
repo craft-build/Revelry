@@ -171,6 +171,18 @@ impl LorebookEntry {
     }
 }
 
+/// Detail about a single lorebook entry that was activated during prompt assembly.
+/// Sent in the StreamChunk::Complete payload for frontend display.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct LorebookActivationDetail {
+    pub lorebook_name: String,
+    pub entry_name: String,
+    pub content_snippet: String,
+    pub token_cost: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub matched_keys: Option<Vec<String>>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,7 +304,10 @@ mod tests {
         entry.token_budget = Some(50);
 
         let json = serde_json::to_string(&entry).expect("serialize failed");
-        assert!(json.contains("\"token_budget\":50"), "Serialized JSON should include token_budget when Some");
+        assert!(
+            json.contains("\"token_budget\":50"),
+            "Serialized JSON should include token_budget when Some"
+        );
         let deserialized: LorebookEntry = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(deserialized.token_budget, Some(50));
     }
@@ -302,7 +317,10 @@ mod tests {
         let entry = LorebookEntry::new("lb-no-budget".to_string());
 
         let json = serde_json::to_string(&entry).expect("serialize failed");
-        assert!(!json.contains("token_budget"), "Serialized JSON should NOT include token_budget when None");
+        assert!(
+            !json.contains("token_budget"),
+            "Serialized JSON should NOT include token_budget when None"
+        );
         let deserialized: LorebookEntry = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(deserialized.token_budget, None);
     }
