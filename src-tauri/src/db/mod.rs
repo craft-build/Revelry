@@ -14,6 +14,7 @@ use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{Lorebook, LorebookEntry};
 use crate::domain::persona::Persona;
 use crate::domain::provider::ProviderConfig;
+use crate::domain::regex_script::RegexScript;
 use rusqlite::Connection;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -188,6 +189,20 @@ pub enum DbCommand {
     LoadCharacterLorebooks {
         character_id: String,
         reply: oneshot::Sender<anyhow::Result<Vec<Lorebook>>>,
+    },
+
+    // Regex script operations
+    LoadRegexScripts {
+        character_id: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<RegexScript>>>,
+    },
+    SaveRegexScript {
+        script: RegexScript,
+        reply: oneshot::Sender<anyhow::Result<RegexScript>>,
+    },
+    DeleteRegexScript {
+        id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
     },
 
     // Provider operations
@@ -482,6 +497,28 @@ impl DbWorker {
                 reply,
             } => {
                 let result = lorebook::load_lorebooks_for_character(conn, &character_id);
+                let _ = reply.send(result);
+            }
+
+            // Regex script operations
+            DbCommand::LoadRegexScripts { character_id, reply } => {
+                let result = regex_scripts::load_regex_scripts(conn, &character_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::SaveRegexScript { script, reply } => {
+                let result = if regex_scripts::load_regex_scripts(conn, &script.character_id)
+                    .unwrap_or_default()
+                    .iter()
+                    .any(|s| s.id == script.id)
+                {
+                    regex_scripts::update_regex_script(conn, &script).map(|_| script.clone())
+                } else {
+                    regex_scripts::insert_regex_script(conn, &script).map(|_| script.clone())
+                };
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteRegexScript { id, reply } => {
+                let result = regex_scripts::delete_regex_script(conn, &id);
                 let _ = reply.send(result);
             }
 
