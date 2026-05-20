@@ -104,10 +104,10 @@ All colors reference existing OKLCH tokens. No new tokens.
 
 ### Focal Points
 
-| Surface                    | Focal Point                                                                                                     |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Regex script editor        | Script form (right column) when a script is selected; script list empty state when no scripts exist.            |
-| Chat header lorebook panel | Lorebook checkbox list inside the popover; trigger button is secondary focal point showing assignment state.    |
+| Surface                     | Focal Point                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Regex script editor         | Script form (right column) when a script is selected; script list empty state when no scripts exist.           |
+| Chat header lorebook panel  | Lorebook checkbox list inside the popover; trigger button is secondary focal point showing assignment state.   |
 | Context bar lorebook detail | Activated entry list (expanded); collapsed count line is the resting focal point drawing attention when N > 0. |
 
 ### New Components
