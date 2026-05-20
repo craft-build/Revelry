@@ -8,3 +8,4 @@ pub mod lorebooks;
 pub mod personas;
 pub mod presets;
 pub mod providers;
+pub mod regex;

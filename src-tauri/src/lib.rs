@@ -87,6 +87,11 @@ pub fn run() {
             commands::chat::edit_and_resend,
             commands::card_io::import_card,
             commands::card_io::export_card,
+            commands::regex::get_regex_scripts,
+            commands::regex::save_regex_script,
+            commands::regex::delete_regex_script,
+            commands::regex::apply_single_regex,
+            commands::regex::validate_regex_pattern,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
