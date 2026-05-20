@@ -191,6 +191,29 @@ pub enum DbCommand {
         reply: oneshot::Sender<anyhow::Result<Vec<Lorebook>>>,
     },
 
+    // Conversation-lorebook junction
+    AssignLorebookToConversation {
+        conversation_id: String,
+        lorebook_id: String,
+        sort_order: i32,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    RemoveLorebookFromConversation {
+        conversation_id: String,
+        lorebook_id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    LoadConversationLorebooks {
+        conversation_id: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<Lorebook>>>,
+    },
+
+    // Bulk entry loading for multiple lorebooks (used by ChatContext)
+    LoadLorebookEntriesForLorebooks {
+        lorebook_ids: Vec<String>,
+        reply: oneshot::Sender<anyhow::Result<Vec<LorebookEntry>>>,
+    },
+
     // Regex script operations
     LoadRegexScripts {
         character_id: String,
@@ -500,8 +523,55 @@ impl DbWorker {
                 let _ = reply.send(result);
             }
 
+            // Conversation-lorebook junction
+            DbCommand::AssignLorebookToConversation {
+                conversation_id,
+                lorebook_id,
+                sort_order,
+                reply,
+            } => {
+                let result = lorebook::assign_lorebook_to_conversation(
+                    conn,
+                    &conversation_id,
+                    &lorebook_id,
+                    sort_order,
+                );
+                let _ = reply.send(result);
+            }
+            DbCommand::RemoveLorebookFromConversation {
+                conversation_id,
+                lorebook_id,
+                reply,
+            } => {
+                let result = lorebook::remove_lorebook_from_conversation(
+                    conn,
+                    &conversation_id,
+                    &lorebook_id,
+                );
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadConversationLorebooks {
+                conversation_id,
+                reply,
+            } => {
+                let result = lorebook::load_lorebooks_for_conversation(conn, &conversation_id);
+                let _ = reply.send(result);
+            }
+
+            // Bulk entry loading for multiple lorebooks
+            DbCommand::LoadLorebookEntriesForLorebooks {
+                lorebook_ids,
+                reply,
+            } => {
+                let result = lorebook::load_entries_for_lorebooks(conn, &lorebook_ids);
+                let _ = reply.send(result);
+            }
+
             // Regex script operations
-            DbCommand::LoadRegexScripts { character_id, reply } => {
+            DbCommand::LoadRegexScripts {
+                character_id,
+                reply,
+            } => {
                 let result = regex_scripts::load_regex_scripts(conn, &character_id);
                 let _ = reply.send(result);
             }
