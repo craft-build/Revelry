@@ -4,6 +4,7 @@
 	import { Button, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
 	import { ProviderEditorDialog, KeyringUnavailableBanner } from '$lib/components/providers';
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
+	import ThemeToggle from '$lib/components/settings/ThemeToggle.svelte';
 	import {
 		Cpu,
 		SlidersHorizontal,
@@ -231,8 +232,12 @@
 						Theme, density, and reading comfort.
 					</p>
 				</header>
-				<div class="rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-sm text-(--color-muted)">
-					Theme controls coming soon. The current build is dark-only.
+				<div class="rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4">
+					<h2 class="font-display text-base font-semibold tracking-tight text-(--color-foreground)">Theme</h2>
+					<p class="text-sm text-(--color-muted) mt-1">Choose how Revelry looks. System follows your OS preference.</p>
+					<div class="mt-4">
+						<ThemeToggle />
+					</div>
 				</div>
 			{:else if active === 'shortcuts'}
 				<header class="mb-6">

@@ -5,6 +5,7 @@
 	import { cn } from '$lib/utils';
 	import { app } from '$lib/stores/app.svelte';
 	import { MarkdownRenderer } from '$lib/components/chat';
+	import { fade } from 'svelte/transition';
 	import BranchBadge from './BranchBadge.svelte';
 	import BranchPopover from './BranchPopover.svelte';
 
@@ -129,6 +130,7 @@
 </script>
 
 <article
+	transition:fade={{ duration: 150 }}
 	class={cn(
 		'group flex gap-3 px-1 py-1',
 		isError ? 'flex-row' : isUser ? 'flex-row-reverse' : 'flex-row'
