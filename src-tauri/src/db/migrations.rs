@@ -312,6 +312,38 @@ pub fn get_migrations() -> Migrations<'static> {
             ALTER TABLE providers DROP COLUMN models;
             "
         ),
+
+        // Phase 9: lorebook_entries new columns + conversation_lorebooks junction table
+        M::up(
+            "
+            -- Add token_budget column to lorebook_entries (nullable INTEGER)
+            ALTER TABLE lorebook_entries ADD COLUMN token_budget INTEGER;
+
+            -- Add sort_order column to lorebook_entries (default 0)
+            ALTER TABLE lorebook_entries ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;
+
+            -- Add enabled column to lorebook_entries (default 1 = true)
+            ALTER TABLE lorebook_entries ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1;
+
+            -- Create conversation_lorebooks junction table (mirrors character_lorebooks structure)
+            CREATE TABLE conversation_lorebooks (
+                conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+                lorebook_id TEXT NOT NULL REFERENCES lorebooks(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (conversation_id, lorebook_id)
+            );
+            CREATE INDEX idx_conversation_lorebooks_conv ON conversation_lorebooks(conversation_id, sort_order);
+            "
+        )
+        .down(
+            "
+            DROP INDEX IF EXISTS idx_conversation_lorebooks_conv;
+            DROP TABLE IF EXISTS conversation_lorebooks;
+            ALTER TABLE lorebook_entries DROP COLUMN enabled;
+            ALTER TABLE lorebook_entries DROP COLUMN sort_order;
+            ALTER TABLE lorebook_entries DROP COLUMN token_budget;
+            "
+        ),
     ])
 }
 
@@ -873,5 +905,91 @@ mod tests {
             columns.iter().any(|c| c == "model_name"),
             "conversations table should have 'model_name' column after Phase 4 migration"
         );
+    }
+
+    // ── Phase 9 migration tests ───────────────────────────────────────────
+
+    #[test]
+    fn test_lorebook_entries_has_token_budget() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM lorebook_entries")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "token_budget"),
+            "lorebook_entries should have 'token_budget' column after Phase 9 migration"
+        );
+    }
+
+    #[test]
+    fn test_lorebook_entries_has_sort_order() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM lorebook_entries")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "sort_order"),
+            "lorebook_entries should have 'sort_order' column after Phase 9 migration"
+        );
+    }
+
+    #[test]
+    fn test_lorebook_entries_has_enabled() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM lorebook_entries")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "enabled"),
+            "lorebook_entries should have 'enabled' column after Phase 9 migration"
+        );
+    }
+
+    #[test]
+    fn test_conversation_lorebooks_table_exists() {
+        let conn = setup_test_db();
+        let result: i64 = conn
+            .query_row(
+                "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='conversation_lorebooks')",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query sqlite_master");
+        assert_eq!(
+            result, 1,
+            "conversation_lorebooks table should exist after Phase 9 migration"
+        );
+    }
+
+    #[test]
+    fn test_conversation_lorebooks_columns() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM conversation_lorebooks")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let expected = vec!["conversation_id", "lorebook_id", "sort_order"];
+        for col in &expected {
+            assert!(
+                columns.iter().any(|c| c == col),
+                "conversation_lorebooks should have '{}' column",
+                col
+            );
+        }
     }
 }
