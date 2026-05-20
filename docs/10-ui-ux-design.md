@@ -5,24 +5,79 @@
 
 ## 10.1 Primary Views
 
-The application is organized into three primary views, accessible through the AdwHeaderBar view switcher. The Chat View is the default and dominant view, where active conversations take place. The Characters View provides character management, persona management, card editing, and import/export. The Settings View handles provider configuration, application preferences, and advanced customization.
+The application is organized into three primary views, accessible through navigation in the `AppHeader`. The Chat View is the default and dominant view, where active conversations take place. The Characters View provides character management, persona management, card editing, and import/export. The Settings View handles provider configuration, application preferences, and advanced customization.
 
 ## 10.2 Chat View Layout
 
-The Chat View is the most complex and most-used view. The view uses an AdwOverlaySplitView for the adaptive sidebar/content layout. The sidebar contains the conversation list with persona indicators. The main content area contains an AdwHeaderBar at the top with the active character name, persona indicator (AdwAvatar + name), model indicator, and action buttons. Below the header, a GtkListView renders messages as custom widget rows, with character messages left-aligned and user messages right-aligned. Each message row includes hover-revealed action buttons (edit, regenerate, delete, copy) and branch navigation indicators when multiple sibling responses exist.
+The Chat View is the most complex and most-used view. It uses a CSS-based sidebar/content layout managed by the `ConversationSidebar` component.
 
-The input area at the bottom provides a GtkTextView for multi-line text input with send/stop buttons, a token counter using tiktoken-rs estimates, and a context utilization bar. The input area is wrapped in an AdwClamp to maintain comfortable line width on wide screens. The streaming AI response is rendered in a GtkLabel with Pango markup, updated incrementally as token chunks arrive through the glib channel bridge from the tokio runtime.
+**Sidebar (ConversationSidebar):** Contains the conversation list with relative timestamps (today → time, this week → weekday, older → date), persona indicators, and search filtering. The sidebar toggles via F9, the hamburger button in the header, or collapses automatically in narrow viewports. New conversations are started from the sidebar.
+
+**Main content area:** The `AppHeader` component provides the window drag region, active character name (displayed in Fraunces serif via `.font-display`), persona indicator (avatar + name from `PersonaSwitcher`), provider/model selector (`ProviderModelSelector`), and action buttons.
+
+**Message area:** A scrollable list of `MessageBubble` components renders the conversation. Character messages are left-aligned with `bg-(--color-bubble-character)` background; user messages are right-aligned with `bg-(--color-bubble-user)` background. Each message includes:
+
+- Markdown rendering via `MarkdownRenderer` (marked + DOMPurify + Shiki) for completed messages
+- Raw text display during streaming with `.streaming-caret` animation
+- Hover-revealed action buttons (edit, regenerate, delete, copy)
+- `BranchBadge` and `BranchPopover` indicators when multiple sibling responses exist
+- Token count display
+- Edit and regenerate actions that trigger backend commands
+
+**Input area (`MessageInput`):** A `Textarea` component with auto-grow behavior, send/stop button, token estimate display (using `estimateTokens()` heuristic or real counts from backend), and a context utilization bar showing how much of the model's context window is in use. Enter sends the message; Ctrl+Enter inserts a newline.
 
 ## 10.3 Characters View
 
-The Characters View presents the user's character library as a responsive GtkFlowBox grid of character cards. Each card displays the character's AdwAvatar, name, creator, tags, and a brief description excerpt. Cards use the GNOME card pattern with rounded corners, subtle elevation shadow, and hover-activated action buttons. The grid adapts from three columns on wide screens to two on medium and one on narrow windows, handled automatically by GtkFlowBox's minimum child width property.
+The Characters View presents the user's character library as a responsive CSS grid of `CharacterCard` components. Each card displays the character's `Avatar` (with initials fallback), name (in Fraunces serif), creator, tags as `Tag` components, and a brief description excerpt. Cards use rounded corners (`rounded-(--radius-lg)`), subtle borders, and hover-activated action buttons.
 
-Above the grid, a GtkSearchEntry with GtkFilterControls allows quick character discovery using SQLite FTS5 for instant full-text matching across names, descriptions, and tags. A tab switcher (Characters / My Personas) provides access to the persona library. When a character is selected for editing, an AdwNavigationView slides in from the right with a tabbed card editor (Identity, Personality, Scenario, Advanced, Lorebook).
+Above the grid, an `Input` component with search binding provides quick character discovery using real-time filtering by name, description, and tags. A tab switcher (Characters / My Personas) provides access to the persona library (`PersonaCard` grid). When a character is selected for editing, a `CharacterEditorDialog` opens as a multi-step wizard dialog (Identity → Personality → Scenario → Advanced) with a `StepperHeader` indicating progress.
+
+The characters view also includes:
+- `ImportErrorDialog` for failed character card imports
+- `DeleteConfirmationDialog` for confirm-before-delete flows
+- `RegexScriptEditor` for per-character regex post-processing scripts
 
 ## 10.4 Settings View
 
-The Settings View uses an AdwPreferencesWindow with categorized setting panels. Categories include: AI Providers (add/edit/remove provider configurations using AdwEntryRow and AdwPasswordEntryRow, test connectivity through rig client), Generation Defaults (temperature, top_p, max tokens, context length via AdwSpinRow), Prompt Presets (create/edit/delete named parameter profiles), Appearance (AdwStyleManager-based dark/light/system theme, accent color, font size, message density), Keyboard Shortcuts (view and customize all shortcuts), Data Management (export/import all data, backup/restore, clear history), and About (AdwAboutWindow with version, licenses, links).
+The Settings View uses a section-based layout with categorized setting panels. Categories include:
+
+- **AI Providers** — `ProviderEditorDialog` for adding/editing/removing provider configurations with `ModelEntryRow` components for per-provider model management, API key storage via keyring, and `KeyringUnavailableBanner` when OS keychain is unavailable
+- **Generation Defaults** — Temperature, top_p, max_tokens, context length, frequency_penalty, presence_penalty
+- **Prompt Presets** — Create/edit/delete named parameter profiles via `PresetEditorDialog`
+- **Appearance** — `ThemeToggle` component for dark/light theme switching
+- **Data Management** — Export/import, backup/restore
 
 ## 10.5 Keyboard Navigation
 
-Following GNOME accessibility standards, every action in Revelry can be performed via keyboard. The primary shortcuts include: Ctrl+N for new chat, Ctrl+Shift+N for new character, Ctrl+B to toggle sidebar, Ctrl+F to search, Ctrl+comma to open settings, Escape to cancel generation or close overlays, and Ctrl+Enter to send a message. Arrow keys navigate conversation branches and sidebar items. All shortcuts are documented in the Keyboard Shortcuts settings panel and can be customized through the GNOME shortcuts infrastructure.
+Every action in Revelry can be performed via keyboard. The primary shortcuts include:
+
+| Shortcut | Action |
+|---|---|
+| F9 | Toggle sidebar |
+| Enter | Send message |
+| Ctrl+Enter | Newline in message input |
+| Ctrl+N | New conversation |
+| Ctrl+Shift+N | New character |
+| Escape | Cancel generation or close overlays |
+
+Arrow keys navigate conversation branches and sidebar items. All interactive components (Dialog, Select, Tooltip) support keyboard navigation through bits-ui's headless primitive pattern, which handles focus management and ARIA attributes automatically.
+
+## 10.6 Theme and CSS System
+
+### Tailwind v4 Theme Tokens
+
+All colors are defined as OKLCH CSS custom properties in a `@theme { }` block in `src/app.css`. Token categories: surfaces (5 levels of depth), foreground (3 emphasis levels), borders, accent, semantic, chat bubbles, typography (3 font families), and radii (4 sizes). Tokens are referenced in Tailwind classes via the `-(--token)` shorthand.
+
+### Dark/Light Theme
+
+Dark theme is the default (`<html class="dark">`). The `ThemeToggle` component toggles between dark and light by switching the class. All color tokens are defined once and produce appropriate values for both modes through CSS custom properties. Body scroll is intentionally disabled (`body { overflow: hidden }`); scroll happens inside component containers for the desktop app feel.
+
+### Custom Utilities
+
+| Utility | Purpose |
+|---|---|
+| `.font-display` | Fraunces serif for character names (OpenType ss01, ss02, liga) |
+| `.surface-grain` | Subtle radial-gradient texture overlay |
+| `.streaming-caret` | Animated caret on streaming AI responses |
+| `.drag-region` | Tauri window drag area |
+| `.no-drag` | Exclude elements from drag region |
