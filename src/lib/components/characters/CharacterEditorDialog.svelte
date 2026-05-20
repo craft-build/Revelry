@@ -10,6 +10,7 @@
 		StepperHeader
 	} from '$lib/components/ui';
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
+	import RegexScriptEditor from './RegexScriptEditor.svelte';
 	import {
 		ChevronLeft,
 		ChevronRight,
@@ -61,7 +62,8 @@
 	const steps = [
 		{ label: 'Profile', state: 'upcoming' as const },
 		{ label: 'Prompting', state: 'upcoming' as const },
-		{ label: 'Lorebooks', state: 'upcoming' as const }
+		{ label: 'Lorebooks', state: 'upcoming' as const },
+		{ label: 'Regex', state: 'upcoming' as const }
 	];
 
 	// ── Derived step states ──────────────────────────────────────────────
@@ -468,8 +470,15 @@
 						</div>
 					{/if}
 				</div>
-			{/if}
+				{/if}
 		</div>
+
+	<!-- Step 4: Regex -->
+	{:else if current_step === 3}
+		<RegexScriptEditor
+			characterId={pending_id ?? character?.id ?? ''}
+			createMode={mode === 'create'}
+		/>
 	{/if}
 
 	{#snippet footer()}
