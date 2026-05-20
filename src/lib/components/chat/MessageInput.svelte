@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Send, Square, Paperclip } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
+	import LorebookDetailPanel from './LorebookDetailPanel.svelte';
 
 	interface Props {
 		onsend?: (text: string) => void;
@@ -72,6 +73,9 @@
 				<span>Enter to send · Shift+Enter for newline</span>
 			</div>
 		</div>
+
+		<!-- Lorebook detail panel (expandable) -->
+		<LorebookDetailPanel />
 
 		<!-- Input frame -->
 		<div
