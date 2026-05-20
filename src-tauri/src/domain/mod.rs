@@ -4,6 +4,7 @@ pub mod generation;
 pub mod lorebook;
 pub mod persona;
 pub mod provider;
+pub mod regex_script;
 
 pub use character::{CharaCardV2Spec, CharaCardV2SpecData, CharacterCardV2, CharacterV1};
 pub use conversation::{Conversation, Message, MessageBranch, SearchResult};
