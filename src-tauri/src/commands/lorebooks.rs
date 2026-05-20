@@ -169,3 +169,62 @@ pub async fn get_character_lorebooks(
         .map_err(|e| format!("DB worker dropped: {}", e))?
         .map_err(|e| e.to_string())
 }
+
+// ── Conversation-lorebook junction commands ────────────────────────────────
+
+#[tauri::command]
+pub async fn assign_lorebook_to_conversation(
+    db: State<'_, DbWorker>,
+    conversation_id: String,
+    lorebook_id: String,
+    sort_order: i32,
+) -> Result<(), String> {
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::AssignLorebookToConversation {
+        conversation_id,
+        lorebook_id,
+        sort_order,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn remove_lorebook_from_conversation(
+    db: State<'_, DbWorker>,
+    conversation_id: String,
+    lorebook_id: String,
+) -> Result<(), String> {
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::RemoveLorebookFromConversation {
+        conversation_id,
+        lorebook_id,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_conversation_lorebooks(
+    db: State<'_, DbWorker>,
+    conversation_id: String,
+) -> Result<Vec<Lorebook>, String> {
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::LoadConversationLorebooks {
+        conversation_id,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())
+}
