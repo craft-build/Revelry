@@ -6,10 +6,7 @@ use tauri::{AppHandle, Manager};
 /// Import a character card from a file (PNG with embedded chara tEXt chunk or JSON).
 /// Returns the parsed CharacterCardV2 with a new UUID and normalized fields.
 #[tauri::command]
-pub async fn import_card(
-    app: AppHandle,
-    file_path: String,
-) -> Result<CharacterCardV2, String> {
+pub async fn import_card(app: AppHandle, file_path: String) -> Result<CharacterCardV2, String> {
     let path = PathBuf::from(&file_path);
     if !path.exists() {
         return Err(format!("File does not exist: {}", file_path));
@@ -22,15 +19,13 @@ pub async fn import_card(
         .to_lowercase();
 
     let (character, avatar_bytes) = if ext == "png" {
-        let png_data = std::fs::read(&path)
-            .map_err(|e| format!("Failed to read PNG file: {}", e))?;
-        card_io::import_from_png(&png_data)
-            .map_err(|e| format!("{}", e))?
+        let png_data =
+            std::fs::read(&path).map_err(|e| format!("Failed to read PNG file: {}", e))?;
+        card_io::import_from_png(&png_data).map_err(|e| format!("{}", e))?
     } else if ext == "json" {
         let json_str = std::fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read JSON file: {}", e))?;
-        let character = card_io::import_from_json(&json_str)
-            .map_err(|e| format!("{}", e))?;
+        let character = card_io::import_from_json(&json_str).map_err(|e| format!("{}", e))?;
         (character, None)
     } else {
         return Err(format!(
@@ -93,10 +88,7 @@ pub async fn export_card(
     let avatar_bytes = if let Some(ref avatar_path) = character.avatar_path {
         let path = PathBuf::from(avatar_path);
         if path.exists() {
-            Some(
-                std::fs::read(&path)
-                    .map_err(|e| format!("Failed to read avatar: {}", e))?,
-            )
+            Some(std::fs::read(&path).map_err(|e| format!("Failed to read avatar: {}", e))?)
         } else {
             None
         }
@@ -109,8 +101,7 @@ pub async fn export_card(
         .map_err(|e| format!("Failed to export card: {}", e))?;
 
     // Write to the save path
-    std::fs::write(&save_path, &png_data)
-        .map_err(|e| format!("Failed to write PNG: {}", e))?;
+    std::fs::write(&save_path, &png_data).map_err(|e| format!("Failed to write PNG: {}", e))?;
 
     Ok(())
 }

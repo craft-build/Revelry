@@ -32,13 +32,19 @@ pub struct BudgetInfo {
     pub truncated_count: usize,
 }
 
-
 /// A chunk of data from a streaming AI response.
 /// Serialized via Tauri Channel to the frontend using tagged enum pattern.
 #[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "event", content = "data")]
+#[serde(
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    tag = "event",
+    content = "data"
+)]
 pub enum StreamChunk {
-    Token { content: String },
+    Token {
+        content: String,
+    },
     Complete {
         message_id: String,
         content: String,
@@ -49,7 +55,10 @@ pub enum StreamChunk {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         lorebook_details: Vec<LorebookActivationDetail>,
     },
-    Error { error: String, error_type: String },
+    Error {
+        error: String,
+        error_type: String,
+    },
 }
 
 /// Returns true if the given provider supports the named additional parameter.
@@ -57,12 +66,10 @@ pub enum StreamChunk {
 fn provider_supports_param(provider_type: &ProviderType, param_name: &str) -> bool {
     match param_name {
         // frequency_penalty and presence_penalty: not supported by Anthropic, Gemini, Cohere
-        "frequency_penalty" | "presence_penalty" => {
-            !matches!(
-                provider_type,
-                ProviderType::Anthropic | ProviderType::Gemini | ProviderType::Cohere
-            )
-        }
+        "frequency_penalty" | "presence_penalty" => !matches!(
+            provider_type,
+            ProviderType::Anthropic | ProviderType::Gemini | ProviderType::Cohere
+        ),
         // top_p and stop_sequences are supported by all providers we use
         "top_p" | "stop" => true,
         _ => false,
@@ -85,9 +92,7 @@ fn classify_error(err: &str) -> String {
         || err_lower.contains("401")
     {
         "authentication_failed".to_string()
-    } else if err_lower.contains("rate")
-        || err_lower.contains("429")
-        || err_lower.contains("quota")
+    } else if err_lower.contains("rate") || err_lower.contains("429") || err_lower.contains("quota")
     {
         "rate_limited".to_string()
     } else if err_lower.contains("network")
@@ -120,8 +125,18 @@ macro_rules! build_agent_and_stream {
             builder = builder.additional_params(serde_json::Value::Object($additional.clone()));
         }
         let agent = builder.build();
-        AiService::stream_with_agent(&agent, $prompt, $history, $channel, $message_id, $cancel, $budget, $regex_scripts, $lorebook_details)
-            .await;
+        AiService::stream_with_agent(
+            &agent,
+            $prompt,
+            $history,
+            $channel,
+            $message_id,
+            $cancel,
+            $budget,
+            $regex_scripts,
+            $lorebook_details,
+        )
+        .await;
     }};
 }
 
@@ -179,9 +194,7 @@ impl AiService {
     }
 
     /// Splits the last message off as the prompt, returns the remainder as history.
-    fn split_last_prompt(
-        messages: Vec<Message>,
-    ) -> (Message, Vec<Message>) {
+    fn split_last_prompt(messages: Vec<Message>) -> (Message, Vec<Message>) {
         let mut messages = messages;
         if messages.is_empty() {
             return (Message::user(""), Vec::new());
@@ -214,9 +227,19 @@ impl AiService {
             ProviderType::OpenAI => {
                 let client = Self::build_openai_client(api_key, base_url)?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Anthropic => {
@@ -225,9 +248,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Ollama => {
@@ -238,9 +271,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Gemini => {
@@ -249,9 +292,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Cohere => {
@@ -260,9 +313,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Mistral => {
@@ -271,9 +334,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Groq => {
@@ -282,9 +355,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::DeepSeek => {
@@ -293,9 +376,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::OpenRouter => {
@@ -304,9 +397,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Xai => {
@@ -315,9 +418,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Perplexity => {
@@ -326,9 +439,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::Together => {
@@ -337,9 +460,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::AzureOpenAI => {
@@ -351,9 +484,19 @@ impl AiService {
                     .map_err(|e| e.to_string())?
                     .completions_api();
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::HuggingFace => {
@@ -362,9 +505,19 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
             ProviderType::CustomOpenAICompatible => {
@@ -376,9 +529,19 @@ impl AiService {
                     .map_err(|e| e.to_string())?
                     .completions_api();
                 build_agent_and_stream!(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, history, channel, message_id, cancel, budget.clone(),
-                    regex_scripts.clone(), lorebook_details.clone()
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    history,
+                    channel,
+                    message_id,
+                    cancel,
+                    budget.clone(),
+                    regex_scripts.clone(),
+                    lorebook_details.clone()
                 );
             }
         }
@@ -583,31 +746,55 @@ mod tests {
 
     #[test]
     fn test_provider_supports_param_openai() {
-        assert!(provider_supports_param(&ProviderType::OpenAI, "frequency_penalty"));
-        assert!(provider_supports_param(&ProviderType::OpenAI, "presence_penalty"));
+        assert!(provider_supports_param(
+            &ProviderType::OpenAI,
+            "frequency_penalty"
+        ));
+        assert!(provider_supports_param(
+            &ProviderType::OpenAI,
+            "presence_penalty"
+        ));
         assert!(provider_supports_param(&ProviderType::OpenAI, "top_p"));
         assert!(provider_supports_param(&ProviderType::OpenAI, "stop"));
     }
 
     #[test]
     fn test_provider_supports_param_anthropic() {
-        assert!(!provider_supports_param(&ProviderType::Anthropic, "frequency_penalty"));
-        assert!(!provider_supports_param(&ProviderType::Anthropic, "presence_penalty"));
+        assert!(!provider_supports_param(
+            &ProviderType::Anthropic,
+            "frequency_penalty"
+        ));
+        assert!(!provider_supports_param(
+            &ProviderType::Anthropic,
+            "presence_penalty"
+        ));
         assert!(provider_supports_param(&ProviderType::Anthropic, "top_p"));
         assert!(provider_supports_param(&ProviderType::Anthropic, "stop"));
     }
 
     #[test]
     fn test_provider_supports_param_gemini() {
-        assert!(!provider_supports_param(&ProviderType::Gemini, "frequency_penalty"));
-        assert!(!provider_supports_param(&ProviderType::Gemini, "presence_penalty"));
+        assert!(!provider_supports_param(
+            &ProviderType::Gemini,
+            "frequency_penalty"
+        ));
+        assert!(!provider_supports_param(
+            &ProviderType::Gemini,
+            "presence_penalty"
+        ));
         assert!(provider_supports_param(&ProviderType::Gemini, "top_p"));
     }
 
     #[test]
     fn test_provider_supports_param_cohere() {
-        assert!(!provider_supports_param(&ProviderType::Cohere, "frequency_penalty"));
-        assert!(!provider_supports_param(&ProviderType::Cohere, "presence_penalty"));
+        assert!(!provider_supports_param(
+            &ProviderType::Cohere,
+            "frequency_penalty"
+        ));
+        assert!(!provider_supports_param(
+            &ProviderType::Cohere,
+            "presence_penalty"
+        ));
     }
 
     // ── classify_error tests ──
@@ -691,8 +878,7 @@ mod tests {
         };
 
         // OpenAI should get all additional params
-        let openai_additional =
-            AiService::build_additional_params(&ProviderType::OpenAI, &params);
+        let openai_additional = AiService::build_additional_params(&ProviderType::OpenAI, &params);
         assert!(openai_additional.contains_key("top_p"));
         assert!(openai_additional.contains_key("frequency_penalty"));
         assert!(openai_additional.contains_key("presence_penalty"));
@@ -720,8 +906,7 @@ mod tests {
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
         // Should produce: {"event":"token","data":{"content":"Hello"}}
-        let parsed: serde_json::Value =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(parsed["event"], "token");
         assert_eq!(parsed["data"]["content"], "Hello");
     }
@@ -738,8 +923,7 @@ mod tests {
             lorebook_details: Vec::new(),
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
-        let parsed: serde_json::Value =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(parsed["event"], "complete");
         assert_eq!(parsed["data"]["messageId"], "msg-123");
         assert_eq!(parsed["data"]["tokensUsed"], 4200);
@@ -748,7 +932,10 @@ mod tests {
         // Empty lorebook_details should be skipped by serde skip_serializing_if
         assert!(
             parsed["data"].get("lorebookDetails").is_none()
-                || parsed["data"]["lorebookDetails"].as_array().unwrap().is_empty()
+                || parsed["data"]["lorebookDetails"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
         );
     }
 
@@ -759,8 +946,7 @@ mod tests {
             error_type: "provider_error".to_string(),
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
-        let parsed: serde_json::Value =
-            serde_json::from_str(&json).expect("deserialize failed");
+        let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(parsed["event"], "error");
         assert_eq!(parsed["data"]["error"], "Something went wrong");
         assert_eq!(parsed["data"]["errorType"], "provider_error");

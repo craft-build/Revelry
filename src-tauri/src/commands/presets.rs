@@ -34,8 +34,11 @@ pub async fn save_preset(
 #[tauri::command]
 pub async fn delete_preset(db: State<'_, DbWorker>, id: String) -> Result<(), String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-    db.send(DbCommand::DeletePreset { id, reply: reply_tx })
-        .map_err(|e| e.to_string())?;
+    db.send(DbCommand::DeletePreset {
+        id,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
     reply_rx
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?

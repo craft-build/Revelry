@@ -1,8 +1,8 @@
 pub mod app_settings;
 pub mod avatars;
+pub mod card_io;
 pub mod characters;
 pub mod chat;
-pub mod card_io;
 pub mod conversations;
 pub mod keywords;
 pub mod lorebooks;

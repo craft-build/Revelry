@@ -75,10 +75,9 @@ pub async fn delete_provider(db: State<'_, DbWorker>, id: String) -> Result<(), 
 
     // Best-effort keyring cleanup (Pitfall 5 — don't orphan keychain entries)
     let keyring_id = id;
-    let _ = tokio::task::spawn_blocking(move || {
-        crate::secrets::KeyringStore::delete_key(&keyring_id)
-    })
-    .await;
+    let _ =
+        tokio::task::spawn_blocking(move || crate::secrets::KeyringStore::delete_key(&keyring_id))
+            .await;
 
     Ok(())
 }
@@ -107,12 +106,10 @@ pub async fn has_api_key(provider_id: String) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn delete_api_key(provider_id: String) -> Result<(), String> {
-    tokio::task::spawn_blocking(move || {
-        crate::secrets::KeyringStore::delete_key(&provider_id)
-    })
-    .await
-    .map_err(|e| format!("Keyring task failed: {}", e))?
-    .map_err(|e| format!("Failed to delete API key: {}", e))
+    tokio::task::spawn_blocking(move || crate::secrets::KeyringStore::delete_key(&provider_id))
+        .await
+        .map_err(|e| format!("Keyring task failed: {}", e))?
+        .map_err(|e| format!("Failed to delete API key: {}", e))
 }
 
 #[tauri::command]

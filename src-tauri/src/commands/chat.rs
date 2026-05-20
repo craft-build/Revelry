@@ -120,10 +120,10 @@ async fn load_chat_context(
     let messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-                    conversation_id: conversation_id.to_string(),
-                    branch_id: branch_id.clone(),
-                    reply: reply_tx,
-                })
+            conversation_id: conversation_id.to_string(),
+            branch_id: branch_id.clone(),
+            reply: reply_tx,
+        })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -210,21 +210,23 @@ async fn load_chat_context(
     };
 
     // 7. Load character-assigned lorebooks
-    let character_lorebooks: Vec<crate::domain::lorebook::Lorebook> = if let Some(ref ch) = character {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadCharacterLorebooks {
-            character_id: ch.id.clone(),
-            reply: reply_tx,
-        })
-        .map_err(|e| e.to_string())?;
-        reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
-    } else {
-        Vec::new()
-    };
-    let character_lorebook_ids: Vec<String> = character_lorebooks.iter().map(|lb| lb.id.clone()).collect();
+    let character_lorebooks: Vec<crate::domain::lorebook::Lorebook> =
+        if let Some(ref ch) = character {
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::LoadCharacterLorebooks {
+                character_id: ch.id.clone(),
+                reply: reply_tx,
+            })
+            .map_err(|e| e.to_string())?;
+            reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?
+        } else {
+            Vec::new()
+        };
+    let character_lorebook_ids: Vec<String> =
+        character_lorebooks.iter().map(|lb| lb.id.clone()).collect();
 
     // 8. Load conversation-assigned lorebooks
     let conversation_lorebooks: Vec<crate::domain::lorebook::Lorebook> = {
@@ -239,7 +241,10 @@ async fn load_chat_context(
             .map_err(|e| format!("DB worker dropped: {}", e))?
             .map_err(|e| e.to_string())?
     };
-    let conversation_lorebook_ids: Vec<String> = conversation_lorebooks.iter().map(|lb| lb.id.clone()).collect();
+    let conversation_lorebook_ids: Vec<String> = conversation_lorebooks
+        .iter()
+        .map(|lb| lb.id.clone())
+        .collect();
 
     // 9. Load entries for all assigned lorebooks (character + conversation)
     let all_lorebook_ids: Vec<String> = character_lorebook_ids
@@ -247,20 +252,21 @@ async fn load_chat_context(
         .chain(conversation_lorebook_ids.iter())
         .cloned()
         .collect();
-    let lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry> = if !all_lorebook_ids.is_empty() {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::LoadLorebookEntriesForLorebooks {
-            lorebook_ids: all_lorebook_ids,
-            reply: reply_tx,
-        })
-        .map_err(|e| e.to_string())?;
-        reply_rx
-            .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
-    } else {
-        Vec::new()
-    };
+    let lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry> =
+        if !all_lorebook_ids.is_empty() {
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::LoadLorebookEntriesForLorebooks {
+                lorebook_ids: all_lorebook_ids,
+                reply: reply_tx,
+            })
+            .map_err(|e| e.to_string())?;
+            reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?
+        } else {
+            Vec::new()
+        };
 
     // 10. Load regex scripts for the character
     let regex_scripts: Vec<RegexScript> = if let Some(ref ch) = character {
@@ -297,7 +303,11 @@ async fn load_chat_context(
         character,
         persona,
         provider: provider.clone(),
-        active_model_name: conversation.model_name.as_deref().unwrap_or(&provider.model_name).to_string(),
+        active_model_name: conversation
+            .model_name
+            .as_deref()
+            .unwrap_or(&provider.model_name)
+            .to_string(),
         messages,
         api_key,
         lorebook_entries,
@@ -317,9 +327,15 @@ fn assemble_prompt(
     ctx: &ChatContext,
     messages: &[DomainMessage],
     target_response_length: Option<u64>,
-) -> (String, Vec<rig_core::completion::Message>, BudgetInfo, Vec<LorebookActivationDetail>) {
+) -> (
+    String,
+    Vec<rig_core::completion::Message>,
+    BudgetInfo,
+    Vec<LorebookActivationDetail>,
+) {
     let token_svc = TokenCountService::new();
-    let context_window = token_svc.resolve_context_window_size(&ctx.provider, &ctx.active_model_name);
+    let context_window =
+        token_svc.resolve_context_window_size(&ctx.provider, &ctx.active_model_name);
 
     let assembled = match &ctx.character {
         Some(ch) => PromptEngine::assemble_with_budget(
@@ -397,6 +413,7 @@ pub async fn start_chat(
     sort_order: i32,
     ai_message_id: String,
     branch_id: Option<String>,
+    steering: Option<String>,
 ) -> Result<(), String> {
     // 1. Cancel any existing stream
     {
@@ -406,20 +423,70 @@ pub async fn start_chat(
         }
     }
 
-    // 2. Save the user message atomically using frontend-provided id and sort_order
-    let user_message = DomainMessage {
-        id: message_id,
-        conversation_id: conversation_id.clone(),
-        role: MessageRole::User,
-        content: content.clone(),
-        sort_order,
-        timestamp: chrono::Utc::now(),
-        branch_id: branch_id.clone(),
-    };
-    {
+    // 2. Save the user message and optional steering system message
+    let has_content = !content.trim().is_empty();
+    let has_steering = steering.as_ref().is_some_and(|s| !s.trim().is_empty());
+
+    if has_content {
+        // Save the user message with in-character content
+        let user_message = DomainMessage {
+            id: message_id.clone(),
+            conversation_id: conversation_id.clone(),
+            role: MessageRole::User,
+            content: content.clone(),
+            sort_order,
+            timestamp: chrono::Utc::now(),
+            branch_id: branch_id.clone(),
+        };
+        {
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::SaveMessage {
+                message: user_message.clone(),
+                reply: reply_tx,
+            })
+            .map_err(|e| e.to_string())?;
+            reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?;
+        }
+
+        // Save steering system message if present
+        if has_steering {
+            let steer_msg = DomainMessage {
+                id: uuid::Uuid::new_v4().to_string(),
+                conversation_id: conversation_id.clone(),
+                role: MessageRole::System,
+                content: steering.unwrap(),
+                sort_order: sort_order + 1,
+                timestamp: chrono::Utc::now(),
+                branch_id: branch_id.clone(),
+            };
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::SaveMessage {
+                message: steer_msg,
+                reply: reply_tx,
+            })
+            .map_err(|e| e.to_string())?;
+            reply_rx
+                .await
+                .map_err(|e| format!("DB worker dropped: {}", e))?
+                .map_err(|e| e.to_string())?;
+        }
+    } else if has_steering {
+        // Steer-only: save only the system message, no user message
+        let steer_msg = DomainMessage {
+            id: message_id,
+            conversation_id: conversation_id.clone(),
+            role: MessageRole::System,
+            content: steering.unwrap(),
+            sort_order,
+            timestamp: chrono::Utc::now(),
+            branch_id: branch_id.clone(),
+        };
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::SaveMessage {
-            message: user_message.clone(),
+            message: steer_msg,
             reply: reply_tx,
         })
         .map_err(|e| e.to_string())?;
@@ -427,6 +494,8 @@ pub async fn start_chat(
             .await
             .map_err(|e| format!("DB worker dropped: {}", e))?
             .map_err(|e| e.to_string())?;
+    } else {
+        return Err("Message is empty with no steering instruction.".to_string());
     }
 
     // 3. Load context
@@ -435,14 +504,18 @@ pub async fn start_chat(
         None => return Ok(()), // Error already sent via channel
     };
 
-    // 4. Append user message and assemble prompt
-    let mut all_messages = ctx.messages.clone();
-    all_messages.push(user_message);
-    let target_length = resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
-    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &all_messages, target_length);
+    // 4. Assemble prompt with all persisted messages (including steering system msg)
+    let target_length =
+        resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let (system_prompt, chat_history, budget, lorebook_details) =
+        assemble_prompt(&ctx, &ctx.messages, target_length);
 
     // 5. Resolve generation params and start streaming
-    let params = resolve_generation_params(&ctx.provider, ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let params = resolve_generation_params(
+        &ctx.provider,
+        ctx.generation_preset.as_ref(),
+        ctx.override_max_tokens,
+    );
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
@@ -506,10 +579,10 @@ pub async fn regenerate(
     let messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-                    conversation_id: conversation_id.clone(),
-                    branch_id: branch_id.clone(),
-                    reply: reply_tx,
-                })
+            conversation_id: conversation_id.clone(),
+            branch_id: branch_id.clone(),
+            reply: reply_tx,
+        })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -546,10 +619,10 @@ pub async fn regenerate(
     let updated_messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-                    conversation_id: conversation_id.clone(),
-                    branch_id: branch_id.clone(),
-                    reply: reply_tx,
-                })
+            conversation_id: conversation_id.clone(),
+            branch_id: branch_id.clone(),
+            reply: reply_tx,
+        })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -558,11 +631,17 @@ pub async fn regenerate(
     };
 
     // Assemble prompt
-    let target_length = resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
-    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages, target_length);
+    let target_length =
+        resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let (system_prompt, chat_history, budget, lorebook_details) =
+        assemble_prompt(&ctx, &updated_messages, target_length);
 
     // Resolve generation params and start streaming
-    let params = resolve_generation_params(&ctx.provider, ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let params = resolve_generation_params(
+        &ctx.provider,
+        ctx.generation_preset.as_ref(),
+        ctx.override_max_tokens,
+    );
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
@@ -614,10 +693,10 @@ pub async fn edit_and_resend(
     let sort_order = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-                    conversation_id: conversation_id.clone(),
-                    branch_id: branch_id.clone(),
-                    reply: reply_tx,
-                })
+            conversation_id: conversation_id.clone(),
+            branch_id: branch_id.clone(),
+            reply: reply_tx,
+        })
         .map_err(|e| e.to_string())?;
         let msgs = reply_rx
             .await
@@ -648,11 +727,11 @@ pub async fn edit_and_resend(
     {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::DeleteMessagesAfterSortOrder {
-                    conversation_id: conversation_id.clone(),
-                    sort_order,
-                    branch_id: branch_id.clone(),
-                    reply: reply_tx,
-                })
+            conversation_id: conversation_id.clone(),
+            sort_order,
+            branch_id: branch_id.clone(),
+            reply: reply_tx,
+        })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -670,10 +749,10 @@ pub async fn edit_and_resend(
     let updated_messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
-                    conversation_id: conversation_id.clone(),
-                    branch_id: branch_id.clone(),
-                    reply: reply_tx,
-                })
+            conversation_id: conversation_id.clone(),
+            branch_id: branch_id.clone(),
+            reply: reply_tx,
+        })
         .map_err(|e| e.to_string())?;
         reply_rx
             .await
@@ -682,11 +761,17 @@ pub async fn edit_and_resend(
     };
 
     // 6. Assemble prompt
-    let target_length = resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
-    let (system_prompt, chat_history, budget, lorebook_details) = assemble_prompt(&ctx, &updated_messages, target_length);
+    let target_length =
+        resolve_target_response_length(ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let (system_prompt, chat_history, budget, lorebook_details) =
+        assemble_prompt(&ctx, &updated_messages, target_length);
 
     // 7. Resolve generation params and start streaming
-    let params = resolve_generation_params(&ctx.provider, ctx.generation_preset.as_ref(), ctx.override_max_tokens);
+    let params = resolve_generation_params(
+        &ctx.provider,
+        ctx.generation_preset.as_ref(),
+        ctx.override_max_tokens,
+    );
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {

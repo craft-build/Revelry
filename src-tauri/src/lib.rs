@@ -24,7 +24,10 @@ pub fn run() {
 
     // Initialize keyring store (v4 requires explicit init before Entry::new())
     if let Err(e) = keyring::use_native_store(true) {
-        tracing::warn!("Failed to initialize keyring: {}. Keyring features will be disabled.", e);
+        tracing::warn!(
+            "Failed to initialize keyring: {}. Keyring features will be disabled.",
+            e
+        );
     }
 
     tauri::Builder::default()

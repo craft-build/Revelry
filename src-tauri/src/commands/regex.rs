@@ -45,8 +45,11 @@ pub async fn save_regex_script(
 #[tauri::command]
 pub async fn delete_regex_script(db: State<'_, DbWorker>, id: String) -> Result<(), String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-    db.send(DbCommand::DeleteRegexScript { id, reply: reply_tx })
-        .map_err(|e| e.to_string())?;
+    db.send(DbCommand::DeleteRegexScript {
+        id,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
     reply_rx
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?
@@ -88,10 +91,7 @@ pub async fn apply_single_regex(
 }
 
 #[tauri::command]
-pub async fn validate_regex_pattern(
-    pattern: String,
-    flags: String,
-) -> Result<(), String> {
+pub async fn validate_regex_pattern(pattern: String, flags: String) -> Result<(), String> {
     crate::service::regex::validate_regex_flags(&flags).map_err(|e| e.to_string())?;
     crate::service::regex::validate_regex_pattern(&pattern, &flags).map_err(|e| e.to_string())?;
     Ok(())

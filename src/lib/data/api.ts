@@ -7,467 +7,471 @@
 
 import { invoke, type Channel } from "@tauri-apps/api/core";
 import type {
-	CharacterCard,
-	Conversation,
-	Message,
-	MessageBranch,
-	SearchResult,
-	UserPersona,
-	Provider,
-	ProviderModelEntry,
-	GenerationPreset,
-	Lorebook,
-	LorebookEntry,
-	KeywordTestResult,
-	RegexScript,
-	RegexTestResult,
-	StreamChunk,
+  CharacterCard,
+  Conversation,
+  Message,
+  MessageBranch,
+  SearchResult,
+  UserPersona,
+  Provider,
+  ProviderModelEntry,
+  GenerationPreset,
+  Lorebook,
+  LorebookEntry,
+  KeywordTestResult,
+  RegexScript,
+  RegexTestResult,
+  StreamChunk,
 } from "$lib/types";
 
 // ── Characters ────────────────────────────────────────────────────────────────
 
 export async function getCharacters(): Promise<CharacterCard[]> {
-	return invoke<CharacterCard[]>("get_characters");
+  return invoke<CharacterCard[]>("get_characters");
 }
 
 export async function saveCharacter(
-	character: CharacterCard,
+  character: CharacterCard,
 ): Promise<CharacterCard> {
-	return invoke<CharacterCard>("save_character", { character });
+  return invoke<CharacterCard>("save_character", { character });
 }
 
 export async function deleteCharacter(id: string): Promise<void> {
-	return invoke<void>("delete_character", { id });
+  return invoke<void>("delete_character", { id });
 }
 
 export async function searchCharacters(
-	query: string,
+  query: string,
 ): Promise<CharacterCard[]> {
-	return invoke<CharacterCard[]>("search_characters", { query });
+  return invoke<CharacterCard[]>("search_characters", { query });
 }
 
 // ── Personas ──────────────────────────────────────────────────────────────────
 
 export async function getPersonas(): Promise<UserPersona[]> {
-	return invoke<UserPersona[]>("get_personas");
+  return invoke<UserPersona[]>("get_personas");
 }
 
 export async function savePersona(persona: UserPersona): Promise<UserPersona> {
-	return invoke<UserPersona>("save_persona", { persona });
+  return invoke<UserPersona>("save_persona", { persona });
 }
 
 export async function deletePersona(id: string): Promise<void> {
-	return invoke<void>("delete_persona", { id });
+  return invoke<void>("delete_persona", { id });
 }
 
 export async function searchPersonas(query: string): Promise<UserPersona[]> {
-	return invoke<UserPersona[]>("search_personas", { query });
+  return invoke<UserPersona[]>("search_personas", { query });
 }
 
 // ── Conversations ─────────────────────────────────────────────────────────────
 
 export async function getConversations(): Promise<Conversation[]> {
-	return invoke<Conversation[]>("get_conversations");
+  return invoke<Conversation[]>("get_conversations");
 }
 
 export async function startConversation(
-	characterId: string,
+  characterId: string,
 ): Promise<Conversation> {
-	return invoke<Conversation>("start_conversation", { characterId });
+  return invoke<Conversation>("start_conversation", { characterId });
 }
 
 export async function deleteConversation(id: string): Promise<void> {
-	return invoke<void>("delete_conversation", { id });
+  return invoke<void>("delete_conversation", { id });
 }
 
 export async function searchConversations(
-	query: string,
+  query: string,
 ): Promise<Conversation[]> {
-	return invoke<Conversation[]>("search_conversations", { query });
+  return invoke<Conversation[]>("search_conversations", { query });
 }
 
 // ── Messages ──────────────────────────────────────────────────────────────────
 
 export async function getMessages(
-	conversationId: string,
-	branchId?: string | null,
+  conversationId: string,
+  branchId?: string | null,
 ): Promise<Message[]> {
-	return invoke<Message[]>("get_messages", {
-		conversationId,
-		branchId: branchId ?? null,
-	});
+  return invoke<Message[]>("get_messages", {
+    conversationId,
+    branchId: branchId ?? null,
+  });
 }
 
 export async function saveMessage(message: Message): Promise<void> {
-	return invoke<void>("save_message", { message });
+  return invoke<void>("save_message", { message });
 }
 
 export async function deleteMessage(id: string): Promise<void> {
-	return invoke<void>("delete_message", { id });
+  return invoke<void>("delete_message", { id });
 }
 
 // ── Conversation persona ──────────────────────────────────────────────────────
 
 export async function updateConversationPersona(
-	conversationId: string,
-	personaId: string | null,
+  conversationId: string,
+  personaId: string | null,
 ): Promise<void> {
-	return invoke<void>("update_conversation_persona", {
-		conversationId,
-		personaId,
-	});
+  return invoke<void>("update_conversation_persona", {
+    conversationId,
+    personaId,
+  });
 }
 
 export async function updateConversationProvider(
-	id: string,
-	providerId: string | null,
-	modelName: string | null,
+  id: string,
+  providerId: string | null,
+  modelName: string | null,
 ): Promise<void> {
-	return invoke<void>("update_conversation_provider", {
-		id,
-		providerId,
-		modelName,
-	});
+  return invoke<void>("update_conversation_provider", {
+    id,
+    providerId,
+    modelName,
+  });
 }
 
 // ── Presets ────────────────────────────────────────────────────────────────────
 
 export async function getPresets(): Promise<GenerationPreset[]> {
-	return invoke<GenerationPreset[]>("get_presets");
+  return invoke<GenerationPreset[]>("get_presets");
 }
 
-export async function savePreset(preset: GenerationPreset): Promise<GenerationPreset> {
-	return invoke<GenerationPreset>("save_preset", { preset });
+export async function savePreset(
+  preset: GenerationPreset,
+): Promise<GenerationPreset> {
+  return invoke<GenerationPreset>("save_preset", { preset });
 }
 
 export async function deletePreset(id: string): Promise<void> {
-	return invoke<void>("delete_preset", { id });
+  return invoke<void>("delete_preset", { id });
 }
 
 export async function updateConversationGeneration(
-	conversationId: string,
-	generationPresetId: string | null,
-	overrideMaxTokens: number | null,
+  conversationId: string,
+  generationPresetId: string | null,
+  overrideMaxTokens: number | null,
 ): Promise<void> {
-	return invoke<void>("update_conversation_generation", {
-		conversationId,
-		generationPresetId,
-		overrideMaxTokens,
-	});
+  return invoke<void>("update_conversation_generation", {
+    conversationId,
+    generationPresetId,
+    overrideMaxTokens,
+  });
 }
 
 // ── Lorebooks ──────────────────────────────────────────────────────────────────
 
 export async function getLorebooks(): Promise<Lorebook[]> {
-	return invoke<Lorebook[]>("get_lorebooks");
+  return invoke<Lorebook[]>("get_lorebooks");
 }
 
 export async function getLorebook(id: string): Promise<Lorebook | null> {
-	return invoke<Lorebook | null>("get_lorebook", { id });
+  return invoke<Lorebook | null>("get_lorebook", { id });
 }
 
 export async function saveLorebook(lorebook: Lorebook): Promise<Lorebook> {
-	return invoke<Lorebook>("save_lorebook", { lorebook });
+  return invoke<Lorebook>("save_lorebook", { lorebook });
 }
 
 export async function deleteLorebook(id: string): Promise<void> {
-	return invoke<void>("delete_lorebook", { id });
+  return invoke<void>("delete_lorebook", { id });
 }
 
 // ── Lorebook entries ───────────────────────────────────────────────────────────
 
 export async function getLorebookEntries(
-	lorebookId: string,
+  lorebookId: string,
 ): Promise<LorebookEntry[]> {
-	return invoke<LorebookEntry[]>("get_lorebook_entries", { lorebookId });
+  return invoke<LorebookEntry[]>("get_lorebook_entries", { lorebookId });
 }
 
 export async function saveLorebookEntry(
-	entry: LorebookEntry,
+  entry: LorebookEntry,
 ): Promise<LorebookEntry> {
-	return invoke<LorebookEntry>("save_lorebook_entry", { entry });
+  return invoke<LorebookEntry>("save_lorebook_entry", { entry });
 }
 
 export async function deleteLorebookEntry(id: string): Promise<void> {
-	return invoke<void>("delete_lorebook_entry", { id });
+  return invoke<void>("delete_lorebook_entry", { id });
 }
 
 // ── Character-lorebook junction ────────────────────────────────────────────────
 
 export async function assignLorebookToCharacter(
-	characterId: string,
-	lorebookId: string,
-	sortOrder: number,
+  characterId: string,
+  lorebookId: string,
+  sortOrder: number,
 ): Promise<void> {
-	return invoke<void>("assign_lorebook_to_character", {
-		characterId,
-		lorebookId,
-		sortOrder,
-	});
+  return invoke<void>("assign_lorebook_to_character", {
+    characterId,
+    lorebookId,
+    sortOrder,
+  });
 }
 
 export async function removeLorebookFromCharacter(
-	characterId: string,
-	lorebookId: string,
+  characterId: string,
+  lorebookId: string,
 ): Promise<void> {
-	return invoke<void>("remove_lorebook_from_character", {
-		characterId,
-		lorebookId,
-	});
+  return invoke<void>("remove_lorebook_from_character", {
+    characterId,
+    lorebookId,
+  });
 }
 
 export async function getCharacterLorebooks(
-	characterId: string,
+  characterId: string,
 ): Promise<Lorebook[]> {
-	return invoke<Lorebook[]>("get_character_lorebooks", { characterId });
+  return invoke<Lorebook[]>("get_character_lorebooks", { characterId });
 }
 
 // ── Avatars ────────────────────────────────────────────────────────────────────
 
 export async function uploadAvatar(
-	id: string,
-	sourcePath: string,
+  id: string,
+  sourcePath: string,
 ): Promise<string> {
-	return invoke<string>("upload_avatar", { id, sourcePath });
+  return invoke<string>("upload_avatar", { id, sourcePath });
 }
 
 export async function deleteAvatar(path: string): Promise<void> {
-	return invoke<void>("delete_avatar", { path });
+  return invoke<void>("delete_avatar", { path });
 }
 
 // ── Keyword testing ───────────────────────────────────────────────────────────
 
 export async function testLorebookKeywords(
-	keys: string[],
-	secondaryKeys: string[],
-	text: string,
+  keys: string[],
+  secondaryKeys: string[],
+  text: string,
 ): Promise<KeywordTestResult> {
-	return invoke<KeywordTestResult>("test_lorebook_keywords", {
-		keys,
-		secondaryKeys,
-		text,
-	});
+  return invoke<KeywordTestResult>("test_lorebook_keywords", {
+    keys,
+    secondaryKeys,
+    text,
+  });
 }
 
 // ── Providers ───────────────────────────────────────────────────────────────
 
 export async function getProviders(): Promise<Provider[]> {
-	return invoke<Provider[]>("get_providers");
+  return invoke<Provider[]>("get_providers");
 }
 
 export async function saveProvider(provider: Provider): Promise<Provider> {
-	return invoke<Provider>("save_provider", { provider });
+  return invoke<Provider>("save_provider", { provider });
 }
 
 export async function deleteProvider(id: string): Promise<void> {
-	return invoke<void>("delete_provider", { id });
+  return invoke<void>("delete_provider", { id });
 }
 
 // ── Keyring ──────────────────────────────────────────────────────────────────
 
 export async function saveApiKey(
-	providerId: string,
-	apiKey: string,
+  providerId: string,
+  apiKey: string,
 ): Promise<void> {
-	return invoke<void>("save_api_key", { providerId, apiKey });
+  return invoke<void>("save_api_key", { providerId, apiKey });
 }
 
 export async function hasApiKey(providerId: string): Promise<boolean> {
-	return invoke<boolean>("has_api_key", { providerId });
+  return invoke<boolean>("has_api_key", { providerId });
 }
 
 export async function deleteApiKey(providerId: string): Promise<void> {
-	return invoke<void>("delete_api_key", { providerId });
+  return invoke<void>("delete_api_key", { providerId });
 }
 
 export async function checkKeyringAvailable(): Promise<boolean> {
-	return invoke<boolean>("check_keyring_available");
+  return invoke<boolean>("check_keyring_available");
 }
 
 // ── Chat streaming ────────────────────────────────────────────────────────────
 
 export async function startChat(
-	conversationId: string,
-	content: string,
-	messageId: string,
-	sortOrder: number,
-	aiMessageId: string,
-	onEvent: Channel<StreamChunk>,
-	branchId?: string | null,
+  conversationId: string,
+  content: string,
+  messageId: string,
+  sortOrder: number,
+  aiMessageId: string,
+  onEvent: Channel<StreamChunk>,
+  branchId?: string | null,
+  steering?: string,
 ): Promise<void> {
-	return invoke<void>("start_chat", {
-		conversationId,
-		content,
-		messageId,
-		sortOrder,
-		aiMessageId,
-		branchId: branchId ?? null,
-		channel: onEvent,
-	});
+  return invoke<void>("start_chat", {
+    conversationId,
+    content,
+    messageId,
+    sortOrder,
+    aiMessageId,
+    branchId: branchId ?? null,
+    channel: onEvent,
+    steering: steering ?? null,
+  });
 }
 
 export async function stopGeneration(): Promise<void> {
-	return invoke<void>("stop_generation");
+  return invoke<void>("stop_generation");
 }
 
 export async function regenerate(
-	conversationId: string,
-	aiMessageId: string,
-	onEvent: Channel<StreamChunk>,
-	branchId?: string | null,
+  conversationId: string,
+  aiMessageId: string,
+  onEvent: Channel<StreamChunk>,
+  branchId?: string | null,
 ): Promise<void> {
-	return invoke<void>("regenerate", {
-		conversationId,
-		aiMessageId,
-		branchId: branchId ?? null,
-		channel: onEvent,
-	});
+  return invoke<void>("regenerate", {
+    conversationId,
+    aiMessageId,
+    branchId: branchId ?? null,
+    channel: onEvent,
+  });
 }
 
 export async function editAndResend(
-	messageId: string,
-	newContent: string,
-	conversationId: string,
-	aiMessageId: string,
-	onEvent: Channel<StreamChunk>,
-	branchId?: string | null,
+  messageId: string,
+  newContent: string,
+  conversationId: string,
+  aiMessageId: string,
+  onEvent: Channel<StreamChunk>,
+  branchId?: string | null,
 ): Promise<void> {
-	return invoke<void>("edit_and_resend", {
-		messageId,
-		newContent,
-		conversationId,
-		aiMessageId,
-		branchId: branchId ?? null,
-		channel: onEvent,
-	});
+  return invoke<void>("edit_and_resend", {
+    messageId,
+    newContent,
+    conversationId,
+    aiMessageId,
+    branchId: branchId ?? null,
+    channel: onEvent,
+  });
 }
 
 // ── Card I/O ────────────────────────────────────────────────────────────────
 
 export async function importCard(filePath: string): Promise<CharacterCard> {
-	return invoke<CharacterCard>("import_card", { filePath });
+  return invoke<CharacterCard>("import_card", { filePath });
 }
 
 export async function exportCard(
-	characterId: string,
-	savePath: string,
+  characterId: string,
+  savePath: string,
 ): Promise<void> {
-	return invoke<void>("export_card", { characterId, savePath });
+  return invoke<void>("export_card", { characterId, savePath });
 }
 
 // ── Branches ────────────────────────────────────────────────────────────────────
 
 export async function forkConversation(
-	conversationId: string,
-	parentMessageId: string,
+  conversationId: string,
+  parentMessageId: string,
 ): Promise<MessageBranch> {
-	return invoke<MessageBranch>("fork_conversation", {
-		conversationId,
-		parentMessageId,
-	});
+  return invoke<MessageBranch>("fork_conversation", {
+    conversationId,
+    parentMessageId,
+  });
 }
 
 export async function getBranchesForMessage(
-	parentMessageId: string,
+  parentMessageId: string,
 ): Promise<MessageBranch[]> {
-	return invoke<MessageBranch[]>("get_branches_for_message", {
-		parentMessageId,
-	});
+  return invoke<MessageBranch[]>("get_branches_for_message", {
+    parentMessageId,
+  });
 }
 
 export async function getBranchesForConversation(
-	conversationId: string,
+  conversationId: string,
 ): Promise<MessageBranch[]> {
-	return invoke<MessageBranch[]>("get_branches_for_conversation", {
-		conversationId,
-	});
+  return invoke<MessageBranch[]>("get_branches_for_conversation", {
+    conversationId,
+  });
 }
 
 export async function deleteBranch(branchId: string): Promise<void> {
-	return invoke<void>("delete_branch", { branchId });
+  return invoke<void>("delete_branch", { branchId });
 }
 
 export async function searchMessages(query: string): Promise<SearchResult[]> {
-	return invoke<SearchResult[]>("search_messages", { query });
+  return invoke<SearchResult[]>("search_messages", { query });
 }
 
 // ── Regex scripts ──────────────────────────────────────────────────────────────
 
 export async function getRegexScripts(
-	characterId: string,
+  characterId: string,
 ): Promise<RegexScript[]> {
-	return invoke<RegexScript[]>("get_regex_scripts", { characterId });
+  return invoke<RegexScript[]>("get_regex_scripts", { characterId });
 }
 
 export async function saveRegexScript(
-	script: RegexScript,
+  script: RegexScript,
 ): Promise<RegexScript> {
-	return invoke<RegexScript>("save_regex_script", { script });
+  return invoke<RegexScript>("save_regex_script", { script });
 }
 
 export async function deleteRegexScript(id: string): Promise<void> {
-	return invoke<void>("delete_regex_script", { id });
+  return invoke<void>("delete_regex_script", { id });
 }
 
 export async function applySingleRegex(
-	pattern: string,
-	replacePattern: string,
-	flags: string,
-	sampleText: string,
+  pattern: string,
+  replacePattern: string,
+  flags: string,
+  sampleText: string,
 ): Promise<RegexTestResult> {
-	return invoke<RegexTestResult>("apply_single_regex", {
-		pattern,
-		replacePattern,
-		flags,
-		sampleText,
-	});
+  return invoke<RegexTestResult>("apply_single_regex", {
+    pattern,
+    replacePattern,
+    flags,
+    sampleText,
+  });
 }
 
 export async function validateRegexPattern(
-	pattern: string,
-	flags: string,
+  pattern: string,
+  flags: string,
 ): Promise<void> {
-	return invoke<void>("validate_regex_pattern", { pattern, flags });
+  return invoke<void>("validate_regex_pattern", { pattern, flags });
 }
 
 // ── Conversation-lorebook junction ────────────────────────────────────────────
 
 export async function getConversationLorebooks(
-	conversationId: string,
+  conversationId: string,
 ): Promise<Lorebook[]> {
-	return invoke<Lorebook[]>("get_conversation_lorebooks", {
-		conversationId,
-	});
+  return invoke<Lorebook[]>("get_conversation_lorebooks", {
+    conversationId,
+  });
 }
 
 export async function assignLorebookToConversation(
-	conversationId: string,
-	lorebookId: string,
-	sortOrder: number,
+  conversationId: string,
+  lorebookId: string,
+  sortOrder: number,
 ): Promise<void> {
-	return invoke<void>("assign_lorebook_to_conversation", {
-		conversationId,
-		lorebookId,
-		sortOrder,
-	});
+  return invoke<void>("assign_lorebook_to_conversation", {
+    conversationId,
+    lorebookId,
+    sortOrder,
+  });
 }
 
 export async function removeLorebookFromConversation(
-	conversationId: string,
-	lorebookId: string,
+  conversationId: string,
+  lorebookId: string,
 ): Promise<void> {
-	return invoke<void>("remove_lorebook_from_conversation", {
-		conversationId,
-		lorebookId,
-	});
+  return invoke<void>("remove_lorebook_from_conversation", {
+    conversationId,
+    lorebookId,
+  });
 }
 
 // ── App settings ──────────────────────────────────────────────────────────────
 
 export async function getAppSetting(key: string): Promise<string | null> {
-	return invoke<string | null>("get_app_setting", { key });
+  return invoke<string | null>("get_app_setting", { key });
 }
 
 export async function setAppSetting(key: string, value: string): Promise<void> {
-	return invoke<void>("set_app_setting", { key, value });
+  return invoke<void>("set_app_setting", { key, value });
 }

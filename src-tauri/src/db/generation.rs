@@ -85,24 +85,25 @@ pub fn update_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()>
     }
     let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
     let now = Utc::now();
-    let rows = conn.prepare_cached(
-        "UPDATE generation_presets SET
+    let rows = conn
+        .prepare_cached(
+            "UPDATE generation_presets SET
          name = ?1, temperature = ?2, top_p = ?3, max_tokens = ?4,
          frequency_penalty = ?5, presence_penalty = ?6, stop_sequences = ?7,
          updated_at = ?8
          WHERE id = ?9 AND is_builtin = 0",
-    )?
-    .execute(params![
-        preset.name,
-        preset.temperature,
-        preset.top_p,
-        preset.max_tokens,
-        preset.frequency_penalty,
-        preset.presence_penalty,
-        stop_sequences_str,
-        now.to_rfc3339(),
-        preset.id,
-    ])?;
+        )?
+        .execute(params![
+            preset.name,
+            preset.temperature,
+            preset.top_p,
+            preset.max_tokens,
+            preset.frequency_penalty,
+            preset.presence_penalty,
+            stop_sequences_str,
+            now.to_rfc3339(),
+            preset.id,
+        ])?;
     if rows == 0 {
         anyhow::bail!("Preset not found or is built-in: {}", preset.id);
     }
@@ -111,10 +112,9 @@ pub fn update_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()>
 
 /// Deletes a user-created preset by id. Rejects built-in presets.
 pub fn delete_preset(conn: &Connection, id: &str) -> Result<()> {
-    let rows = conn.prepare_cached(
-        "DELETE FROM generation_presets WHERE id = ?1 AND is_builtin = 0",
-    )?
-    .execute(params![id])?;
+    let rows = conn
+        .prepare_cached("DELETE FROM generation_presets WHERE id = ?1 AND is_builtin = 0")?
+        .execute(params![id])?;
     if rows == 0 {
         anyhow::bail!("Preset not found or is built-in: {}", id);
     }

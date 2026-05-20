@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Message, CharacterCard, UserPersona, MessageBranch } from '$lib/types';
 	import { Avatar } from '$lib/components/ui';
-	import { Pencil, RotateCcw, Copy, Trash2, AlertTriangle, Loader2, GitBranch } from '@lucide/svelte';
+	import { Pencil, RotateCcw, Copy, Trash2, AlertTriangle, Loader2, GitBranch, Compass } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 	import { app } from '$lib/stores/app.svelte';
 	import { MarkdownRenderer } from '$lib/components/chat';
@@ -282,6 +282,17 @@
 					</p>
 				{:else}
 					<MarkdownRenderer content={message.content} />
+				{/if}
+
+				<!-- Steering instruction block -->
+				{#if isUser && message.steering}
+					<div class="mt-2.5 flex gap-2 rounded-(--radius-md) border-l-2 border-(--color-accent-muted) bg-(--color-surface) px-3 py-2">
+						<Compass class="mt-0.5 size-3.5 shrink-0 text-(--color-muted)" />
+						<div class="flex flex-col gap-0.5 min-w-0">
+							<span class="text-[9px] font-semibold uppercase tracking-widest text-(--color-subtle)">Steering</span>
+							<span class="text-[13px] italic leading-relaxed text-(--color-muted)">{message.steering}</span>
+						</div>
+					</div>
 				{/if}
 
 				<!-- Stop reason badges -->

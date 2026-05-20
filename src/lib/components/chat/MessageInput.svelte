@@ -71,6 +71,7 @@
 			</div>
 			<div class="flex items-center gap-2">
 				<span>Enter to send · Shift+Enter for newline</span>
+				<span class="text-(--color-subtle)/60">· <code class="text-[10px]">/steer</code> to instruct</span>
 			</div>
 		</div>
 

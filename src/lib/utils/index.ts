@@ -2,6 +2,40 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { convertFileSrc } from "@tauri-apps/api/core";
 
+// ── Steering message parsing ──────────────────────────────────────────────────
+
+export interface ParsedInput {
+  /** In-character text (empty string if steer-only). */
+  content: string;
+  /** Steering instruction text (empty string if none). */
+  steering: string;
+}
+
+/**
+ * Parse `/steer` commands from user input.
+ * Detects lines starting with `/steer ` (case-insensitive, space required).
+ * Extracts all `/steer` lines as a single joined steering string.
+ * Remaining non-`/steer` lines become content.
+ */
+export function parseSteering(input: string): ParsedInput {
+  const lines = input.split("\n");
+  const steerLines: string[] = [];
+  const contentLines: string[] = [];
+
+  for (const line of lines) {
+    if (/^\/steer\s/i.test(line)) {
+      steerLines.push(line.replace(/^\/steer\s+/i, ""));
+    } else {
+      contentLines.push(line);
+    }
+  }
+
+  return {
+    content: contentLines.join("\n").trim(),
+    steering: steerLines.join("\n").trim(),
+  };
+}
+
 /**
  * Merge Tailwind class names with conflict resolution.
  * Used everywhere Bits.ui components accept a `class` prop.
