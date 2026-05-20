@@ -360,4 +360,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 5/5            | Complete    | 2026-05-19 |
 | 10. Theme & Polish             | 1/1            | Complete    | 2026-05-20 |
-| 11. Spec Update & Distribution | 2/2 | Complete   | 2026-05-20 |
+| 11. Spec Update & Distribution | 2/2 | Complete    | 2026-05-20 |
