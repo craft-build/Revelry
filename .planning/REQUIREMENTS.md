@@ -62,8 +62,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **PRMP-01**: System prompt is assembled from character card, active persona, and conversation history
 - [ ] **PRMP-02**: Prompt assembly respects context window budget (token limit) for the selected model
 - [ ] **PRMP-03**: User can see current context utilization (tokens used / token limit) in the message input area
-- [ ] **PRMP-04**: Lorebook entries are injected into the prompt when their keywords match the conversation
-- [ ] **PRMP-05**: Lorebook injection is recursive (entries can reference other entries) with depth limiting
+- [x] **PRMP-04**: Lorebook entries are injected into the prompt when their keywords match the conversation
+- [x] **PRMP-05**: Lorebook injection is recursive (entries can reference other entries) with depth limiting
 
 ### Providers
 
@@ -76,11 +76,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Lorebook
 
-- [ ] **LORB-01**: User can create lorebook entries with keywords, content, and activation strategy (constant, keyword-triggered)
+- [x] **LORB-01**: User can create lorebook entries with keywords, content, and activation strategy (constant, keyword-triggered)
 - [ ] **LORB-02**: User can edit lorebook entries
 - [ ] **LORB-03**: User can delete lorebook entries
 - [ ] **LORB-04**: User can assign lorebooks to characters and conversations
-- [ ] **LORB-05**: User can set ordering and token budget allocation for lorebook entries
+- [x] **LORB-05**: User can set ordering and token budget allocation for lorebook entries
 - [ ] **LORB-06**: User can test keyword activation by entering sample text in the lorebook editor
 
 ### Regex Scripts
@@ -180,19 +180,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRMP-01     | Phase 6  | Pending  |
 | PRMP-02     | Phase 6  | Pending  |
 | PRMP-03     | Phase 6  | Pending  |
-| PRMP-04     | Phase 9  | Pending  |
-| PRMP-05     | Phase 9  | Pending  |
+| PRMP-04     | Phase 9  | Complete |
+| PRMP-05     | Phase 9  | Complete |
 | PROV-01     | Phase 4  | Complete |
 | PROV-02     | Phase 4  | Complete |
 | PROV-03     | Phase 4  | Complete |
 | PROV-04     | Phase 4  | Complete |
 | PROV-05     | Phase 4  | Complete |
 | PROV-06     | Phase 4  | Complete |
-| LORB-01     | Phase 9  | Pending  |
+| LORB-01     | Phase 9  | Complete |
 | LORB-02     | Phase 9  | Pending  |
 | LORB-03     | Phase 9  | Pending  |
 | LORB-04     | Phase 9  | Pending  |
-| LORB-05     | Phase 9  | Pending  |
+| LORB-05     | Phase 9  | Complete |
 | LORB-06     | Phase 3  | Done     |
 | REGX-01     | Phase 9  | Complete |
 | REGX-02     | Phase 9  | Complete |

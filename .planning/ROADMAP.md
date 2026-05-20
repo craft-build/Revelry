@@ -299,9 +299,9 @@ Plans:
 
 Plans:
 
-- [ ] 09-01: Port LorebookService from gtk_ref/ with keyword matching and recursive insertion
+- [x] 09-01: Port LorebookService from gtk_ref/ with keyword matching and recursive insertion
 - [ ] 09-02: Integrate lorebook into PromptEngine
-- [ ] 09-03: Port RegexService from gtk_ref/ with validation
+- [x] 09-03: Port RegexService from gtk_ref/ with validation
 - [ ] 09-04: Integrate regex scripts into AI response pipeline
 - [ ] 09-05: Wire lorebook and regex to editor UIs and conversation flow
 

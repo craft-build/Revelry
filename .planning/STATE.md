@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-05-20T02:19:50Z"
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-05-20T02:24:26Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 11
   completed_phases: 7
   total_plans: 31
-  completed_plans: 28
-  percent: 90
+  completed_plans: 29
+  percent: 94
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-05-10)
 
 Phase: 09 of 9 (power features)
 Status: Executing Phase 09
-Last activity: 2026-05-19
+Last activity: 2026-05-20
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -86,6 +86,9 @@ Recent decisions affecting current work:
 - RegexScript uses DateTime<Utc> with RFC 3339 (Tauri convention, not gtk_ref NaiveDateTime)
 - validate_regex_pattern uses size_limit(1_000_000) for ReDoS protection
 - save_regex_script validates pattern + flags before DB persist (REGX-05)
+- LorebookActivation role filtering: CharacterOnly/UserOnly scan only matching role messages (09-01)
+- conversation_lorebooks junction mirrors character_lorebooks pattern (09-01)
+- Free functions in service/lorebook.rs for consistency with gtk_ref port (09-01)
 
 ### Pending Todos
 
@@ -105,6 +108,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-20T02:19:34Z
-Stopped at: Completed 09-03-PLAN.md
+Last session: 2026-05-20T02:24:26Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
