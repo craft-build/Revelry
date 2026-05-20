@@ -1,6 +1,34 @@
 {
-  "files": {},
-  "turnCycles": 0,
+  "files": {
+    "src/lib/components/characters/RegexScriptEditor.svelte": {
+      "modifiedRanges": [
+        {
+          "start": 347,
+          "end": 349
+        },
+        {
+          "start": 358,
+          "end": 358
+        },
+        {
+          "start": 360,
+          "end": 361
+        },
+        {
+          "start": 370,
+          "end": 370
+        },
+        {
+          "start": 373,
+          "end": 374
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T03:02:06.484Z"
+    }
+  },
+  "turnCycles": 1,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-20T02:58:56.750Z"
+  "lastUpdated": "2026-05-20T03:02:08.378Z",
+  "sessionId": "lens-mpdgo2o2-27ba4be2"
 }

@@ -870,7 +870,32 @@
         }
       ],
       "trend": "stable"
+    },
+    "src/lib/components/characters/RegexScriptEditor.svelte": {
+      "latest": {
+        "commit": "16d585b",
+        "timestamp": "2026-05-20T03:01:05.776Z",
+        "mi": 16,
+        "cognitive": 71,
+        "nesting": 3,
+        "lines": 420,
+        "maxCyclomatic": 19,
+        "entropy": 6.58
+      },
+      "history": [
+        {
+          "commit": "16d585b",
+          "timestamp": "2026-05-20T03:01:05.776Z",
+          "mi": 16,
+          "cognitive": 71,
+          "nesting": 3,
+          "lines": 420,
+          "maxCyclomatic": 19,
+          "entropy": 6.58
+        }
+      ],
+      "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-20T02:47:54.228Z"
+  "capturedAt": "2026-05-20T03:01:10.777Z"
 }
