@@ -2,6 +2,11 @@
   "success": true,
   "issues": [
     {
+      "type": "file",
+      "name": "src/lib/components/chat/ConversationLorebookPanel.svelte",
+      "file": "src/lib/components/chat/ConversationLorebookPanel.svelte"
+    },
+    {
       "type": "dependency",
       "name": "@tauri-apps/plugin-fs",
       "file": "package.json",
@@ -262,7 +267,13 @@
       "line": 277
     }
   ],
-  "unusedFiles": [],
+  "unusedFiles": [
+    {
+      "type": "file",
+      "name": "src/lib/components/chat/ConversationLorebookPanel.svelte",
+      "file": "src/lib/components/chat/ConversationLorebookPanel.svelte"
+    }
+  ],
   "unusedDeps": [
     {
       "type": "dependency",
@@ -308,5 +319,5 @@
     }
   ],
   "unlistedDeps": [],
-  "summary": "Found 25 issues"
+  "summary": "Found 26 issues"
 }
