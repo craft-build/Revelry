@@ -5,7 +5,7 @@
 
 ## 13.1 API Key Security
 
-API keys are the most sensitive credential in the application. Keys are stored exclusively in the operating system's native credential store through the keyring crate: GNOME Keyring (via Secret Service API) on Linux, Keychain Services on macOS, and Credential Manager on Windows. They are never written to the SQLite database, configuration files, or logs. The Rust code loads keys into memory only when needed for a rig API request and drops them immediately after use. This approach is more secure than the Tauri design's approach of passing keys across the IPC bridge, which requires the key to exist in both the Rust and JavaScript memory spaces.
+API keys are the most sensitive credential in the application. Keys are stored exclusively in the operating system's native credential store through the keyring crate (v4.0): macOS Keychain Services, GNOME Keyring (via Secret Service API) on Linux, and Credential Manager on Windows. They are never written to the SQLite database, configuration files, or logs. The Rust backend loads keys into memory only when needed for a rig API request and drops them immediately after use. The keyring integration requires `use_native_store(true)` initialization and `release_store()` shutdown for clean lifecycle management.
 
 ## 13.2 Network Security
 
@@ -17,4 +17,4 @@ Revelry does not implement content filtering or moderation. The application is d
 
 ## 13.4 Input Sanitization
 
-Imported character cards and conversation data undergo sanitization to prevent common attack vectors. JSON parsing uses strict schema validation through serde to reject malformed or oversized payloads. PNG card extraction validates tEXt chunk sizes and rejects cards exceeding reasonable limits. Regex scripts are validated for ReDoS patterns before being applied.
+Imported character cards and conversation data undergo sanitization to prevent common attack vectors. JSON parsing uses strict schema validation through serde to reject malformed or oversized payloads. PNG card extraction validates tEXt chunk sizes and rejects cards exceeding reasonable limits. Regex scripts are validated for ReDoS patterns before being applied. The frontend uses DOMPurify to sanitize HTML in markdown-rendered AI responses, preventing XSS from untrusted model output. Tauri's content security policy provides an additional layer of protection for the webview.

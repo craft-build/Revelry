@@ -56,18 +56,18 @@ AI character cards gain an optional extension field that specifies the default u
 
 ### 9.4.3 Mid-Conversation Switching
 
-Users can switch their active persona at any point during a conversation by clicking the persona indicator in the chat header, which shows the current persona name and avatar using an AdwAvatar widget. A GtkPopover appears listing all available personas with search and filtering. After selection, all subsequent AI requests use the new persona's data in the prompt. An optional local system message (not sent to the AI) can be inserted into the conversation for tracking purposes.
+Users can switch their active persona at any point during a conversation by clicking the persona indicator in the chat header (`PersonaSwitcher` component), which shows the current persona name and avatar. A dropdown appears listing all available personas with search and filtering. After selection, all subsequent AI requests use the new persona's data in the prompt. An optional local system message (not sent to the AI) can be inserted into the conversation for tracking purposes.
 
 ## 9.5 Persona UI Components
 
 ### 9.5.1 Persona Library View
 
-The persona library is accessed from the Characters View through a tab switcher at the top of the content area: Characters and My Personas. Switching to My Personas displays the user's persona library in the same grid layout used for AI characters, using GtkFlowBox with custom card widgets. Each persona card displays an AdwAvatar, the name, the role_description (or first line of personality), tags as pill-shaped labels, a default badge, and hover-revealed actions (edit, set as default, duplicate, delete).
+The persona library is accessed from the Characters View through a tab switcher at the top of the content area: Characters and My Personas. Switching to My Personas displays the user's persona library in the same grid layout used for AI characters, using `PersonaCard` components. Each persona card displays an `Avatar`, the name, the role_description (or first line of personality), tags as `Tag` components, a default badge, and hover-revealed actions (edit, set as default, duplicate, delete).
 
 ### 9.5.2 Persona Editor
 
-The persona editor follows the same sliding panel pattern as the character card editor, implemented as an AdwNavigationPage within an AdwNavigationView. It uses a tabbed layout aligned with the persona's field structure: Identity (name, avatar, role description), Appearance and Personality (appearance, personality, speech style), Background and Relationships (background, relationships with {{char}} hint), and Settings (tags, set as default, extensions). Each text area includes a character count indicator and a token estimate using tiktoken-rs, helping users understand how much context budget their persona will consume.
+The persona editor is implemented as a `PersonaEditorDialog` with a tabbed layout aligned with the persona's field structure: Identity (name, avatar, role description), Appearance and Personality (appearance, personality, speech style), Background and Relationships (background, relationships with {{char}} hint), and Settings (tags, set as default, extensions). Each text area includes a character count indicator and a token estimate, helping users understand how much context budget their persona will consume.
 
-### 9.5.3 Persona Switcher Popover
+### 9.5.3 Persona Switcher
 
-The persona switcher is a compact GtkPopover that appears when the user clicks the persona indicator in the chat header. It lists all available personas with the active one highlighted, a No Persona option always listed last, and quick-access buttons for Create New Persona and Manage Personas. Keyboard navigation supports Up/Down arrows for selection, Enter to confirm, and Escape to cancel.
+The `PersonaSwitcher` component is a compact dropdown that appears when the user clicks the persona indicator in the chat header. It lists all available personas with the active one highlighted, a No Persona option always listed last, and quick-access buttons for Create New Persona and Manage Personas. Keyboard navigation supports Up/Down arrows for selection, Enter to confirm, and Escape to cancel.

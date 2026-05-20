@@ -7,15 +7,15 @@ This section details the functional requirements for each major feature area, or
 
 ## 11.1 Conversation Management (Tier 1)
 
-The conversation system is the heart of the application. Each conversation is associated with a character card and a user persona, and maintains its own message history, context state, and generation parameters. Conversations can be created from scratch (starting with the character's first_mes), resumed from history, or forked from any point in an existing conversation. Message editing allows users to modify any previous user message, which automatically creates a new branch at that point while preserving the original branch. The entire branch tree is stored efficiently in SQLite using a parent-child message relationship.
+The conversation system is the heart of the application. Each conversation is associated with a character card and a user persona, and maintains its own message history, context state, and generation parameters. Conversations can be created from scratch (starting with the character's first_mes), resumed from history, or forked from any point in an existing conversation. Message editing allows users to modify any previous user message, which automatically creates a new branch at that point while preserving the original branch. The entire branch tree is stored efficiently in SQLite using a parent-child message relationship. The frontend pre-generates message UUIDs and sort_order for atomic persistence.
 
 ## 11.2 Character Management (Tier 1)
 
-The character management system provides full CRUD operations for character cards, plus import/export functionality. Characters are displayed in a searchable, tag-filterable GtkFlowBox grid. The card editor validates all fields in real-time, warns about potential prompt injection risks in user-provided cards, and provides a live preview of how the character's data will be assembled into the AI prompt. Avatar images are stored as base64 data within the card for portability, with a thumbnail cache for fast grid rendering.
+The character management system provides full CRUD operations for character cards, plus import/export functionality. Characters are displayed in a searchable, tag-filterable grid using `CharacterCard` components. The card editor (`CharacterEditorDialog`) validates all fields in real-time, warns about potential prompt injection risks in user-provided cards, and provides a live preview of how the character's data will be assembled into the AI prompt. Avatar images are stored as base64 data within the card for portability, with a thumbnail cache for fast grid rendering.
 
 ## 11.3 User Persona System (Tier 1-2)
 
-The User Persona System is integrated across Tiers 1 and 2. Tier 1 includes basic persona CRUD, the persona block in prompt assembly, {{user}} variable resolution, and the persona indicator in the chat header. Tier 2 adds the persona switcher popover, per-conversation persona assignment, the global default persona, the persona library view in the Characters view, and token budget awareness for the persona block.
+The User Persona System is integrated across Tiers 1 and 2. Tier 1 includes basic persona CRUD, the persona block in prompt assembly, {{user}} variable resolution, and the persona indicator in the chat header. Tier 2 adds the persona switcher dropdown, per-conversation persona assignment, the global default persona, the persona library view in the Characters view, and token budget awareness for the persona block.
 
 ## 11.4 Prompt Presets (Tier 1)
 
@@ -27,11 +27,11 @@ Group chat allows multiple characters to participate in a single conversation. I
 
 ## 11.6 Lorebook Management (Tier 2)
 
-The lorebook editor provides a structured interface for managing world-building entries within a character card. Entries are displayed in a sortable, filterable GtkColumnView with inline editing. The editor highlights keyword matches in real-time as the user types, showing which entries would activate given the current conversation context and active persona data. Recursive activation is visualized as a dependency tree.
+The lorebook editor (`LorebookEditor` component) provides a structured interface for managing world-building entries within a character card. Entries are displayed in a sortable, filterable list with inline editing. The editor highlights keyword matches in real-time as the user types, showing which entries would activate given the current conversation context and active persona data. Recursive activation is visualized as a dependency tree.
 
 ## 11.7 Regex Scripting (Tier 2)
 
-For advanced users, Revelry supports regex-based find-and-replace scripts that can modify AI responses before display. Scripts are defined per-character with a test panel that shows before/after results on sample text. Regex patterns are validated for ReDoS vulnerability before being applied to live conversations, protecting users from malicious scripts.
+For advanced users, Revelry supports regex-based find-and-replace scripts that can modify AI responses before display. Scripts are defined per-character via the `RegexScriptEditor` component with a test panel that shows before/after results on sample text. Regex patterns are validated for ReDoS vulnerability before being applied to live conversations, protecting users from malicious scripts.
 
 ## 11.8 Conversation Search (Tier 2)
 

@@ -9,7 +9,7 @@ Understanding the existing landscape of AI roleplay platforms is essential for i
 
 | **Feature** | **Character.ai** | **SpicyChat.ai** | **SillyTavern** | **Revelry (Proposed)** |
 |---|---|---|---|---|
-| Platform Type | Web | Web | Web/Desktop (Node.js) | Native Desktop (Rust/GTK4) |
+| Platform Type | Web | Web | Web/Desktop (Node.js) | Native Desktop (Rust/Tauri + SvelteKit) |
 | Open Source | No | No | Yes | Yes |
 | AI Provider | Proprietary | Proprietary | Multi-provider | Multi-provider (20+ via rig) |
 | Character Cards | Internal format | Internal format | CharacterCardV2 (PNG/JSON) | CharacterCardV2 (PNG/JSON) |
@@ -18,20 +18,20 @@ Understanding the existing landscape of AI roleplay platforms is essential for i
 | Lorebook / World Info | Limited | No | Yes (advanced) | Yes (advanced) |
 | Local Data Storage | No (cloud) | No (cloud) | Yes | Yes (SQLite via rusqlite) |
 | Account Required | Yes | Yes | No | No |
-| Streaming Responses | Yes | Yes | Yes | Yes (rig streaming) |
+| Streaming Responses | Yes | Yes | Yes | Yes (rig streaming via Tauri Channel) |
 | User Persona System | Basic | Yes (Personas) | Basic (user profiles) | Yes (advanced, per-character) |
 | Group Chat | Yes | No | Yes | Yes |
 | Regex Scripting | No | No | Yes | Yes |
-| UI Design Philosophy | Mobile-first social | Chat-oriented | Functional/dense | GNOME minimalist (native) |
+| UI Design Philosophy | Mobile-first social | Chat-oriented | Functional/dense | Content-first desktop native |
 | Offline Capability | No | No | Partial (needs server) | Full (with local model) |
-| GNOME Integration | No | No | No | Yes (libadwaita, GNOME Circle) |
+| Cross-Platform | No (web) | No (web) | Partial | Yes (macOS, Linux, Windows) |
 
 ## 3.2 Key Differentiators
 
-Revelry distinguishes itself through four primary differentiators. First, the native GNOME experience creates a fundamentally different user experience from existing platforms. While Character.ai adopts a social media aesthetic, SpicyChat uses a generic chat-oriented layout, and SillyTavern packs maximum functionality into dense panels, Revelry uses actual GTK4/libadwaita widgets that look and feel like a native GNOME application. This means native Adwaita theming, proper header bars, sidebar navigation with AdwOverlaySplitView, circular AdwAvatar widgets, AdwPreferencesWindow for settings, and native dark mode support through AdwStyleManager. The application respects GNOME keyboard shortcuts, integrates with the GNOME keyring for secret storage, and follows the GNOME Human Interface Guidelines in every detail.
+Revelry distinguishes itself through four primary differentiators. First, the native desktop experience creates a fundamentally different user experience from existing platforms. While Character.ai adopts a social media aesthetic, SpicyChat uses a generic chat-oriented layout, and SillyTavern packs maximum functionality into dense panels, Revelry uses a purpose-built SvelteKit SPA in a Tauri native window that feels like a desktop application. This means native window controls, drag regions, proper dark/light theming, keyboard shortcuts, and a layout that fills the entire window without browser-style scrollbars. The application respects desktop conventions for window management and keyboard navigation.
 
-Second, the pure Rust architecture eliminates the IPC bridge complexity of Tauri-based approaches. In a Tauri application, every interaction between the frontend and backend crosses a TypeScript-to-Rust IPC boundary, requiring serialization, deserialization, and careful lifecycle management. In Revelry, the UI layer communicates with the business logic through native Rust function calls and channel-based message passing within the same process. This simplifies the codebase, reduces latency, and eliminates an entire class of IPC-related bugs.
+Second, the Tauri architecture provides a clean separation between the reactive SvelteKit frontend and the Rust backend. Communication happens through typed `invoke()` calls for request/response and `Channel<T>` for streaming, providing a well-defined IPC boundary that is simpler to maintain than raw HTTP bridges. The Rust backend handles all sensitive operations (database, AI inference, secret storage) while the frontend focuses entirely on UI rendering.
 
-Third, the rig framework provides native support for over twenty AI providers with a unified API, far surpassing the simple OpenAI-compatible HTTP adapter approach. Each provider gets a purpose-built client that handles provider-specific authentication, request formatting, and response parsing. The rig framework also provides agent abstractions with tool calling, RAG pipelines with vector store integrations, structured output extraction, and conversation management, all of which would need to be built from scratch with a raw reqwest approach.
+Third, the rig framework provides native support for over twenty AI providers with a unified API, far surpassing the simple OpenAI-compatible HTTP adapter approach. Each provider gets a purpose-built client that handles provider-specific authentication, request formatting, and response parsing. The rig framework also provides agent abstractions with tool calling, RAG pipelines with vector store integrations, structured output extraction, and conversation management.
 
-Fourth, the local-first, no-account-required philosophy ensures that users own their data completely from the first launch. There is no registration flow, no cloud dependency, and no telemetry by default. Conversations, characters, and settings live on the user's machine in a portable SQLite database. API keys are stored in the operating system's native credential store through the keyring crate, using GNOME Keyring on Linux, Keychain Services on macOS, and Credential Manager on Windows.
+Fourth, the local-first, no-account-required philosophy ensures that users own their data completely from the first launch. There is no registration flow, no cloud dependency, and no telemetry by default. Conversations, characters, and settings live on the user's machine in a portable SQLite database. API keys are stored in the operating system's native credential store through the keyring crate, using macOS Keychain Services, GNOME Keyring on Linux, and Credential Manager on Windows.
