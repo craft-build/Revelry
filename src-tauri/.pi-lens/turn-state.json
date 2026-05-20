@@ -8,7 +8,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-20T02:20:43.077Z"
+      "lastEdit": "2026-05-20T05:18:10.979Z"
     },
     "src/db/conversations.rs": {
       "modifiedRanges": [
@@ -37,6 +37,10 @@
     "src/commands/mod.rs": {
       "modifiedRanges": [
         {
+          "start": 1,
+          "end": 1
+        },
+        {
           "start": 3,
           "end": 4
         },
@@ -46,7 +50,7 @@
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-20T02:19:06.743Z"
+      "lastEdit": "2026-05-20T05:18:26.427Z"
     },
     "src/lib.rs": {
       "modifiedRanges": [
@@ -69,10 +73,14 @@
         {
           "start": 90,
           "end": 94
+        },
+        {
+          "start": 98,
+          "end": 99
         }
       ],
       "importsChanged": false,
-      "lastEdit": "2026-05-20T02:31:47.579Z"
+      "lastEdit": "2026-05-20T05:18:39.122Z"
     },
     "src/ai/mod.rs": {
       "modifiedRanges": [
@@ -535,10 +543,30 @@
       ],
       "importsChanged": false,
       "lastEdit": "2026-05-20T02:31:42.934Z"
+    },
+    "src/db/app_settings.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 21
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T05:17:42.101Z"
+    },
+    "src/commands/app_settings.rs": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 37
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T05:17:42.183Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-20T02:34:03.128Z",
-  "sessionId": "lens-mpdfxwoz-d9609ead"
+  "lastUpdated": "2026-05-20T05:18:39.122Z",
+  "sessionId": "lens-mpdm0ifo-def2b98f"
 }

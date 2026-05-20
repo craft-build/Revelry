@@ -1,3 +1,4 @@
+pub mod app_settings;
 pub mod avatars;
 pub mod characters;
 pub mod chat;

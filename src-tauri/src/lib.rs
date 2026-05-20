@@ -95,6 +95,8 @@ pub fn run() {
             commands::regex::delete_regex_script,
             commands::regex::apply_single_regex,
             commands::regex::validate_regex_pattern,
+            commands::app_settings::get_app_setting,
+            commands::app_settings::set_app_setting,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

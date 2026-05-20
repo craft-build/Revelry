@@ -441,3 +441,13 @@ export async function removeLorebookFromConversation(
 		lorebookId,
 	});
 }
+
+// ── App settings ──────────────────────────────────────────────────────────────
+
+export async function getAppSetting(key: string): Promise<string | null> {
+	return invoke<string | null>("get_app_setting", { key });
+}
+
+export async function setAppSetting(key: string, value: string): Promise<void> {
+	return invoke<void>("set_app_setting", { key, value });
+}

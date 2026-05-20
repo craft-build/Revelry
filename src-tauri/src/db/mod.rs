@@ -1,3 +1,4 @@
+pub mod app_settings;
 pub mod characters;
 pub mod conversations;
 pub mod generation;
@@ -238,6 +239,17 @@ pub enum DbCommand {
     },
     DeleteProvider {
         id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // App settings operations
+    LoadAppSetting {
+        key: String,
+        reply: oneshot::Sender<anyhow::Result<Option<String>>>,
+    },
+    SaveAppSetting {
+        key: String,
+        value: String,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
 }
@@ -646,6 +658,15 @@ impl DbWorker {
             }
             DbCommand::SearchMessages { query, reply } => {
                 let result = conversations::search_messages(conn, &query);
+                let _ = reply.send(result);
+            }
+
+            DbCommand::LoadAppSetting { key, reply } => {
+                let result = app_settings::load_app_setting(conn, &key);
+                let _ = reply.send(result);
+            }
+            DbCommand::SaveAppSetting { key, value, reply } => {
+                let result = app_settings::save_app_setting(conn, &key, &value);
                 let _ = reply.send(result);
             }
         }

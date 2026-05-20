@@ -21,7 +21,7 @@
       "fileA": "src/lib/components/chat/BranchPopover.svelte",
       "startA": 99,
       "fileB": "src/lib/components/chat/ChatHeader.svelte",
-      "startB": 149,
+      "startB": 154,
       "lines": 16,
       "tokens": 0
     },
@@ -29,13 +29,29 @@
       "fileA": "src/lib/components/chat/BranchPopover.svelte",
       "startA": 139,
       "fileB": "src/lib/components/chat/ChatHeader.svelte",
-      "startB": 189,
+      "startB": 194,
       "lines": 18,
       "tokens": 0
     },
     {
+      "fileA": "src/lib/components/characters/RegexScriptEditor.svelte",
+      "startA": 409,
+      "fileB": "src/lib/components/lorebooks/LorebookEditor.svelte",
+      "startB": 655,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
       "fileA": "src/lib/components/characters/CharacterEditorDialog.svelte",
-      "startA": 205,
+      "startA": 190,
+      "fileB": "src/lib/components/characters/CharacterEditorDialog.svelte",
+      "startB": 175,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src/lib/components/characters/CharacterEditorDialog.svelte",
+      "startA": 222,
       "fileB": "src/lib/components/personas/PersonaEditorDialog.svelte",
       "startB": 101,
       "lines": 21,
@@ -203,7 +219,7 @@
     },
     {
       "fileA": "src-tauri/src/service/prompt.rs",
-      "startA": 375,
+      "startA": 437,
       "fileB": "src-tauri/src/service/token_count.rs",
       "startB": 152,
       "lines": 13,
@@ -211,17 +227,17 @@
     },
     {
       "fileA": "src-tauri/src/service/prompt.rs",
-      "startA": 674,
+      "startA": 736,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 551,
+      "startB": 613,
       "lines": 9,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/service/prompt.rs",
-      "startA": 690,
+      "startA": 752,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 402,
+      "startB": 464,
       "lines": 10,
       "tokens": 0
     },
@@ -646,7 +662,31 @@
       "startA": 162,
       "fileB": "src-tauri/src/commands/regex.rs",
       "startB": 12,
-      "lines": 10,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 184,
+      "fileB": "src-tauri/src/commands/lorebooks.rs",
+      "startB": 125,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 204,
+      "fileB": "src-tauri/src/commands/lorebooks.rs",
+      "startB": 145,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/lorebooks.rs",
+      "startA": 222,
+      "fileB": "src-tauri/src/commands/regex.rs",
+      "startB": 13,
+      "lines": 9,
       "tokens": 0
     },
     {
@@ -731,10 +771,10 @@
     },
     {
       "fileA": "src-tauri/src/commands/conversations.rs",
-      "startA": 185,
-      "fileB": "src-tauri/src/commands/regex.rs",
-      "startB": 13,
-      "lines": 12,
+      "startA": 184,
+      "fileB": "src-tauri/src/commands/lorebooks.rs",
+      "startB": 221,
+      "lines": 13,
       "tokens": 0
     },
     {
@@ -755,7 +795,7 @@
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 57,
+      "startA": 67,
       "fileB": "src-tauri/src/commands/providers.rs",
       "startB": 67,
       "lines": 9,
@@ -763,7 +803,7 @@
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 98,
+      "startA": 108,
       "fileB": "src-tauri/src/commands/providers.rs",
       "startB": 18,
       "lines": 9,
@@ -771,7 +811,7 @@
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 250,
+      "startA": 159,
       "fileB": "src-tauri/src/commands/providers.rs",
       "startB": 67,
       "lines": 9,
@@ -779,55 +819,87 @@
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 333,
-      "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 56,
-      "lines": 12,
-      "tokens": 0
-    },
-    {
-      "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 353,
+      "startA": 176,
       "fileB": "src-tauri/src/commands/providers.rs",
       "startB": 67,
-      "lines": 11,
+      "lines": 10,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 370,
-      "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 330,
-      "lines": 15,
+      "startA": 196,
+      "fileB": "src-tauri/src/commands/regex.rs",
+      "startB": 13,
+      "lines": 13,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 388,
+      "startA": 211,
       "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 272,
-      "lines": 28,
-      "tokens": 0
-    },
-    {
-      "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 420,
-      "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 316,
+      "startB": 158,
       "lines": 14,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 434,
-      "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 330,
+      "startA": 336,
+      "fileB": "src-tauri/src/commands/providers.rs",
+      "startB": 67,
       "lines": 9,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 457,
+      "startA": 422,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 66,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 442,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 159,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 459,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 419,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 477,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 358,
+      "lines": 31,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 512,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 405,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 526,
+      "fileB": "src-tauri/src/commands/chat.rs",
+      "startB": 419,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/commands/chat.rs",
+      "startA": 549,
       "fileB": "src-tauri/src/commands/regex.rs",
       "startB": 13,
       "lines": 11,
@@ -835,26 +907,26 @@
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 472,
+      "startA": 564,
       "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 56,
+      "startB": 66,
       "lines": 12,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 490,
+      "startA": 582,
       "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 370,
+      "startB": 459,
       "lines": 15,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/commands/chat.rs",
-      "startA": 508,
+      "startA": 600,
       "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 272,
-      "lines": 25,
+      "startB": 358,
+      "lines": 28,
       "tokens": 0
     },
     {
@@ -893,7 +965,7 @@
       "fileA": "src-tauri/src/commands/card_io.rs",
       "startA": 80,
       "fileB": "src-tauri/src/commands/chat.rs",
-      "startB": 70,
+      "startB": 80,
       "lines": 8,
       "tokens": 0
     },
@@ -907,98 +979,106 @@
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 225,
+      "startA": 237,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 213,
-      "lines": 9,
-      "tokens": 0
-    },
-    {
-      "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 234,
-      "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
+      "startB": 224,
       "lines": 10,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 244,
+      "startA": 247,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 254,
+      "startA": 258,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 264,
+      "startA": 269,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 274,
+      "startA": 280,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 284,
+      "startA": 291,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 294,
+      "startA": 302,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 304,
+      "startA": 313,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 314,
+      "startA": 324,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 337,
+      "startA": 335,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 212,
-      "lines": 10,
+      "startB": 223,
+      "lines": 11,
       "tokens": 0
     },
     {
       "fileA": "src-tauri/src/ai/mod.rs",
-      "startA": 347,
+      "startA": 360,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 324,
-      "lines": 13,
+      "startB": 223,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 371,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 346,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "src-tauri/src/ai/mod.rs",
+      "startA": 759,
+      "fileB": "src-tauri/src/ai/mod.rs",
+      "startB": 738,
+      "lines": 6,
       "tokens": 0
     },
     {
@@ -1211,49 +1291,41 @@
     },
     {
       "fileA": "gtk_ref/src/service/prompt.rs",
-      "startA": 16,
+      "startA": 58,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 17,
-      "lines": 20,
+      "startB": 72,
+      "lines": 36,
       "tokens": 0
     },
     {
       "fileA": "gtk_ref/src/service/prompt.rs",
-      "startA": 56,
+      "startA": 118,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 66,
-      "lines": 34,
+      "startB": 124,
+      "lines": 15,
       "tokens": 0
     },
     {
       "fileA": "gtk_ref/src/service/prompt.rs",
-      "startA": 120,
+      "startA": 152,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 104,
-      "lines": 13,
-      "tokens": 0
-    },
-    {
-      "fileA": "gtk_ref/src/service/prompt.rs",
-      "startA": 149,
-      "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 123,
-      "lines": 25,
+      "startB": 161,
+      "lines": 18,
       "tokens": 0
     },
     {
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 174,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 146,
-      "lines": 24,
+      "startB": 185,
+      "lines": 13,
       "tokens": 0
     },
     {
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 205,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 182,
+      "startB": 244,
       "lines": 96,
       "tokens": 0
     },
@@ -1261,7 +1333,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 300,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 280,
+      "startB": 342,
       "lines": 69,
       "tokens": 0
     },
@@ -1269,7 +1341,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 393,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 363,
+      "startB": 425,
       "lines": 13,
       "tokens": 0
     },
@@ -1277,7 +1349,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 436,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 383,
+      "startB": 445,
       "lines": 50,
       "tokens": 0
     },
@@ -1285,7 +1357,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 486,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 435,
+      "startB": 497,
       "lines": 88,
       "tokens": 0
     },
@@ -1293,7 +1365,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 574,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 526,
+      "startB": 588,
       "lines": 21,
       "tokens": 0
     },
@@ -1301,7 +1373,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 595,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 552,
+      "startB": 614,
       "lines": 11,
       "tokens": 0
     },
@@ -1309,7 +1381,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 606,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 557,
+      "startB": 619,
       "lines": 10,
       "tokens": 0
     },
@@ -1317,7 +1389,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 616,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 575,
+      "startB": 637,
       "lines": 25,
       "tokens": 0
     },
@@ -1333,7 +1405,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 747,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 617,
+      "startB": 679,
       "lines": 22,
       "tokens": 0
     },
@@ -1341,7 +1413,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 795,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 552,
+      "startB": 614,
       "lines": 14,
       "tokens": 0
     },
@@ -1349,7 +1421,7 @@
       "fileA": "gtk_ref/src/service/prompt.rs",
       "startA": 815,
       "fileB": "src-tauri/src/service/prompt.rs",
-      "startB": 403,
+      "startB": 465,
       "lines": 14,
       "tokens": 0
     },
@@ -1509,7 +1581,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 10,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 14,
+      "startB": 16,
       "lines": 12,
       "tokens": 0
     },
@@ -1517,7 +1589,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 52,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 49,
+      "startB": 53,
       "lines": 20,
       "tokens": 0
     },
@@ -1525,7 +1597,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 98,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 139,
+      "startB": 145,
       "lines": 7,
       "tokens": 0
     },
@@ -1645,7 +1717,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 418,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 357,
+      "startB": 382,
       "lines": 46,
       "tokens": 0
     },
@@ -1653,7 +1725,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 600,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 728,
+      "startB": 771,
       "lines": 12,
       "tokens": 0
     },
@@ -1661,7 +1733,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 645,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 547,
+      "startB": 584,
       "lines": 30,
       "tokens": 0
     },
@@ -1669,7 +1741,7 @@
       "fileA": "gtk_ref/src/service/ai.rs",
       "startA": 674,
       "fileB": "src-tauri/src/ai/mod.rs",
-      "startB": 645,
+      "startB": 682,
       "lines": 30,
       "tokens": 0
     },
@@ -2610,7 +2682,7 @@
       "tokens": 0
     }
   ],
-  "duplicatedLines": 5577,
-  "totalLines": 44251,
-  "percentage": 12.6
+  "duplicatedLines": 5668,
+  "totalLines": 45723,
+  "percentage": 12.4
 }

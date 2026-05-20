@@ -11,19 +11,19 @@
 
 ## Light Theme Aesthetic
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Cool-toned (same hue) | Same 270 hue family as dark, just inverted lightness. Consistent identity. | ✓ |
-| Warm/paper-like | Shift to warmer hue (30–60). Creamy backgrounds, book-like. | |
-| Neutral/gray | Near-achromatic grays, teal accent pops more. | |
+| Option                | Description                                                                | Selected |
+| --------------------- | -------------------------------------------------------------------------- | -------- |
+| Cool-toned (same hue) | Same 270 hue family as dark, just inverted lightness. Consistent identity. | ✓        |
+| Warm/paper-like       | Shift to warmer hue (30–60). Creamy backgrounds, book-like.                |          |
+| Neutral/gray          | Near-achromatic grays, teal accent pops more.                              |          |
 
 **User's choice:** Cool-toned (same hue)
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Bright/white-heavy | oklch(0.97–0.99), high contrast, crisp. | |
-| Soft/off-white | oklch(0.94–0.97), slightly muted, easier on eyes. | ✓ |
-| You decide | Agent calibrates lightness levels. | |
+| Option             | Description                                       | Selected |
+| ------------------ | ------------------------------------------------- | -------- |
+| Bright/white-heavy | oklch(0.97–0.99), high contrast, crisp.           |          |
+| Soft/off-white     | oklch(0.94–0.97), slightly muted, easier on eyes. | ✓        |
+| You decide         | Agent calibrates lightness levels.                |          |
 
 **User's choice:** Soft/off-white
 
@@ -33,27 +33,27 @@
 
 ## Theme Toggle UX
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Three-way toggle | System / Light / Dark. Default System. Standard desktop app pattern. | ✓ |
-| Binary toggle only | Light or Dark, no OS detection. | |
-| Segmented control | Three options as button group instead of dropdown. | |
+| Option             | Description                                                          | Selected |
+| ------------------ | -------------------------------------------------------------------- | -------- |
+| Three-way toggle   | System / Light / Dark. Default System. Standard desktop app pattern. | ✓        |
+| Binary toggle only | Light or Dark, no OS detection.                                      |          |
+| Segmented control  | Three options as button group instead of dropdown.                   |          |
 
 **User's choice:** Three-way toggle
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Settings page only | In Appearance section. Standard location, stub already exists. | ✓ |
-| Header + Settings | Quick toggle in AppHeader plus full control in Settings. | |
-| Sidebar + Settings | Toggle at sidebar bottom plus full control in Settings. | |
+| Option             | Description                                                    | Selected |
+| ------------------ | -------------------------------------------------------------- | -------- |
+| Settings page only | In Appearance section. Standard location, stub already exists. | ✓        |
+| Header + Settings  | Quick toggle in AppHeader plus full control in Settings.       |          |
+| Sidebar + Settings | Toggle at sidebar bottom plus full control in Settings.        |          |
 
 **User's choice:** Settings page only
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Button group | Three adjacent buttons: System \| Light \| Dark. Active highlighted. | ✓ |
-| Dropdown | Select element with three options. | |
-| You decide | Agent picks best UI pattern. | |
+| Option       | Description                                                          | Selected |
+| ------------ | -------------------------------------------------------------------- | -------- |
+| Button group | Three adjacent buttons: System \| Light \| Dark. Active highlighted. | ✓        |
+| Dropdown     | Select element with three options.                                   |          |
+| You decide   | Agent picks best UI pattern.                                         |          |
 
 **User's choice:** Button group
 
@@ -61,19 +61,19 @@
 
 ## Polish Scope
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Transitions + animations | Sidebar slide, page cross-fade, message appear. Standard desktop feel. | |
-| Theme-only polish | Only theme toggle transition, skip other animation work. | |
-| Full visual audit | Transitions, animations, PLUS spacing, hover states, focus rings audit. | ✓ |
+| Option                   | Description                                                             | Selected |
+| ------------------------ | ----------------------------------------------------------------------- | -------- |
+| Transitions + animations | Sidebar slide, page cross-fade, message appear. Standard desktop feel.  |          |
+| Theme-only polish        | Only theme toggle transition, skip other animation work.                |          |
+| Full visual audit        | Transitions, animations, PLUS spacing, hover states, focus rings audit. | ✓        |
 
 **User's choice:** Full visual audit
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Subtle/fast (150–200ms) | Quiet — felt, not seen. Matches content-first philosophy. | ✓ |
-| Expressive/playful (250–350ms) | More personality, elasticity. Potentially distracting. | |
-| You decide | Agent picks durations and easing curves. | |
+| Option                         | Description                                               | Selected |
+| ------------------------------ | --------------------------------------------------------- | -------- |
+| Subtle/fast (150–200ms)        | Quiet — felt, not seen. Matches content-first philosophy. | ✓        |
+| Expressive/playful (250–350ms) | More personality, elasticity. Potentially distracting.    |          |
+| You decide                     | Agent picks durations and easing curves.                  |          |
 
 **User's choice:** Subtle/fast (150–200ms)
 
@@ -83,25 +83,25 @@
 
 ## Theme Switching Mechanics
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Class-based token override | `.light` class overrides @theme tokens. Cleanest with Tailwind v4. | ✓ |
-| Media query + class hybrid | @media for system, class for manual override. | |
+| Option                     | Description                                                        | Selected |
+| -------------------------- | ------------------------------------------------------------------ | -------- |
+| Class-based token override | `.light` class overrides @theme tokens. Cleanest with Tailwind v4. | ✓        |
+| Media query + class hybrid | @media for system, class for manual override.                      |          |
 
 **User's choice:** Class-based token override
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Inline script | <script> in app.html reads localStorage before hydration. No flash. | ✓ |
-| Tauri-injected | Backend passes theme during init. Adds coupling. | |
-| You decide | Agent picks best approach. | |
+| Option         | Description                                                         | Selected |
+| -------------- | ------------------------------------------------------------------- | -------- |
+| Inline script  | <script> in app.html reads localStorage before hydration. No flash. | ✓        |
+| Tauri-injected | Backend passes theme during init. Adds coupling.                    |          |
+| You decide     | Agent picks best approach.                                          |          |
 
 **User's choice:** Inline script
 
-| Option | Description | Selected |
-| ---------- | ---------------------------------- | -------- |
-| Vitesse pair | vitesse-dark + vitesse-light. Same family, consistent feel. | ✓ |
-| You decide | Agent picks matching light theme. | |
+| Option       | Description                                                 | Selected |
+| ------------ | ----------------------------------------------------------- | -------- |
+| Vitesse pair | vitesse-dark + vitesse-light. Same family, consistent feel. | ✓        |
+| You decide   | Agent picks matching light theme.                           |          |
 
 **User's choice:** Vitesse pair
 
