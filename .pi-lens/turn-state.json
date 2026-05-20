@@ -1,22 +1,18 @@
 {
   "files": {
-    "src/lib/components/chat/ChatHeader.svelte": {
+    "src/lib/components/chat/LorebookDetailPanel.svelte": {
       "modifiedRanges": [
         {
-          "start": 10,
-          "end": 10
-        },
-        {
-          "start": 94,
-          "end": 97
+          "start": 1,
+          "end": 79
         }
       ],
-      "importsChanged": true,
-      "lastEdit": "2026-05-20T02:54:17.710Z"
+      "importsChanged": false,
+      "lastEdit": "2026-05-20T02:54:46.235Z"
     }
   },
   "turnCycles": 1,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-20T02:54:24.530Z",
+  "lastUpdated": "2026-05-20T02:54:48.131Z",
   "sessionId": "lens-mpdgo2o2-27ba4be2"
 }
