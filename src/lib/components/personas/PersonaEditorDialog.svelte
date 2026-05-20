@@ -215,8 +215,9 @@
 				disabled={is_saving}
 			/>
 			<div class="flex-1 space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Name *</label>
+				<label for="persona-name" class="text-sm font-medium text-(--color-foreground)">Name *</label>
 				<Input
+					id="persona-name"
 					bind:value={form_name}
 					placeholder="Persona name"
 					disabled={is_saving}
@@ -230,8 +231,9 @@
 
 		<!-- Appearance -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Appearance</label>
+			<label for="persona-appearance" class="text-sm font-medium text-(--color-foreground)">Appearance</label>
 			<Textarea
+				id="persona-appearance"
 				bind:value={form_appearance}
 				placeholder="Physical description of the persona"
 				autogrow
@@ -241,8 +243,9 @@
 
 		<!-- Personality -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Personality</label>
+			<label for="persona-personality" class="text-sm font-medium text-(--color-foreground)">Personality</label>
 			<Textarea
+				id="persona-personality"
 				bind:value={form_personality}
 				placeholder="Personality traits and behaviors"
 				autogrow
@@ -253,8 +256,9 @@
 
 		<!-- Background -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Background</label>
+			<label for="persona-background" class="text-sm font-medium text-(--color-foreground)">Background</label>
 			<Textarea
+				id="persona-background"
 				bind:value={form_background}
 				placeholder="Backstory and history"
 				autogrow
@@ -264,8 +268,9 @@
 
 		<!-- Role description -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Role description</label>
+			<label for="persona-role-description" class="text-sm font-medium text-(--color-foreground)">Role description</label>
 			<Input
+				id="persona-role-description"
 				bind:value={form_role_description}
 				placeholder="e.g. Mage, Knight, Scholar"
 				disabled={is_saving}
@@ -274,8 +279,9 @@
 
 		<!-- Relationships -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Relationships</label>
+			<label for="persona-relationships" class="text-sm font-medium text-(--color-foreground)">Relationships</label>
 			<Textarea
+				id="persona-relationships"
 				bind:value={form_relationships}
 				placeholder="Key relationships with other characters"
 				autogrow
@@ -285,8 +291,9 @@
 
 		<!-- Speech style -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Speech style</label>
+			<label for="persona-speech-style" class="text-sm font-medium text-(--color-foreground)">Speech style</label>
 			<Textarea
+				id="persona-speech-style"
 				bind:value={form_speech_style}
 				placeholder="How the persona talks — vocabulary, tone, mannerisms"
 				autogrow
@@ -296,8 +303,9 @@
 
 		<!-- Tags -->
 		<div class="space-y-1">
-			<label class="text-sm font-medium text-(--color-foreground)">Tags</label>
+			<label for="persona-tags" class="text-sm font-medium text-(--color-foreground)">Tags</label>
 			<Input
+				id="persona-tags"
 				bind:value={form_tags}
 				placeholder="Comma-separated tags"
 				disabled={is_saving}

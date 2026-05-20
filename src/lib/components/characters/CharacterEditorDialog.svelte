@@ -352,8 +352,9 @@
 					onselect={handleAvatarSelect}
 				/>
 				<div class="flex-1 space-y-1">
-					<label class="text-sm font-medium text-(--color-foreground)">Name *</label>
+					<label for="editor-name" class="text-sm font-medium text-(--color-foreground)">Name *</label>
 					<Input
+						id="editor-name"
 						bind:value={form_name}
 						placeholder="Character name"
 						class={name_error ? 'border-(--color-destructive)' : ''}
@@ -365,23 +366,23 @@
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Creator</label>
-				<Input bind:value={form_creator} placeholder="Who made this character" />
+				<label for="editor-creator" class="text-sm font-medium text-(--color-foreground)">Creator</label>
+				<Input id="editor-creator" bind:value={form_creator} placeholder="Who made this character" />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Description</label>
-				<Textarea bind:value={form_description} placeholder="Brief description of the character" autogrow />
+				<label for="editor-description" class="text-sm font-medium text-(--color-foreground)">Description</label>
+				<Textarea id="editor-description" bind:value={form_description} placeholder="Brief description of the character" autogrow />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Personality</label>
-				<Textarea bind:value={form_personality} placeholder="Character's personality traits and behaviors" autogrow rows={3} />
+				<label for="editor-personality" class="text-sm font-medium text-(--color-foreground)">Personality</label>
+				<Textarea id="editor-personality" bind:value={form_personality} placeholder="Character's personality traits and behaviors" autogrow rows={3} />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Scenario</label>
-				<Textarea bind:value={form_scenario} placeholder="Setting and context for the roleplay" autogrow rows={2} />
+				<label for="editor-scenario" class="text-sm font-medium text-(--color-foreground)">Scenario</label>
+				<Textarea id="editor-scenario" bind:value={form_scenario} placeholder="Setting and context for the roleplay" autogrow rows={2} />
 			</div>
 		</div>
 
@@ -389,28 +390,28 @@
 	{:else if current_step === 1}
 		<div class="space-y-4">
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">System Prompt</label>
-				<Textarea bind:value={form_system_prompt} placeholder="System-level instructions for the AI" autogrow rows={3} />
+				<label for="editor-system-prompt" class="text-sm font-medium text-(--color-foreground)">System Prompt</label>
+				<Textarea id="editor-system-prompt" bind:value={form_system_prompt} placeholder="System-level instructions for the AI" autogrow rows={3} />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Post-History Instructions</label>
-				<Textarea bind:value={form_post_history_instructions} placeholder="Instructions appended after the chat history" autogrow rows={2} />
+				<label for="editor-post-history" class="text-sm font-medium text-(--color-foreground)">Post-History Instructions</label>
+				<Textarea id="editor-post-history" bind:value={form_post_history_instructions} placeholder="Instructions appended after the chat history" autogrow rows={2} />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">First Message</label>
-				<Textarea bind:value={form_first_mes} placeholder="The character's opening message" autogrow rows={3} />
+				<label for="editor-first-message" class="text-sm font-medium text-(--color-foreground)">First Message</label>
+				<Textarea id="editor-first-message" bind:value={form_first_mes} placeholder="The character's opening message" autogrow rows={3} />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Example Messages</label>
-				<Textarea bind:value={form_mes_example} placeholder="Example dialogue between user and character" autogrow rows={3} />
+				<label for="editor-example-messages" class="text-sm font-medium text-(--color-foreground)">Example Messages</label>
+				<Textarea id="editor-example-messages" bind:value={form_mes_example} placeholder="Example dialogue between user and character" autogrow rows={3} />
 			</div>
 
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Creator Notes</label>
-				<Textarea bind:value={form_creator_notes} placeholder="Notes from the creator (not used in prompts)" autogrow rows={2} />
+				<label for="editor-creator-notes" class="text-sm font-medium text-(--color-foreground)">Creator Notes</label>
+				<Textarea id="editor-creator-notes" bind:value={form_creator_notes} placeholder="Notes from the creator (not used in prompts)" autogrow rows={2} />
 			</div>
 		</div>
 
@@ -424,7 +425,7 @@
 			{:else}
 				<!-- Assigned lorebooks -->
 				<div class="space-y-2">
-					<label class="text-sm font-medium text-(--color-foreground)">Attached Lorebooks</label>
+					<span class="text-sm font-medium text-(--color-foreground)">Attached Lorebooks</span>
 					{#if lorebooks_loading}
 						<p class="text-sm text-(--color-muted)">Loading…</p>
 					{:else if form_lorebooks.length === 0}
@@ -454,8 +455,9 @@
 
 				<!-- Add lorebook -->
 				<div class="space-y-2">
-					<label class="text-sm font-medium text-(--color-foreground)">Add Lorebook</label>
+					<label for="editor-add-lorebook" class="text-sm font-medium text-(--color-foreground)">Add Lorebook</label>
 					<Input
+						id="editor-add-lorebook"
 						bind:value={lorebook_search}
 						placeholder="Search lorebooks…"
 					/>

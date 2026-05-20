@@ -329,8 +329,9 @@
 
 					<!-- Name -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Name</label>
+						<label for="regex-name" class="text-sm font-medium text-(--color-foreground)">Name</label>
 						<Input
+							id="regex-name"
 							bind:value={form_name}
 							placeholder="Script name"
 							disabled={is_saving}
@@ -339,8 +340,9 @@
 
 					<!-- Find pattern -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Find pattern</label>
+						<label for="regex-find-pattern" class="text-sm font-medium text-(--color-foreground)">Find pattern</label>
 						<Input
+							id="regex-find-pattern"
 							bind:value={form_find_pattern}
 							placeholder="Regex pattern (e.g. \\*\\_([^_]+)\\_\\*)"
 							disabled={is_saving}
@@ -350,8 +352,9 @@
 
 					<!-- Replace pattern -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Replace pattern</label>
+						<label for="regex-replace-pattern" class="text-sm font-medium text-(--color-foreground)">Replace pattern</label>
 						<Input
+							id="regex-replace-pattern"
 							bind:value={form_replace_pattern}
 							placeholder="Replacement string (e.g. **$1**)"
 							disabled={is_saving}
@@ -362,8 +365,9 @@
 					<!-- Flags + Enabled row -->
 					<div class="flex items-end gap-3">
 						<div class="w-32 space-y-1">
-							<label class="text-sm font-medium text-(--color-foreground)">Flags</label>
+							<label for="regex-flags" class="text-sm font-medium text-(--color-foreground)">Flags</label>
 							<Input
+								id="regex-flags"
 								bind:value={form_flags}
 								placeholder="gi"
 								disabled={is_saving}
@@ -423,8 +427,9 @@
 			{#if test_panel_open}
 				<div class="mt-3 space-y-3">
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Sample AI text</label>
+						<label for="regex-sample-text" class="text-sm font-medium text-(--color-foreground)">Sample AI text</label>
 						<Textarea
+							id="regex-sample-text"
 							bind:value={test_input}
 							placeholder="Paste or type sample AI output to test the regex transformation..."
 							rows={3}

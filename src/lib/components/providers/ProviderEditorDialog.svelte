@@ -406,8 +406,9 @@
 		<div class="space-y-3">
 			<!-- Name -->
 			<div class="space-y-1">
-				<label class="text-xs text-(--color-subtle)">Name</label>
+				<label for="provider-name" class="text-xs text-(--color-subtle)">Name</label>
 				<Input
+					id="provider-name"
 					bind:value={form_name}
 					placeholder="e.g. My OpenAI"
 					disabled={is_saving}
@@ -420,8 +421,9 @@
 
 			<!-- Provider Type -->
 			<div class="space-y-1">
-				<label class="text-xs text-(--color-subtle)">Type</label>
+				<label for="provider-type" class="text-xs text-(--color-subtle)">Type</label>
 				<Select
+					id="provider-type"
 					bind:value={form_provider_type}
 					onchange={handleTypeChange}
 					disabled={is_saving || mode === 'edit'}
@@ -459,8 +461,9 @@
 
 			<!-- Base URL -->
 			<div class="space-y-1">
-				<label class="text-xs text-(--color-subtle)">Base URL</label>
+				<label for="provider-base-url" class="text-xs text-(--color-subtle)">Base URL</label>
 				<Input
+					id="provider-base-url"
 					bind:value={form_base_url}
 					placeholder="https://api.example.com/v1"
 					disabled={is_saving}
@@ -475,9 +478,10 @@
 		<!-- ── API Key section ────────────────────────────────────────────── -->
 		{#if !isOllamaType()}
 			<div class="space-y-1">
-				<label class="text-xs text-(--color-subtle)">API Key</label>
+				<label for="provider-api-key" class="text-xs text-(--color-subtle)">API Key</label>
 				<div class="flex items-center gap-2">
 					<Input
+						id="provider-api-key"
 						type={form_api_key_visible ? 'text' : 'password'}
 						bind:value={form_api_key}
 						placeholder={mode === 'edit' && provider?.has_api_key ? 'Key set •••••••' : keyringAvailable ? 'Enter your API key…' : 'Keychain unavailable'}
@@ -511,7 +515,7 @@
 
 		<!-- ── Models section ─────────────────────────────────────────────── -->
 		<div class="space-y-2">
-			<label class="text-xs font-semibold text-(--color-subtle)">Models</label>
+			<span class="text-xs font-semibold text-(--color-subtle)">Models</span>
 			<div class="flex flex-col gap-2">
 				{#each form_models as model, i (i)}
 					<div class="relative">
@@ -551,16 +555,17 @@
 
 		<!-- ── Generation Parameters section ──────────────────────────────── -->
 		<div class="space-y-2">
-			<label class="text-xs font-semibold text-(--color-subtle)">Generation parameters</label>
+			<span class="text-xs font-semibold text-(--color-subtle)">Generation parameters</span>
 			<div class="grid grid-cols-3 gap-x-3 gap-y-4">
 				<div>
-					<label class="mb-1.5 block text-xs text-(--color-subtle)">Temperature</label>
+					<label for="provider-temperature" class="mb-1.5 block text-xs text-(--color-subtle)">Temperature</label>
 					<Input
-						type="number"
-						step="0.1"
-						min="0"
-						max="2"
-						bind:value={form_temperature}
+id="provider-temperature"
+							type="number"
+							step="0.1"
+							min="0"
+							max="2"
+							bind:value={form_temperature}
 						placeholder="—"
 						disabled={is_saving}
 						class={temperature_error ? 'border-(--color-destructive)' : ''}
@@ -570,13 +575,14 @@
 					{/if}
 				</div>
 				<div>
-					<label class="mb-1.5 block text-xs text-(--color-subtle)">Top P</label>
+					<label for="provider-top-p" class="mb-1.5 block text-xs text-(--color-subtle)">Top P</label>
 					<Input
-						type="number"
-						step="0.05"
-						min="0"
-						max="1"
-						bind:value={form_top_p}
+id="provider-top-p"
+							type="number"
+							step="0.05"
+							min="0"
+							max="1"
+							bind:value={form_top_p}
 						placeholder="—"
 						disabled={is_saving}
 						class={top_p_error ? 'border-(--color-destructive)' : ''}
@@ -586,12 +592,13 @@
 					{/if}
 				</div>
 				<div>
-					<label class="mb-1.5 block text-xs text-(--color-subtle)">Max tokens</label>
+					<label for="provider-max-tokens" class="mb-1.5 block text-xs text-(--color-subtle)">Max tokens</label>
 					<Input
-						type="number"
-						step="1"
-						min="1"
-						bind:value={form_max_tokens}
+id="provider-max-tokens"
+							type="number"
+							step="1"
+							min="1"
+							bind:value={form_max_tokens}
 						placeholder="—"
 						disabled={is_saving}
 						class={max_tokens_error ? 'border-(--color-destructive)' : ''}

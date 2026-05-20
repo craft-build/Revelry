@@ -422,8 +422,9 @@
 		<!-- Lorebook name + description -->
 		<div class="space-y-3">
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Name *</label>
+				<label for="lorebook-name" class="text-sm font-medium text-(--color-foreground)">Name *</label>
 				<Input
+					id="lorebook-name"
 					bind:value={form_name}
 					placeholder="Lorebook name"
 					disabled={is_saving}
@@ -434,8 +435,9 @@
 				{/if}
 			</div>
 			<div class="space-y-1">
-				<label class="text-sm font-medium text-(--color-foreground)">Description</label>
+				<label for="lorebook-description" class="text-sm font-medium text-(--color-foreground)">Description</label>
 				<Input
+					id="lorebook-description"
 					bind:value={form_description}
 					placeholder="Short description of this lorebook"
 					disabled={is_saving}
@@ -511,8 +513,9 @@
 
 					<!-- Enabled toggle -->
 					<div class="flex items-center justify-between mb-1">
-						<label class="text-xs text-(--color-muted) uppercase tracking-wider">Enabled</label>
+						<label for="entry-enabled" class="text-xs text-(--color-muted) uppercase tracking-wider">Enabled</label>
 						<button
+							id="entry-enabled"
 							type="button"
 							class={cn(
 								'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
@@ -524,14 +527,15 @@
 							<span class={cn(
 								'pointer-events-none inline-block size-4 rounded-full bg-white shadow ring-0 transition-transform',
 								entry_enabled ? 'translate-x-4' : 'translate-x-0'
-							)} />
+							)}></span>
 						</button>
 					</div>
 
 					<!-- Sort order -->
 					<div class="space-y-1">
-						<label class="text-xs text-(--color-muted) uppercase tracking-wider">Sort Order</label>
+						<label for="entry-sort-order" class="text-xs text-(--color-muted) uppercase tracking-wider">Sort Order</label>
 						<input
+							id="entry-sort-order"
 							type="number"
 							bind:value={entry_sort_order}
 							class="w-20 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-2 py-1 text-sm"
@@ -541,9 +545,10 @@
 
 					<!-- Token budget -->
 					<div class="space-y-1">
-						<label class="text-xs text-(--color-muted) uppercase tracking-wider">Token Budget</label>
+						<label for="entry-token-budget" class="text-xs text-(--color-muted) uppercase tracking-wider">Token Budget</label>
 						<div class="flex items-center gap-2">
 							<input
+								id="entry-token-budget"
 								type="number"
 								bind:value={entry_token_budget}
 								class="w-24 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-2 py-1 text-sm"
@@ -556,8 +561,9 @@
 
 					<!-- Keywords -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Keywords *</label>
+						<label for="entry-keywords" class="text-sm font-medium text-(--color-foreground)">Keywords *</label>
 						<Input
+							id="entry-keywords"
 							bind:value={entry_keys}
 							placeholder="comma-separated keywords"
 							disabled={is_saving_entry}
@@ -570,8 +576,9 @@
 
 					<!-- Secondary keys -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Secondary keys</label>
+						<label for="entry-secondary-keys" class="text-sm font-medium text-(--color-foreground)">Secondary keys</label>
 						<Input
+							id="entry-secondary-keys"
 							bind:value={entry_secondary_keys}
 							placeholder="optional secondary keywords"
 							disabled={is_saving_entry}
@@ -580,8 +587,9 @@
 
 					<!-- Content -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Content *</label>
+						<label for="entry-content" class="text-sm font-medium text-(--color-foreground)">Content *</label>
 						<Textarea
+							id="entry-content"
 							bind:value={entry_content}
 							placeholder="Entry content injected into context"
 							rows={4}
@@ -596,16 +604,17 @@
 					<!-- Position + Depth row -->
 					<div class="flex gap-3">
 						<div class="flex-1 space-y-1">
-							<label class="text-sm font-medium text-(--color-foreground)">Position</label>
-							<Select bind:value={entry_position} disabled={is_saving_entry}>
+							<label for="entry-position" class="text-sm font-medium text-(--color-foreground)">Position</label>
+							<Select id="entry-position" bind:value={entry_position} disabled={is_saving_entry}>
 								<option value="before_char">Before character</option>
 								<option value="after_char">After character</option>
 								<option value="at_depth">At depth</option>
 							</Select>
 						</div>
 						<div class="w-24 space-y-1">
-							<label class="text-sm font-medium text-(--color-foreground)">Depth</label>
+							<label for="entry-depth" class="text-sm font-medium text-(--color-foreground)">Depth</label>
 							<Input
+								id="entry-depth"
 								type="number"
 								bind:value={entry_depth_str}
 								min={0}
@@ -618,8 +627,8 @@
 
 					<!-- Activation -->
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Activation</label>
-						<Select bind:value={entry_activation} disabled={is_saving_entry}>
+						<label for="entry-activation" class="text-sm font-medium text-(--color-foreground)">Activation</label>
+					<Select id="entry-activation" bind:value={entry_activation} disabled={is_saving_entry}>
 							<option value="always">Always active</option>
 							<option value="character_only">Character only</option>
 							<option value="user_only">User only</option>
@@ -669,8 +678,9 @@
 			{#if test_panel_open}
 				<div class="mt-3 space-y-3">
 					<div class="space-y-1">
-						<label class="text-sm font-medium text-(--color-foreground)">Sample text</label>
+						<label for="test-sample-text" class="text-sm font-medium text-(--color-foreground)">Sample text</label>
 						<Textarea
+							id="test-sample-text"
 							bind:value={test_sample_text}
 							placeholder="Paste or type sample chat text to test which entries would activate…"
 							rows={3}
