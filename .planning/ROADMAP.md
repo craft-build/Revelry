@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export ✅ 2026-05-18
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
 - [x] **Phase 9: Power Features** - Lorebook context injection and regex scripting ✅ 2026-05-19
-- [ ] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements ✅ 2026-05-19
+- [x] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements ✅ 2026-05-19 (completed 2026-05-20)
 - [ ] **Phase 11: Spec Update & Distribution** - Updated design doc and cross-platform builds
 
 ## Phase Details
@@ -359,5 +359,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Rich Output & Cards         | 4/4            | Complete    | 2026-05-18 |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 5/5            | Complete    | 2026-05-19 |
-| 10. Theme & Polish             | 1/1            | Complete    | 2026-05-19 |
+| 10. Theme & Polish             | 1/1            | Complete    | 2026-05-20 |
 | 11. Spec Update & Distribution | 0/3            | Not started | -          |
