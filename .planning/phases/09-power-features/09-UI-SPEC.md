@@ -51,13 +51,13 @@ All new elements use existing design tokens, bits-ui primitives, and Tailwind v4
 
 Uses existing 8-point scale. No exceptions for this phase.
 
-| Token | Value | Usage                                              |
-| ----- | ----- | -------------------------------------------------- |
-| xs    | 4px   | Regex script row inner padding, test result gaps   |
-| sm    | 8px   | Compact element spacing, lorebook chip padding     |
-| md    | 16px  | Default section padding, popover body padding      |
-| lg    | 24px  | Section breaks within regex editor, test panel     |
-| xl    | 32px  | Layout gaps in context bar detail                  |
+| Token | Value | Usage                                            |
+| ----- | ----- | ------------------------------------------------ |
+| xs    | 4px   | Regex script row inner padding, test result gaps |
+| sm    | 8px   | Compact element spacing, lorebook chip padding   |
+| md    | 16px  | Default section padding, popover body padding    |
+| lg    | 24px  | Section breaks within regex editor, test panel   |
+| xl    | 32px  | Layout gaps in context bar detail                |
 
 Exceptions: none
 
@@ -65,13 +65,13 @@ Exceptions: none
 
 ## Typography
 
-Reuses existing scale. No new sizes or weights.
+Reuses existing scale. No new sizes. Consolidated to 2 weights (400, 600).
 
 | Role    | Size    | Weight | Line Height | Usage in This Phase                                            |
 | ------- | ------- | ------ | ----------- | -------------------------------------------------------------- |
 | Body    | 15px    | 400    | 1.6         | Regex test panel output, lorebook detail entry content snippet |
-| Label   | 12-13px | 500    | 1.4         | Lorebook chip names, regex script names in list                |
-| Heading | 14px    | 600    | 1.2         | Section headers ("Regex Scripts", "Lorebook: 3 active")        |
+| Label   | 12-13px | 400    | 1.4         | Lorebook chip names, regex script names in list                |
+| Heading | 13px    | 600    | 1.2         | Section headers ("Regex Scripts", "Lorebook: 3 active")        |
 | Display | 10-11px | 400    | 1.3         | Token cost badges, section metadata, uppercase labels          |
 
 ---
@@ -80,14 +80,14 @@ Reuses existing scale. No new sizes or weights.
 
 All colors reference existing OKLCH tokens. No new tokens.
 
-| Role            | Token                    | Usage                                                                                         |
-| --------------- | ------------------------ | --------------------------------------------------------------------------------------------- |
-| Dominant (60%)  | `--color-background`     | Chat view background, regex editor background (unchanged)                                     |
-| Secondary (30%) | `--color-surface`        | Lorebook panel popover, regex test panel background, context bar detail section               |
-| Accent (10%)    | `--color-accent`         | Lorebook chip borders when active, regex test match highlights, "Run test" button, expansion indicator |
-| Destructive     | `--color-destructive`    | Invalid regex error banner, delete script action                                              |
-| Warning         | `--color-warning`        | Budget overflow warning in context bar detail                                                 |
-| Success         | `--color-success`        | Regex validation pass indicator, matched entry indicator in lorebook detail                   |
+| Role            | Token                 | Usage                                                                                                  |
+| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------ |
+| Dominant (60%)  | `--color-background`  | Chat view background, regex editor background (unchanged)                                              |
+| Secondary (30%) | `--color-surface`     | Lorebook panel popover, regex test panel background, context bar detail section                        |
+| Accent (10%)    | `--color-accent`      | Lorebook chip borders when active, regex test match highlights, "Run test" button, expansion indicator |
+| Destructive     | `--color-destructive` | Invalid regex error banner, delete script action                                                       |
+| Warning         | `--color-warning`     | Budget overflow warning in context bar detail                                                          |
+| Success         | `--color-success`     | Regex validation pass indicator, matched entry indicator in lorebook detail                            |
 
 ### Accent reserved for (this phase only)
 
@@ -102,26 +102,34 @@ All colors reference existing OKLCH tokens. No new tokens.
 
 ## Component Inventory
 
+### Focal Points
+
+| Surface                    | Focal Point                                                                                                     |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Regex script editor        | Script form (right column) when a script is selected; script list empty state when no scripts exist.            |
+| Chat header lorebook panel | Lorebook checkbox list inside the popover; trigger button is secondary focal point showing assignment state.    |
+| Context bar lorebook detail | Activated entry list (expanded); collapsed count line is the resting focal point drawing attention when N > 0. |
+
 ### New Components
 
-| Component              | Location                                                        | bits-ui Primitive       | Description                                                                                                                     |
-| ---------------------- | --------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ConversationLorebookPanel | `src/lib/components/chat/ConversationLorebookPanel.svelte`  | `Popover` from bits-ui  | Popover in chat header showing available lorebooks with checkboxes. Shows assigned lorebooks and even-split budget allocation.  |
-| RegexScriptEditor      | `src/lib/components/characters/RegexScriptEditor.svelte`        | none (plain form)       | Two-column layout: script list + script form. Collapsible test panel at bottom. Manages per-character regex scripts.            |
-| RegexTestPanel         | embedded within RegexScriptEditor                               | none                    | Collapsible section: input textarea for sample text, "Run test" button, output with highlighted matches.                        |
-| LorebookDetailPanel    | `src/lib/components/chat/LorebookDetailPanel.svelte`            | none                    | Expandable section below context bar. Collapsed: "Lorebook: N active". Expanded: list of activated entries with name, snippet, token cost. |
+| Component                 | Location                                                   | bits-ui Primitive      | Description                                                                                                                                |
+| ------------------------- | ---------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| ConversationLorebookPanel | `src/lib/components/chat/ConversationLorebookPanel.svelte` | `Popover` from bits-ui | Popover in chat header showing available lorebooks with checkboxes. Shows assigned lorebooks and even-split budget allocation.             |
+| RegexScriptEditor         | `src/lib/components/characters/RegexScriptEditor.svelte`   | none (plain form)      | Two-column layout: script list + script form. Collapsible test panel at bottom. Manages per-character regex scripts.                       |
+| RegexTestPanel            | embedded within RegexScriptEditor                          | none                   | Collapsible section: input textarea for sample text, "Run test" button, output with highlighted matches.                                   |
+| LorebookDetailPanel       | `src/lib/components/chat/LorebookDetailPanel.svelte`       | none                   | Expandable section below context bar. Collapsed: "Lorebook: N active". Expanded: list of activated entries with name, snippet, token cost. |
 
 ### Modified Components
 
-| Component              | File                                                           | Changes                                                                                                                                                               |
-| ---------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CharacterEditorDialog  | `src/lib/components/characters/CharacterEditorDialog.svelte`   | Add 4th step "Regex" after "Lorebooks" in stepper. Renders RegexScriptEditor component when on step 3. Steps array extended. `pending_id` used for loading scripts. |
-| MessageBubble          | `src/lib/components/chat/MessageBubble.svelte`                 | After streaming completes, final content passes through `app.applyRegexScripts(content)` before rendering with MarkdownRenderer. No visual change to the bubble.     |
-| MessageInput           | `src/lib/components/chat/MessageInput.svelte`                  | Below the token bar row, add LorebookDetailPanel component. Passes `context_budget` data.                                                                             |
-| ChatHeader             | `src/lib/components/chat/ChatHeader.svelte`                    | Add ConversationLorebookPanel trigger button after provider/model selector, separated by divider.                                                                     |
-| AppState               | `src/lib/stores/app.svelte.ts`                                 | Add `regex_scripts`, `conversation_lorebooks`, lorebook detail state, regex-related actions.                                                                          |
-| Types                  | `src/lib/types/index.ts`                                       | Add `RegexScript`, `LorebookActivationDetail` types.                                                                                                                  |
-| API                    | `src/lib/data/api.ts`                                          | Add invoke wrappers for regex CRUD, apply_single_regex, conversation lorebook junction commands.                                                                      |
+| Component             | File                                                         | Changes                                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CharacterEditorDialog | `src/lib/components/characters/CharacterEditorDialog.svelte` | Add 4th step "Regex" after "Lorebooks" in stepper. Renders RegexScriptEditor component when on step 3. Steps array extended. `pending_id` used for loading scripts. |
+| MessageBubble         | `src/lib/components/chat/MessageBubble.svelte`               | After streaming completes, final content passes through `app.applyRegexScripts(content)` before rendering with MarkdownRenderer. No visual change to the bubble.    |
+| MessageInput          | `src/lib/components/chat/MessageInput.svelte`                | Below the token bar row, add LorebookDetailPanel component. Passes `context_budget` data.                                                                           |
+| ChatHeader            | `src/lib/components/chat/ChatHeader.svelte`                  | Add ConversationLorebookPanel trigger button after provider/model selector, separated by divider.                                                                   |
+| AppState              | `src/lib/stores/app.svelte.ts`                               | Add `regex_scripts`, `conversation_lorebooks`, lorebook detail state, regex-related actions.                                                                        |
+| Types                 | `src/lib/types/index.ts`                                     | Add `RegexScript`, `LorebookActivationDetail` types.                                                                                                                |
+| API                   | `src/lib/data/api.ts`                                        | Add invoke wrappers for regex CRUD, apply_single_regex, conversation lorebook junction commands.                                                                    |
 
 ---
 
@@ -149,11 +157,11 @@ All colors reference existing OKLCH tokens. No new tokens.
 - Lorebook list: each lorebook is a checkbox row
   - Full-width `<label>`, rounded `rounded-(--radius-md)`, `px-3 py-2`
   - Checkbox: native `<input type="checkbox">` with `accent-color: var(--color-accent)`
-  - Lorebook name: `text-sm font-medium text-(--color-foreground)`
+  - Lorebook name: `text-sm text-(--color-foreground)`
   - Lorebook description: `text-xs text-(--color-muted)` — single line truncated
   - Checked state: `bg-(--color-accent)/5 border border-(--color-accent)/20`
   - Unchecked state: `hover:bg-(--color-surface-hover)`
-  - Character-assigned lorebooks shown as disabled/pre-checked with a "Character" badge: `text-[10px] bg-(--color-accent)/15 text-(--color-accent) rounded-(--radius-sm) px-1.5 py-0.5 font-medium`
+  - Character-assigned lorebooks shown as disabled/pre-checked with a "Character" badge: `text-[10px] bg-(--color-accent)/15 text-(--color-accent) rounded-(--radius-sm) px-1.5 py-0.5`
 - Budget display at bottom: "Budget: N tokens / M max" in `text-[11px] text-(--color-muted)`
 - Max height: `max-h-80 overflow-y-auto`
 - Empty state when no lorebooks exist: "No lorebooks available. Create one in the Characters tab."
@@ -164,6 +172,8 @@ All colors reference existing OKLCH tokens. No new tokens.
 - Character-level lorebooks are read-only in this panel (managed in character editor)
 - Panel closes on outside click (standard Popover behavior)
 
+**Delete confirmation:** Immediate delete with undo toast. When the Trash2 "Delete script" button is clicked, the script is removed immediately and a toast notification appears with "Script deleted" text and an "Undo" action button. The undo action calls `saveRegexScript` to restore the script. Toast auto-dismisses after 5 seconds.
+
 ### 2. Regex Script Editor (Character Editor Step 4)
 
 **Where:** 4th step of CharacterEditorDialog, labeled "Regex" in the stepper.
@@ -173,14 +183,14 @@ All colors reference existing OKLCH tokens. No new tokens.
 **Left column — Script list:**
 
 - Width: `w-2/5`
-- Header: "Scripts" in `text-sm font-medium text-(--color-foreground)` with Plus button
+- Header: "Scripts" in `text-sm font-semibold text-(--color-foreground)` with Plus button (`aria-label="Add regex script"`)
 - Each script row:
   - `rounded-(--radius-md) border px-3 py-2` container
-  - Script name: `text-sm font-medium text-(--color-foreground)` (truncated)
+  - Script name: `text-sm text-(--color-foreground)` (truncated)
   - Find pattern preview: `text-xs text-(--color-muted) font-mono` (truncated, first 40 chars)
   - Enabled indicator: green dot (`bg-(--color-success) size-2 rounded-full`) when enabled, grey when disabled
   - Selected state: `border-(--color-accent) bg-(--color-accent)/5`
-  - Hover delete button: `opacity-0 group-hover:opacity-100` pattern, Trash2 icon
+  - Hover delete button: `opacity-0 group-hover:opacity-100` pattern, Trash2 icon (`aria-label="Delete script"`)
   - Max height: `max-h-[280px] overflow-y-auto`
 - Empty state: "No regex scripts. Add one to transform AI output."
 - Create mode: "Regex scripts can be added after the character is created." (same pattern as lorebook step in create mode)
@@ -188,22 +198,22 @@ All colors reference existing OKLCH tokens. No new tokens.
 **Right column — Script form:**
 
 - Width: `w-3/5`, separated by `border-l border-(--color-border) pl-4`
-- Header: "Script details" in `text-sm font-medium text-(--color-foreground)`
+- Header: "Script details" in `text-sm font-semibold text-(--color-foreground)`
 - Fields:
-  1. **Name** — Input, `text-sm font-medium text-(--color-foreground)` label, placeholder "Script name"
-  2. **Find pattern** — Input with `font-mono text-sm`, placeholder "Regex pattern (e.g., \\*([^*]+)\\*)"
+  1. **Name** — Input, `text-sm text-(--color-foreground)` label, placeholder "Script name"
+  2. **Find pattern** — Input with `font-mono text-sm`, placeholder "Regex pattern (e.g., \\_([^_]+)\\\*)"
      - Error state: `border-(--color-destructive)` when backend rejects pattern
      - Error message: `text-xs text-(--color-destructive)` — backend error text (e.g., "Invalid regex: unclosed group")
   3. **Replace pattern** — Input with `font-mono text-sm`, placeholder "Replacement string (e.g. **$1**)" — can be empty (deletion)
   4. **Flags** — Input with `font-mono text-sm`, placeholder "Flags (e.g., gi)", width `w-32`
-  5. **Enabled** — native checkbox, label "Enabled" in `text-sm font-medium`
+  5. **Enabled** — native checkbox, label "Enabled" in `text-sm`
 - Save button: "Save script" with Check icon, `variant="primary" size="sm" class="w-full"` (matches lorebook entry save)
 - No script selected state: "Select a script to edit" in `text-sm text-(--color-subtle)`
 
 **Test panel (collapsible, same pattern as lorebook keyword tester):**
 
 - Collapsible section below the two-column layout, separated by `border-t border-(--color-border) pt-3`
-- Toggle: ChevronRight/ChevronDown + "Test pattern" text, `text-sm font-medium`
+- Toggle: ChevronRight/ChevronDown + "Test pattern" text, `text-sm font-semibold`
 - When expanded:
   - "Sample AI text" label + Textarea (rows=3), placeholder "Paste or type sample AI output to test the regex transformation..."
   - "Run test" button: `variant="secondary" size="sm"`, Play icon
@@ -230,7 +240,7 @@ All colors reference existing OKLCH tokens. No new tokens.
 - Same header row but with ChevronDown icon
 - Below: list of activated lorebook entries in a `space-y-1` container with `px-1 pb-2`
 - Each entry row: `flex items-center gap-2 rounded-(--radius-sm) px-2 py-1.5`
-  - Entry name: `text-sm font-medium text-(--color-foreground)` — primary keyword or "Entry N" if no keys
+  - Entry name: `text-sm text-(--color-foreground)` — primary keyword or "Entry N" if no keys
   - Content snippet: `text-xs text-(--color-muted)` — first ~30 chars of content, truncated with ellipsis
   - Token cost: `text-[10px] font-mono text-(--color-subtle) bg-(--color-surface-elevated) rounded-(--radius-sm) px-1.5 py-0.5` (e.g., "42 tok")
   - Match indicator: Check icon in `text-(--color-success)` for keyword-matched entries, or "constant" label for always-active entries
@@ -262,29 +272,33 @@ All colors reference existing OKLCH tokens. No new tokens.
 
 ## Copywriting Contract
 
-| Element                                    | Copy                                                                                           |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Chat header lorebook button (none)         | "Lorebooks"                                                                                    |
-| Chat header lorebook button (N assigned)   | "Lorebooks (N)"                                                                                |
-| Lorebook panel header                      | "CONVERSATION LOREBOOKS" (uppercase section header)                                            |
-| Lorebook panel budget line                 | "Budget: {tokens} tokens evenly split"                                                         |
-| Lorebook panel empty                       | "No lorebooks available. Create one in the Characters tab."                                    |
-| Character badge (character-level lorebook) | "Character"                                                                                    |
-| Regex editor step label                    | "Regex"                                                                                        |
-| Regex script empty state                   | "No regex scripts. Add one to transform AI output."                                            |
-| Regex script create mode lockout           | "Regex scripts can be added after the character is created."                                   |
-| Regex test panel toggle                    | "Test pattern"                                                                                 |
-| Regex test run button                      | "Run test"                                                                                     |
-| Regex test no matches                      | "No matches"                                                                                   |
-| Regex test match count                     | "{N} matches found"                                                                            |
-| Regex validation error prefix              | "Invalid regex: " (backend error follows)                                                      |
-| Context bar lorebook collapsed (0 active)  | "Lorebook: none active"                                                                        |
-| Context bar lorebook collapsed (N active)  | "Lorebook: {N} active"                                                                         |
-| Context bar budget warning                 | "Lorebook budget exceeded by {N} tokens. Some entries truncated."                              |
-| Constant entry indicator                   | "constant" (badge text for always-active entries)                                              |
-| Error: lorebook assign failed              | "Failed to assign lorebook. Try again."                                                        |
-| Error: regex save failed                   | "Failed to save regex script. Try again."                                                      |
-| Error: regex test failed                   | "Pattern test failed. Check your syntax."                                                      |
+| Element                                    | Copy                                                              |
+| ------------------------------------------ | ----------------------------------------------------------------- |
+| Chat header lorebook button (none)         | "Lorebooks"                                                       |
+| Chat header lorebook button (N assigned)   | "Lorebooks (N)"                                                   |
+| Lorebook panel header                      | "CONVERSATION LOREBOOKS" (uppercase section header)               |
+| Lorebook panel budget line                 | "Budget: {tokens} tokens evenly split"                            |
+| Lorebook panel empty                       | "No lorebooks available. Create one in the Characters tab."       |
+| Character badge (character-level lorebook) | "Character"                                                       |
+| Regex editor step label                    | "Regex"                                                           |
+| Regex script empty state                   | "No regex scripts. Add one to transform AI output."               |
+| Regex script create mode lockout           | "Regex scripts can be added after the character is created."      |
+| Regex test panel toggle                    | "Test pattern"                                                    |
+| Regex test run button                      | "Run test"                                                        |
+| Regex test no matches                      | "No matches"                                                      |
+| Regex test match count                     | "{N} matches found"                                               |
+| Regex validation error prefix              | "Invalid regex: " (backend error follows)                         |
+| Context bar lorebook collapsed (0 active)  | "Lorebook: none active"                                           |
+| Context bar lorebook collapsed (N active)  | "Lorebook: {N} active"                                            |
+| Context bar budget warning                 | "Lorebook budget exceeded by {N} tokens. Some entries truncated." |
+| Constant entry indicator                   | "constant" (badge text for always-active entries)                 |
+| Error: lorebook assign failed              | "Failed to assign lorebook. Try again."                           |
+| Error: regex save failed                   | "Failed to save regex script. Try again."                         |
+| Error: regex test failed                   | "Pattern test failed. Check your syntax."                         |
+| Plus button aria-label                     | "Add regex script"                                                |
+| Trash2 button aria-label                   | "Delete script"                                                   |
+| Delete confirmation toast                  | "Script deleted" (with Undo action)                               |
+| Delete undo toast                          | "Script restored"                                                 |
 
 ---
 
@@ -317,24 +331,24 @@ interface LorebookActivationDetail {
 
 ### New AppState fields
 
-| Field                    | Type                        | Default | Description                                                               |
-| ------------------------ | --------------------------- | ------- | ------------------------------------------------------------------------- |
-| `regex_scripts`          | `Map<string, RegexScript[]>` | `new Map()` | Per-character regex scripts cache, keyed by character_id             |
-| `conversation_lorebooks` | `Lorebook[]`                | `[]`    | Lorebooks assigned to the active conversation (loaded on conversation open) |
-| `lorebook_detail_open`   | `boolean`                   | `false` | Whether context bar lorebook detail is expanded                           |
-| `lorebook_details`       | `LorebookActivationDetail[]`| `[]`    | Activation details from last generation (populated from complete event)    |
+| Field                    | Type                         | Default     | Description                                                                 |
+| ------------------------ | ---------------------------- | ----------- | --------------------------------------------------------------------------- |
+| `regex_scripts`          | `Map<string, RegexScript[]>` | `new Map()` | Per-character regex scripts cache, keyed by character_id                    |
+| `conversation_lorebooks` | `Lorebook[]`                 | `[]`        | Lorebooks assigned to the active conversation (loaded on conversation open) |
+| `lorebook_detail_open`   | `boolean`                    | `false`     | Whether context bar lorebook detail is expanded                             |
+| `lorebook_details`       | `LorebookActivationDetail[]` | `[]`        | Activation details from last generation (populated from complete event)     |
 
 ### New AppState actions
 
-| Method                                    | Parameters                                     | Behavior                                                                                                         |
-| ----------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `loadRegexScripts(characterId)`           | `characterId: string`                          | Calls `invoke('get_regex_scripts', { characterId })`. Caches in `regex_scripts` Map.                             |
-| `saveRegexScript(script)`                 | `script: RegexScript`                          | Calls `invoke('save_regex_script', { script })`. Validates via backend first. Updates cache. Returns saved.      |
-| `deleteRegexScript(id, characterId)`      | `id: string, characterId: string`              | Calls `invoke('delete_regex_script', { id })`. Removes from cache.                                               |
-| `testRegexPattern(pattern, replace, flags, text)` | `pattern, replace, flags, text: string` | Calls `invoke('apply_single_regex', { pattern, replacePattern, flags, sampleText })`. Returns transformed text.  |
-| `applyRegexScripts(content, characterId)` | `content: string, characterId: string`         | Retrieves cached scripts for character, applies enabled scripts in sort_order as pipe-chain. Returns transformed. |
-| `toggleConversationLorebook(conversationId, lorebookId)` | `conversationId, lorebookId: string` | Adds or removes lorebook from conversation_lorebooks junction. Updates `conversation_lorebooks`.                 |
-| `loadConversationLorebooks(conversationId)` | `conversationId: string`                     | Calls `invoke('get_conversation_lorebooks', { conversationId })`. Sets `conversation_lorebooks`.                 |
+| Method                                                   | Parameters                              | Behavior                                                                                                          |
+| -------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `loadRegexScripts(characterId)`                          | `characterId: string`                   | Calls `invoke('get_regex_scripts', { characterId })`. Caches in `regex_scripts` Map.                              |
+| `saveRegexScript(script)`                                | `script: RegexScript`                   | Calls `invoke('save_regex_script', { script })`. Validates via backend first. Updates cache. Returns saved.       |
+| `deleteRegexScript(id, characterId)`                     | `id: string, characterId: string`       | Calls `invoke('delete_regex_script', { id })`. Removes from cache.                                                |
+| `testRegexPattern(pattern, replace, flags, text)`        | `pattern, replace, flags, text: string` | Calls `invoke('apply_single_regex', { pattern, replacePattern, flags, sampleText })`. Returns transformed text.   |
+| `applyRegexScripts(content, characterId)`                | `content: string, characterId: string`  | Retrieves cached scripts for character, applies enabled scripts in sort_order as pipe-chain. Returns transformed. |
+| `toggleConversationLorebook(conversationId, lorebookId)` | `conversationId, lorebookId: string`    | Adds or removes lorebook from conversation_lorebooks junction. Updates `conversation_lorebooks`.                  |
+| `loadConversationLorebooks(conversationId)`              | `conversationId: string`                | Calls `invoke('get_conversation_lorebooks', { conversationId })`. Sets `conversation_lorebooks`.                  |
 
 ### StreamChunk complete event extension
 
@@ -376,11 +390,11 @@ removeLorebookFromConversation(conversationId: string, lorebookId: string): Prom
 
 ## Registry Safety
 
-| Registry       | Blocks Used                    | Safety Gate                                  |
-| -------------- | ------------------------------ | -------------------------------------------- |
-| shadcn         | N/A (Svelte project)           | not applicable                               |
-| bits-ui        | Popover (existing, reused)     | already in project, no new primitives needed |
-| @lucide/svelte | BookOpen (existing), Play (existing), Check (existing), ChevronRight/Down (existing) | official library, no vetting required |
+| Registry       | Blocks Used                                                                          | Safety Gate                                  |
+| -------------- | ------------------------------------------------------------------------------------ | -------------------------------------------- |
+| shadcn         | N/A (Svelte project)                                                                 | not applicable                               |
+| bits-ui        | Popover (existing, reused)                                                           | already in project, no new primitives needed |
+| @lucide/svelte | BookOpen (existing), Play (existing), Check (existing), ChevronRight/Down (existing) | official library, no vetting required        |
 
 Third-party registries: none
 
@@ -401,15 +415,15 @@ Third-party registries: none
 
 ## Pre-Populated From
 
-| Source                       | Decisions Used                                                                                           |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Source                       | Decisions Used                                                                                            |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
 | 09-CONTEXT.md                | 9 decisions (D-01 through D-09) — regex scoping, conversation lorebooks, injection visibility, test panel |
-| app.css                      | All color tokens, spacing, typography, radii — no new tokens needed                                      |
+| app.css                      | All color tokens, spacing, typography, radii — no new tokens needed                                       |
 | LorebookEditor.svelte        | Two-column editor layout pattern, keyword test panel pattern, entry list pattern                          |
 | CharacterEditorDialog.svelte | Stepper wizard pattern, step structure, lorebook assignment pattern                                       |
-| ChatHeader.svelte            | Popover trigger button pattern, divider pattern, provider selector layout                                |
+| ChatHeader.svelte            | Popover trigger button pattern, divider pattern, provider selector layout                                 |
 | MessageInput.svelte          | Context bar token utilization layout                                                                      |
 | MessageBubble.svelte         | Streaming/completion conditional rendering pattern                                                        |
 | api.ts                       | invoke wrapper patterns, command naming conventions                                                       |
 | Phase 08-UI-SPEC.md          | Structural template for interaction contracts, copywriting contract format                                |
-| User input                   | 0 (all questions answered by upstream artifacts)                                                         |
+| User input                   | 0 (all questions answered by upstream artifacts)                                                          |
