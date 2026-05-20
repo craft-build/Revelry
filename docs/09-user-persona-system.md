@@ -13,18 +13,18 @@ In most AI roleplay platforms, the user is an invisible, undefined presence. The
 
 A User Persona is a structured record that defines the user's roleplay identity. Unlike AI character cards, which follow the CharacterCardV2 specification, user personas have a simpler but equally important schema designed around the question: Who am I in this story? The schema includes the following fields:
 
-| **Field** | **Required** | **Token Budget** | **Description** |
-|---|---|---|---|
-| name | Yes | Always included | The persona's display name, used as {{user}} replacement and in UI elements |
-| appearance | Yes | Always included | Physical description: height, build, hair, eyes, clothing, distinguishing features |
-| personality | Yes | Always included | Core personality traits, emotional tendencies, behavioral patterns |
-| background | Recommended | Always if present | The persona's history, origin, and formative experiences |
-| role_description | Optional | Always if present | Occupation, social role, or narrative function within the story world |
-| relationships | Optional | Always if present | Template string describing relationship to AI characters, supports {{char}} |
-| speech_style | Optional | Always if present | How the persona speaks: vocabulary, accent, verbal tics |
-| tags | Optional | Not injected | Categorization tags for organization and filtering |
-| is_default | Optional | Not injected | Marks one persona as the default for new conversations |
-| extensions | Optional | Varies | Extensible namespace for future features and integrations |
+| **Field**        | **Required** | **Token Budget**  | **Description**                                                                    |
+| ---------------- | ------------ | ----------------- | ---------------------------------------------------------------------------------- |
+| name             | Yes          | Always included   | The persona's display name, used as {{user}} replacement and in UI elements        |
+| appearance       | Yes          | Always included   | Physical description: height, build, hair, eyes, clothing, distinguishing features |
+| personality      | Yes          | Always included   | Core personality traits, emotional tendencies, behavioral patterns                 |
+| background       | Recommended  | Always if present | The persona's history, origin, and formative experiences                           |
+| role_description | Optional     | Always if present | Occupation, social role, or narrative function within the story world              |
+| relationships    | Optional     | Always if present | Template string describing relationship to AI characters, supports {{char}}        |
+| speech_style     | Optional     | Always if present | How the persona speaks: vocabulary, accent, verbal tics                            |
+| tags             | Optional     | Not injected      | Categorization tags for organization and filtering                                 |
+| is_default       | Optional     | Not injected      | Marks one persona as the default for new conversations                             |
+| extensions       | Optional     | Varies            | Extensible namespace for future features and integrations                          |
 
 ### 9.2.2 Template Variables
 

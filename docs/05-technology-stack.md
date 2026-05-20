@@ -71,18 +71,18 @@ API keys are stored in the operating system's native credential store through th
 
 ## Technology Summary
 
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| Shell | Tauri | 2.x | Native desktop webview |
-| Frontend | SvelteKit + Svelte | 2.x / 5.x | UI framework (runes mode) |
-| Bundler | Vite | 8.x | Frontend build |
-| Styling | Tailwind CSS | 4.x | Utility-first CSS with OKLCH tokens |
-| Components | bits-ui | 2.x | Headless UI primitives |
-| Icons | @lucide/svelte | 1.x | Icon library |
-| Markdown | marked + DOMPurify + Shiki | 18 / 3 / 4 | GFM rendering + syntax highlighting |
-| Backend | Rust + Tauri | stable / 2.x | Native backend |
-| Database | SQLite (rusqlite bundled) | 0.31 | Local persistence |
-| AI | rig-core | 0.37 | Multi-provider LLM integration |
-| Secrets | keyring | 4.0 | OS-native keychain |
-| Token Counting | tiktoken-rs | 0.11 | BPE tokenization for context window management |
-| Package Manager | Bun | latest | Frontend dependency management |
+| Layer           | Technology                 | Version      | Purpose                                        |
+| --------------- | -------------------------- | ------------ | ---------------------------------------------- |
+| Shell           | Tauri                      | 2.x          | Native desktop webview                         |
+| Frontend        | SvelteKit + Svelte         | 2.x / 5.x    | UI framework (runes mode)                      |
+| Bundler         | Vite                       | 8.x          | Frontend build                                 |
+| Styling         | Tailwind CSS               | 4.x          | Utility-first CSS with OKLCH tokens            |
+| Components      | bits-ui                    | 2.x          | Headless UI primitives                         |
+| Icons           | @lucide/svelte             | 1.x          | Icon library                                   |
+| Markdown        | marked + DOMPurify + Shiki | 18 / 3 / 4   | GFM rendering + syntax highlighting            |
+| Backend         | Rust + Tauri               | stable / 2.x | Native backend                                 |
+| Database        | SQLite (rusqlite bundled)  | 0.31         | Local persistence                              |
+| AI              | rig-core                   | 0.37         | Multi-provider LLM integration                 |
+| Secrets         | keyring                    | 4.0          | OS-native keychain                             |
+| Token Counting  | tiktoken-rs                | 0.11         | BPE tokenization for context window management |
+| Package Manager | Bun                        | latest       | Frontend dependency management                 |

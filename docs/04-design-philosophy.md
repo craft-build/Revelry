@@ -54,26 +54,26 @@ Spacing follows Tailwind's default scale. Border radii are tokenized: `--radius-
 
 ### Custom Utilities
 
-| Utility | Purpose |
-|---|---|
-| `.font-display` | Fraunces serif with OpenType features for character names |
-| `.surface-grain` | Subtle radial-gradient texture overlay for atmospheric depth |
-| `.streaming-caret` | Animated `▍` caret on streaming AI responses |
-| `.drag-region` | `-webkit-app-region: drag` for Tauri window dragging |
-| `.no-drag` | `-webkit-app-region: no-drag` to exclude elements from drag region |
+| Utility            | Purpose                                                            |
+| ------------------ | ------------------------------------------------------------------ |
+| `.font-display`    | Fraunces serif with OpenType features for character names          |
+| `.surface-grain`   | Subtle radial-gradient texture overlay for atmospheric depth       |
+| `.streaming-caret` | Animated `▍` caret on streaming AI responses                       |
+| `.drag-region`     | `-webkit-app-region: drag` for Tauri window dragging               |
+| `.no-drag`         | `-webkit-app-region: no-drag` to exclude elements from drag region |
 
 ## Interaction Patterns
 
 ### Keyboard Shortcuts
 
-| Shortcut | Action |
-|---|---|
-| F9 | Toggle sidebar |
-| Enter | Send message |
-| Ctrl+Enter | Newline in message input |
-| Ctrl+N | New conversation |
-| Ctrl+Shift+N | New character |
-| Escape | Cancel generation / close overlays |
+| Shortcut     | Action                             |
+| ------------ | ---------------------------------- |
+| F9           | Toggle sidebar                     |
+| Enter        | Send message                       |
+| Ctrl+Enter   | Newline in message input           |
+| Ctrl+N       | New conversation                   |
+| Ctrl+Shift+N | New character                      |
+| Escape       | Cancel generation / close overlays |
 
 ### Sidebar Navigation
 

@@ -33,6 +33,7 @@ The Characters View presents the user's character library as a responsive CSS gr
 Above the grid, an `Input` component with search binding provides quick character discovery using real-time filtering by name, description, and tags. A tab switcher (Characters / My Personas) provides access to the persona library (`PersonaCard` grid). When a character is selected for editing, a `CharacterEditorDialog` opens as a multi-step wizard dialog (Identity → Personality → Scenario → Advanced) with a `StepperHeader` indicating progress.
 
 The characters view also includes:
+
 - `ImportErrorDialog` for failed character card imports
 - `DeleteConfirmationDialog` for confirm-before-delete flows
 - `RegexScriptEditor` for per-character regex post-processing scripts
@@ -51,14 +52,14 @@ The Settings View uses a section-based layout with categorized setting panels. C
 
 Every action in Revelry can be performed via keyboard. The primary shortcuts include:
 
-| Shortcut | Action |
-|---|---|
-| F9 | Toggle sidebar |
-| Enter | Send message |
-| Ctrl+Enter | Newline in message input |
-| Ctrl+N | New conversation |
-| Ctrl+Shift+N | New character |
-| Escape | Cancel generation or close overlays |
+| Shortcut     | Action                              |
+| ------------ | ----------------------------------- |
+| F9           | Toggle sidebar                      |
+| Enter        | Send message                        |
+| Ctrl+Enter   | Newline in message input            |
+| Ctrl+N       | New conversation                    |
+| Ctrl+Shift+N | New character                       |
+| Escape       | Cancel generation or close overlays |
 
 Arrow keys navigate conversation branches and sidebar items. All interactive components (Dialog, Select, Tooltip) support keyboard navigation through bits-ui's headless primitive pattern, which handles focus management and ARIA attributes automatically.
 
@@ -74,10 +75,10 @@ Dark theme is the default (`<html class="dark">`). The `ThemeToggle` component t
 
 ### Custom Utilities
 
-| Utility | Purpose |
-|---|---|
-| `.font-display` | Fraunces serif for character names (OpenType ss01, ss02, liga) |
-| `.surface-grain` | Subtle radial-gradient texture overlay |
-| `.streaming-caret` | Animated caret on streaming AI responses |
-| `.drag-region` | Tauri window drag area |
-| `.no-drag` | Exclude elements from drag region |
+| Utility            | Purpose                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `.font-display`    | Fraunces serif for character names (OpenType ss01, ss02, liga) |
+| `.surface-grain`   | Subtle radial-gradient texture overlay                         |
+| `.streaming-caret` | Animated caret on streaming AI responses                       |
+| `.drag-region`     | Tauri window drag area                                         |
+| `.no-drag`         | Exclude elements from drag region                              |

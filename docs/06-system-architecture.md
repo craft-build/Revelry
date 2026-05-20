@@ -43,6 +43,7 @@ graph LR
 ```
 
 **Communication patterns:**
+
 - `invoke()` for request/response operations (CRUD, configuration, search)
 - `Channel<T>` for streaming operations (AI token-by-token responses)
 
@@ -78,12 +79,12 @@ src/lib/components/
 
 SvelteKit file-based routing provides navigation:
 
-| Route | Purpose |
-|---|---|
-| `/` | Welcome page with suggested characters |
-| `/chat/[id]` | Active conversation view with streaming |
-| `/characters` | Character and persona library with tabs |
-| `/settings` | Provider config, generation params, preferences |
+| Route         | Purpose                                         |
+| ------------- | ----------------------------------------------- |
+| `/`           | Welcome page with suggested characters          |
+| `/chat/[id]`  | Active conversation view with streaming         |
+| `/characters` | Character and persona library with tabs         |
+| `/settings`   | Provider config, generation params, preferences |
 
 ### State Hydration
 
@@ -108,31 +109,31 @@ graph TD
 
 Each module exposes `#[tauri::command]` functions that the frontend calls via `invoke()`:
 
-| Module | Key Commands |
-|---|---|
-| `app_settings` | get_app_setting, set_app_setting |
-| `avatars` | upload_avatar, delete_avatar |
-| `card_io` | import_card, export_card |
-| `characters` | get_characters, save_character, delete_character, search_characters |
-| `chat` | start_chat, stop_generation, regenerate, edit_and_resend |
+| Module          | Key Commands                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `app_settings`  | get_app_setting, set_app_setting                                                                                         |
+| `avatars`       | upload_avatar, delete_avatar                                                                                             |
+| `card_io`       | import_card, export_card                                                                                                 |
+| `characters`    | get_characters, save_character, delete_character, search_characters                                                      |
+| `chat`          | start_chat, stop_generation, regenerate, edit_and_resend                                                                 |
 | `conversations` | get_conversations, start_conversation, delete_conversation, fork_conversation, get_branches_for_message, search_messages |
-| `keywords` | test_lorebook_keywords |
-| `lorebooks` | get_lorebooks, save_lorebook, assign_lorebook_to_character, get_conversation_lorebooks |
-| `personas` | get_personas, save_persona, delete_persona |
-| `presets` | get_presets, save_preset, delete_preset |
-| `providers` | get_providers, save_provider, save_api_key, has_api_key, check_keyring_available |
-| `regex` | get_regex_scripts, save_regex_script, apply_single_regex, validate_regex_pattern |
+| `keywords`      | test_lorebook_keywords                                                                                                   |
+| `lorebooks`     | get_lorebooks, save_lorebook, assign_lorebook_to_character, get_conversation_lorebooks                                   |
+| `personas`      | get_personas, save_persona, delete_persona                                                                               |
+| `presets`       | get_presets, save_preset, delete_preset                                                                                  |
+| `providers`     | get_providers, save_provider, save_api_key, has_api_key, check_keyring_available                                         |
+| `regex`         | get_regex_scripts, save_regex_script, apply_single_regex, validate_regex_pattern                                         |
 
 ### service/ — Business Logic
 
-| Module | Responsibility |
-|---|---|
-| `prompt` | PromptEngine: assembles system prompt, character data, lorebook entries, persona data, and conversation history with budget-aware truncation |
-| `lorebook` | Lorebook service: recursive keyword matching with LorebookActivation role filtering |
-| `regex` | Regex script engine: ordered pipe-chain application with ReDoS protection via size_limit |
-| `card_io` | Character card import/export (PNG V2 tEXt chunks, JSON) |
-| `template` | Template variable resolution ({{user}}, {{char}}, etc.) |
-| `token_count` | BPE tokenization via tiktoken-rs |
+| Module        | Responsibility                                                                                                                               |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prompt`      | PromptEngine: assembles system prompt, character data, lorebook entries, persona data, and conversation history with budget-aware truncation |
+| `lorebook`    | Lorebook service: recursive keyword matching with LorebookActivation role filtering                                                          |
+| `regex`       | Regex script engine: ordered pipe-chain application with ReDoS protection via size_limit                                                     |
+| `card_io`     | Character card import/export (PNG V2 tEXt chunks, JSON)                                                                                      |
+| `template`    | Template variable resolution ({{user}}, {{char}}, etc.)                                                                                      |
+| `token_count` | BPE tokenization via tiktoken-rs                                                                                                             |
 
 ### db/ — SQLite Access Layer
 

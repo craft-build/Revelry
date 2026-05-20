@@ -9,22 +9,22 @@ This section documents all Svelte components in the Revelry UI, organized by cat
 
 Components in `src/lib/components/ui/` — headless-style primitives styled with Tailwind CSS:
 
-| Component | Purpose | Key Props |
-|---|---|---|
-| `Avatar.svelte` | Character/persona avatar with initials fallback | `src`, `name`, `size` |
-| `AvatarUpload.svelte` | Avatar image upload with preview | `onUpload` |
-| `Button.svelte` | Variant button with tailwind-variants | `variant`, `size`, `class` |
-| `Dialog.svelte` | Modal dialog overlay | `open`, `title`, `children` |
-| `Input.svelte` | Text input with label | `value`, `placeholder`, `class` |
-| `KebabMenu.svelte` | Three-dot context menu | `items` |
-| `KebabMenuItem.svelte` | Individual menu item | `label`, `icon`, `onClick` |
-| `KebabMenuSeparator.svelte` | Menu separator line | — |
-| `Logo.svelte` | App logo display | `size` |
-| `Select.svelte` | Dropdown select | `options`, `value`, `onChange` |
-| `StepperHeader.svelte` | Wizard step indicator | `steps`, `current` |
-| `Tag.svelte` | Badge/tag display | `label`, `color` |
-| `Textarea.svelte` | Auto-growing textarea | `value`, `placeholder`, `maxRows` |
-| `Tooltip.svelte` | Hover tooltip | `content`, `children` |
+| Component                   | Purpose                                         | Key Props                         |
+| --------------------------- | ----------------------------------------------- | --------------------------------- |
+| `Avatar.svelte`             | Character/persona avatar with initials fallback | `src`, `name`, `size`             |
+| `AvatarUpload.svelte`       | Avatar image upload with preview                | `onUpload`                        |
+| `Button.svelte`             | Variant button with tailwind-variants           | `variant`, `size`, `class`        |
+| `Dialog.svelte`             | Modal dialog overlay                            | `open`, `title`, `children`       |
+| `Input.svelte`              | Text input with label                           | `value`, `placeholder`, `class`   |
+| `KebabMenu.svelte`          | Three-dot context menu                          | `items`                           |
+| `KebabMenuItem.svelte`      | Individual menu item                            | `label`, `icon`, `onClick`        |
+| `KebabMenuSeparator.svelte` | Menu separator line                             | —                                 |
+| `Logo.svelte`               | App logo display                                | `size`                            |
+| `Select.svelte`             | Dropdown select                                 | `options`, `value`, `onChange`    |
+| `StepperHeader.svelte`      | Wizard step indicator                           | `steps`, `current`                |
+| `Tag.svelte`                | Badge/tag display                               | `label`, `color`                  |
+| `Textarea.svelte`           | Auto-growing textarea                           | `value`, `placeholder`, `maxRows` |
+| `Tooltip.svelte`            | Hover tooltip                                   | `content`, `children`             |
 
 `Button.svelte` exports `buttonVariants` from a module script block, allowing consumers to reference variant styles without importing the component.
 
@@ -95,6 +95,7 @@ Components in `src/lib/components/settings/`:
 All components follow these Svelte 5 patterns:
 
 **Props declaration** — `$props()` with TypeScript interface:
+
 ```svelte
 <script lang="ts">
   interface Props {
@@ -108,11 +109,13 @@ All components follow these Svelte 5 patterns:
 **Content projection** — `children?: Snippet` + `{@render children?.()}` instead of `<slot />`.
 
 **Class merging** — Every component accepting a `class` prop merges it through `cn()`:
+
 ```svelte
 <button class={cn(buttonVariants({ variant }), className)}>
 ```
 
 **Module script for variant exports** — Components that expose variant helpers use a `<script lang="ts" module>` block:
+
 ```svelte
 <script lang="ts" module>
   import { tv } from 'tailwind-variants';

@@ -7,24 +7,24 @@ Understanding the existing landscape of AI roleplay platforms is essential for i
 
 ## 3.1 Platform Comparison
 
-| **Feature** | **Character.ai** | **SpicyChat.ai** | **SillyTavern** | **Revelry (Proposed)** |
-|---|---|---|---|---|
-| Platform Type | Web | Web | Web/Desktop (Node.js) | Native Desktop (Rust/Tauri + SvelteKit) |
-| Open Source | No | No | Yes | Yes |
-| AI Provider | Proprietary | Proprietary | Multi-provider | Multi-provider (20+ via rig) |
-| Character Cards | Internal format | Internal format | CharacterCardV2 (PNG/JSON) | CharacterCardV2 (PNG/JSON) |
-| Content Policy | Strict SFW filter | Tiered (free=SFW, paid=NSFW) | User-controlled | User-controlled |
-| Conversation Branching | No | No | Yes | Yes |
-| Lorebook / World Info | Limited | No | Yes (advanced) | Yes (advanced) |
-| Local Data Storage | No (cloud) | No (cloud) | Yes | Yes (SQLite via rusqlite) |
-| Account Required | Yes | Yes | No | No |
-| Streaming Responses | Yes | Yes | Yes | Yes (rig streaming via Tauri Channel) |
-| User Persona System | Basic | Yes (Personas) | Basic (user profiles) | Yes (advanced, per-character) |
-| Group Chat | Yes | No | Yes | Yes |
-| Regex Scripting | No | No | Yes | Yes |
-| UI Design Philosophy | Mobile-first social | Chat-oriented | Functional/dense | Content-first desktop native |
-| Offline Capability | No | No | Partial (needs server) | Full (with local model) |
-| Cross-Platform | No (web) | No (web) | Partial | Yes (macOS, Linux, Windows) |
+| **Feature**            | **Character.ai**    | **SpicyChat.ai**             | **SillyTavern**            | **Revelry (Proposed)**                  |
+| ---------------------- | ------------------- | ---------------------------- | -------------------------- | --------------------------------------- |
+| Platform Type          | Web                 | Web                          | Web/Desktop (Node.js)      | Native Desktop (Rust/Tauri + SvelteKit) |
+| Open Source            | No                  | No                           | Yes                        | Yes                                     |
+| AI Provider            | Proprietary         | Proprietary                  | Multi-provider             | Multi-provider (20+ via rig)            |
+| Character Cards        | Internal format     | Internal format              | CharacterCardV2 (PNG/JSON) | CharacterCardV2 (PNG/JSON)              |
+| Content Policy         | Strict SFW filter   | Tiered (free=SFW, paid=NSFW) | User-controlled            | User-controlled                         |
+| Conversation Branching | No                  | No                           | Yes                        | Yes                                     |
+| Lorebook / World Info  | Limited             | No                           | Yes (advanced)             | Yes (advanced)                          |
+| Local Data Storage     | No (cloud)          | No (cloud)                   | Yes                        | Yes (SQLite via rusqlite)               |
+| Account Required       | Yes                 | Yes                          | No                         | No                                      |
+| Streaming Responses    | Yes                 | Yes                          | Yes                        | Yes (rig streaming via Tauri Channel)   |
+| User Persona System    | Basic               | Yes (Personas)               | Basic (user profiles)      | Yes (advanced, per-character)           |
+| Group Chat             | Yes                 | No                           | Yes                        | Yes                                     |
+| Regex Scripting        | No                  | No                           | Yes                        | Yes                                     |
+| UI Design Philosophy   | Mobile-first social | Chat-oriented                | Functional/dense           | Content-first desktop native            |
+| Offline Capability     | No                  | No                           | Partial (needs server)     | Full (with local model)                 |
+| Cross-Platform         | No (web)            | No (web)                     | Partial                    | Yes (macOS, Linux, Windows)             |
 
 ## 3.2 Key Differentiators
 

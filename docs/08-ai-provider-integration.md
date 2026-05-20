@@ -9,23 +9,23 @@ Revelry's provider integration is built on the rig framework, which provides a u
 
 ## 8.2 Supported Providers
 
-| **Provider** | **Type** | **rig Support** | **Notes** |
-|---|---|---|---|
-| OpenAI | Completion + Embedding | Native client | GPT-4, GPT-3.5, GPT-4o; first-class support |
-| Anthropic | Completion + Embedding | Native client | Claude models; native API format |
-| Ollama | Completion + Embedding | Native client | Local models; no OpenAI translation needed |
-| Gemini | Completion + Embedding | Native client | Google Gemini models |
-| Cohere | Completion + Embedding | Native client | Cohere Command models |
-| Mistral | Completion + Embedding | Native client | Mistral AI models |
-| DeepSeek | Completion + Embedding | Native client | DeepSeek models |
-| Groq | Completion + Embedding | Native client | Fast inference via Groq |
-| Azure OpenAI | Completion + Embedding | Native client | Azure-hosted OpenAI models |
-| OpenRouter | Completion + Embedding | Native client | Multi-provider routing |
-| Together AI | Completion + Embedding | Native client | Together AI hosted models |
-| HuggingFace | Completion + Embedding | Native client | HF Inference API |
-| Perplexity | Completion + Embedding | Native client | Perplexity AI models |
-| xAI (Grok) | Completion + Embedding | Native client | Grok models |
-| Custom Endpoints | Completion | OpenAI client w/ custom base URL | LM Studio, vLLM, LocalAI, etc. |
+| **Provider**     | **Type**               | **rig Support**                  | **Notes**                                   |
+| ---------------- | ---------------------- | -------------------------------- | ------------------------------------------- |
+| OpenAI           | Completion + Embedding | Native client                    | GPT-4, GPT-3.5, GPT-4o; first-class support |
+| Anthropic        | Completion + Embedding | Native client                    | Claude models; native API format            |
+| Ollama           | Completion + Embedding | Native client                    | Local models; no OpenAI translation needed  |
+| Gemini           | Completion + Embedding | Native client                    | Google Gemini models                        |
+| Cohere           | Completion + Embedding | Native client                    | Cohere Command models                       |
+| Mistral          | Completion + Embedding | Native client                    | Mistral AI models                           |
+| DeepSeek         | Completion + Embedding | Native client                    | DeepSeek models                             |
+| Groq             | Completion + Embedding | Native client                    | Fast inference via Groq                     |
+| Azure OpenAI     | Completion + Embedding | Native client                    | Azure-hosted OpenAI models                  |
+| OpenRouter       | Completion + Embedding | Native client                    | Multi-provider routing                      |
+| Together AI      | Completion + Embedding | Native client                    | Together AI hosted models                   |
+| HuggingFace      | Completion + Embedding | Native client                    | HF Inference API                            |
+| Perplexity       | Completion + Embedding | Native client                    | Perplexity AI models                        |
+| xAI (Grok)       | Completion + Embedding | Native client                    | Grok models                                 |
+| Custom Endpoints | Completion             | OpenAI client w/ custom base URL | LM Studio, vLLM, LocalAI, etc.              |
 
 ## 8.3 Provider Configuration
 

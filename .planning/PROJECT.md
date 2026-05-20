@@ -67,8 +67,8 @@ Users can have immersive, streaming AI conversations with custom characters thro
 - ✓ Theme toggle (dark/light) — Phase 10
 - [ ] Branch navigation for conversation branching
 - [ ] Full-text search across conversations
-- [ ] Update design specification (docs/) to replace GTK4/GNOME references with SvelteKit/Tauri equivalents
-- [ ] Cross-platform build and distribution (macOS, Linux, Windows)
+- ✓ Update design specification (docs/) to replace GTK4/GNOME references with SvelteKit/Tauri equivalents — Phase 11
+- ✓ Cross-platform build and distribution (macOS, Linux, Windows) — Phase 11
 
 ### Out of Scope
 
@@ -83,7 +83,7 @@ Users can have immersive, streaming AI conversations with custom characters thro
 
 **Prior work:** The project began as a Rust/GTK4/libadwaita desktop app (archived in `gtk_ref/`). A complete proof-of-concept was built with Relm4, rig-core, rusqlite, and OS keyring integration. The decision was then made to shift the UI layer to SvelteKit + Bits.ui for faster iteration and Tauri compatibility. The SvelteKit frontend scaffold is now built with mock data and mock streaming; the Rust backend logic in `gtk_ref/` is preserved as an archival reference for migration.
 
-**Design specification:** A v2.0 design spec exists at `docs/Revelry_Design_Specification_v2.0.docx`. It was written for GTK4/GNOME and needs updating to reflect the SvelteKit/Tauri architecture. The update scope is primarily replacing GTK/GNOME references with SvelteKit/Tauri equivalents — not a fundamental redesign.
+**Design specification:** The v2.0 design spec has been converted from .docx to 16 Markdown files under `docs/` (01 through 16). All GTK4/GNOME/Relm4 references have been replaced with SvelteKit/Tauri equivalents. The .docx has been deleted; `docs/Revelry.svg` is preserved as the app logo.
 
 **Rig-core provider support:** The most-used provider will be custom OpenAI-compatible endpoints, but rig-core supports 15+ providers natively. The full rig-core abstraction should be preserved — no reason to subset.
 
@@ -138,4 +138,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-\_Last updated: 2026-05-20 after Phase 10
+\_Last updated: 2026-05-20 after Phase 11

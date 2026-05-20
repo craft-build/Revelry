@@ -43,12 +43,12 @@ Deliverables: Updated Markdown documentation, cross-platform builds.
 
 ## 14.8 Roadmap Summary
 
-| **Phase** | **Focus** | **Key Deliverables** |
-|---|---|---|
-| Phase 1 | Tauri shell + scaffold | SvelteKit SPA in Tauri window, layout, mock data |
-| Phase 2 | Backend migration + IPC | Rust backend, SQLite, real data, full command set |
-| Phase 3 | Character editor + lorebook | Multi-step wizards, avatar upload, lorebook management |
-| Phase 4 | Chat streaming + AI | rig-core streaming, PromptEngine, message branching |
-| Phases 5-9 | Advanced features | Presets, context bar, markdown, regex, lorebook activation |
-| Phase 10 | Theme polish | Dark/light toggle, OKLCH token refinement |
-| Phase 11 | Spec update + distribution | Markdown docs, cross-platform builds |
+| **Phase**  | **Focus**                   | **Key Deliverables**                                       |
+| ---------- | --------------------------- | ---------------------------------------------------------- |
+| Phase 1    | Tauri shell + scaffold      | SvelteKit SPA in Tauri window, layout, mock data           |
+| Phase 2    | Backend migration + IPC     | Rust backend, SQLite, real data, full command set          |
+| Phase 3    | Character editor + lorebook | Multi-step wizards, avatar upload, lorebook management     |
+| Phase 4    | Chat streaming + AI         | rig-core streaming, PromptEngine, message branching        |
+| Phases 5-9 | Advanced features           | Presets, context bar, markdown, regex, lorebook activation |
+| Phase 10   | Theme polish                | Dark/light toggle, OKLCH token refinement                  |
+| Phase 11   | Spec update + distribution  | Markdown docs, cross-platform builds                       |

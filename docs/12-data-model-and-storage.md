@@ -7,17 +7,17 @@
 
 Revelry's data model is designed for efficient local storage and fast query performance using SQLite via rusqlite. The schema supports the full feature set including branching conversations, lorebooks, user personas, and provider configurations. All tables use TEXT primary keys (UUIDs) for simplicity and portability across SQLite versions.
 
-| **Table** | **Purpose** | **Key Columns** |
-|---|---|---|
-| characters | AI character card storage | id, name, description, personality, scenario, first_mes, mes_example, system_prompt, post_history_instructions, alternate_greetings, tags, extensions, created_at, updated_at |
-| conversations | Conversation metadata | id, character_id, user_persona_id, title, created_at, updated_at, active_branch_tip |
-| messages | Conversation messages with branching | id, conversation_id, parent_id, branch_index, role, content, token_count, metadata, created_at |
-| lorebook_entries | World-building entries per character | id, character_id, keys, secondary_keys, content, position, depth, activation_state, extensions |
-| user_personas | User roleplay identities | id, name, avatar_url, appearance, personality, background, role_description, relationships, speech_style, notes, tags, is_default, extensions, created_at, updated_at |
-| persona_snapshots | Persona evolution tracking (Tier 3) | id, persona_id, conversation_id, message_id, snapshot_data, label, created_at |
-| providers | AI provider configurations | id, name, provider_type, base_url, model, default_params, extensions |
-| prompt_presets | Generation parameter profiles | id, name, system_prompt, temperature, top_p, max_tokens, frequency_penalty, presence_penalty, stop_sequences |
-| regex_scripts | Per-character regex post-processing | id, character_id, find_pattern, replace_pattern, flags, order |
+| **Table**         | **Purpose**                          | **Key Columns**                                                                                                                                                               |
+| ----------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| characters        | AI character card storage            | id, name, description, personality, scenario, first_mes, mes_example, system_prompt, post_history_instructions, alternate_greetings, tags, extensions, created_at, updated_at |
+| conversations     | Conversation metadata                | id, character_id, user_persona_id, title, created_at, updated_at, active_branch_tip                                                                                           |
+| messages          | Conversation messages with branching | id, conversation_id, parent_id, branch_index, role, content, token_count, metadata, created_at                                                                                |
+| lorebook_entries  | World-building entries per character | id, character_id, keys, secondary_keys, content, position, depth, activation_state, extensions                                                                                |
+| user_personas     | User roleplay identities             | id, name, avatar_url, appearance, personality, background, role_description, relationships, speech_style, notes, tags, is_default, extensions, created_at, updated_at         |
+| persona_snapshots | Persona evolution tracking (Tier 3)  | id, persona_id, conversation_id, message_id, snapshot_data, label, created_at                                                                                                 |
+| providers         | AI provider configurations           | id, name, provider_type, base_url, model, default_params, extensions                                                                                                          |
+| prompt_presets    | Generation parameter profiles        | id, name, system_prompt, temperature, top_p, max_tokens, frequency_penalty, presence_penalty, stop_sequences                                                                  |
+| regex_scripts     | Per-character regex post-processing  | id, character_id, find_pattern, replace_pattern, flags, order                                                                                                                 |
 
 ## 12.2 Branch Storage Model
 

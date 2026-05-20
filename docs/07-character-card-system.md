@@ -9,22 +9,22 @@ The character card is the atomic unit of Revelry's data model, encoding everythi
 
 Character cards are stored as PNG images with embedded JSON metadata (following the tEXt chunk convention) for visual portability, or as standalone JSON files for programmatic access. The V2 specification defines a structured data model with nested objects for different aspects of a character's definition. Each card contains the following primary fields:
 
-| **Field** | **Type** | **Required** | **Description** |
-|---|---|---|---|
-| name | string | Yes | Character display name, used in chat headers and mentions |
-| description | string | Yes | Core personality and background, always included in context |
-| personality | string | No | Summary of personality traits, appended to description |
-| scenario | string | No | Starting scenario / setting for new conversations |
-| first_mes | string | No | Character's opening message when starting a new chat |
-| mes_example | string | No | Sample dialogue demonstrating character's speech patterns |
-| creator_notes | string | No | Notes from the card creator for users |
-| system_prompt | string | No | Custom system prompt override for this character |
-| post_history_instructions | string | No | Instructions injected after conversation history |
-| alternate_greetings | string[] | No | Additional first messages beyond first_mes |
-| tags | string[] | No | Categorization tags for search and filtering |
-| creator | string | No | Name of the card creator |
-| character_version | string | No | Version string for the card |
-| extensions | object | No | Namespace for app-specific extensions (personas, rig config) |
+| **Field**                 | **Type** | **Required** | **Description**                                              |
+| ------------------------- | -------- | ------------ | ------------------------------------------------------------ |
+| name                      | string   | Yes          | Character display name, used in chat headers and mentions    |
+| description               | string   | Yes          | Core personality and background, always included in context  |
+| personality               | string   | No           | Summary of personality traits, appended to description       |
+| scenario                  | string   | No           | Starting scenario / setting for new conversations            |
+| first_mes                 | string   | No           | Character's opening message when starting a new chat         |
+| mes_example               | string   | No           | Sample dialogue demonstrating character's speech patterns    |
+| creator_notes             | string   | No           | Notes from the card creator for users                        |
+| system_prompt             | string   | No           | Custom system prompt override for this character             |
+| post_history_instructions | string   | No           | Instructions injected after conversation history             |
+| alternate_greetings       | string[] | No           | Additional first messages beyond first_mes                   |
+| tags                      | string[] | No           | Categorization tags for search and filtering                 |
+| creator                   | string   | No           | Name of the card creator                                     |
+| character_version         | string   | No           | Version string for the card                                  |
+| extensions                | object   | No           | Namespace for app-specific extensions (personas, rig config) |
 
 ## 7.2 Lorebook System
 
