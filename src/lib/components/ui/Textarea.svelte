@@ -30,7 +30,7 @@
 	bind:value
 	class={cn(
 		'flex min-h-[80px] w-full rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-3 py-2 text-sm placeholder:text-(--color-subtle) focus-visible:border-(--color-accent) focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent) disabled:cursor-not-allowed disabled:opacity-50',
-		autogrow && 'resize-none overflow-hidden',
+		autogrow && 'resize-none max-h-64 overflow-y-auto',
 		className
 	)}
 	oninput={autoResize}

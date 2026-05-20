@@ -168,7 +168,7 @@
 	// not when the character prop mutates mid-dialog (e.g. after a save).
 	let was_open = $state(false);
 
-	$effect(() => {
+		$effect(() => {
 		const just_opened = open && !was_open;
 		if (just_opened) {
 			if (mode === 'edit' && character) {
@@ -185,6 +185,21 @@
 				form_creator_notes = character.creator_notes;
 				form_creator = character.creator;
 				loadCharacterLorebooks();
+			} else if (character) {
+				// Import: create mode with pre-filled data from imported card
+				pending_id = crypto.randomUUID();
+				form_name = character.name;
+				form_avatar_path = character.avatar_path;
+				form_description = character.description;
+				form_personality = character.personality;
+				form_scenario = character.scenario;
+				form_first_mes = character.first_mes;
+				form_mes_example = character.mes_example;
+				form_system_prompt = character.system_prompt;
+				form_post_history_instructions = character.post_history_instructions;
+				form_creator_notes = character.creator_notes;
+				form_creator = character.creator;
+				form_lorebooks = [];
 			} else {
 				pending_id = crypto.randomUUID();
 				form_name = '';
