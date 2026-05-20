@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 09-04-PLAN.md
-last_updated: "2026-05-20T02:47:03.498Z"
+status: completed
+stopped_at: Phase 9 complete
+last_updated: "2026-05-20T03:17:39.284Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 11
-  completed_phases: 7
-  total_plans: 31
-  completed_plans: 31
-  percent: 100
+  completed_phases: 9
+  total_plans: 32
+  completed_plans: 33
+  percent: 97
 ---
 
 # Project State
@@ -21,35 +21,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** Users can have immersive, streaming AI conversations with custom characters through personas — and the whole thing runs locally as a native desktop app.
-**Current focus:** Phase 9 — Power Features
+**Current focus:** Phase 10 — Theme & Polish
 
 ## Current Position
 
 Phase: 09 of 9 (power features)
-Status: Executing Phase 09
+Status: Milestone complete
 Last activity: 2026-05-20
 
-Progress: [██████████] 100%
+Progress: [█████████░] 97%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 31
+- Total plans completed: 32
 - Average duration: ~12 min
-- Total execution time: ~5.8 hours
+- Total execution time: ~6.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total  | Avg/Plan |
 | ----- | ----- | ------ | -------- |
 | 1     | 4     | 75min  | 19min    |
-| 2     | 4     | ~80min | 20min    |
-| 3     | 4     | ~90min | 22min    |
+| 2     | 4     | ~80min  | 20min    |
+| 3     | 4     | ~90min  | 22min    |
 | 4     | 2     | 11min  | 6min     |
 | 5     | 5     | ~20min | 4min     |
 | 6     | 3     | ~14min | 5min     |
 | 7     | 4     | ~12min | 3min     |
+| 9     | 5     | ~40min | 8min     |
 
 _Updated after each plan completion_
 
@@ -83,17 +84,10 @@ Recent decisions affecting current work:
 - marked@18 + dompurify@3 + shiki@4 for GFM markdown rendering pipeline (07-01)
 - Conditional rendering: raw text during streaming, MarkdownRenderer on completion (07-01)
 - Shiki vitesse-dark theme for code syntax highlighting (07-01)
-- RegexScript uses DateTime<Utc> with RFC 3339 (Tauri convention, not gtk_ref NaiveDateTime)
-- validate_regex_pattern uses size_limit(1_000_000) for ReDoS protection
-- save_regex_script validates pattern + flags before DB persist (REGX-05)
-- LorebookActivation role filtering: CharacterOnly/UserOnly scan only matching role messages (09-01)
-- conversation_lorebooks junction mirrors character_lorebooks pattern (09-01)
-- Free functions in service/lorebook.rs for consistency with gtk_ref port (09-01)
-- Depth-based lorebook entries injected AFTER truncation to prevent silent removal by budget (09-02)
-- Lorebook budget fraction is 25% of context window as constant, not yet user-configurable (09-02)
-- LorebookActivationDetail uses lorebook_id as fallback name when DB access unavailable (09-02)
-- Regex transforms applied server-side on stream completion, not mid-stream (09-04)
-- LorebookActivationDetail included in StreamChunk::Complete for frontend context bar (09-04)
+- Lorebook activation uses recursive keyword matching with LorebookActivation role filtering (09-01)
+- Lorebook injection handles BeforeChar/AfterChar/AtDepth positions with depth-aware ordering (09-01)
+- Regex scripts apply as ordered pipe-chain with ReDoS protection via size_limit(1M) (09-03)
+- Lorebook activation details included in StreamChunk::Complete for frontend context bar (09-04)
 
 ### Pending Todos
 
@@ -113,6 +107,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-20T02:33:39Z
-Stopped at: Completed 09-04-PLAN.md
-Resume file: None
+Last session: 2026-05-20T00:00:00Z
+Stopped at: Phase 9 complete
+Resume file: .planning/phases/09-power-features/09-VERIFICATION.md

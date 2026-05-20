@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Smart Prompts** - Budget-aware prompt assembly and real token counting ✅ 2026-05-16
 - [x] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export ✅ 2026-05-18
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
-- [ ] **Phase 9: Power Features** - Lorebook context injection and regex scripting
+- [x] **Phase 9: Power Features** - Lorebook context injection and regex scripting ✅ 2026-05-19
 - [ ] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements
 - [ ] **Phase 11: Spec Update & Distribution** - Updated design doc and cross-platform builds
 
@@ -303,7 +303,7 @@ Plans:
 - [x] 09-02: Integrate lorebook into PromptEngine
 - [x] 09-03: Port RegexService from gtk_ref/ with validation
 - [x] 09-04: Integrate regex scripts into AI response pipeline
-- [ ] 09-05: Wire lorebook and regex to editor UIs and conversation flow
+- [x] 09-05: Wire lorebook and regex to editor UIs and conversation flow
 
 ### Phase 10: Theme & Polish
 
@@ -370,6 +370,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Smart Prompts               | 3/4            | In Progress | 2026-05-16 |
 | 7. Rich Output & Cards         | 4/4            | Complete    | 2026-05-18 |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
-| 9. Power Features              | 0/5            | Not started | -          |
+| 9. Power Features              | 5/5            | Complete    | 2026-05-19 |
 | 10. Theme & Polish             | 0/2            | Not started | -          |
 | 11. Spec Update & Distribution | 0/3            | Not started | -          |
