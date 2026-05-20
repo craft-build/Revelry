@@ -7,6 +7,7 @@
 	import { cn } from '$lib/utils';
 	import PersonaSwitcher from './PersonaSwitcher.svelte';
 	import ProviderModelSelector from './ProviderModelSelector.svelte';
+	import ConversationLorebookPanel from './ConversationLorebookPanel.svelte';
 
 	let providerTrigger: HTMLButtonElement | undefined = $state();
 	let branchPopoverOpen = $state(false);
@@ -89,6 +90,10 @@
 		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
 
 		<ProviderModelSelector />
+
+		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
+
+		<ConversationLorebookPanel />
 
 		<!-- Branch switcher — only shown when branches exist -->
 		{#if hasBranches}
