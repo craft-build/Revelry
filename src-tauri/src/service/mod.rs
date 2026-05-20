@@ -1,5 +1,6 @@
 pub mod card_io;
 pub mod prompt;
+pub mod regex;
 pub mod template;
 pub mod token_count;
 
