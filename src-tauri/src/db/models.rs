@@ -4,6 +4,7 @@ use crate::domain::generation::GenerationPreset;
 use crate::domain::lorebook::{Lorebook, LorebookActivation, LorebookEntry, LorebookPosition};
 use crate::domain::persona::Persona;
 use crate::domain::provider::{GenerationParams, ProviderConfig, ProviderModelEntry, ProviderType};
+use crate::domain::regex_script::RegexScript;
 use chrono::{DateTime, Utc};
 use rusqlite::Row;
 use std::str::FromStr;
@@ -330,7 +331,33 @@ pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
         position,
         depth: row.get("depth")?,
         activation_state,
+        token_budget: row.get::<_, Option<i64>>("token_budget")?,
+        sort_order: row.get("sort_order")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
         extensions,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Converts a database row into a RegexScript.
+/// `enabled` is stored as INTEGER (1/0) and converted to bool.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+pub fn row_to_regex_script(row: &Row) -> rusqlite::Result<RegexScript> {
+    let created_at_str: String = row.get("created_at")?;
+    let updated_at_str: String = row.get("updated_at")?;
+    let created_at = parse_timestamp(&created_at_str)?;
+    let updated_at = parse_timestamp(&updated_at_str)?;
+
+    Ok(RegexScript {
+        id: row.get("id")?,
+        character_id: row.get("character_id")?,
+        name: row.get("name")?,
+        find_pattern: row.get("find_pattern")?,
+        replace_pattern: row.get("replace_pattern")?,
+        flags: row.get("flags")?,
+        sort_order: row.get("sort_order")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
         created_at,
         updated_at,
     })

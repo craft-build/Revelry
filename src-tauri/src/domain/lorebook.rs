@@ -123,6 +123,12 @@ pub struct LorebookEntry {
     pub depth: i32,
     #[serde(default)]
     pub activation_state: LorebookActivation,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_budget: Option<i64>,
+    #[serde(default = "default_sort_order")]
+    pub sort_order: i32,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
     #[serde(default = "default_extensions")]
     pub extensions: serde_json::Value,
     pub created_at: DateTime<Utc>,
@@ -131,6 +137,14 @@ pub struct LorebookEntry {
 
 fn default_extensions() -> serde_json::Value {
     serde_json::json!({})
+}
+
+fn default_sort_order() -> i32 {
+    0
+}
+
+fn default_enabled() -> bool {
+    true
 }
 
 impl LorebookEntry {
@@ -147,6 +161,9 @@ impl LorebookEntry {
             position: LorebookPosition::AfterChar,
             depth: 4,
             activation_state: LorebookActivation::Always,
+            token_budget: None,
+            sort_order: 0,
+            enabled: true,
             extensions: serde_json::json!({}),
             created_at: now,
             updated_at: now,
@@ -181,6 +198,9 @@ mod tests {
         assert_eq!(entry.position, LorebookPosition::AfterChar);
         assert_eq!(entry.depth, 4);
         assert_eq!(entry.activation_state, LorebookActivation::Always);
+        assert!(entry.token_budget.is_none());
+        assert_eq!(entry.sort_order, 0);
+        assert!(entry.enabled);
         assert_eq!(entry.extensions, serde_json::json!({}));
     }
 
@@ -248,10 +268,42 @@ mod tests {
         entry.position = LorebookPosition::AtDepth;
         entry.depth = 2;
         entry.activation_state = LorebookActivation::CharacterOnly;
+        entry.token_budget = Some(100);
+        entry.sort_order = 2;
+        entry.enabled = false;
         entry.extensions = serde_json::json!({"custom": true});
 
         let json = serde_json::to_string(&entry).expect("serialize failed");
         let deserialized: LorebookEntry = serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(entry, deserialized);
+    }
+
+    #[test]
+    fn test_lorebook_entry_defaults() {
+        let entry = LorebookEntry::new("lb-defaults".to_string());
+        assert!(entry.token_budget.is_none());
+        assert_eq!(entry.sort_order, 0);
+        assert!(entry.enabled);
+    }
+
+    #[test]
+    fn test_lorebook_entry_serde_with_token_budget() {
+        let mut entry = LorebookEntry::new("lb-budget".to_string());
+        entry.token_budget = Some(50);
+
+        let json = serde_json::to_string(&entry).expect("serialize failed");
+        assert!(json.contains("\"token_budget\":50"), "Serialized JSON should include token_budget when Some");
+        let deserialized: LorebookEntry = serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(deserialized.token_budget, Some(50));
+    }
+
+    #[test]
+    fn test_lorebook_entry_serde_without_token_budget() {
+        let entry = LorebookEntry::new("lb-no-budget".to_string());
+
+        let json = serde_json::to_string(&entry).expect("serialize failed");
+        assert!(!json.contains("token_budget"), "Serialized JSON should NOT include token_budget when None");
+        let deserialized: LorebookEntry = serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(deserialized.token_budget, None);
     }
 }
