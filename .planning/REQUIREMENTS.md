@@ -88,7 +88,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **REGX-01**: User can create regex scripts with find/replace patterns and enable/disable toggles
 - [x] **REGX-02**: User can edit regex scripts
 - [x] **REGX-03**: User can delete regex scripts
-- [ ] **REGX-04**: Regex scripts are applied in order to AI output before display
+- [x] **REGX-04**: Regex scripts are applied in order to AI output before display
 - [x] **REGX-05**: Invalid regex patterns are rejected on save with a clear error message
 
 ### Settings
@@ -197,7 +197,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REGX-01     | Phase 9  | Complete |
 | REGX-02     | Phase 9  | Complete |
 | REGX-03     | Phase 9  | Complete |
-| REGX-04     | Phase 9  | Pending  |
+| REGX-04     | Phase 9  | Complete |
 | REGX-05     | Phase 9  | Complete |
 | SETT-01     | Phase 10 | Pending  |
 | SETT-02     | Phase 10 | Pending  |
