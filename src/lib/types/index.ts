@@ -60,6 +60,12 @@ export interface LorebookEntry {
   position: LorebookPosition;
   depth: number;
   activation_state: LorebookActivation;
+  /** Per-entry soft token limit (nullable). */
+  token_budget?: number | null;
+  /** Display/activation ordering. */
+  sort_order: number;
+  /** Activation toggle. */
+  enabled: boolean;
   extensions?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -68,6 +74,14 @@ export interface LorebookEntry {
 export interface KeywordTestResult {
   entry_id: string;
   matched_keys: string[];
+}
+
+export interface LorebookActivationDetail {
+  lorebook_name: string;
+  entry_name: string;
+  content_snippet: string;
+  token_cost: number;
+  matched_keys?: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -143,6 +157,7 @@ export interface ContextBudget {
   tokensUsed: number;
   tokensLimit: number;
   truncatedCount: number;
+  lorebookDetails?: LorebookActivationDetail[];
 }
 
 export interface Conversation {
@@ -259,3 +274,25 @@ export type { GenerationPreset as PromptPreset };
 
 export type PrimaryView = "chat" | "characters" | "settings";
 export type CharactersTab = "characters" | "personas" | "lorebooks";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regex scripts
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RegexScript {
+  id: string;
+  character_id: string;
+  name: string;
+  find_pattern: string;
+  replace_pattern: string;
+  flags: string;
+  sort_order: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RegexTestResult {
+  output: string;
+  match_count: number;
+}

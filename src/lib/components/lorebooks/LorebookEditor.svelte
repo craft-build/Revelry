@@ -245,6 +245,8 @@
 				position: entry_position,
 				depth: parseInt(entry_depth_str, 10) || 4,
 				activation_state: entry_activation,
+				sort_order: selected_entry?.sort_order ?? 0,
+				enabled: selected_entry?.enabled ?? true,
 				created_at: selected_entry?.created_at ?? new Date().toISOString(),
 				updated_at: new Date().toISOString()
 			};
@@ -291,6 +293,8 @@
 			position: 'before_char',
 			depth: 4,
 			activation_state: 'always',
+			sort_order: 0,
+			enabled: true,
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		};
