@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Rich Output & Cards** - Markdown rendering and TavernAI V2 card import/export ✅ 2026-05-18
 - [ ] **Phase 8: Advanced Conversations** - Branching, navigation, and full-text search
 - [x] **Phase 9: Power Features** - Lorebook context injection and regex scripting ✅ 2026-05-19
-- [ ] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements
+- [ ] **Phase 10: Theme & Polish** - Dark/light toggle and final refinements ✅ 2026-05-19
 - [ ] **Phase 11: Spec Update & Distribution** - Updated design doc and cross-platform builds
 
 ## Phase Details
@@ -315,25 +315,13 @@ Plans:
 
 1. User can toggle between dark and light themes
 2. App respects system appearance preference with manual override
-   **Plans**: 2 plans in 2 waves
+   **Plans**: 1 plan in 1 wave
 
 Plans:
 
-**Wave 1** _(autonomous — backend: keyring + domain + migration + CRUD + commands)_
+**Wave 1** _(autonomous — backend + CSS + state + component)_
 
-- [x] 04-01: KeyringStore + ProviderConfig domain + migration #3 + CRUD + Tauri commands
-
-**Wave 2** _(autonomous — frontend: editor dialog + settings wiring + ChatHeader selector, blocked on Wave 1)_
-
-- [ ] 04-02: ProviderEditorDialog + ModelEntryRow + KeyringUnavailableBanner + settings wiring + ChatHeader provider/model selector
-
-**Cross-cutting constraints:**
-
-- API key security: keys stored only in OS keychain via KeyringStore; never in SQLite, IPC responses, or logs
-- keyring v4 split: `keyring = "4.0"` + `keyring-core = "1.0"` — both crates required; store init before use
-- ProviderType serde: Rust uses `#[serde(rename_all = "snake_case")]` to match TypeScript values
-- Conversation model_name write path: update_conversation_provider function persists both provider_id and model_name together
-  **UI hint**: yes
+- [x] 10-01: Backend app_settings CRUD + CSS light theme tokens + flash prevention + AppState theme + Shiki dual theme + ThemeToggle + settings integration
 
 ### Phase 11: Spec Update & Distribution
 
@@ -371,5 +359,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Rich Output & Cards         | 4/4            | Complete    | 2026-05-18 |
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 5/5            | Complete    | 2026-05-19 |
-| 10. Theme & Polish             | 0/2            | Not started | -          |
+| 10. Theme & Polish             | 1/1            | Complete    | 2026-05-19 |
 | 11. Spec Update & Distribution | 0/3            | Not started | -          |
