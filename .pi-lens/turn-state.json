@@ -1,22 +1,6 @@
 {
-  "files": {
-    "src/lib/components/chat/MessageInput.svelte": {
-      "modifiedRanges": [
-        {
-          "start": 4,
-          "end": 4
-        },
-        {
-          "start": 77,
-          "end": 79
-        }
-      ],
-      "importsChanged": true,
-      "lastEdit": "2026-05-20T02:54:59.262Z"
-    }
-  },
-  "turnCycles": 1,
+  "files": {},
+  "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-20T02:55:07.232Z",
-  "sessionId": "lens-mpdgo2o2-27ba4be2"
+  "lastUpdated": "2026-05-20T02:58:56.750Z"
 }

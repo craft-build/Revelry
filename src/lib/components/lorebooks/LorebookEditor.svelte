@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Lorebook, LorebookEntry, LorebookPosition, LorebookActivation, KeywordTestResult } from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
+	import { cn } from '$lib/utils';
 	import {
 		getLorebookEntries as apiGetLorebookEntries,
 		saveLorebookEntry as apiSaveLorebookEntry,
@@ -60,6 +61,9 @@
 	let entry_position = $state<LorebookPosition>('before_char');
 	let entry_depth_str = $state('4');
 	let entry_activation = $state<LorebookActivation>('always');
+	let entry_enabled = $state(true);
+	let entry_sort_order = $state(0);
+	let entry_token_budget = $state<number | null>(null);
 	let entry_keys_error = $state('');
 	let entry_content_error = $state('');
 	let is_saving_entry = $state(false);
@@ -141,6 +145,9 @@
 			entry_position = entry.position;
 			entry_depth_str = String(entry.depth);
 			entry_activation = entry.activation_state;
+			entry_enabled = entry.enabled;
+			entry_sort_order = entry.sort_order;
+			entry_token_budget = entry.token_budget ?? null;
 			entry_keys_error = '';
 			entry_content_error = '';
 		}
@@ -245,8 +252,9 @@
 				position: entry_position,
 				depth: parseInt(entry_depth_str, 10) || 4,
 				activation_state: entry_activation,
-				sort_order: selected_entry?.sort_order ?? 0,
-				enabled: selected_entry?.enabled ?? true,
+				sort_order: entry_sort_order,
+				enabled: entry_enabled,
+				token_budget: entry_token_budget,
 				created_at: selected_entry?.created_at ?? new Date().toISOString(),
 				updated_at: new Date().toISOString()
 			};
@@ -336,6 +344,9 @@
 		entry_position = 'before_char';
 		entry_depth_str = '4';
 		entry_activation = 'always';
+		entry_enabled = true;
+		entry_sort_order = 0;
+		entry_token_budget = null;
 		entry_keys_error = '';
 		entry_content_error = '';
 	}
@@ -457,11 +468,14 @@
 								tabindex="0"
 								onclick={() => selectEntry(entry.id)}
 								onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectEntry(entry.id); }}
-								class="group/entry relative flex items-start gap-2 rounded-(--radius-md) border px-3 py-2 text-left transition-colors cursor-pointer {selected_entry_id === entry.id ? 'border-(--color-accent) bg-(--color-accent)/5' : 'border-(--color-border) hover:border-(--color-border-strong)'} {test_results.length > 0 && !has_match ? 'opacity-40' : ''}"
+								class="group/entry relative flex items-start gap-2 rounded-(--radius-md) border px-3 py-2 text-left transition-colors cursor-pointer {selected_entry_id === entry.id ? 'border-(--color-accent) bg-(--color-accent)/5' : 'border-(--color-border) hover:border-(--color-border-strong)'} {test_results.length > 0 && !has_match ? 'opacity-40' : ''} {!entry.enabled ? 'opacity-50' : ''}"
 							>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium text-(--color-foreground)">
 										{entry.keys.length > 0 ? truncate(entry.keys[0], 18) : 'Empty entry'}
+										{#if !entry.enabled}
+											<span class="ml-1.5 text-[10px] font-normal text-(--color-subtle)">Disabled</span>
+										{/if}
 									</p>
 									<p class="truncate text-xs text-(--color-muted)">
 										{truncate(entry.content, 60)}
@@ -491,9 +505,54 @@
 			</div>
 
 			<!-- Right column: Entry form -->
-			<div class="w-3/5 space-y-3 border-l border-(--color-border) pl-4">
+			<div class="w-3/5 space-y-3 border-l border-(--color-border) pl-4" class:opacity-50={!entry_enabled} class:pointer-events-none={!entry_enabled}>
 				{#if selected_entry}
 					<h3 class="text-sm font-medium text-(--color-foreground)">Entry details</h3>
+
+					<!-- Enabled toggle -->
+					<div class="flex items-center justify-between mb-1">
+						<label class="text-xs text-(--color-muted) uppercase tracking-wider">Enabled</label>
+						<button
+							type="button"
+							class={cn(
+								'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+								entry_enabled ? 'bg-(--color-accent)' : 'bg-(--color-surface-hover)'
+							)}
+							onclick={() => (entry_enabled = !entry_enabled)}
+							aria-label="Toggle entry enabled"
+						>
+							<span class={cn(
+								'pointer-events-none inline-block size-4 rounded-full bg-white shadow ring-0 transition-transform',
+								entry_enabled ? 'translate-x-4' : 'translate-x-0'
+							)} />
+						</button>
+					</div>
+
+					<!-- Sort order -->
+					<div class="space-y-1">
+						<label class="text-xs text-(--color-muted) uppercase tracking-wider">Sort Order</label>
+						<input
+							type="number"
+							bind:value={entry_sort_order}
+							class="w-20 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-2 py-1 text-sm"
+							min="0"
+						/>
+					</div>
+
+					<!-- Token budget -->
+					<div class="space-y-1">
+						<label class="text-xs text-(--color-muted) uppercase tracking-wider">Token Budget</label>
+						<div class="flex items-center gap-2">
+							<input
+								type="number"
+								bind:value={entry_token_budget}
+								class="w-24 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-2 py-1 text-sm"
+								min="0"
+								placeholder="\u221E"
+							/>
+							<span class="text-xs text-(--color-subtle)">Leave empty for shared budget</span>
+						</div>
+					</div>
 
 					<!-- Keywords -->
 					<div class="space-y-1">
