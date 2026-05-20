@@ -1,44 +1,84 @@
 <!-- Revelry Design Specification v2.0 — Section 4 -->
 <!-- Last updated: 2026-05-20 -->
 
-# Design Philosophy: GNOME Ethos
+# Design Philosophy
 
-## 4.1 Core Principles Applied
+## Design Principles
 
-### 4.1.1 Content-First Design
+### Content-First Interface
 
-In GNOME applications, the user's content is always the visual priority. Revelry applies this principle by making the conversation area the dominant element in every view. Chat messages receive the maximum available screen space, with UI chrome receding to minimal, contextually appropriate elements. Navigation elements collapse when not in use through the AdwOverlaySplitView adaptive sidebar pattern, and secondary controls are accessed through progressive disclosure rather than permanent panels. The character's responses and the user's inputs are the stars; everything else exists to support that interaction.
+The conversation is the primary activity in Revelry; all UI chrome recedes to make chat content dominant. Chat messages receive the maximum available screen space, with navigation and controls appearing only when contextually needed. The sidebar collapses when not in use (toggled via F9 or automatically in compact layouts), and secondary controls are accessed through progressive disclosure rather than permanent panels. The character's responses and the user's inputs are the visual priority — everything else exists to support that interaction.
 
-### 4.1.2 Progressive Disclosure
+### Progressive Disclosure
 
-GNOME advocates showing only what is needed at each level of interaction. Revelry implements this through a tiered interface where casual users see a simple chat view with a message input, while advanced features like prompt editing, lorebook management, and response regeneration are revealed through contextual menus, expandable panels, and keyboard shortcuts. A new user can start chatting within seconds of launching the application, while power users can progressively discover and enable sophisticated customization without ever being overwhelmed by initial complexity.
+Revelry implements a tiered interface where casual users see a simple chat view with a message input, while advanced features like prompt editing, lorebook management, regex scripting, and provider configuration are revealed through contextual menus, expandable panels, and dedicated settings views. A new user can start chatting within seconds of launching the application, while power users can progressively discover and enable sophisticated customization without ever being overwhelmed by initial complexity. Features are organized into tiers: Tier 1 (core chat, character management) is immediately visible; Tier 2 (lorebooks, regex, advanced search) is discoverable but not prominent; Tier 3 (vault mode, persona evolution) is available but specialized.
 
-### 4.1.3 Consistent Visual Language
+### Dark-First Aesthetic
 
-GNOME maintains a rigorous visual consistency through its Human Interface Guidelines. Revelry achieves this natively through libadwaita widgets, which enforce visual consistency at the toolkit level. Every AdwHeaderBar, AdwAvatar, AdwClamp, AdwPreferencesWindow, and AdwAlertDialog follows the same visual grammar automatically. Custom widgets are styled through GTK4's CSS system, using named colors from the Adwaita palette to ensure they blend seamlessly with the rest of the application. This eliminates the need for a separate design token system since the Adwaita theme itself serves as the single source of truth for colors, spacing, and typographic scale.
+Dark theme is the default — creative roleplay users overwhelmingly work at night, and a dark interface reduces eye strain during extended sessions. OKLCH color tokens ensure perceptual uniformity across both dark and light modes, with carefully calibrated surface hierarchies (background → surface → surface-elevated → surface-hover) that maintain visual depth in either theme. A light theme toggle is available via the ThemeToggle component, and all custom colors are defined in a way that works for both modes through CSS custom properties on the `<html>` element's `class` attribute.
 
-### 4.1.4 Header Bar Pattern
+### Desktop-Native Feel
 
-Rather than traditional menu bars and separate title bars, GNOME applications use a consolidated AdwHeaderBar that combines the window title, primary navigation, and key actions into a single, space-efficient element. Revelry adopts this pattern with an AdwHeaderBar containing the application name, view switcher using AdwViewSwitcher, and contextual actions. This saves approximately thirty to forty pixels of vertical space compared to separate title bar and menu bar approaches, which directly benefits the content area.
+Revelry runs as a native desktop application inside a Tauri window, not a browser tab. This means native window controls, drag regions (via `.drag-region` CSS utility), keyboard shortcuts (F9 sidebar toggle, Ctrl+Enter send, Ctrl+N new chat), and a layout that fills the entire window without browser-style scrollbars on the body. Body scroll is intentionally disabled (`body { overflow: hidden }`); scrolling happens inside component containers (message list, sidebar conversation list) for a desktop app feel. The application respects the user's operating system conventions for window management and input methods.
 
-### 4.1.5 Sidebar Navigation
+### Accessibility
 
-GNOME applications like Files, Contacts, and Music use a left sidebar for primary navigation, allowing the main content area to remain focused. Revelry implements this with AdwOverlaySplitView, which provides an adaptive sidebar that sits alongside content in wide windows and overlays in narrow windows. The sidebar can be toggled with a keyboard shortcut (F9) and auto-hides in compact window sizes, giving users full control over their screen real estate. Selected items in the sidebar immediately update the main content view without page transitions, maintaining spatial continuity.
+The UI uses bits-ui headless primitives, which provide full keyboard navigation and screen reader compatibility out of the box. Sufficient contrast ratios are enforced through the OKLCH token system. Focus management follows standard web conventions, and all interactive elements are reachable via keyboard. The component library (Dialog, Tooltip, Select, etc.) handles ARIA attributes automatically through the headless primitive pattern.
 
-### 4.1.6 Adaptive Layout
+## Visual Language
 
-While desktop-focused, GNOME design accounts for different window sizes. Revelry's layout adapts gracefully using AdwOverlaySplitView and AdwClamp: in wide windows, the sidebar and main content sit side by side; in narrower windows, the sidebar becomes an overlay; and the conversation view reflows through GtkListView's natural layout management. This ensures the application works well on screens ranging from compact laptops to ultrawide monitors without sacrificing usability or visual quality.
+### Color System
 
-## 4.2 Visual Style Guide
+All colors are defined as OKLCH tokens in a `@theme { }` block within `src/app.css`. This provides perceptual uniformity — colors that appear equidistant in lightness to human perception — which is critical for a dark-theme-first application. The token categories are:
 
-| **Element** | **Specification** | **Rationale** |
-|---|---|---|
-| Color Scheme | Adwaita light/dark (system sync via AdwStyleManager) | Native GNOME theming, zero custom color management |
-| Accent Color | System accent color via Adwaita, fallback Teal #4ECDC4 | Respects user's GNOME accent color preference |
-| Typography | System font (Cantarell on GNOME, platform default elsewhere) | Native feel, zero font loading delay, respects OS preferences |
-| Border Radius | Native Adwaita widget defaults (12px cards, 8px buttons) | Automatic consistency with GNOME HIG |
-| Spacing Grid | Adwaita internal widget spacing | Handled by the toolkit, no manual grid system needed |
-| Icon Style | Adwaita symbolic icons via GtkImage | Native GNOME icon pattern, automatic dark/light adaptation |
-| Shadows | Native GTK4 elevation via GtkBox shadow CSS | Consistent with GTK4/libadwaita patterns |
-| Animations | Native GTK4 transition durations (200-300ms) | Matches GNOME motion guidelines automatically |
-| Message Bubbles | Character: left-aligned, User: right-aligned, rounded | Clear speaker attribution, chat convention familiarity |
+- **Surfaces:** `--color-background`, `--color-surface`, `--color-surface-elevated`, `--color-surface-hover`, `--color-surface-input` — layered depth hierarchy
+- **Foreground:** `--color-foreground`, `--color-muted`, `--color-subtle` — three levels of text emphasis
+- **Borders:** `--color-border`, `--color-border-strong` — subtle structural delineation
+- **Accent:** `--color-accent`, `--color-accent-fg`, `--color-accent-muted` — teal-based interactive color
+- **Semantic:** `--color-destructive`, `--color-warning`, `--color-success` — status colors
+- **Chat bubbles:** `--color-bubble-user`, `--color-bubble-character` — speaker attribution via background color
+
+Tokens are referenced in Tailwind classes using the `-(--token)` shorthand: `bg-(--color-surface)`, `text-(--color-muted)`, etc.
+
+### Typography
+
+Three font families are loaded via Google Fonts and defined as CSS custom properties:
+
+- **Geist** (`--font-sans`) — sans-serif body font for all UI text
+- **Fraunces** (`--font-serif`) — serif display font for character names via `.font-display` utility, with OpenType features `ss01`, `ss02`, and `liga` enabled for editorial flair
+- **Geist Mono** (`--font-mono`) — monospace for code blocks and token counts
+
+### Spacing and Radii
+
+Spacing follows Tailwind's default scale. Border radii are tokenized: `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`. Cards use `rounded-(--radius-lg)`, buttons use `rounded-(--radius-md)`.
+
+### Custom Utilities
+
+| Utility | Purpose |
+|---|---|
+| `.font-display` | Fraunces serif with OpenType features for character names |
+| `.surface-grain` | Subtle radial-gradient texture overlay for atmospheric depth |
+| `.streaming-caret` | Animated `▍` caret on streaming AI responses |
+| `.drag-region` | `-webkit-app-region: drag` for Tauri window dragging |
+| `.no-drag` | `-webkit-app-region: no-drag` to exclude elements from drag region |
+
+## Interaction Patterns
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| F9 | Toggle sidebar |
+| Enter | Send message |
+| Ctrl+Enter | Newline in message input |
+| Ctrl+N | New conversation |
+| Ctrl+Shift+N | New character |
+| Escape | Cancel generation / close overlays |
+
+### Sidebar Navigation
+
+A left sidebar (`ConversationSidebar` component) displays the conversation list with relative timestamps. The sidebar toggles via F9, a hamburger button, or collapses automatically in narrow windows. It follows a CSS-based layout pattern (not a native overlay split view) with smooth transitions between collapsed and expanded states. Selected conversations immediately update the main content area without page transitions, maintaining spatial continuity.
+
+### Drag Regions
+
+The `AppHeader` component uses the `.drag-region` utility to make the header bar act as a native window title bar, allowing users to move the window by dragging the header. Interactive elements within the header use `.no-drag` to remain clickable. This replicates the consolidated header bar pattern from native desktop applications, combining window controls and navigation into a single space-efficient element.
