@@ -64,7 +64,7 @@ Users can have immersive, streaming AI conversations with custom characters thro
 - [ ] Replace naive markdown rendering with pulldown-cmark output via Tauri IPC
 - [ ] Character and persona editors (multi-step wizards from spec §7.4)
 - [ ] Lorebook editor UI
-- [ ] Theme toggle (dark/light)
+- ✓ Theme toggle (dark/light) — Phase 10
 - [ ] Branch navigation for conversation branching
 - [ ] Full-text search across conversations
 - [ ] Update design specification (docs/) to replace GTK4/GNOME references with SvelteKit/Tauri equivalents
@@ -138,4 +138,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-\_Last updated: 2026-05-20 after Phase 9
+\_Last updated: 2026-05-20 after Phase 10
