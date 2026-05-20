@@ -3,42 +3,193 @@
 
 # System Architecture
 
-## 6.1 High-Level Architecture
+## High-Level Architecture
 
-Revelry's architecture eliminates the IPC bridge layer present in Tauri-based designs. Instead of a React frontend communicating with a Rust backend through typed invoke commands, Revelry uses a unified Rust process where the Relm4 UI layer communicates with the business logic through native Rust function calls and channel-based message passing. The architecture is organized into four major layers that all exist within the same process.
+Revelry uses a two-process architecture: a SvelteKit SPA running in Tauri's native webview (frontend process) communicating with a Rust backend (backend process) through Tauri's IPC layer. The frontend handles all UI rendering and local state management; the backend handles data persistence, AI inference, secret storage, and file operations.
 
-The Presentation Layer consists of Relm4 components that render the GNOME-inspired UI using GTK4/libadwaita widgets and handle user interactions through the message dispatch system. The State Layer (Relm4 Model) manages application state, including active conversations, loaded characters, and UI preferences, all within a single Rust struct that updates atomically through message processing. The Service Layer contains the business logic modules for AI inference, database access, file operations, and encryption, exposed as regular Rust functions and structs. The Data Layer manages SQLite access through rusqlite, rig client configuration, filesystem operations, and OS keychain integration.
+```mermaid
+graph LR
+    subgraph Frontend["Frontend (SvelteKit SPA)"]
+        UI[Svelte Components]
+        State[AppState<br/>$state runes]
+        Types[TypeScript Types]
+    end
 
-When a user sends a message, the flow proceeds as follows: the Relm4 component dispatches a SendMessage message to the model. The model's update function calls the chat-engine module, which constructs the full prompt (combining system prompt, character card, lorebook entries, user persona data, conversation history, and user message) and submits it to the configured rig agent. The rig agent's streaming completion runs on the tokio runtime, emitting token chunks through a glib::MainContext channel back to the UI thread. The model receives each token chunk via a StreamToken message and updates the active message in the model state. Relm4's view! macro reactively updates the GtkLabel showing the AI's response, producing a smooth typewriter effect.
+    subgraph IPC["Tauri IPC"]
+        Invoke[invoke&#40;&#41;<br/>request/response]
+        Channel[Channel&lt;T&gt;<br/>streaming]
+    end
 
-## 6.2 Module Architecture
+    subgraph Backend["Backend (Rust + Tauri)"]
+        Commands[commands/]
+        Service[service/]
+        DB[db/]
+        Domain[domain/]
+        AI[ai/]
+        Secrets[secrets/]
+    end
 
-| **Module** | **Layer** | **Responsibility** |
-|---|---|---|
-| chat-engine | Service | Prompt assembly, context window management, token counting, message dispatch via rig |
-| rig-adapter | Service | rig agent construction, provider configuration, streaming completion coordination |
-| card-service | Service | Character card CRUD, import/export (PNG V2, JSON), validation, migration |
-| persona-service | Service | User persona CRUD, assignment resolution, prompt block construction |
-| db-service | Service | SQLite operations, migrations, FTS5 search, backup/restore |
-| crypto-service | Service | AES-256-GCM encryption for optional vault mode, key derivation |
-| file-service | Service | Image handling, log management, export bundling, config files |
-| AppModel | State (Relm4) | Root application model: conversations, characters, personas, UI state |
-| ChatModel | State (Relm4) | Active conversation state, message history, branch pointers, generation status |
-| CharacterModel | State (Relm4) | Loaded characters, search filters, selected card, edit state |
-| SettingsModel | State (Relm4) | All user preferences, provider configs, UI settings |
-| ChatView | Presentation (Relm4) | Conversation display, message input, streaming render, branch navigation |
-| CharacterManager | Presentation (Relm4) | Character list, card editor, import wizard, avatar management |
-| PersonaManager | Presentation (Relm4) | Persona library, editor, switcher popover, assignment resolution |
-| SettingsPanel | Presentation (Relm4) | Provider configuration, prompt presets, theme selection, keyboard shortcuts |
+    UI --> State
+    State --> Invoke
+    State --> Channel
+    Invoke --> Commands
+    Channel --> Commands
+    Commands --> Service
+    Service --> DB
+    Service --> AI
+    Service --> Secrets
+    DB --> Domain
+    Service --> Domain
+```
 
-## 6.3 Thread Architecture
+**Communication patterns:**
+- `invoke()` for request/response operations (CRUD, configuration, search)
+- `Channel<T>` for streaming operations (AI token-by-token responses)
 
-Rig's async operations require the tokio runtime, while GTK4 requires the GLib main loop. Revelry bridges these two runtimes using a well-established channel pattern. A single multi-threaded tokio runtime is spawned on a background thread at application startup. When the UI needs to initiate an AI completion, it sends a request through an async-channel to the tokio runtime, which processes it using rig's streaming API. Token chunks flow back through a glib::MainContext channel to the GLib main loop, where the Relm4 model processes them and updates the UI.
+The frontend pre-generates message UUIDs and sort_order before sending to the backend, ensuring atomic persistence even if the connection is interrupted.
 
-Database operations follow a similar pattern: SQLite queries are dispatched to a dedicated database thread that holds the rusqlite connection, and results flow back through glib::MainContext channels. This ensures that neither AI inference nor database operations ever block the GTK main loop, maintaining a responsive UI at all times. The keyring crate's synchronous API calls are also dispatched to background threads to prevent credential lookup from causing UI freezes.
+## Frontend Architecture
 
-## 6.4 Context Window Management
+### Central State: AppState
 
-One of the most critical service responsibilities is context window management. AI models have finite context windows (ranging from 4K tokens for older models to 128K+ for modern ones), and Revelry must ensure that the assembled prompt fits within the selected model's limit while preserving the most relevant conversation context. The chat-engine module implements a multi-strategy context manager that combines character card data, user persona data, lorebook entries, and conversation history into a prioritized token budget.
+All application state lives in a single reactive class (`AppState`) exported as a singleton `app` from `src/lib/stores/app.svelte.ts`. This follows an Elm-inspired single source of truth pattern, implemented with Svelte 5 runes:
 
-The context assembly process works in layers. First, the system prompt and character card data (name, personality, scenario, mes_example) are marked as sticky, meaning they always occupy their portion of the context. Next, the user persona block is inserted (semi-sticky, with compression levels if the budget is tight). Then, activated lorebook entries (matched by keyword scanning of the recent conversation and persona fields) are inserted. Finally, conversation history fills the remaining budget, with older messages being truncated first. Token counting uses tiktoken-rs for OpenAI-compatible BPE tokenization, and the rig framework's response metadata provides actual token usage for runtime validation.
+- `$state()` fields: `characters`, `personas`, `conversations`, `providers`, `prompt_presets`, `messages`, `active_conversation_id`, `is_generating`, `sidebar_open`, `character_search_query`
+- Derived getters: `active_conversation`, `active_character`, `active_persona`, `default_persona`, `filtered_characters`
+- Action methods: `hydrate()`, `openConversation()`, `appendMessage()`, `updateStreamingMessage()`, `toggleSidebar()`, `switchPersona()`
+
+Components import `app` and read/write state directly. No event bus or message dispatch layer is needed — Svelte's reactivity system handles UI updates automatically when state changes.
+
+### Component Module Structure
+
+```
+src/lib/components/
+├── ui/          Headless UI primitives (Avatar, Button, Dialog, Input, etc.)
+├── layout/      App shell components (AppHeader, ConversationSidebar)
+├── chat/        Chat-specific (ChatHeader, MessageBubble, MessageInput, MarkdownRenderer, etc.)
+├── characters/  Character management (CharacterCard, CharacterEditorDialog, etc.)
+├── personas/    Persona management (PersonaCard, PersonaEditorDialog)
+├── lorebooks/   Lorebook management (LorebookCard, LorebookEditor)
+├── providers/   Provider configuration (ProviderEditorDialog, ModelEntryRow)
+└── settings/    Settings (ThemeToggle, PresetEditorDialog)
+```
+
+### Routing
+
+SvelteKit file-based routing provides navigation:
+
+| Route | Purpose |
+|---|---|
+| `/` | Welcome page with suggested characters |
+| `/chat/[id]` | Active conversation view with streaming |
+| `/characters` | Character and persona library with tabs |
+| `/settings` | Provider config, generation params, preferences |
+
+### State Hydration
+
+The root layout (`+layout.svelte`) calls `app.hydrate()` at startup, loading initial data (characters, personas, conversations, providers, presets) from the Tauri backend via `invoke()` calls. Subsequent data loads happen on-demand when navigating to specific views.
+
+## Backend Architecture
+
+The Rust backend is organized into layered modules within `src-tauri/src/`:
+
+```mermaid
+graph TD
+    Commands[commands/<br/>Tauri IPC handlers] --> Service[service/<br/>Business logic]
+    Service --> DB[db/<br/>SQLite access]
+    Service --> AI[ai/<br/>rig-core integration]
+    Service --> Secrets[secrets/<br/>OS keychain]
+    DB --> Domain[domain/<br/>Data types]
+    Service --> Domain
+    AI --> Domain
+```
+
+### commands/ — Tauri IPC Handlers
+
+Each module exposes `#[tauri::command]` functions that the frontend calls via `invoke()`:
+
+| Module | Key Commands |
+|---|---|
+| `app_settings` | get_app_setting, set_app_setting |
+| `avatars` | upload_avatar, delete_avatar |
+| `card_io` | import_card, export_card |
+| `characters` | get_characters, save_character, delete_character, search_characters |
+| `chat` | start_chat, stop_generation, regenerate, edit_and_resend |
+| `conversations` | get_conversations, start_conversation, delete_conversation, fork_conversation, get_branches_for_message, search_messages |
+| `keywords` | test_lorebook_keywords |
+| `lorebooks` | get_lorebooks, save_lorebook, assign_lorebook_to_character, get_conversation_lorebooks |
+| `personas` | get_personas, save_persona, delete_persona |
+| `presets` | get_presets, save_preset, delete_preset |
+| `providers` | get_providers, save_provider, save_api_key, has_api_key, check_keyring_available |
+| `regex` | get_regex_scripts, save_regex_script, apply_single_regex, validate_regex_pattern |
+
+### service/ — Business Logic
+
+| Module | Responsibility |
+|---|---|
+| `prompt` | PromptEngine: assembles system prompt, character data, lorebook entries, persona data, and conversation history with budget-aware truncation |
+| `lorebook` | Lorebook service: recursive keyword matching with LorebookActivation role filtering |
+| `regex` | Regex script engine: ordered pipe-chain application with ReDoS protection via size_limit |
+| `card_io` | Character card import/export (PNG V2 tEXt chunks, JSON) |
+| `template` | Template variable resolution ({{user}}, {{char}}, etc.) |
+| `token_count` | BPE tokenization via tiktoken-rs |
+
+### db/ — SQLite Access Layer
+
+The `DbWorker` runs on a dedicated background thread, receiving operations via `tokio::sync::mpsc` channels. Database modules include: `app_settings`, `characters`, `conversations`, `generation`, `lorebook`, `migrations`, `models`, `personas`, `providers`, `regex_scripts`. A single collapsed migration handles all schema creation (no data to preserve in initial release).
+
+### domain/ — Data Types
+
+Rust structs with `serde` serialization that mirror the SQLite schema and are serialized to JSON for IPC transport to the frontend. Types include: `character`, `conversation`, `generation`, `lorebook`, `persona`, `provider`, `regex_script`.
+
+### ai/ — AI Provider Integration
+
+Uses rig-core 0.37 to construct provider clients via builder pattern. The `start_chat` command creates a `ChatContext` that loads character, persona, and history data, then uses `PromptEngine` to assemble the full prompt before streaming via rig-core's completion API.
+
+### secrets/ — OS Keychain
+
+Wraps the keyring v4 crate for storing API keys in the OS-native credential store. Uses `use_native_store(true)` at init and `release_store()` at shutdown.
+
+## Data Flow: Chat Interaction
+
+The following describes the complete data flow when a user sends a message in an active conversation:
+
+1. User types message in `MessageInput` and presses Enter
+2. Frontend generates UUID + sort_order for the new message
+3. Frontend calls `invoke('save_message', { message })` to persist the user message
+4. Frontend calls `invoke('start_chat', { conversation_id, channel })` with a Tauri `Channel<StreamChunk>`
+5. Backend `ChatContext` loads: character data, active persona, conversation history, lorebook entries
+6. `PromptEngine` assembles the full prompt with budget-aware context management
+7. `AiService` initiates streaming completion via rig-core
+8. Token chunks are sent through the `Channel<StreamChunk>` back to the frontend
+9. Frontend `app.updateStreamingMessage()` appends each token to the active message
+10. On completion, `StreamChunk::Complete` includes token usage and lorebook activation details
+11. Regex scripts are applied to the completed response before final display
+12. `MarkdownRenderer` renders the completed message with GFM formatting and syntax highlighting
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend as SvelteKit Frontend
+    participant IPC as Tauri IPC
+    participant Backend as Rust Backend
+    participant AI as rig-core / LLM
+
+    User->>Frontend: Type message + Enter
+    Frontend->>Frontend: Generate UUID + sort_order
+    Frontend->>IPC: invoke('save_message')
+    IPC->>Backend: Persist user message to SQLite
+    Frontend->>IPC: invoke('start_chat', Channel)
+    IPC->>Backend: ChatContext loads data
+    Backend->>Backend: PromptEngine assembles prompt
+    Backend->>AI: Streaming completion request
+    loop Token by token
+        AI-->>Backend: Token chunk
+        Backend-->>IPC: Channel<StreamChunk>::Token
+        IPC-->>Frontend: updateStreamingMessage()
+    end
+    AI-->>Backend: Completion
+    Backend->>Backend: Apply regex scripts
+    Backend-->>IPC: Channel<StreamChunk>::Complete
+    IPC-->>Frontend: Finalize message + MarkdownRenderer
+```
