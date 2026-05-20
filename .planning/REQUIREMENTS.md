@@ -103,9 +103,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Distribution
 
-- [ ] **DIST-01**: App builds and distributes for macOS
-- [ ] **DIST-02**: App builds and distributes for Linux
-- [ ] **DIST-03**: App builds and distributes for Windows
+- [x] **DIST-01**: App builds and distributes for macOS
+- [x] **DIST-02**: App builds and distributes for Linux
+- [x] **DIST-03**: App builds and distributes for Windows
 
 ## v2 Requirements
 
@@ -203,9 +203,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETT-02     | Phase 10 | Pending  |
 | SETT-03     | Phase 1  | Done     |
 | DOC-01      | Phase 11 | Pending  |
-| DIST-01     | Phase 11 | Pending  |
-| DIST-02     | Phase 11 | Pending  |
-| DIST-03     | Phase 11 | Pending  |
+| DIST-01     | Phase 11 | Complete |
+| DIST-02     | Phase 11 | Complete |
+| DIST-03     | Phase 11 | Complete |
 
 **Coverage:**
 

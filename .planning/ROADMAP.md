@@ -340,7 +340,7 @@ Plans:
 Plans:
 
 - [ ] 11-01: Update design specification (GTK4/GNOME → SvelteKit/Tauri)
-- [ ] 11-02: Cross-platform build testing and fixes
+- [x] 11-02: Cross-platform build testing and fixes
 - [ ] 11-03: Distribution packaging (DMG/AppImage/MSI)
 
 ## Progress
@@ -360,4 +360,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Advanced Conversations      | 0/4            | Not started | -          |
 | 9. Power Features              | 5/5            | Complete    | 2026-05-19 |
 | 10. Theme & Polish             | 1/1            | Complete    | 2026-05-20 |
-| 11. Spec Update & Distribution | 0/3            | Not started | -          |
+| 11. Spec Update & Distribution | 1/2 | In Progress|  |
