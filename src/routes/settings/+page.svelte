@@ -6,6 +6,7 @@
 	import PresetEditorDialog from '$lib/components/settings/PresetEditorDialog.svelte';
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
 	import ThemeToggle from '$lib/components/settings/ThemeToggle.svelte';
+	import CodeThemeSelector from '$lib/components/settings/CodeThemeSelector.svelte';
 	import {
 		Cpu,
 		SlidersHorizontal,
@@ -306,6 +307,13 @@
 					<p class="text-sm text-(--color-muted) mt-1">Choose how Revelry looks. System follows your OS preference.</p>
 					<div class="mt-4">
 						<ThemeToggle />
+					</div>
+				</div>
+				<div class="mt-4 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4">
+					<h2 class="font-display text-base font-semibold tracking-tight text-(--color-foreground)">Markdown Theme</h2>
+					<p class="text-sm text-(--color-muted) mt-1">Color scheme for rendered markdown in message bubbles.</p>
+					<div class="mt-4">
+						<CodeThemeSelector />
 					</div>
 				</div>
 			{:else if active === 'shortcuts'}

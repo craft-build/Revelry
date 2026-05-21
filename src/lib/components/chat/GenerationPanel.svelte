@@ -1,15 +1,36 @@
 <script lang="ts">
 	import { app } from '$lib/stores/app.svelte';
 	import { cn } from '$lib/utils';
-	import { X, ExternalLink } from '@lucide/svelte';
-	import { Button, Input } from '$lib/components/ui';
+	import { X, ExternalLink, Sun, Moon } from '@lucide/svelte';
+	import { Button, Input, Select } from '$lib/components/ui';
 	import { goto } from '$app/navigation';
+	import { getThemeCatalog } from '$lib/shiki.svelte';
 
 	let localOverride = $state<string>(
 		app.active_conversation?.override_max_tokens?.toString() ?? ''
 	);
 
 	let isUpdating = $state(false);
+
+	const catalog = getThemeCatalog();
+	const darkCodeThemes = catalog.filter((t) => t.type === 'dark');
+	const lightCodeThemes = catalog.filter((t) => t.type === 'light');
+
+	let localCodeTheme = $state(
+		app.resolved_theme === 'dark' ? app.code_theme_dark : app.code_theme_light
+	);
+
+	$effect(() => {
+		localCodeTheme = app.resolved_theme === 'dark' ? app.code_theme_dark : app.code_theme_light;
+	});
+
+	function handleCodeThemeChange() {
+		if (app.resolved_theme === 'dark') {
+			app.setCodeThemeDark(localCodeTheme);
+		} else {
+			app.setCodeThemeLight(localCodeTheme);
+		}
+	}
 
 	$effect(() => {
 		const conv = app.active_conversation;
@@ -117,7 +138,7 @@
 				</div>
 				<p class="mt-1 text-[11px] text-(--color-subtle)">
 					{#if app.effective_max_tokens > 0}
-						Instructs the AI to aim for ~{app.effective_max_tokens.toLocaleString()} tokens.
+						Instructs the AI to target ~{app.effective_max_tokens.toLocaleString()} tokens (~{Math.round(app.effective_max_tokens * 0.75).toLocaleString()} words).
 					{:else}
 						No length instruction set — AI decides response length.
 					{/if}
@@ -172,6 +193,56 @@
 				<ExternalLink class="size-3" />
 				Manage presets in Settings
 			</button>
+
+			<!-- Theme toggle -->
+			<div class="border-t border-(--color-border) pt-4">
+				<span class="mb-1.5 block text-xs font-medium text-(--color-muted)">Theme</span>
+				<button
+					type="button"
+				onclick={() => {
+						app.setTheme(app.resolved_theme === 'dark' ? 'light' : 'dark');
+					}}
+					class={cn(
+						'inline-flex w-full items-center justify-center gap-2 rounded-(--radius-md) border border-(--color-border) px-3 py-2 text-sm font-medium transition-all duration-150',
+						'bg-(--color-surface-input) text-(--color-foreground) hover:bg-(--color-surface-hover)'
+					)}
+				>
+					{#if app.resolved_theme === 'dark'}
+						<Sun class="size-4" />
+						Switch to Light
+					{:else}
+						<Moon class="size-4" />
+						Switch to Dark
+					{/if}
+				</button>
+
+				<!-- Code theme selector -->
+				<div class="pt-3">
+					<span class="mb-1.5 block text-xs font-medium text-(--color-muted)">Code Theme</span>
+					<p class="mb-1.5 text-[11px] text-(--color-subtle)">
+						{#if app.resolved_theme === 'dark'}
+							Markdown colors for dark mode.
+						{:else}
+							Markdown colors for light mode.
+						{/if}
+					</p>
+					<Select
+						bind:value={localCodeTheme}
+						onchange={handleCodeThemeChange}
+						class="w-full text-sm"
+					>
+						{#if app.resolved_theme === 'dark'}
+							{#each darkCodeThemes as theme (theme.id)}
+								<option value={theme.id}>{theme.displayName}</option>
+							{/each}
+						{:else}
+							{#each lightCodeThemes as theme (theme.id)}
+								<option value={theme.id}>{theme.displayName}</option>
+							{/each}
+						{/if}
+					</Select>
+				</div>
+			</div>
 		</div>
 	</div>
 </aside>

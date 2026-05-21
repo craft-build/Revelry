@@ -394,8 +394,17 @@ fn assemble_prompt(
 
     // Inject response-length instruction as a post-history directive.
     // This tells the AI to aim for a target length without hard-truncating via the API.
+    // The instruction uses both token count and approximate word count for stronger
+    // compliance, and places it as the final instruction in the preamble.
     if let Some(target) = target_response_length {
-        let length_instruction = format!("\n\nKeep your response around {} tokens.", target);
+        // Rough token-to-word ratio: ~0.75 words per token for English
+        let approx_words = (target as f64 * 0.75).round() as u64;
+        let length_instruction = format!(
+            "\n\n[IMPORTANT: Your response MUST be approximately {} tokens long (roughly {} words). \
+             This is a strict length constraint. Do NOT write significantly more or fewer tokens than this. \
+             Wrap up your response naturally as you approach this length.]",
+            target, approx_words
+        );
         preamble.push_str(&length_instruction);
     }
 

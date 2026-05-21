@@ -2,7 +2,7 @@
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 	import { onMount } from 'svelte';
-	import { getShikiHighlighter } from '$lib/shiki.svelte';
+	import { getShikiHighlighter, loadShikiTheme, getThemeColors, type ThemeColors } from '$lib/shiki.svelte';
 	import { app } from '$lib/stores/app.svelte';
 
 	interface Props {
@@ -14,6 +14,8 @@
 	let renderedHtml = $state<string>('');
 	let highlighter = $state<Awaited<ReturnType<typeof getShikiHighlighter>> | null>(null);
 	let containerEl: HTMLDivElement | undefined = $state();
+	let themeVersion = $state(0);
+	let themeColors: ThemeColors | null = $state(null);
 
 	// Preload highlighter with common languages
 	onMount(async () => {
@@ -24,31 +26,50 @@
 		}
 	});
 
-	// Re-render markdown when content changes
+	// Re-render markdown when content or theme changes
 	$effect(() => {
 		const rawContent = content;
+
+		// Eagerly ensure the current code theme is loaded before rendering
+		const shikiTheme = app.code_theme;
+		let themeReady = highlighter?.getLoadedThemes().includes(shikiTheme) ?? false;
+
+		// Bump reactive counter after async load so the effect re-runs
+		const _v = themeVersion;
+
+		if (highlighter && !themeReady) {
+			loadShikiTheme(shikiTheme)
+				.then(() => {
+					themeVersion++;
+				})
+				.catch((err) => {
+					console.warn('Failed to load Shiki theme:', shikiTheme, err);
+				});
+		}
+
+		// Resolve theme colors for prose styling
+		if (themeReady) {
+			getThemeColors(shikiTheme).then((c) => {
+				themeColors = c;
+			});
+		}
 
 		const renderer = new marked.Renderer();
 		const hl = highlighter;
 
 		// Custom code block renderer with Shiki highlighting
 		renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-			if (lang && hl) {
+			if (lang && hl && themeReady) {
 				try {
-					const shikiTheme =
-						app.resolved_theme === 'light' ? 'vitesse-light' : 'vitesse-dark';
-					if (
-						hl.getLoadedLanguages().includes(lang) &&
-						hl.getLoadedThemes().includes(shikiTheme)
-					) {
+					if (hl.getLoadedLanguages().includes(lang)) {
 						const highlighted = hl.codeToHtml(text, { lang, theme: shikiTheme });
 						return `<div class="relative"><span class="lang-label">${lang}</span>${highlighted}</div>`;
 					}
-				} catch {
-					// Fall through to plain code block
-				}
+			} catch {
+				// Fall through to plain code block
 			}
-			// No language or Shiki not loaded — plain code block
+			}
+			// No language, Shiki not loaded, or theme not ready — plain code block
 			const langAttr = lang ? ` class="language-${lang}"` : '';
 			const langLabel = lang ? `<span class="lang-label">${lang}</span>` : '';
 			return `<div class="relative">${langLabel}<pre><code${langAttr}>${escapeHtml(text)}</code></pre></div>`;
@@ -119,7 +140,13 @@
 	}
 </script>
 
-<div class="prose-markdown" bind:this={containerEl}>
+<div
+	class="prose-markdown"
+	bind:this={containerEl}
+	style={themeColors
+		? `--md-fg: ${themeColors.fg}; --md-bg: ${themeColors.bg}; --md-muted: ${themeColors.muted}; --md-accent: ${themeColors.accent}; --md-border: ${themeColors.border}; --md-surface: ${themeColors.surface};`
+		: ''}
+>
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html renderedHtml}
 </div>

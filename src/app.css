@@ -230,6 +230,16 @@ html.light {
 
 @layer components {
   .prose-markdown {
+    /* Default CSS variable values — overridden by inline styles from MarkdownRenderer */
+    --md-fg: var(--color-foreground);
+    --md-bg: transparent;
+    --md-muted: var(--color-muted);
+    --md-accent: var(--color-accent);
+    --md-border: var(--color-border);
+    --md-surface: var(--color-surface);
+
+    color: var(--md-fg);
+
     /* Body text */
     & p {
       margin-bottom: 16px;
@@ -287,25 +297,25 @@ html.light {
       font-weight: 600;
     }
 
-    /* Emphasis / Italic — narration text uses muted color (D-05) */
+    /* Emphasis / Italic — narration text uses muted color */
     & em {
-      color: var(--color-muted);
+      color: var(--md-muted);
     }
 
     /* Inline code */
     & code:not(pre code) {
       font-family: var(--font-mono);
       font-size: 13px;
-      background: var(--color-surface-elevated);
-      color: var(--color-accent);
+      background: var(--md-surface);
+      color: var(--md-accent);
       padding: 2px 6px;
       border-radius: var(--radius-sm);
     }
 
     /* Fenced code blocks */
     & pre {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
+      background: var(--md-surface);
+      border: 1px solid var(--md-border);
       border-radius: var(--radius-lg);
       padding: 16px;
       margin: 16px 0;
@@ -317,7 +327,7 @@ html.light {
       font-size: 13px;
       line-height: 1.5;
       background: transparent;
-      color: var(--color-foreground);
+      color: var(--md-fg);
       padding: 0;
     }
 
@@ -328,7 +338,7 @@ html.light {
       right: 12px;
       font-family: var(--font-sans);
       font-size: 12px;
-      color: var(--color-subtle);
+      color: var(--md-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       pointer-events: none;
@@ -336,7 +346,7 @@ html.light {
 
     /* Links */
     & a {
-      color: var(--color-accent);
+      color: var(--md-accent);
       text-decoration: none;
     }
     & a:hover {
@@ -345,12 +355,12 @@ html.light {
 
     /* Blockquotes */
     & blockquote {
-      border-left: 3px solid var(--color-border-strong);
+      border-left: 3px solid var(--md-border);
       padding-left: 16px;
       padding-top: 4px;
       padding-bottom: 4px;
       margin: 16px 0;
-      color: var(--color-muted);
+      color: var(--md-muted);
     }
     & blockquote p {
       margin-bottom: 0;
@@ -367,7 +377,7 @@ html.light {
       line-height: 1.75;
     }
     & ul li::marker {
-      color: var(--color-subtle);
+      color: var(--md-muted);
     }
 
     /* Ordered lists */
@@ -381,7 +391,7 @@ html.light {
       line-height: 1.75;
     }
     & ol li::marker {
-      color: var(--color-subtle);
+      color: var(--md-muted);
     }
 
     /* Nested lists */
@@ -396,7 +406,7 @@ html.light {
     /* Horizontal rule */
     & hr {
       border: none;
-      border-top: 1px solid var(--color-border);
+      border-top: 1px solid var(--md-border);
       margin: 16px 0;
     }
 
@@ -408,18 +418,18 @@ html.light {
       font-size: 14px;
     }
     & th {
-      background: var(--color-surface-elevated);
+      background: var(--md-surface);
       font-weight: 600;
       text-align: left;
       padding: 8px 12px;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--md-border);
     }
     & td {
       padding: 8px 12px;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--md-border);
     }
     & tr:hover td {
-      background: var(--color-surface-hover);
+      background: color-mix(in oklch, var(--md-surface) 50%, transparent);
     }
 
     /* GFM Task lists */
@@ -428,7 +438,7 @@ html.light {
       padding-left: 8px;
     }
     & input[type="checkbox"] {
-      accent-color: var(--color-accent);
+      accent-color: var(--md-accent);
       margin-right: 8px;
       vertical-align: middle;
     }
@@ -436,7 +446,7 @@ html.light {
     /* GFM Strikethrough */
     & del {
       text-decoration: line-through;
-      color: var(--color-subtle);
+      color: var(--md-muted);
     }
 
     /* Images (AI responses may include markdown images) */
