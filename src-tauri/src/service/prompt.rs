@@ -41,7 +41,7 @@ impl PromptEngine {
         messages: &[Message],
     ) -> AssembledPrompt {
         let preamble = build_system_prompt_with_persona(character, persona);
-        let chat_history = build_chat_history(messages);
+        let chat_history = build_chat_history(messages, persona, Some(character));
 
         AssembledPrompt {
             preamble,
@@ -149,7 +149,8 @@ impl PromptEngine {
         let truncated_messages = truncated_history.truncated_count;
 
         // Build chat history from truncated messages, then inject lorebook entries
-        let mut chat_history = build_chat_history(&truncated_history.messages);
+        let mut chat_history =
+            build_chat_history(&truncated_history.messages, persona, Some(character));
         tokens_used += truncated_history.tokens_used;
 
         // Apply lorebook injection via service function
@@ -404,14 +405,31 @@ fn build_system_prompt(character: &CharacterCardV2) -> String {
 }
 
 /// Converts domain messages to rig messages.
-fn build_chat_history(messages: &[Message]) -> Vec<rig_core::completion::Message> {
+/// System messages (including steering) have template variables resolved so that
+/// `{{user}}` and `{{char}}` become actual names that the LLM can understand.
+fn build_chat_history(
+    messages: &[Message],
+    persona: Option<&Persona>,
+    character: Option<&CharacterCardV2>,
+) -> Vec<rig_core::completion::Message> {
     messages
         .iter()
         .filter(|m| !m.content.is_empty()) // Skip empty messages
-        .map(|msg| match msg.role {
-            MessageRole::User => rig_core::completion::Message::user(&msg.content),
-            MessageRole::Assistant => rig_core::completion::Message::assistant(&msg.content),
-            MessageRole::System => rig_core::completion::Message::system(&msg.content),
+        .map(|msg| {
+            let content = if matches!(msg.role, MessageRole::System) {
+                if let Some(ch) = character {
+                    template::resolve_variables(&msg.content, persona, ch)
+                } else {
+                    msg.content.clone()
+                }
+            } else {
+                msg.content.clone()
+            };
+            match msg.role {
+                MessageRole::User => rig_core::completion::Message::user(&content),
+                MessageRole::Assistant => rig_core::completion::Message::assistant(&content),
+                MessageRole::System => rig_core::completion::Message::system(&content),
+            }
         })
         .collect()
 }
@@ -536,7 +554,7 @@ mod tests {
     #[test]
     fn test_build_chat_history_user_message() {
         let messages = vec![make_test_message(MessageRole::User, "Hello")];
-        let history = build_chat_history(&messages);
+        let history = build_chat_history(&messages, None, None);
 
         assert_eq!(history.len(), 1);
     }
@@ -544,7 +562,7 @@ mod tests {
     #[test]
     fn test_build_chat_history_assistant_message() {
         let messages = vec![make_test_message(MessageRole::Assistant, "Hi there")];
-        let history = build_chat_history(&messages);
+        let history = build_chat_history(&messages, None, None);
 
         assert_eq!(history.len(), 1);
     }
@@ -552,9 +570,36 @@ mod tests {
     #[test]
     fn test_build_chat_history_system_message() {
         let messages = vec![make_test_message(MessageRole::System, "System info")];
-        let history = build_chat_history(&messages);
+        let history = build_chat_history(&messages, None, None);
 
         assert_eq!(history.len(), 1);
+    }
+
+    #[test]
+    fn test_build_chat_history_system_message_resolves_templates() {
+        let character = make_test_character();
+        let messages = vec![make_test_message(
+            MessageRole::System,
+            "Do not post for {{user}}",
+        )];
+        let history = build_chat_history(&messages, None, Some(&character));
+
+        assert_eq!(history.len(), 1);
+        // {{user}} should be resolved to "User" (no persona → default "User")
+        let content = match &history[0] {
+            rig_core::completion::Message::System { content } => content.clone(),
+            _ => panic!("Expected system message"),
+        };
+        assert!(
+            content.contains("User"),
+            "Expected {{user}} to be resolved, got: {}",
+            content
+        );
+        assert!(
+            !content.contains("{{user}}"),
+            "{{user}} should have been resolved, got: {}",
+            content
+        );
     }
 
     #[test]
@@ -564,7 +609,7 @@ mod tests {
             make_test_message(MessageRole::Assistant, ""), // Empty
             make_test_message(MessageRole::User, "World"),
         ];
-        let history = build_chat_history(&messages);
+        let history = build_chat_history(&messages, None, None);
 
         assert_eq!(history.len(), 2); // Empty message filtered out
     }
@@ -576,7 +621,7 @@ mod tests {
             make_test_message(MessageRole::Assistant, "Answer"),
             make_test_message(MessageRole::User, "Follow up"),
         ];
-        let history = build_chat_history(&messages);
+        let history = build_chat_history(&messages, None, None);
 
         assert_eq!(history.len(), 3);
     }

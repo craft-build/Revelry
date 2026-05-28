@@ -4,7 +4,9 @@
 	import { app } from '$lib/stores/app.svelte';
 	import AppHeader from '$lib/components/layout/AppHeader.svelte';
 	import ConversationSidebar from '$lib/components/layout/ConversationSidebar.svelte';
+	import { ToastContainer } from '$lib/components/ui';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { getShikiHighlighter } from '$lib/shiki.svelte';
 	import { AlertTriangle, RefreshCw } from '@lucide/svelte';
 
@@ -19,6 +21,21 @@
 			if (e.key === 'F9') {
 				e.preventDefault();
 				app.toggleSidebar();
+			}
+			// Ctrl/Cmd+N — new chat
+			if ((e.metaKey || e.ctrlKey) && e.key === 'n' && !e.shiftKey) {
+				e.preventDefault();
+				goto('/');
+			}
+			// Ctrl/Cmd+Shift+N — new character
+			if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'N') {
+				e.preventDefault();
+				goto('/characters');
+			}
+			// Escape — cancel generation
+			if (e.key === 'Escape' && app.is_generating) {
+				e.preventDefault();
+				app.stopGeneration();
 			}
 		};
 		window.addEventListener('keydown', onkey);
@@ -127,5 +144,6 @@
 				{@render children?.()}
 			</main>
 		</div>
+		<ToastContainer />
 	{/if}
 </div>

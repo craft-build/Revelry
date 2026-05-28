@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Send, Square, Paperclip } from '@lucide/svelte';
+	import { Send, Square } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
 	import LorebookDetailPanel from './LorebookDetailPanel.svelte';
 
@@ -82,20 +82,12 @@
 		<div
 			class="flex items-end gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-input) p-2 focus-within:border-(--color-accent)"
 		>
-			<button
-				type="button"
-				class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-sm) text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-				aria-label="Attach"
-			>
-				<Paperclip class="size-4" />
-			</button>
-
 			<textarea
 				bind:this={textarea}
 				bind:value={text}
 				oninput={autogrow}
 				onkeydown={handleKey}
-				placeholder="Message {app.active_character?.name ?? 'character'}…"
+				placeholder={`Message ${app.active_character?.name ?? 'character'}…`}
 				rows="1"
 				disabled={app.is_generating}
 				class="block flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-relaxed text-(--color-foreground) placeholder:text-(--color-subtle) focus:outline-none disabled:opacity-50"

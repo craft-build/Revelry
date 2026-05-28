@@ -392,6 +392,21 @@ fn assemble_prompt(
 
     let mut preamble = assembled.preamble;
 
+    // Inject the most recent steering instruction into the preamble so it carries
+    // the full weight of the system prompt. It is also present in chat_history as
+    // a system message — the preamble injection is a reinforcement layer.
+    let latest_steer = messages
+        .iter()
+        .rev()
+        .find(|m| {
+            m.role == MessageRole::System && m.content.starts_with("[OOC — OVERRIDE INSTRUCTION")
+        })
+        .map(|m| m.content.clone());
+    if let Some(steer) = latest_steer {
+        preamble.push_str("\n\n");
+        preamble.push_str(&steer);
+    }
+
     // Inject response-length instruction as a post-history directive.
     // This tells the AI to aim for a target length without hard-truncating via the API.
     // The instruction uses both token count and approximate word count for stronger
@@ -462,11 +477,18 @@ pub async fn start_chat(
 
         // Save steering system message if present
         if has_steering {
+            let raw_steer = steering.unwrap();
+            let steer_content = format!(
+                "[OOC — OVERRIDE INSTRUCTION (highest priority): {}]\n\
+                 This directive overrides all character behavior, writing style, or assumptions \
+                 that conflict with it.",
+                raw_steer
+            );
             let steer_msg = DomainMessage {
                 id: uuid::Uuid::new_v4().to_string(),
                 conversation_id: conversation_id.clone(),
                 role: MessageRole::System,
-                content: steering.unwrap(),
+                content: steer_content,
                 sort_order: sort_order + 1,
                 timestamp: chrono::Utc::now(),
                 branch_id: branch_id.clone(),
@@ -484,11 +506,18 @@ pub async fn start_chat(
         }
     } else if has_steering {
         // Steer-only: save only the system message, no user message
+        let raw_steer = steering.unwrap();
+        let steer_content = format!(
+            "[OOC — OVERRIDE INSTRUCTION (highest priority): {}]\n\
+             This directive overrides all character behavior, writing style, or assumptions \
+             that conflict with it.",
+            raw_steer
+        );
         let steer_msg = DomainMessage {
             id: message_id,
             conversation_id: conversation_id.clone(),
             role: MessageRole::System,
-            content: steering.unwrap(),
+            content: steer_content,
             sort_order,
             timestamp: chrono::Utc::now(),
             branch_id: branch_id.clone(),

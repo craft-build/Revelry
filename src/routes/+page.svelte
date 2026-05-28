@@ -4,8 +4,12 @@
 	import { app } from '$lib/stores/app.svelte';
 	import { Avatar } from '$lib/components/ui';
 
-	// Surface a few characters as quick starts
-	let suggested = $derived(app.characters.slice(0, 3));
+	// Surface most recently updated characters as quick starts
+	let suggested = $derived(
+		[...app.characters]
+			.sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+			.slice(0, 3),
+	);
 </script>
 
 <svelte:head>

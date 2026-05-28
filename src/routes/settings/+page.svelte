@@ -343,11 +343,7 @@
 						Backup, restore, and export all of your data.
 					</p>
 				</header>
-				<div class="flex flex-col gap-2">
-					<Button variant="secondary">Export everything to ZIP</Button>
-					<Button variant="secondary">Backup database</Button>
-					<Button variant="destructive">Clear conversation history</Button>
-				</div>
+				<p class="text-sm text-(--color-muted)">Coming soon — export, backup, and data management will be available when the backend supports these operations.</p>
 			{:else if active === 'about'}
 				<header class="mb-6">
 					<h1 class="font-display text-2xl font-semibold tracking-tight">About</h1>

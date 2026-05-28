@@ -30,11 +30,33 @@
 		});
 	});
 
-	// Auto-scroll to bottom when messages change
+	// Auto-scroll to bottom only when a new message is appended or
+	// the last message's streaming content grows — never on edits,
+	// deletes, or branch switches in the middle of the conversation.
+	let prevLen = $state(0);
+	let prevLastContent = $state('');
+	let shouldAutoScroll = $state(false);
+
 	$effect(() => {
-		// Touch the length so the effect re-runs on append/edit
-		void app.messages.length;
-		void app.messages.at(-1)?.content;
+		const len = app.messages.length;
+		const lastContent = app.messages.at(-1)?.content ?? '';
+
+		// Only flag auto-scroll when a message was appended OR the last
+		// message content grew (streaming). Edits/deletes mid-conversation
+		// are ignored.
+		if (len > prevLen) {
+			shouldAutoScroll = true;
+		} else if (len === prevLen && lastContent.length > prevLastContent.length) {
+			shouldAutoScroll = true;
+		}
+
+		prevLen = len;
+		prevLastContent = lastContent;
+	});
+
+	$effect(() => {
+		if (!shouldAutoScroll) return;
+		shouldAutoScroll = false;
 		tick().then(() => {
 			scrollEl?.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
 		});
@@ -93,6 +115,15 @@
 </svelte:head>
 
 <ChatHeader />
+
+<!-- Screen reader announcements for streaming state -->
+<div class="sr-only" aria-live="polite">
+	{#if app.is_generating}
+		{app.active_character?.name ?? 'Character'} is typing…
+	{:else if app.messages.at(-1)?.role === 'assistant' && !app.messages.at(-1)?.is_streaming}
+		Response complete
+	{/if}
+</div>
 
 <!-- Message list + Generation panel -->
 <div class="flex min-h-0 flex-1">

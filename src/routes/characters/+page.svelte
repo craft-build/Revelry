@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Tabs } from 'bits-ui';
-	import { Plus, Search, Upload, Filter, BookOpen } from '@lucide/svelte';
+	import { Plus, Search, Upload, BookOpen } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
-	import { Input, Button, Tooltip } from '$lib/components/ui';
+	import { Input, Button } from '$lib/components/ui';
 	import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 	import PersonaCard from '$lib/components/personas/PersonaCard.svelte';
 	import { LorebookCard, LorebookEditor } from '$lib/components/lorebooks';
@@ -269,15 +269,6 @@
 								class="h-9 w-72 pl-9"
 							/>
 						</div>
-						<Tooltip text="Filter by tag">
-							<button
-								type="button"
-								class="inline-flex size-9 items-center justify-center rounded-(--radius-md) border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-								aria-label="Filter"
-							>
-								<Filter class="size-4" />
-							</button>
-						</Tooltip>
 					</div>
 				</div>
 

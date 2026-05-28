@@ -2,7 +2,7 @@
 	import type { Message, CharacterCard, UserPersona, MessageBranch } from '$lib/types';
 	import { Avatar } from '$lib/components/ui';
 	import { Pencil, RotateCcw, Copy, Trash2, AlertTriangle, Loader2, GitBranch, Compass } from '@lucide/svelte';
-	import { cn } from '$lib/utils';
+	import { cn, formatRelativeTime } from '$lib/utils';
 	import { app } from '$lib/stores/app.svelte';
 	import { MarkdownRenderer } from '$lib/components/chat';
 	import { fade } from 'svelte/transition';
@@ -30,6 +30,7 @@
 	// Edit mode state
 	let isEditing = $state<boolean>(false);
 	let editContent = $state<string>('');
+	let editTextarea: HTMLTextAreaElement | undefined = $state();
 	let isSaving = $state<boolean>(false);
 
 	function getErrorDisplay(errorType?: string, errorContent?: string): {
@@ -234,13 +235,13 @@
 				class="w-full rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-input) p-3"
 			>
 				<textarea
+					bind:this={editTextarea}
 					bind:value={editContent}
 					onkeydown={handleEditKeydown}
-					oninput={() => autogrow(undefined)}
+					oninput={() => autogrow(editTextarea)}
 					disabled={isSaving}
 					rows="1"
 					class="w-full resize-none bg-transparent text-[14px] leading-relaxed text-(--color-foreground) focus:outline-none disabled:opacity-50"
-					style:height="auto"
 				></textarea>
 				<div class="mt-2 flex items-center gap-2">
 					<button
@@ -316,7 +317,7 @@
 		{#if !isError && !isEditing}
 			<div
 				class={cn(
-					'mt-0.5 flex gap-0.5 px-1 opacity-0 transition-opacity group-hover:opacity-100',
+					'mt-0.5 flex gap-0.5 px-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100',
 					isUser ? 'flex-row-reverse' : 'flex-row'
 				)}
 			>
@@ -371,5 +372,13 @@
 				</button>
 			</div>
 		{/if}
+
+		<!-- Timestamp -->
+		<span
+			class="mt-0.5 px-1 text-[10px] text-(--color-subtle) opacity-0 transition-opacity group-hover:opacity-100"
+			title={message.timestamp ? new Date(message.timestamp).toLocaleString() : ''}
+		>
+			{message.timestamp ? formatRelativeTime(message.timestamp) : ''}
+		</span>
 	</div>
 </article>

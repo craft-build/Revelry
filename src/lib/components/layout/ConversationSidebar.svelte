@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plus, Search, MessageSquareDashed, Trash2 } from '@lucide/svelte';
+	import { Plus, Search, MessageSquareDashed, Trash2, Pencil } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { app } from '$lib/stores/app.svelte';
 	import type { SearchResult } from '$lib/types';
@@ -14,6 +14,11 @@
 	let deleting_name = $state('');
 	let delete_open = $state(false);
 	let delete_loading = $state(false);
+
+	// Rename state
+	let renaming_id = $state<string | null>(null);
+	let renaming_title = $state('');
+	let rename_input: HTMLInputElement | undefined = $state();
 
 	// Dual-mode: empty search shows all conversations (no backend call)
 	// Non-empty search uses backend FTS5 results from app.search_results
@@ -76,12 +81,32 @@
 				delete_loading = false;
 			});
 	}
+
+	function startRename(convId: string, currentTitle: string) {
+		renaming_id = convId;
+		renaming_title = currentTitle;
+		// Focus the input after the DOM updates
+		setTimeout(() => rename_input?.focus(), 0);
+	}
+
+	function commitRename() {
+		if (!renaming_id || !renaming_title.trim()) {
+			renaming_id = null;
+			return;
+		}
+		app.renameConversation(renaming_id, renaming_title.trim());
+		renaming_id = null;
+	}
+
+	function cancelRename() {
+		renaming_id = null;
+	}
 </script>
 
 <aside
 	class={cn(
-		'flex h-full w-72 shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface) transition-[width] duration-200',
-		!app.sidebar_open && 'w-0 overflow-hidden border-r-0'
+		'flex h-full shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface) transition-[transform,margin,opacity] duration-200 ease-in-out',
+		app.sidebar_open ? 'w-72 translate-x-0' : 'w-72 -translate-x-full -ml-72 border-r-0 opacity-0 pointer-events-none'
 	)}
 >
 	<!-- New chat -->
@@ -173,52 +198,79 @@
 					{@const char = characterFor(conv.character_id)}
 					{@const active = conv.id === app.active_conversation_id}
 					<li class="group/conv relative">
-						<a
-							href={`/chat/${conv.id}`}
-							class={cn(
-								'group flex gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors',
-								active ? 'bg-(--color-surface-elevated)' : 'hover:bg-(--color-surface-hover)'
-							)}
-						>
-							<Avatar
-								name={char?.name ?? '?'}
-								src={char?.avatar_path}
-								size="sm"
-								class="mt-0.5"
-							/>
-							<div class="min-w-0 flex-1">
-								<div class="flex items-baseline justify-between gap-2">
-									<span
-										class={cn(
-											'truncate text-xs font-medium',
-											active ? 'text-(--color-foreground)' : 'text-(--color-foreground)/90'
-										)}
-									>
-										{conv.title}
-									</span>
-									<span class="shrink-0 text-[10px] text-(--color-subtle)">
-										{formatRelativeTime(conv.updated_at)}
-									</span>
-								</div>
-								<p class="mt-0.5 line-clamp-2 text-[11px] leading-tight text-(--color-muted)">
-									{conv.last_message_preview || '—'}
-								</p>
-							</div>
-						</a>
-						<div class="absolute right-1 top-1 opacity-0 transition-opacity group-hover/conv:opacity-100">
-							<KebabMenu>
-								<KebabMenuItem
-									onclick={() => {
-										deleting_id = conv.id;
-										deleting_name = conv.title;
-										delete_open = true;
+						{#if renaming_id === conv.id}
+							<div class="flex items-center gap-2 rounded-(--radius-md) px-2 py-2">
+								<Avatar
+									name={char?.name ?? '?'}
+									src={char?.avatar_path}
+									size="sm"
+									class="mt-0.5"
+								/>
+								<input
+									bind:this={rename_input}
+									bind:value={renaming_title}
+									onkeydown={(e) => {
+										if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+										if (e.key === 'Escape') { e.preventDefault(); cancelRename(); }
 									}}
-								>
-									<Trash2 class="size-3.5" />
-									Delete
-								</KebabMenuItem>
-							</KebabMenu>
-						</div>
+									onblur={commitRename}
+									class="min-w-0 flex-1 rounded-(--radius-sm) border border-(--color-accent) bg-(--color-surface-input) px-2 py-0.5 text-xs text-(--color-foreground) focus:outline-none"
+								/>
+							</div>
+						{:else}
+							<a
+								href={`/chat/${conv.id}`}
+								class={cn(
+									'group flex gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors',
+									active ? 'bg-(--color-surface-elevated)' : 'hover:bg-(--color-surface-hover)'
+								)}
+							>
+								<Avatar
+									name={char?.name ?? '?'}
+									src={char?.avatar_path}
+									size="sm"
+									class="mt-0.5"
+								/>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-baseline justify-between gap-2">
+										<span
+											class={cn(
+												'truncate text-xs font-medium',
+												active ? 'text-(--color-foreground)' : 'text-(--color-foreground)/90'
+											)}
+										>
+											{conv.title}
+										</span>
+										<span class="shrink-0 text-[10px] text-(--color-subtle)">
+											{formatRelativeTime(conv.updated_at)}
+										</span>
+									</div>
+									<p class="mt-0.5 line-clamp-2 text-[11px] leading-tight text-(--color-muted)">
+										{conv.last_message_preview || '—'}
+									</p>
+								</div>
+							</a>
+							<div class="absolute right-1 top-1 opacity-0 transition-opacity group-hover/conv:opacity-100">
+								<KebabMenu>
+									<KebabMenuItem
+										onclick={() => startRename(conv.id, conv.title)}
+									>
+										<Pencil class="size-3.5" />
+										Rename
+									</KebabMenuItem>
+									<KebabMenuItem
+										onclick={() => {
+											deleting_id = conv.id;
+											deleting_name = conv.title;
+											delete_open = true;
+										}}
+									>
+										<Trash2 class="size-3.5" />
+										Delete
+									</KebabMenuItem>
+								</KebabMenu>
+							</div>
+						{/if}
 					</li>
 				{/each}
 			</ul>

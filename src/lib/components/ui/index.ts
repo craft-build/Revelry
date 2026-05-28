@@ -11,4 +11,5 @@ export { default as Select } from "./Select.svelte";
 export { default as StepperHeader } from "./StepperHeader.svelte";
 export { default as Tag } from "./Tag.svelte";
 export { default as Textarea } from "./Textarea.svelte";
+export { default as ToastContainer } from "./ToastContainer.svelte";
 export { default as Tooltip } from "./Tooltip.svelte";
