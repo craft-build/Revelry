@@ -274,13 +274,17 @@
 					isUser
 						? 'border-(--color-border) bg-(--color-bubble-user) text-(--color-foreground)'
 						: 'border-(--color-border) bg-(--color-bubble-character) text-(--color-foreground)',
-					message.is_streaming && 'streaming-caret'
+					message.is_streaming && message.content && 'streaming-caret'
 				)}
 			>
 				{#if message.is_streaming}
-					<p class="whitespace-pre-wrap break-words">
-						{message.content}
-					</p>
+					{#if !message.content}
+						<div class="thinking-dots" aria-label="Thinking">
+							<span></span><span></span><span></span>
+						</div>
+					{:else}
+						<p class="whitespace-pre-wrap break-words">{message.content}</p>
+					{/if}
 				{:else}
 					<MarkdownRenderer content={message.content} />
 				{/if}
