@@ -294,3 +294,29 @@ export interface RegexTestResult {
   output: string;
   match_count: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Character generation
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Streaming chunk for the character generation command. */
+export type GenerateCharacterChunk =
+  | { event: "token"; data: { content: string } }
+  | { event: "complete"; data: { character: GeneratedCharacterData } }
+  | { event: "error"; data: { error: string; errorType: string } };
+
+/** Partial character data returned by the generator. Creative fields only —
+ *  id, created_at, updated_at are assigned on save. */
+export interface GeneratedCharacterData {
+  name: string;
+  description: string;
+  personality: string;
+  scenario: string;
+  first_mes: string;
+  mes_example: string;
+  system_prompt: string;
+  post_history_instructions: string;
+  creator_notes: string;
+  tags: string[];
+  alternate_greetings: string[];
+}

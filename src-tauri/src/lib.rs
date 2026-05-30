@@ -47,6 +47,9 @@ pub fn run() {
         .manage(commands::chat::CancelState {
             token: std::sync::Mutex::new(None),
         })
+        .manage(commands::generate::GenerateCancelState {
+            token: std::sync::Mutex::new(None),
+        })
         .invoke_handler(tauri::generate_handler![
             commands::characters::get_characters,
             commands::characters::save_character,
@@ -110,6 +113,8 @@ pub fn run() {
             commands::regex::validate_regex_pattern,
             commands::app_settings::get_app_setting,
             commands::app_settings::set_app_setting,
+            commands::generate::generate_character,
+            commands::generate::stop_character_generation,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

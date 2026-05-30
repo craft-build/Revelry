@@ -22,7 +22,14 @@ import type {
   RegexScript,
   RegexTestResult,
   StreamChunk,
+  GenerateCharacterChunk,
+  GeneratedCharacterData,
 } from "$lib/types";
+
+// ── Dev-mode detection ──────────────────────────────────────────────────────────
+
+const IS_DEV =
+  typeof window !== "undefined" && !("__TAURI_INTERNALS__" in window);
 
 // ── Characters ────────────────────────────────────────────────────────────────
 
@@ -443,4 +450,76 @@ export async function getAppSetting(key: string): Promise<string | null> {
 
 export async function setAppSetting(key: string, value: string): Promise<void> {
   return invoke<void>("set_app_setting", { key, value });
+}
+
+// ── Character generation ──────────────────────────────────────────────────────
+
+export async function stopCharacterGeneration(): Promise<void> {
+  return invoke<void>("stop_character_generation");
+}
+
+export async function generateCharacter(
+  idea: string,
+  providerId: string,
+  modelName: string,
+  onEvent: Channel<GenerateCharacterChunk>,
+): Promise<void> {
+  if (IS_DEV) {
+    return mockGenerateCharacter(idea, onEvent);
+  }
+  return invoke<void>("generate_character", {
+    idea,
+    providerId,
+    modelName,
+    channel: onEvent,
+  });
+}
+
+// ── Mock implementations (dev mode) ───────────────────────────────────────────
+
+const MOCK_GENERATED_CHARACTER: GeneratedCharacterData = {
+  name: "Aria Nightwhisper",
+  description:
+    "A mysterious half-elf archivist who tends the Forbidden Stacks of the Grand Athenaeum. She speaks in riddles and forgotten tongues, guarding knowledge that reality has tried to unwrite.",
+  personality:
+    "Eccentric and melancholic. Aria oscillates between playful teasing and somber introspection. She hoards secrets like coins and delights in being the only one who remembers things that never happened.",
+  scenario:
+    "You've wandered into the Forbidden Stacks after hours. The candles are still burning — which shouldn't be possible, since no one has been here in decades. Aria is waiting, as if she knew you'd come.",
+  first_mes:
+    "*The candlelight doesn't flicker as you enter — it bends toward you, curious.*\n\nAnother lost soul stumbling where the library's fingers are longest. *She looks up from a book that seems to be reading itself.* Tell me, seeker — are you looking for something, or running from it? The Stacks accept both kinds.",
+  mes_example:
+    "<START>\n{{user}}: What's this book?\n{{char}}: *Aria's eyes narrow with something between amusement and warning.* That particular volume has been trying to escape for three centuries. I'd put it down before it gets ideas — or put it back before it puts you down. The Stacks have a sense of humor, and it is not kind.",
+  system_prompt:
+    "Write as Aria Nightwhisper, the half-elf archivist. Speak cryptically but warmly. Reference forgotten knowledge and impossible books.",
+  post_history_instructions: "",
+  creator_notes: "Generated as a demo character.",
+  tags: ["fantasy", "elf", "librarian", "mysterious"],
+  alternate_greetings: [],
+};
+
+function mockGenerateCharacter(
+  _idea: string,
+  onEvent: Channel<GenerateCharacterChunk>,
+): Promise<void> {
+  const jsonPreview = JSON.stringify(MOCK_GENERATED_CHARACTER, null, 2);
+  const chunkSize = 8;
+  let offset = 0;
+
+  return new Promise((resolve) => {
+    function sendChunk() {
+      if (offset < jsonPreview.length) {
+        const content = jsonPreview.slice(offset, offset + chunkSize);
+        offset += chunkSize;
+        onEvent.onmessage({ event: "token", data: { content } });
+        setTimeout(sendChunk, 30 + Math.random() * 40);
+      } else {
+        onEvent.onmessage({
+          event: "complete",
+          data: { character: MOCK_GENERATED_CHARACTER },
+        });
+        resolve();
+      }
+    }
+    setTimeout(sendChunk, 200);
+  });
 }

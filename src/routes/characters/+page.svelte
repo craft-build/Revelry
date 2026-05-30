@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { Tabs } from 'bits-ui';
-	import { Plus, Search, Upload, BookOpen } from '@lucide/svelte';
+	import { Plus, Search, Upload, BookOpen, Sparkles } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
 	import { Input, Button } from '$lib/components/ui';
 	import CharacterCard from '$lib/components/characters/CharacterCard.svelte';
 	import PersonaCard from '$lib/components/personas/PersonaCard.svelte';
 	import { LorebookCard, LorebookEditor } from '$lib/components/lorebooks';
-	import { CharacterEditorDialog, DeleteConfirmationDialog, ImportErrorDialog } from '$lib/components/characters';
+	import { CharacterEditorDialog, CharacterGeneratorDialog, DeleteConfirmationDialog, ImportErrorDialog } from '$lib/components/characters';
 	import { PersonaEditorDialog } from '$lib/components/personas';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import type { CharacterCard as CharacterCardType, UserPersona, Lorebook } from '$lib/types';
+	import type { CharacterCard as CharacterCardType, UserPersona, Lorebook, GeneratedCharacterData } from '$lib/types';
 
 	// Tab state synced to query string so the persona switcher's
 	// "Manage personas" link can deep-link.
@@ -44,6 +44,9 @@
 	let import_error_open = $state(false);
 	let import_error_message = $state('');
 	let is_importing = $state(false);
+
+	// ── Generator state ──────────────────────────────────────────────────
+	let generator_open = $state(false);
 
 	// ── Persona editor state ────────────────────────────────────────────
 	let persona_editor_open = $state(false);
@@ -81,6 +84,40 @@
 		} finally {
 			is_importing = false;
 		}
+	}
+
+	function generatedToCard(data: GeneratedCharacterData): CharacterCardType {
+		return {
+			id: crypto.randomUUID(),
+			name: data.name,
+			description: data.description,
+			personality: data.personality,
+			scenario: data.scenario,
+			first_mes: data.first_mes,
+			mes_example: data.mes_example,
+			system_prompt: data.system_prompt,
+			post_history_instructions: data.post_history_instructions,
+			creator_notes: data.creator_notes,
+			tags: data.tags,
+			alternate_greetings: data.alternate_greetings,
+			creator: '',
+			character_version: '2.0',
+			avatar_path: undefined,
+			default_persona_id: undefined,
+			default_preset_id: undefined,
+			character_book: undefined,
+			lorebook_scan_depth: 2,
+			lorebook_recursive_depth: 2,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		};
+	}
+
+	function handleGeneratorEditDetails(data: GeneratedCharacterData) {
+		editor_mode = 'create';
+		editing_character = generatedToCard(data);
+		editor_open = true;
+		generator_open = false;
 	}
 
 	async function handleExport(id: string) {
@@ -203,6 +240,10 @@
 			</div>
 
 			<div class="flex items-center gap-2">
+				<Button variant="secondary" size="sm" onclick={() => (generator_open = true)}>
+					<Sparkles class="size-3.5" />
+					Generate
+				</Button>
 				<Button variant="secondary" size="sm" onclick={handleImport} disabled={is_importing}>
 					{#if is_importing}
 						<span class="size-3.5 animate-spin rounded-full border-2 border-(--color-subtle) border-t-transparent"></span>
@@ -373,6 +414,12 @@
 	bind:open={editor_open}
 	mode={editor_mode}
 	character={editing_character}
+/>
+
+<!-- Character generator dialog -->
+<CharacterGeneratorDialog
+	bind:open={generator_open}
+	oneditdetails={handleGeneratorEditDetails}
 />
 
 <!-- Persona editor dialog -->

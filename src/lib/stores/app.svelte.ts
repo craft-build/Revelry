@@ -13,6 +13,8 @@ import type {
   RegexTestResult,
   StreamChunk,
   ContextBudget,
+  GenerateCharacterChunk,
+  GeneratedCharacterData,
 } from "$lib/types";
 import { Channel } from "@tauri-apps/api/core";
 import {
@@ -65,6 +67,8 @@ import {
   saveMessage as apiSaveMessage,
   importCard as apiImportCard,
   exportCard as apiExportCard,
+  generateCharacter as apiGenerateCharacter,
+  stopCharacterGeneration as apiStopCharacterGeneration,
   getAppSetting as apiGetAppSetting,
   setAppSetting as apiSetAppSetting,
 } from "$lib/data/api";
@@ -133,6 +137,12 @@ class AppState {
 
   // ── Generation panel state ────────────────────────────────────────────────
   generation_panel_open = $state<boolean>(false);
+
+  // ── Character generation state ──────────────────────────────────────────
+  is_generating_character = $state<boolean>(false);
+  generated_character_preview = $state<string>("");
+  generated_character_data = $state<GeneratedCharacterData | null>(null);
+  generation_error = $state<string>("");
 
   // ── Derived ────────────────────────────────────────────────────────────
   get active_conversation(): Conversation | undefined {
@@ -214,6 +224,10 @@ class AppState {
       : this.code_theme_dark;
   }
 
+  get available_generation_providers(): Provider[] {
+    return this.providers.filter((p) => p.enabled && p.has_api_key);
+  }
+
   get filtered_characters(): CharacterCard[] {
     const q = this.character_search_query.trim().toLowerCase();
     if (!q) return this.characters;
@@ -244,6 +258,57 @@ class AppState {
         p.personality.toLowerCase().includes(q) ||
         p.tags?.some((t) => t.toLowerCase().includes(q)),
     );
+  }
+
+  // ── Character generation ──────────────────────────────────────────────────
+
+  generateCharacter(idea: string, providerId: string, modelName: string): void {
+    const provider = this.providers.find(
+      (p) => p.id === providerId && p.enabled && p.has_api_key,
+    );
+    if (!provider) {
+      this.generation_error =
+        "No valid provider selected. Choose an enabled provider with an API key.";
+      return;
+    }
+
+    this.is_generating_character = true;
+    this.generated_character_preview = "";
+    this.generated_character_data = null;
+    this.generation_error = "";
+
+    const onEvent = new Channel<GenerateCharacterChunk>();
+
+    onEvent.onmessage = (chunk: GenerateCharacterChunk) => {
+      switch (chunk.event) {
+        case "token":
+          this.generated_character_preview += chunk.data.content;
+          break;
+        case "complete":
+          this.generated_character_data = chunk.data.character;
+          this.is_generating_character = false;
+          break;
+        case "error":
+          this.generation_error = chunk.data.error;
+          this.is_generating_character = false;
+          break;
+      }
+    };
+
+    apiGenerateCharacter(idea, providerId, modelName, onEvent).catch((err) => {
+      this.generation_error = err instanceof Error ? err.message : String(err);
+      this.is_generating_character = false;
+    });
+  }
+
+  clearGeneration(): void {
+    if (this.is_generating_character) {
+      apiStopCharacterGeneration().catch(() => {});
+    }
+    this.generated_character_preview = "";
+    this.generated_character_data = null;
+    this.generation_error = "";
+    this.is_generating_character = false;
   }
 
   // ── Actions ────────────────────────────────────────────────────────────
