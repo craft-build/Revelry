@@ -114,9 +114,14 @@ fn default_enabled() -> bool {
 pub struct GenerationParams {
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
+    /// Maximum tokens the API should generate (safety ceiling).
+    /// Stored as i64 for SQLite compatibility; converted to u64 at the AI boundary.
     pub max_tokens: Option<i64>,
     pub frequency_penalty: Option<f64>,
+    #[serde(default)]
     pub presence_penalty: Option<f64>,
+    #[serde(default)]
+    pub stop_sequences: Option<Vec<String>>,
 }
 
 /// Configuration for an AI provider stored in the database.

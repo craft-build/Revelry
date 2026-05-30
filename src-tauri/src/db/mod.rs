@@ -23,6 +23,22 @@ use tokio::sync::oneshot;
 
 /// Commands sent to the DbWorker background thread.
 /// Each variant carries a `reply` oneshot channel so callers can await results.
+///
+/// # reply.send() Error Handling
+///
+/// The `reply` field is a `tokio::sync::oneshot::Sender`. If the receiver
+/// has already been dropped (e.g., the caller's future was cancelled), `reply.send()`
+/// returns `Err(_)`. This is a benign "broken pipe" — not a bug — and is safely
+/// ignored with `let _ = reply.send(result);` throughout `handle_command`.
+/// The result is simply discarded since no one is waiting for it.
+///
+/// # Enum Size
+///
+/// This enum has many variants, some carrying large payloads (e.g., `CharacterCardV2`).
+/// The enum's size is dominated by its largest variant. If this becomes a memory
+/// concern, large payloads can be `Box`ed (e.g., `character: Box<CharacterCardV2>`).
+/// Currently the overhead is acceptable since commands are short-lived and sent
+/// one at a time through the channel.
 #[derive(Debug)]
 pub enum DbCommand {
     // Character operations
@@ -274,7 +290,7 @@ pub enum DbCommand {
 /// Owns the SQLite connection and processes all DB operations serially.
 /// This prevents main-thread blocking per PITFALLS.md Pitfall 3.
 pub struct DbWorker {
-    sender: mpsc::Sender<DbCommand>,
+    sender: std::sync::Mutex<mpsc::Sender<DbCommand>>,
 }
 
 impl DbWorker {
@@ -326,12 +342,16 @@ impl DbWorker {
             tracing::info!("DbWorker thread shutting down");
         });
 
-        Ok(Self { sender })
+        Ok(Self {
+            sender: std::sync::Mutex::new(sender),
+        })
     }
 
     /// Sends a command to the background thread.
     pub fn send(&self, cmd: DbCommand) -> Result<(), String> {
         self.sender
+            .lock()
+            .map_err(|e| format!("DbWorker sender mutex poisoned: {}", e))?
             .send(cmd)
             .map_err(|e| format!("Failed to send DB command: {}", e))
     }
@@ -719,11 +739,7 @@ impl DbWorker {
     }
 }
 
-// Safety: DbWorker only exposes `send()` which is safe to call from any thread.
-// The Connection stays on the background thread and is never moved across threads.
-// The mpsc::Sender is already Send + Sync.
-unsafe impl Send for DbWorker {}
-unsafe impl Sync for DbWorker {}
+
 
 #[cfg(test)]
 mod tests {

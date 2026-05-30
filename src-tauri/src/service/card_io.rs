@@ -113,7 +113,9 @@ pub fn export_to_png(character: &CharacterCardV2, avatar_bytes: Option<&[u8]>) -
         let decoder = png::Decoder::new(cursor);
         let mut reader = decoder.read_info()?;
         let info = reader.info().clone();
-        let mut img_data = vec![0u8; reader.output_buffer_size().unwrap()];
+        let mut img_data = vec![0u8; reader
+            .output_buffer_size()
+            .ok_or_else(|| anyhow!("Cannot determine PNG output buffer size"))?];
         let _output_info = reader.next_frame(&mut img_data)?;
 
         let width = info.width;

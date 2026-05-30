@@ -2,6 +2,7 @@ mod ai;
 mod commands;
 mod db;
 mod domain;
+mod error;
 mod secrets;
 mod service;
 
@@ -9,8 +10,14 @@ use db::DbWorker;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let db_path = dirs::data_dir()
-        .expect("Could not determine platform data directory")
+    let data_dir = match dirs::data_dir() {
+        Some(d) => d,
+        None => {
+            eprintln!("FATAL: Could not determine platform data directory");
+            std::process::exit(1);
+        }
+    };
+    let db_path = data_dir
         .join("com.revelry.desktop")
         .join("revelry.db");
 

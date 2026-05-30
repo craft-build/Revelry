@@ -188,6 +188,7 @@ mod tests {
             max_tokens: Some(4096),
             frequency_penalty: None,
             presence_penalty: None,
+            stop_sequences: None,
         });
         insert_provider(&conn, &provider).expect("Insert should succeed");
 

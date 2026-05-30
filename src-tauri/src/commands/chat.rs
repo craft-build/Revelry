@@ -8,6 +8,7 @@ use crate::db::{DbCommand, DbWorker};
 use crate::domain::conversation::{Message as DomainMessage, MessageRole};
 use crate::domain::lorebook::LorebookActivationDetail;
 use crate::domain::regex_script::RegexScript;
+use crate::error::AppError;
 use crate::service::prompt::PromptEngine;
 use crate::service::token_count::TokenCountService;
 
@@ -100,20 +101,20 @@ async fn load_chat_context(
     channel: &Channel<StreamChunk>,
     conversation_id: &str,
     branch_id: Option<String>,
-) -> Result<Option<ChatContext>, String> {
+) -> Result<Option<ChatContext>, AppError> {
     // 1. Load conversation
     let conversation = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadConversations { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         let conversations = reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
         conversations
             .into_iter()
             .find(|c| c.id == conversation_id)
-            .ok_or_else(|| "Conversation not found".to_string())?
+            .ok_or_else(|| AppError::not_found("Conversation not found"))?
     };
 
     // 2. Load messages
@@ -124,22 +125,22 @@ async fn load_chat_context(
             branch_id: branch_id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?
     };
 
     // 3. Load character
     let character = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadCharacters { reply: reply_tx })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         let characters = reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
         characters
             .into_iter()
             .find(|c| c.id == conversation.character_id)
@@ -150,11 +151,11 @@ async fn load_chat_context(
         Some(pid) => {
             let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
             db.send(DbCommand::LoadPersonas { reply: reply_tx })
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             let personas = reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
             personas.into_iter().find(|p| p.id == *pid)
         }
         None => None,
@@ -165,11 +166,11 @@ async fn load_chat_context(
         Some(pid) => {
             let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
             db.send(DbCommand::LoadProviders { reply: reply_tx })
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             let providers = reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
             providers.into_iter().find(|p| p.id == *pid)
         }
         None => None,
@@ -196,7 +197,7 @@ async fn load_chat_context(
         crate::secrets::KeyringStore::load_key(&provider_id_for_key)
     })
     .await
-    .map_err(|e| format!("Keyring task failed: {}", e))?;
+    .map_err(|e| AppError::keyring(format!("Keyring task failed: {}", e)))?;
 
     let api_key = match api_key_result {
         Ok(key) => key,
@@ -217,11 +218,11 @@ async fn load_chat_context(
                 character_id: ch.id.clone(),
                 reply: reply_tx,
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?
         } else {
             Vec::new()
         };
@@ -235,11 +236,11 @@ async fn load_chat_context(
             conversation_id: conversation_id.to_string(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?
     };
     let conversation_lorebook_ids: Vec<String> = conversation_lorebooks
         .iter()
@@ -259,11 +260,11 @@ async fn load_chat_context(
                 lorebook_ids: all_lorebook_ids,
                 reply: reply_tx,
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?
         } else {
             Vec::new()
         };
@@ -275,11 +276,11 @@ async fn load_chat_context(
             character_id: ch.id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?
     } else {
         Vec::new()
     };
@@ -289,11 +290,11 @@ async fn load_chat_context(
         Some(pid) => {
             let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
             db.send(DbCommand::LoadPresets { reply: reply_tx })
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             let presets = reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
             presets.into_iter().find(|p| p.id == *pid)
         }
         None => None,
@@ -438,10 +439,10 @@ pub async fn start_chat(
     ai_message_id: String,
     branch_id: Option<String>,
     steering: Option<String>,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     // 1. Cancel any existing stream
     {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         if let Some(existing) = token_guard.take() {
             existing.cancel();
         }
@@ -449,7 +450,7 @@ pub async fn start_chat(
 
     // 2. Save the user message and optional steering system message
     let has_content = !content.trim().is_empty();
-    let has_steering = steering.as_ref().is_some_and(|s| !s.trim().is_empty());
+    let raw_steer = steering.filter(|s| !s.trim().is_empty());
 
     if has_content {
         // Save the user message with in-character content
@@ -468,21 +469,20 @@ pub async fn start_chat(
                 message: user_message.clone(),
                 reply: reply_tx,
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
         }
 
         // Save steering system message if present
-        if has_steering {
-            let raw_steer = steering.unwrap();
+        if let Some(steer) = raw_steer.as_deref() {
             let steer_content = format!(
                 "[OOC — OVERRIDE INSTRUCTION (highest priority): {}]\n\
                  This directive overrides all character behavior, writing style, or assumptions \
                  that conflict with it.",
-                raw_steer
+                steer
             );
             let steer_msg = DomainMessage {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -498,20 +498,19 @@ pub async fn start_chat(
                 message: steer_msg,
                 reply: reply_tx,
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
             reply_rx
                 .await
-                .map_err(|e| format!("DB worker dropped: {}", e))?
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
         }
-    } else if has_steering {
+    } else if let Some(steer) = raw_steer.as_deref() {
         // Steer-only: save only the system message, no user message
-        let raw_steer = steering.unwrap();
         let steer_content = format!(
             "[OOC — OVERRIDE INSTRUCTION (highest priority): {}]\n\
              This directive overrides all character behavior, writing style, or assumptions \
              that conflict with it.",
-            raw_steer
+            steer
         );
         let steer_msg = DomainMessage {
             id: message_id,
@@ -527,13 +526,13 @@ pub async fn start_chat(
             message: steer_msg,
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
     } else {
-        return Err("Message is empty with no steering instruction.".to_string());
+        return Err(AppError::validation("Message is empty with no steering instruction."));
     }
 
     // 3. Load context
@@ -557,7 +556,7 @@ pub async fn start_chat(
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         *token_guard = Some(cancel_token.clone());
     }
 
@@ -583,9 +582,9 @@ pub async fn start_chat(
 }
 
 #[tauri::command]
-pub async fn stop_generation(cancel_state: State<'_, CancelState>) -> Result<(), String> {
+pub async fn stop_generation(cancel_state: State<'_, CancelState>) -> Result<(), AppError> {
     let token = {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         token_guard.take()
     };
 
@@ -604,10 +603,10 @@ pub async fn regenerate(
     conversation_id: String,
     ai_message_id: String,
     branch_id: Option<String>,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     // Cancel any existing stream
     {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         if let Some(existing) = token_guard.take() {
             existing.cancel();
         }
@@ -621,11 +620,11 @@ pub async fn regenerate(
             branch_id: branch_id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?
     };
 
     // Find the last AI message and delete it
@@ -640,11 +639,11 @@ pub async fn regenerate(
             id: ai_msg.id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
     }
 
     // Load context
@@ -661,11 +660,11 @@ pub async fn regenerate(
             branch_id: branch_id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?
     };
 
     // Assemble prompt
@@ -683,7 +682,7 @@ pub async fn regenerate(
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         *token_guard = Some(cancel_token.clone());
     }
 
@@ -718,10 +717,10 @@ pub async fn edit_and_resend(
     conversation_id: String,
     ai_message_id: String,
     branch_id: Option<String>,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     // Cancel any existing stream
     {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         if let Some(existing) = token_guard.take() {
             existing.cancel();
         }
@@ -735,15 +734,15 @@ pub async fn edit_and_resend(
             branch_id: branch_id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         let msgs = reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
         msgs.iter()
             .find(|m| m.id == message_id)
             .map(|m| m.sort_order)
-            .ok_or_else(|| "Message not found".to_string())?
+            .ok_or_else(|| AppError::not_found("Message not found"))?
     };
 
     // 2. Update message content
@@ -754,11 +753,11 @@ pub async fn edit_and_resend(
             content: new_content,
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
     }
 
     // 3. Delete all subsequent messages
@@ -770,11 +769,11 @@ pub async fn edit_and_resend(
             branch_id: branch_id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
     }
 
     // 4. Load context
@@ -791,11 +790,11 @@ pub async fn edit_and_resend(
             branch_id: branch_id.clone(),
             reply: reply_tx,
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
         reply_rx
             .await
-            .map_err(|e| format!("DB worker dropped: {}", e))?
-            .map_err(|e| e.to_string())?
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?
     };
 
     // 6. Assemble prompt
@@ -813,7 +812,7 @@ pub async fn edit_and_resend(
     let regex_scripts = ctx.regex_scripts.clone();
     let cancel_token = CancellationToken::new();
     {
-        let mut token_guard = cancel_state.token.lock().map_err(|e| e.to_string())?;
+        let mut token_guard = cancel_state.token.lock()?;
         *token_guard = Some(cancel_token.clone());
     }
 

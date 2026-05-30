@@ -199,7 +199,7 @@ pub fn search_conversations(conn: &Connection, query: &str) -> Result<Vec<Conver
     let pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
     let mut stmt = conn.prepare_cached(
         "SELECT id, character_id, provider_id, model_name, creator_persona_id, generation_preset_id,
-         title, last_message_preview, created_at, updated_at
+         override_max_tokens, title, last_message_preview, created_at, updated_at
          FROM conversations
          WHERE title LIKE ?1 ESCAPE '\\' OR last_message_preview LIKE ?1 ESCAPE '\\'
          ORDER BY updated_at DESC",

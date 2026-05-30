@@ -12,6 +12,8 @@ pub const DEFAULT_CONTEXT_WINDOW: i64 = 8192;
 /// Per D-03: Uses a single tokenizer (cl100k_base) for all providers.
 /// Applies a 10% safety margin on all token counts (round up: count + count / 10).
 /// The tokenizer is lazily initialized on first use and cached behind a Mutex.
+/// If the tokenizer fails to initialize, falls back to a character-based estimate
+/// (~4 characters per token) with a 20% safety margin.
 pub struct TokenCountService {
     bpe: Mutex<Option<CoreBPE>>,
 }
@@ -92,27 +94,45 @@ impl TokenCountService {
     }
 
     /// Lazily initializes and returns a reference to the cached BPE tokenizer.
+    /// If the mutex is poisoned, logs an error and recovers the guard.
+    /// If the tokenizer fails to initialize, logs a warning and leaves BPE as None
+    /// (callers will use the character-based fallback via `count_with_guard`).
     fn get_bpe(&self) -> std::sync::MutexGuard<'_, Option<CoreBPE>> {
-        let mut guard = self
-            .bpe
-            .lock()
-            .expect("TokenCountService bpe mutex poisoned");
+        let mut guard = match self.bpe.lock() {
+            Ok(g) => g,
+            Err(e) => {
+                tracing::error!("TokenCountService bpe mutex poisoned: {}, recovering", e);
+                e.into_inner()
+            }
+        };
         if guard.is_none() {
-            *guard = Some(
-                tiktoken_rs::cl100k_base().expect("Failed to initialize cl100k_base tokenizer"),
-            );
+            match tiktoken_rs::cl100k_base() {
+                Ok(bpe) => *guard = Some(bpe),
+                Err(e) => {
+                    tracing::warn!("Failed to initialize cl100k_base tokenizer: {}. Falling back to character-based estimation.", e);
+                }
+            }
         }
         guard
     }
 }
 
 /// Helper to count tokens using a MutexGuard<Option<CoreBPE>>.
-/// The guard is always Some after initialization, so we unwrap the Option.
+/// If BPE is available, uses it for accurate tokenization.
+/// Otherwise, falls back to a character-based estimate (~4 chars per token).
 fn count_with_guard(guard: &std::sync::MutexGuard<'_, Option<CoreBPE>>, text: &str) -> usize {
-    guard
-        .as_ref()
-        .expect("BPE should be initialized")
-        .count_with_special_tokens(text)
+    match guard.as_ref() {
+        Some(bpe) => bpe.count_with_special_tokens(text),
+        None => {
+            // Fallback: ~4 characters per token for English text
+            let char_count = text.chars().count();
+            if char_count == 0 {
+                0
+            } else {
+                (char_count + 3) / 4 // ceiling division
+            }
+        }
+    }
 }
 
 impl Default for TokenCountService {

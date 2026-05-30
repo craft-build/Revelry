@@ -14,6 +14,11 @@ use tokio_util::sync::CancellationToken;
 
 /// Generation parameters resolved from the provider defaults (D-03).
 /// Passed to AiService::stream_chat to configure the AI request.
+///
+/// This is the runtime representation used by the AI layer. The domain-layer
+/// `GenerationParams` (in `domain::provider`) uses `i64` for `max_tokens` to
+/// match SQLite's INTEGER type; this type uses `u64` since API `max_tokens`
+/// is always non-negative.
 #[derive(Clone, Debug, Default)]
 pub struct GenerationParams {
     pub temperature: Option<f64>,
@@ -22,6 +27,21 @@ pub struct GenerationParams {
     pub frequency_penalty: Option<f64>,
     pub presence_penalty: Option<f64>,
     pub stop_sequences: Option<Vec<String>>,
+}
+
+impl From<crate::domain::provider::GenerationParams> for GenerationParams {
+    fn from(params: crate::domain::provider::GenerationParams) -> Self {
+        Self {
+            temperature: params.temperature,
+            top_p: params.top_p,
+            max_tokens: params
+                .max_tokens
+                .and_then(|v| if v > 0 { Some(v as u64) } else { None }),
+            frequency_penalty: params.frequency_penalty,
+            presence_penalty: params.presence_penalty,
+            stop_sequences: params.stop_sequences,
+        }
+    }
 }
 
 /// Budget info from PromptEngine to include in StreamChunk::Complete.
@@ -690,20 +710,11 @@ impl AiService {
     }
 
     /// Resolves GenerationParams from a ProviderConfig's default_params.
-    /// Maps the provider domain's GenerationParams (i64 max_tokens) to the
-    /// ai module's GenerationParams (u64 max_tokens).
+    /// Uses the `From<domain::provider::GenerationParams>` impl to convert
+    /// the domain type (i64 max_tokens) to the AI type (u64 max_tokens).
     pub fn from_provider_config(provider: &ProviderConfig) -> GenerationParams {
         match &provider.default_params {
-            Some(params) => GenerationParams {
-                temperature: params.temperature,
-                top_p: params.top_p,
-                max_tokens: params
-                    .max_tokens
-                    .and_then(|v| if v > 0 { Some(v as u64) } else { None }),
-                frequency_penalty: params.frequency_penalty,
-                presence_penalty: params.presence_penalty,
-                stop_sequences: None,
-            },
+            Some(params) => params.clone().into(),
             None => GenerationParams::default(),
         }
     }
@@ -984,6 +995,7 @@ mod tests {
             max_tokens: Some(2048),
             frequency_penalty: Some(0.5),
             presence_penalty: Some(0.3),
+            stop_sequences: None,
         });
         let params = AiService::from_provider_config(&provider);
         assert_eq!(params.temperature, Some(0.7));
@@ -1002,6 +1014,7 @@ mod tests {
             max_tokens: Some(0),
             frequency_penalty: None,
             presence_penalty: None,
+            stop_sequences: None,
         });
         let params = AiService::from_provider_config(&provider);
         // max_tokens of 0 should map to None (unset)
