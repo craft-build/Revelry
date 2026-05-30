@@ -19,7 +19,7 @@
 		X,
 		Trash2
 	} from '@lucide/svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 
 	const sections = [
 		{ id: 'providers', label: 'AI Providers', icon: Cpu },
@@ -48,7 +48,7 @@
 
 	// Auto-navigate from URL param ?section=generation
 	$effect(() => {
-		const section = $page.url.searchParams.get('section');
+		const section = page.url.searchParams.get('section');
 		if (section && sections.some((s) => s.id === section)) {
 			active = section;
 		}

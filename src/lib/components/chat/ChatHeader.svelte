@@ -12,12 +12,12 @@
 	let providerTrigger: HTMLButtonElement | undefined = $state();
 	let branchPopoverOpen = $state(false);
 
-	// When focusProviderSelector is set (from error bubble "Switch provider" link),
+	// When focus_provider_selector is set (from error bubble "Switch provider" link),
 	// focus the provider/model selector trigger and reset the flag.
 	$effect(() => {
-		if (app.focusProviderSelector && providerTrigger) {
+		if (app.focus_provider_selector && providerTrigger) {
 			providerTrigger.click();
-			app.focusProviderSelector = false;
+			app.focus_provider_selector = false;
 		}
 	});
 

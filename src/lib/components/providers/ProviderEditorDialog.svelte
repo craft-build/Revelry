@@ -30,7 +30,7 @@
 
 	// ── Form state ────────────────────────────────────────────────────────
 	let form_name = $state('');
-	let form_provider_type = $state<string>('');
+	let form_provider_type = $state<ProviderType | ''>('');
 	let form_base_url = $state('');
 	let form_api_key = $state('');
 	let form_api_key_visible = $state(false);
@@ -41,7 +41,7 @@
 	let is_saving = $state(false);
 	let backend_error = $state('');
 	let discard_open = $state(false);
-	let prev_provider_type = $state<string>('');
+	let prev_provider_type = $state<ProviderType | ''>('');
 	let type_change_confirm_open = $state(false);
 
 	// ── Validation errors ──────────────────────────────────────────────────
@@ -341,6 +341,9 @@
 		if (is_saving) return;
 		if (!validate()) return;
 
+		// Validation guarantees form_provider_type is set (non-empty)
+		const providerType = form_provider_type as ProviderType;
+
 		is_saving = true;
 		backend_error = '';
 
@@ -366,7 +369,7 @@
 			} else {
 				await app.createProvider({
 					name: form_name.trim(),
-					provider_type: form_provider_type as ProviderType,
+					provider_type: providerType,
 					base_url: form_base_url.trim() || undefined,
 					model_name: form_models.find((m) => m.enabled)?.name ?? form_models[0]?.name ?? '',
 					models: form_models,

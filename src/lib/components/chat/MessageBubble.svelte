@@ -219,7 +219,7 @@
 							{#if errorInfo.showSwitchProvider}
 								<button
 									type="button"
-									onclick={() => { app.focusProviderSelector = true; }}
+									onclick={() => { app.focus_provider_selector = true; }}
 									class="text-xs text-(--color-accent) hover:underline"
 								>
 									Switch provider

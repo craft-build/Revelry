@@ -40,12 +40,6 @@ export async function deleteCharacter(id: string): Promise<void> {
   return invoke<void>("delete_character", { id });
 }
 
-export async function searchCharacters(
-  query: string,
-): Promise<CharacterCard[]> {
-  return invoke<CharacterCard[]>("search_characters", { query });
-}
-
 // ── Personas ──────────────────────────────────────────────────────────────────
 
 export async function getPersonas(): Promise<UserPersona[]> {
@@ -58,10 +52,6 @@ export async function savePersona(persona: UserPersona): Promise<UserPersona> {
 
 export async function deletePersona(id: string): Promise<void> {
   return invoke<void>("delete_persona", { id });
-}
-
-export async function searchPersonas(query: string): Promise<UserPersona[]> {
-  return invoke<UserPersona[]>("search_personas", { query });
 }
 
 // ── Conversations ─────────────────────────────────────────────────────────────
@@ -78,12 +68,6 @@ export async function startConversation(
 
 export async function deleteConversation(id: string): Promise<void> {
   return invoke<void>("delete_conversation", { id });
-}
-
-export async function searchConversations(
-  query: string,
-): Promise<Conversation[]> {
-  return invoke<Conversation[]>("search_conversations", { query });
 }
 
 // ── Messages ──────────────────────────────────────────────────────────────────
@@ -162,10 +146,6 @@ export async function updateConversationGeneration(
 
 export async function getLorebooks(): Promise<Lorebook[]> {
   return invoke<Lorebook[]>("get_lorebooks");
-}
-
-export async function getLorebook(id: string): Promise<Lorebook | null> {
-  return invoke<Lorebook | null>("get_lorebook", { id });
 }
 
 export async function saveLorebook(lorebook: Lorebook): Promise<Lorebook> {
@@ -272,10 +252,6 @@ export async function saveApiKey(
   apiKey: string,
 ): Promise<void> {
   return invoke<void>("save_api_key", { providerId, apiKey });
-}
-
-export async function hasApiKey(providerId: string): Promise<boolean> {
-  return invoke<boolean>("has_api_key", { providerId });
 }
 
 export async function deleteApiKey(providerId: string): Promise<void> {
@@ -425,13 +401,6 @@ export async function applySingleRegex(
     flags,
     sampleText,
   });
-}
-
-export async function validateRegexPattern(
-  pattern: string,
-  flags: string,
-): Promise<void> {
-  return invoke<void>("validate_regex_pattern", { pattern, flags });
 }
 
 // ── Conversation-lorebook junction ────────────────────────────────────────────

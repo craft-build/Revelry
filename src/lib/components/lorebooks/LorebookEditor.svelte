@@ -191,14 +191,16 @@
 		is_saving = true;
 		backend_error = '';
 
-		const id = await saveLorebookGetId();
+		try {
+			const id = await saveLorebookGetId();
 
-		is_saving = false;
-
-	if (id !== null) {
-		open = false;
-		onopenchange?.(false);
-	}
+			if (id !== null) {
+				open = false;
+				onopenchange?.(false);
+			}
+		} finally {
+			is_saving = false;
+		}
 	}
 
 	// ── Entry save ────────────────────────────────────────────────────────

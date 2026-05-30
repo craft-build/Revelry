@@ -71,6 +71,12 @@ import {
 import { parseSteering } from "$lib/utils";
 import { open, save } from "@tauri-apps/plugin-dialog";
 
+/** Default context window fallback when no model/provider limit is available. */
+const DEFAULT_CONTEXT_LIMIT = 8192;
+
+/** Max characters kept in conversation sidebar previews. */
+const PREVIEW_LENGTH = 100;
+
 /**
  * Root application state. Mirrors the AppModel/ChatModel/CharacterModel/SettingsModel
  * split from §6.2 of the design spec, but unified into a single Svelte 5 rune-store
@@ -103,7 +109,7 @@ class AppState {
   sidebar_open = $state<boolean>(true);
   character_search_query = $state<string>("");
   keyring_available = $state<boolean>(true);
-  focusProviderSelector = $state<boolean>(false);
+  focus_provider_selector = $state<boolean>(false);
 
   // ── Theme state ──────────────────────────────────────────────────────────
   theme = $state<"system" | "light" | "dark">("system");
@@ -161,17 +167,17 @@ class AppState {
    *  1. Use backend-reported budget limit if available
    *  2. Fall back to the model entry's context_window_size
    *  3. Fall back to the provider-level context_window_size
-   *  4. Default to 8192 */
+   *  4. Default to DEFAULT_CONTEXT_LIMIT */
   get effective_context_limit(): number {
     if (this.context_budget) return this.context_budget.tokensLimit;
     const provider = this.active_provider;
-    if (!provider) return 8192;
+    if (!provider) return DEFAULT_CONTEXT_LIMIT;
     const conv = this.active_conversation;
     const modelName = conv?.model_name ?? provider.model_name;
     const modelEntry = provider.models.find((m) => m.name === modelName);
     if (modelEntry?.context_window_size) return modelEntry.context_window_size;
     if (provider.context_window_size) return provider.context_window_size;
-    return 8192;
+    return DEFAULT_CONTEXT_LIMIT;
   }
 
   get active_preset(): GenerationPreset | undefined {
@@ -409,7 +415,7 @@ class AppState {
 
   /** Update a conversation's last_message_preview and updated_at in the sidebar list. */
   updateConversationPreview(conversationId: string, content: string) {
-    const preview = content.slice(0, 100);
+    const preview = content.slice(0, PREVIEW_LENGTH);
     const now = new Date().toISOString();
     this.conversations = this.conversations.map((c) =>
       c.id === conversationId
@@ -543,6 +549,7 @@ class AppState {
       this.messages = messages;
     } catch (err) {
       console.error("Failed to switch branch:", err);
+      throw err;
     }
   }
 
@@ -935,6 +942,8 @@ class AppState {
       this.regex_scripts = new Map(this.regex_scripts);
     } catch (err) {
       console.error("Failed to load regex scripts:", err);
+      this.regex_scripts.set(characterId, []);
+      this.regex_scripts = new Map(this.regex_scripts);
     }
   }
 
@@ -1035,6 +1044,7 @@ class AppState {
       }
     } catch (err) {
       console.error("Failed to toggle conversation lorebook:", err);
+      throw err;
     }
   }
 

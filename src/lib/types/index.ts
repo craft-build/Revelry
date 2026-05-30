@@ -274,13 +274,6 @@ export interface GenerationPreset {
 export type { GenerationPreset as PromptPreset };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// View routing
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type PrimaryView = "chat" | "characters" | "settings";
-export type CharactersTab = "characters" | "personas" | "lorebooks";
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Regex scripts
 // ─────────────────────────────────────────────────────────────────────────────
 

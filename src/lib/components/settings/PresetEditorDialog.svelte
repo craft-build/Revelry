@@ -156,8 +156,8 @@
 		try {
 			await app.savePreset(presetData);
 			open = false;
-		} catch (err: any) {
-			backend_error = err?.toString() ?? 'Failed to save preset';
+		} catch (err) {
+			backend_error = err instanceof Error ? err.message : String(err);
 		} finally {
 			is_saving = false;
 		}

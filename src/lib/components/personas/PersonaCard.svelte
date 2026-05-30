@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { UserPersona } from '$lib/types';
 	import { Avatar, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
-	import { Pencil, Trash2, Copy } from '@lucide/svelte';
+	import { Pencil, Trash2 } from '@lucide/svelte';
 
 	interface Props {
 		persona: UserPersona;
@@ -51,12 +51,5 @@
 				Delete
 			</KebabMenuItem>
 		</KebabMenu>
-		<button
-			type="button"
-			class="inline-flex size-8 items-center justify-center rounded-(--radius-md) border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)"
-			aria-label="Duplicate persona"
-		>
-			<Copy class="size-3.5" />
-		</button>
 	</div>
 </article>
