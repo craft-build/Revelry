@@ -1,3 +1,4 @@
+use jiff::Timestamp;
 use std::sync::Mutex;
 use tauri::ipc::Channel;
 use tauri::State;
@@ -460,7 +461,7 @@ pub async fn start_chat(
             role: MessageRole::User,
             content: content.clone(),
             sort_order,
-            timestamp: chrono::Utc::now(),
+            timestamp: Timestamp::now(),
             branch_id: branch_id.clone(),
         };
         {
@@ -490,7 +491,7 @@ pub async fn start_chat(
                 role: MessageRole::System,
                 content: steer_content,
                 sort_order: sort_order + 1,
-                timestamp: chrono::Utc::now(),
+                timestamp: Timestamp::now(),
                 branch_id: branch_id.clone(),
             };
             let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
@@ -518,7 +519,7 @@ pub async fn start_chat(
             role: MessageRole::System,
             content: steer_content,
             sort_order,
-            timestamp: chrono::Utc::now(),
+            timestamp: Timestamp::now(),
             branch_id: branch_id.clone(),
         };
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();

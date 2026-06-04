@@ -1,6 +1,7 @@
 use crate::db::models::{row_to_lorebook, row_to_lorebook_entry};
 use crate::domain::lorebook::{Lorebook, LorebookEntry};
 use anyhow::Result;
+use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 // ── Lorebook CRUD ──────────────────────────────────────────────────────────
@@ -42,8 +43,8 @@ pub fn insert_lorebook(conn: &Connection, lorebook: &Lorebook) -> Result<()> {
         lorebook.id,
         lorebook.name,
         lorebook.description,
-        lorebook.created_at.to_rfc3339(),
-        lorebook.updated_at.to_rfc3339(),
+        lorebook.created_at.to_string(),
+        lorebook.updated_at.to_string(),
     ])?;
     Ok(())
 }
@@ -57,7 +58,7 @@ pub fn update_lorebook(conn: &Connection, lorebook: &Lorebook) -> Result<()> {
     .execute(params![
         lorebook.name,
         lorebook.description,
-        lorebook.updated_at.to_rfc3339(),
+        lorebook.updated_at.to_string(),
         lorebook.id,
     ])?;
     Ok(())
@@ -112,8 +113,8 @@ pub fn insert_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
         entry.sort_order,
         entry.enabled as i32,
         extensions_str,
-        entry.created_at.to_rfc3339(),
-        entry.updated_at.to_rfc3339(),
+        entry.created_at.to_string(),
+        entry.updated_at.to_string(),
     ])?;
     Ok(())
 }
@@ -141,7 +142,7 @@ pub fn update_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
         entry.sort_order,
         entry.enabled as i32,
         extensions_str,
-        entry.updated_at.to_rfc3339(),
+        entry.updated_at.to_string(),
         entry.id,
     ])?;
     Ok(())
@@ -342,7 +343,7 @@ mod tests {
 
         lorebook.name = "Updated".to_string();
         lorebook.description = "Updated description".to_string();
-        lorebook.updated_at = chrono::Utc::now();
+        lorebook.updated_at = Timestamp::now();
         update_lorebook(&conn, &lorebook).expect("Update should succeed");
 
         let loaded = load_lorebook(&conn, &lorebook.id)
@@ -393,7 +394,7 @@ mod tests {
 
         entry.content = "Updated content".to_string();
         entry.keys = vec!["new_key".to_string()];
-        entry.updated_at = chrono::Utc::now();
+        entry.updated_at = Timestamp::now();
         update_lorebook_entry(&conn, &entry).expect("Update entry should succeed");
 
         let loaded =

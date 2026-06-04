@@ -1,6 +1,7 @@
 use crate::db::models::row_to_character;
 use crate::domain::character::CharacterCardV2;
 use anyhow::Result;
+use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Inserts a new character into the database.
@@ -43,8 +44,8 @@ pub fn insert_character(conn: &Connection, character: &CharacterCardV2) -> Resul
         character.default_preset_id,
         character.lorebook_scan_depth,
         character.lorebook_recursive_depth,
-        character.created_at.to_rfc3339(),
-        character.updated_at.to_rfc3339(),
+        character.created_at.to_string(),
+        character.updated_at.to_string(),
     ])?;
     Ok(())
 }
@@ -121,7 +122,7 @@ pub fn update_character(conn: &Connection, character: &CharacterCardV2) -> Resul
         character.default_preset_id,
         character.lorebook_scan_depth,
         character.lorebook_recursive_depth,
-        character.updated_at.to_rfc3339(),
+        character.updated_at.to_string(),
         character.id,
     ])?;
     Ok(())
@@ -235,7 +236,7 @@ mod tests {
         character.name = "Updated".to_string();
         character.description = "A brave hero".to_string();
         character.tags = vec!["fantasy".to_string(), "warrior".to_string()];
-        character.updated_at = chrono::Utc::now();
+        character.updated_at = Timestamp::now();
         update_character(&conn, &character).expect("Update should succeed");
 
         let loaded = load_character(&conn, &character.id)
@@ -253,7 +254,7 @@ mod tests {
         insert_character(&conn, &character).expect("Insert should succeed");
 
         character.default_preset_id = Some("builtin-creative".to_string());
-        character.updated_at = chrono::Utc::now();
+        character.updated_at = Timestamp::now();
         update_character(&conn, &character).expect("Update should succeed");
 
         let loaded = load_character(&conn, &character.id)
@@ -345,7 +346,7 @@ mod tests {
 
         // Update tags to include "updated"
         c.tags = vec!["updated".to_string()];
-        c.updated_at = chrono::Utc::now();
+        c.updated_at = Timestamp::now();
         update_character(&conn, &c).expect("Update");
 
         // Now search should find it

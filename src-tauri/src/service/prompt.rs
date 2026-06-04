@@ -440,7 +440,7 @@ mod tests {
     use crate::domain::conversation::Message as DomainMessage;
     use crate::domain::persona::Persona;
     use crate::service::token_count::TokenCountService;
-    use chrono::Utc;
+    use jiff::Timestamp;
 
     fn make_test_character() -> CharacterCardV2 {
         let mut character = CharacterCardV2::new("Test Character".to_string());
@@ -459,7 +459,7 @@ mod tests {
             role,
             content: content.to_string(),
             sort_order: 0,
-            timestamp: Utc::now(),
+            timestamp: Timestamp::now(),
             branch_id: None,
         }
     }

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -21,15 +21,15 @@ pub struct GenerationPreset {
     pub presence_penalty: f64,
     #[serde(default)]
     pub stop_sequences: Vec<String>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl GenerationPreset {
     /// Creates a new generation preset with a generated UUID v4 id, current timestamps,
     /// and default parameter values (temperature 0.8, top_p 0.9, no limits/penalties).
     pub fn new(name: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             name,
@@ -47,7 +47,7 @@ impl GenerationPreset {
 
     /// Built-in Creative preset per D-12: temp 1.2, top_p 0.9, penalties 0, no stop sequences.
     pub fn creative() -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: "builtin-creative".to_string(),
             name: "Creative".to_string(),
@@ -65,7 +65,7 @@ impl GenerationPreset {
 
     /// Built-in Balanced preset per D-12: temp 0.8, top_p 0.9, penalties 0, no stop sequences.
     pub fn balanced() -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: "builtin-balanced".to_string(),
             name: "Balanced".to_string(),
@@ -83,7 +83,7 @@ impl GenerationPreset {
 
     /// Built-in Precise preset per D-12: temp 0.3, top_p 0.75, penalties 0, no stop sequences.
     pub fn precise() -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: "builtin-precise".to_string(),
             name: "Precise".to_string(),
@@ -130,7 +130,7 @@ mod tests {
         assert_eq!(preset.presence_penalty, 0.0);
         assert!(preset.stop_sequences.is_empty());
 
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(preset.created_at <= now);
         assert!(preset.updated_at <= now);
     }

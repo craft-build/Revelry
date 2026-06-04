@@ -1,6 +1,7 @@
 use crate::db::models::row_to_persona;
 use crate::domain::persona::Persona;
 use anyhow::Result;
+use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Inserts a new persona into the database.
@@ -24,8 +25,8 @@ pub fn insert_persona(conn: &Connection, persona: &Persona) -> Result<()> {
         persona.speech_style,
         tags_str,
         persona.avatar_path,
-        persona.created_at.to_rfc3339(),
-        persona.updated_at.to_rfc3339(),
+        persona.created_at.to_string(),
+        persona.updated_at.to_string(),
     ])?;
     Ok(())
 }
@@ -77,7 +78,7 @@ pub fn update_persona(conn: &Connection, persona: &Persona) -> Result<()> {
         persona.speech_style,
         tags_str,
         persona.avatar_path,
-        persona.updated_at.to_rfc3339(),
+        persona.updated_at.to_string(),
         persona.id,
     ])?;
     Ok(())
@@ -168,7 +169,7 @@ mod tests {
         persona.personality = "Updated personality".to_string();
         persona.appearance = "Blue hair".to_string();
         persona.tags = vec!["fantasy".to_string(), "mage".to_string()];
-        persona.updated_at = chrono::Utc::now();
+        persona.updated_at = Timestamp::now();
         update_persona(&conn, &persona).expect("Update should succeed");
 
         let loaded = load_persona(&conn, &persona.id)

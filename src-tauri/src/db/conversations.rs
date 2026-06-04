@@ -4,7 +4,7 @@ use crate::domain::conversation::{
     Conversation, Message, MessageBranch, MessageRole, SearchResult,
 };
 use anyhow::Result;
-use chrono::Utc;
+use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Starts a new conversation with a character.
@@ -35,8 +35,8 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
         &conversation.override_max_tokens,
         &conversation.title,
         &conversation.last_message_preview,
-        conversation.created_at.to_rfc3339(),
-        conversation.updated_at.to_rfc3339(),
+        conversation.created_at.to_string(),
+        conversation.updated_at.to_string(),
     ])?;
 
     // Create initial assistant message from character's first_mes (if not empty)
@@ -160,17 +160,17 @@ pub fn save_message(conn: &Connection, msg: &Message) -> Result<()> {
         msg.role.to_string(),
         &msg.content,
         msg.sort_order,
-        msg.timestamp.to_rfc3339(),
+        msg.timestamp.to_string(),
         &msg.branch_id,
     ])?;
 
     // Update conversation's updated_at and last_message_preview
-    let now = Utc::now();
+    let now = Timestamp::now();
     let preview: String = msg.content.chars().take(100).collect();
     conn.prepare_cached(
         "UPDATE conversations SET updated_at = ?1, last_message_preview = ?2 WHERE id = ?3",
     )?
-    .execute(params![now.to_rfc3339(), preview, &msg.conversation_id])?;
+    .execute(params![now.to_string(), preview, &msg.conversation_id])?;
 
     Ok(())
 }
@@ -218,11 +218,11 @@ pub fn update_conversation_persona(
     conversation_id: &str,
     persona_id: Option<&str>,
 ) -> Result<()> {
-    let now = Utc::now();
+    let now = Timestamp::now();
     conn.prepare_cached(
         "UPDATE conversations SET creator_persona_id = ?1, updated_at = ?2 WHERE id = ?3",
     )?
-    .execute(params![persona_id, now.to_rfc3339(), conversation_id])?;
+    .execute(params![persona_id, now.to_string(), conversation_id])?;
     Ok(())
 }
 
@@ -234,14 +234,14 @@ pub fn update_conversation_provider(
     provider_id: Option<&str>,
     model_name: Option<&str>,
 ) -> Result<()> {
-    let now = Utc::now();
+    let now = Timestamp::now();
     conn.prepare_cached(
         "UPDATE conversations SET provider_id = ?1, model_name = ?2, updated_at = ?3 WHERE id = ?4",
     )?
     .execute(params![
         provider_id,
         model_name,
-        now.to_rfc3339(),
+        now.to_string(),
         conversation_id
     ])?;
     Ok(())
@@ -255,14 +255,14 @@ pub fn update_conversation_generation(
     generation_preset_id: Option<&str>,
     override_max_tokens: Option<i64>,
 ) -> Result<()> {
-    let now = Utc::now();
+    let now = Timestamp::now();
     conn.prepare_cached(
         "UPDATE conversations SET generation_preset_id = ?1, override_max_tokens = ?2, updated_at = ?3 WHERE id = ?4",
     )?
     .execute(params![
         generation_preset_id,
         override_max_tokens,
-        now.to_rfc3339(),
+        now.to_string(),
         conversation_id
     ])?;
     Ok(())
@@ -279,7 +279,7 @@ pub fn create_branch(conn: &Connection, branch: &MessageBranch) -> Result<()> {
         &branch.conversation_id,
         &branch.parent_message_id,
         &branch.label,
-        branch.created_at.to_rfc3339(),
+        branch.created_at.to_string(),
     ])?;
     Ok(())
 }
@@ -328,7 +328,7 @@ pub fn delete_branch_by_id(conn: &Connection, branch_id: &str) -> Result<()> {
         .execute(params![branch_id])?;
 
     if let Some(cid) = conv_id {
-        let now = Utc::now();
+        let now = Timestamp::now();
         let preview: Option<String> = conn
             .prepare_cached(
                 "SELECT content FROM messages WHERE conversation_id = ?1 ORDER BY sort_order DESC LIMIT 1",
@@ -338,7 +338,7 @@ pub fn delete_branch_by_id(conn: &Connection, branch_id: &str) -> Result<()> {
         conn.prepare_cached(
             "UPDATE conversations SET updated_at = ?1, last_message_preview = ?2 WHERE id = ?3",
         )?
-        .execute(params![now.to_rfc3339(), preview.unwrap_or_default(), cid])?;
+        .execute(params![now.to_string(), preview.unwrap_or_default(), cid])?;
     }
     Ok(())
 }
@@ -446,7 +446,7 @@ pub fn delete_messages_after_sort_order_branch(
     }
 
     // Update conversation preview
-    let now = Utc::now();
+    let now = Timestamp::now();
     let preview: Option<String> = conn
         .prepare_cached(
             "SELECT content FROM messages WHERE conversation_id = ?1 ORDER BY sort_order DESC LIMIT 1",
@@ -457,7 +457,7 @@ pub fn delete_messages_after_sort_order_branch(
         "UPDATE conversations SET updated_at = ?1, last_message_preview = ?2 WHERE id = ?3",
     )?
     .execute(params![
-        now.to_rfc3339(),
+        now.to_string(),
         preview.unwrap_or_default(),
         conversation_id
     ])?;

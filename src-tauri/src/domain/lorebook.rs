@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -87,15 +87,15 @@ pub struct Lorebook {
     pub name: String,
     #[serde(default)]
     pub description: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl Lorebook {
     /// Creates a new lorebook with a generated UUID v4 id, current timestamps,
     /// and empty description.
     pub fn new(name: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             name,
@@ -131,8 +131,8 @@ pub struct LorebookEntry {
     pub enabled: bool,
     #[serde(default = "default_extensions")]
     pub extensions: serde_json::Value,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 fn default_extensions() -> serde_json::Value {
@@ -151,7 +151,7 @@ impl LorebookEntry {
     /// Creates a new lorebook entry with a generated UUID v4 id, current timestamps,
     /// and all other fields at their defaults.
     pub fn new(lorebook_id: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             lorebook_id,

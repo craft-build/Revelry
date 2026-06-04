@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -57,8 +57,8 @@ pub struct CharacterCardV2 {
     /// Per D-12: recursive activation depth limit (default 2).
     #[serde(default = "default_lorebook_recursive_depth")]
     pub lorebook_recursive_depth: i32,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 fn default_creator() -> String {
@@ -89,7 +89,7 @@ impl CharacterCardV2 {
     /// Creates a new character with a generated UUID v4 id, current timestamps,
     /// character_version "2.0", and all other fields at their defaults.
     pub fn new(name: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             name,
@@ -168,7 +168,7 @@ pub struct CharaCardV2SpecData {
 
 impl CharaCardV2Spec {
     pub fn to_domain(&self) -> CharacterCardV2 {
-        let now = Utc::now();
+        let now = Timestamp::now();
         CharacterCardV2 {
             id: Uuid::new_v4().to_string(),
             name: self.data.name.clone(),
@@ -230,7 +230,7 @@ pub struct CharacterV1 {
 
 impl CharacterV1 {
     pub fn to_v2(&self) -> CharacterCardV2 {
-        let now = Utc::now();
+        let now = Timestamp::now();
         CharacterCardV2 {
             id: Uuid::new_v4().to_string(),
             name: self.char_name.clone(),
@@ -295,7 +295,7 @@ mod tests {
         assert_eq!(character.character_version, "2.0");
 
         // Timestamps should be set
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(character.created_at <= now);
         assert!(character.updated_at <= now);
 

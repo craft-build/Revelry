@@ -29,8 +29,8 @@ pub fn insert_provider(conn: &Connection, provider: &ProviderConfig) -> Result<(
         provider.context_window_size,
         default_params_str,
         provider.enabled as i32,
-        provider.created_at.to_rfc3339(),
-        provider.updated_at.to_rfc3339(),
+        provider.created_at.to_string(),
+        provider.updated_at.to_string(),
     ])?;
     Ok(())
 }
@@ -89,7 +89,7 @@ pub fn update_provider(conn: &Connection, provider: &ProviderConfig) -> Result<(
         provider.context_window_size,
         default_params_str,
         provider.enabled as i32,
-        provider.updated_at.to_rfc3339(),
+        provider.updated_at.to_string(),
         provider.id,
     ])?;
     Ok(())

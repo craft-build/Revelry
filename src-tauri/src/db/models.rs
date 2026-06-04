@@ -5,13 +5,13 @@ use crate::domain::lorebook::{Lorebook, LorebookActivation, LorebookEntry, Loreb
 use crate::domain::persona::Persona;
 use crate::domain::provider::{GenerationParams, ProviderConfig, ProviderModelEntry, ProviderType};
 use crate::domain::regex_script::RegexScript;
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use rusqlite::Row;
 use std::str::FromStr;
 
-/// Parses a RFC 3339 timestamp string from the database into DateTime<Utc>.
-fn parse_timestamp(s: &str) -> rusqlite::Result<DateTime<Utc>> {
-    s.parse::<DateTime<Utc>>().map_err(|e| {
+/// Parses a RFC 3339 timestamp string from the database into Timestamp.
+fn parse_timestamp(s: &str) -> rusqlite::Result<Timestamp> {
+    s.parse::<Timestamp>().map_err(|e| {
         rusqlite::Error::FromSqlConversionFailure(
             0,
             rusqlite::types::Type::Text,
@@ -22,7 +22,7 @@ fn parse_timestamp(s: &str) -> rusqlite::Result<DateTime<Utc>> {
 
 /// Converts a database row into a CharacterCardV2.
 /// JSON fields (alternate_greetings, tags, extensions, character_book) are deserialized from TEXT.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -80,7 +80,7 @@ pub fn row_to_character(row: &Row) -> rusqlite::Result<CharacterCardV2> {
 
 /// Converts a database row into a Persona.
 /// Tags are deserialized from a JSON array stored as TEXT.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -110,7 +110,7 @@ pub fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
 
 /// Converts a database row into a Conversation.
 /// Phase 2 includes title, last_message_preview, and generation_preset_id.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -134,7 +134,7 @@ pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
 
 /// Converts a database row into a Message.
 /// Phase 8: includes branch_id. Role is parsed via MessageRole::from_str().
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_message(row: &Row) -> rusqlite::Result<Message> {
     let timestamp_str: String = row.get("timestamp")?;
     let timestamp = parse_timestamp(&timestamp_str)?;
@@ -178,7 +178,7 @@ pub fn row_to_message_branch(row: &Row) -> rusqlite::Result<MessageBranch> {
 
 /// Converts a database row into a ProviderConfig.
 /// JSON fields (provider_type, models, default_params) are deserialized from TEXT.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_provider(row: &Row) -> rusqlite::Result<ProviderConfig> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -230,7 +230,7 @@ pub fn row_to_provider(row: &Row) -> rusqlite::Result<ProviderConfig> {
 /// Converts a database row into a GenerationPreset.
 /// stop_sequences is deserialized from a JSON array stored as TEXT.
 /// is_builtin is stored as INTEGER and converted to bool via != 0.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_generation_preset(row: &Row) -> rusqlite::Result<GenerationPreset> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -258,7 +258,7 @@ pub fn row_to_generation_preset(row: &Row) -> rusqlite::Result<GenerationPreset>
 }
 
 /// Converts a database row into a Lorebook.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_lorebook(row: &Row) -> rusqlite::Result<Lorebook> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -277,7 +277,7 @@ pub fn row_to_lorebook(row: &Row) -> rusqlite::Result<Lorebook> {
 /// Converts a database row into a LorebookEntry.
 /// JSON fields (keys, secondary_keys, extensions) are deserialized from TEXT.
 /// Position and activation_state are parsed from TEXT via FromStr.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;
@@ -343,7 +343,7 @@ pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
 
 /// Converts a database row into a RegexScript.
 /// `enabled` is stored as INTEGER (1/0) and converted to bool.
-/// Timestamps are stored as RFC 3339 TEXT and parsed into DateTime<Utc>.
+/// Timestamps are stored as RFC 3339 TEXT and parsed into Timestamp.
 pub fn row_to_regex_script(row: &Row) -> rusqlite::Result<RegexScript> {
     let created_at_str: String = row.get("created_at")?;
     let updated_at_str: String = row.get("updated_at")?;

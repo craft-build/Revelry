@@ -1,6 +1,0 @@
-[bash]
-allow = [
-    "cargo *",
-    "tail *",
-    "git *",
-]

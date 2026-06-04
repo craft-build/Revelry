@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -24,15 +24,15 @@ pub struct Persona {
     pub tags: Vec<String>,
     #[serde(default)]
     pub avatar_path: Option<String>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl Persona {
     /// Creates a new persona with a generated UUID v4 id, current timestamps,
     /// and all optional fields empty.
     pub fn new(name: String, personality: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             name,
@@ -72,7 +72,7 @@ mod tests {
         assert_eq!(persona.personality, "Bold and charismatic");
 
         // Timestamps should be set
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(persona.created_at <= now);
         assert!(persona.updated_at <= now);
 

@@ -85,7 +85,7 @@ pub fn apply_single_regex(
 mod tests {
     use super::*;
     use crate::domain::regex_script::RegexScript;
-    use chrono::Utc;
+    use jiff::Timestamp;
 
     fn make_script(
         name: &str,
@@ -95,7 +95,7 @@ mod tests {
         sort_order: i32,
         enabled: bool,
     ) -> RegexScript {
-        let now = Utc::now();
+        let now = Timestamp::now();
         RegexScript {
             id: uuid::Uuid::new_v4().to_string(),
             character_id: "test-char".to_string(),

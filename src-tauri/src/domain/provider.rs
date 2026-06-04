@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -145,8 +145,8 @@ pub struct ProviderConfig {
     /// Default generation parameters stored as JSON.
     #[serde(default)]
     pub default_params: Option<GenerationParams>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl ProviderConfig {
@@ -155,7 +155,7 @@ impl ProviderConfig {
     /// Auto-populates models vec with one default ProviderModelEntry.
     /// Sets enabled to true and timestamps to the current time.
     pub fn new(name: String, provider_type: ProviderType) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             name,

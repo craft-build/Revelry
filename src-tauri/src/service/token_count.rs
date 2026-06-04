@@ -167,7 +167,7 @@ mod tests {
     use super::*;
     use crate::domain::conversation::{Message as DomainMessage, MessageRole};
     use crate::domain::provider::{ProviderConfig, ProviderType};
-    use chrono::Utc;
+    use jiff::Timestamp;
 
     fn make_test_message(role: MessageRole, content: &str) -> DomainMessage {
         DomainMessage {
@@ -176,7 +176,7 @@ mod tests {
             role,
             content: content.to_string(),
             sort_order: 0,
-            timestamp: Utc::now(),
+            timestamp: Timestamp::now(),
             branch_id: None,
         }
     }

@@ -301,7 +301,7 @@ mod tests {
     use super::*;
     use crate::domain::conversation::Message as DomainMessage;
     use crate::domain::lorebook::{LorebookActivation, LorebookPosition};
-    use chrono::Utc;
+    use jiff::Timestamp;
 
     fn make_test_entry(name: &str, keys: Vec<&str>, content: &str) -> LorebookEntry {
         let mut entry = LorebookEntry::new("lorebook-1".to_string());

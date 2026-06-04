@@ -1,7 +1,7 @@
 use crate::db::models::row_to_generation_preset;
 use crate::domain::generation::GenerationPreset;
 use anyhow::Result;
-use chrono::Utc;
+use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Seeds built-in presets (Creative, Balanced, Precise) using INSERT OR IGNORE.
@@ -30,8 +30,8 @@ pub fn seed_builtin_presets(conn: &Connection) -> Result<()> {
             preset.frequency_penalty,
             preset.presence_penalty,
             stop_sequences_str,
-            preset.created_at.to_rfc3339(),
-            preset.updated_at.to_rfc3339(),
+            preset.created_at.to_string(),
+            preset.updated_at.to_string(),
         ])?;
     }
     Ok(())
@@ -72,8 +72,8 @@ pub fn insert_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()>
         preset.frequency_penalty,
         preset.presence_penalty,
         stop_sequences_str,
-        preset.created_at.to_rfc3339(),
-        preset.updated_at.to_rfc3339(),
+        preset.created_at.to_string(),
+        preset.updated_at.to_string(),
     ])?;
     Ok(())
 }
@@ -84,7 +84,7 @@ pub fn update_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()>
         anyhow::bail!("Cannot modify built-in preset '{}'", preset.name);
     }
     let stop_sequences_str = serde_json::to_string(&preset.stop_sequences)?;
-    let now = Utc::now();
+    let now = Timestamp::now();
     let rows = conn
         .prepare_cached(
             "UPDATE generation_presets SET
@@ -101,7 +101,7 @@ pub fn update_preset(conn: &Connection, preset: &GenerationPreset) -> Result<()>
             preset.frequency_penalty,
             preset.presence_penalty,
             stop_sequences_str,
-            now.to_rfc3339(),
+            now.to_string(),
             preset.id,
         ])?;
     if rows == 0 {

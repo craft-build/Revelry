@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -25,15 +25,15 @@ pub struct Conversation {
     pub title: String,
     /// Truncated preview of the last message for list display.
     pub last_message_preview: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl Conversation {
     /// Creates a new conversation with a generated UUID v4 id and current timestamps.
     /// provider_id is None (no providers until Phase 3).
     pub fn new(character_id: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             character_id,
@@ -91,7 +91,7 @@ pub struct Message {
     pub role: MessageRole,
     pub content: String,
     pub sort_order: i32,
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: Timestamp,
     /// Branch this message belongs to. None = Main/root path.
     pub branch_id: Option<String>,
 }
@@ -99,7 +99,7 @@ pub struct Message {
 impl Message {
     /// Creates a new message with a generated UUID v4 id and current timestamp.
     pub fn new(conversation_id: String, role: MessageRole, content: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             conversation_id,
@@ -118,7 +118,7 @@ impl Message {
         content: String,
         sort_order: i32,
     ) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             conversation_id,
@@ -145,13 +145,13 @@ pub struct MessageBranch {
     pub conversation_id: String,
     pub parent_message_id: String,
     pub label: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Timestamp,
 }
 
 impl MessageBranch {
     /// Creates a new branch with a generated UUID v4 id and current timestamp.
     pub fn new(conversation_id: String, parent_message_id: String, label: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             conversation_id,
@@ -207,7 +207,7 @@ mod tests {
         assert!(conv.last_message_preview.is_empty());
 
         // Timestamps should be set
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(conv.created_at <= now);
         assert!(conv.updated_at <= now);
     }
@@ -235,7 +235,7 @@ mod tests {
         assert_eq!(msg.sort_order, 0);
 
         // Timestamp should be set
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(msg.timestamp <= now);
 
         // branch_id should be None by default
@@ -324,7 +324,7 @@ mod tests {
         assert_eq!(branch.conversation_id, "conv-1");
         assert_eq!(branch.parent_message_id, "msg-1");
         assert_eq!(branch.label, "Branch 1");
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(branch.created_at <= now);
     }
 

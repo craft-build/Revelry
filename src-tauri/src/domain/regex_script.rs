@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -25,8 +25,8 @@ pub struct RegexScript {
     /// Activation toggle — disabled scripts are skipped at runtime.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 fn default_flags() -> String {
@@ -41,7 +41,7 @@ impl RegexScript {
     /// Creates a new regex script with a generated UUID v4 id, current timestamps,
     /// and defaults (flags: "gi", sort_order: 0, enabled: true).
     pub fn new(character_id: String, name: String) -> Self {
-        let now = Utc::now();
+        let now = Timestamp::now();
         Self {
             id: Uuid::new_v4().to_string(),
             character_id,
@@ -101,8 +101,8 @@ impl RegexScript {
                                 .get("enabled")
                                 .and_then(|v| v.as_bool())
                                 .unwrap_or(true),
-                            created_at: Utc::now(),
-                            updated_at: Utc::now(),
+                            created_at: Timestamp::now(),
+                            updated_at: Timestamp::now(),
                         })
                     })
                     .collect()
@@ -157,7 +157,7 @@ mod tests {
         assert_eq!(script.sort_order, 0);
         assert!(script.enabled);
 
-        let now = Utc::now();
+        let now = Timestamp::now();
         assert!(script.created_at <= now);
         assert!(script.updated_at <= now);
     }
