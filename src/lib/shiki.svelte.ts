@@ -1,5 +1,6 @@
 import {
   createHighlighter,
+  createJavaScriptRegexEngine,
   bundledThemesInfo,
   type Highlighter,
   type BundledThemeInfo,
@@ -30,6 +31,7 @@ export async function getShikiHighlighter(): Promise<Highlighter> {
   highlighterPromise = createHighlighter({
     themes: [...DEFAULT_THEMES],
     langs: [...LANGS],
+    engine: createJavaScriptRegexEngine(),
   }).then((hl) => {
     highlighterInstance = hl;
     return hl;
