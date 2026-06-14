@@ -17,6 +17,9 @@ import type {
   GeneratedCharacterData,
 } from "$lib/types";
 import { Channel } from "@tauri-apps/api/core";
+
+const VALID_STOP_REASONS = ["end", "cancelled", "length", "error"] as const;
+type StopReason = (typeof VALID_STOP_REASONS)[number];
 import {
   getCharacters as apiGetCharacters,
   saveCharacter as apiSaveCharacter,
@@ -1138,10 +1141,7 @@ class AppState {
       throw new Error("cancelled");
     }
 
-    // open() returns string | string[] | null. With multiple: false, it's string | null.
-    const path = typeof filePath === "string" ? filePath : filePath;
-
-    return await apiImportCard(path);
+    return await apiImportCard(filePath);
   }
 
   /** Export a character card as a TavernAI V2 PNG file.
@@ -1321,18 +1321,18 @@ class AppState {
             true,
           );
           // Update metadata with stop reason
+          const stopReason: StopReason = (
+            VALID_STOP_REASONS as readonly string[]
+          ).includes(chunk.data.stopReason)
+            ? (chunk.data.stopReason as StopReason)
+            : "end";
           this.messages = this.messages.map((m) =>
             m.id === aiId
               ? {
                   ...m,
                   metadata: {
                     ...m.metadata,
-                    stop_reason: chunk.data
-                      .stopReason as Message["metadata"] extends {
-                      stop_reason?: infer S;
-                    }
-                      ? S
-                      : never,
+                    stop_reason: stopReason,
                   },
                 }
               : m,

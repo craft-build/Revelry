@@ -323,7 +323,7 @@
 				<div class="overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface)">
 					<table class="w-full text-sm">
 						<tbody>
-							{#each [['New chat', 'Ctrl+N'], ['New character', 'Ctrl+Shift+N'], ['Toggle sidebar', 'F9'], ['Search', 'Ctrl+F'], ['Open settings', 'Ctrl+,'], ['Send message', 'Enter'], ['Newline in input', 'Shift+Enter'], ['Cancel generation', 'Esc']] as row}
+							{#each [['New chat', 'Ctrl+N'], ['New character', 'Ctrl+Shift+N'], ['Toggle sidebar', 'F9'], ['Send message', 'Enter'], ['Newline in input', 'Shift+Enter'], ['Cancel generation', 'Esc']] as row}
 								<tr class="border-t border-(--color-border) first:border-t-0">
 									<td class="px-4 py-2.5">{row[0]}</td>
 									<td class="px-4 py-2.5 text-right">

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { app } from '$lib/stores/app.svelte';
 	import type { MessageBranch } from '$lib/types';
 	import { getMessages } from '$lib/data/api';
@@ -17,11 +17,13 @@
 	let scrollEl: HTMLDivElement | undefined = $state();
 
 	// Hydrate the active conversation when the route id changes.
-	// Preserve the current branch if the conversation hasn't changed.
+	// Read branch state untracked so branch switches don't re-fetch
+	// (switchBranch already updates messages directly).
 	$effect(() => {
 		const convId = data.id;
-		const currentBranchId =
-			app.active_conversation_id === convId ? app.active_branch_id : null;
+		const currentBranchId = untrack(() =>
+			app.active_conversation_id === convId ? app.active_branch_id : null,
+		);
 		getMessages(convId, currentBranchId).then((msgs) => {
 			app.openConversation(convId, msgs, currentBranchId);
 		}).catch((err) => {
@@ -73,7 +75,7 @@
 	// Client-side branch filter — safety net to hide messages that don't belong
 	// to the active branch. The backend should already return the correct subset,
 	// but this catches any leaked main-branch messages after a fork point.
-	let visibleMessages = $derived(() => {
+	let visibleMessages = $derived.by(() => {
 		const branchId = app.active_branch_id;
 		if (!branchId) return app.messages;
 
@@ -91,7 +93,7 @@
 	});
 
 	let lastAiMessageId = $derived(
-		visibleMessages()
+		visibleMessages
 			.filter((m) => m.role === 'assistant' && m.metadata?.stop_reason !== 'error')
 			.at(-1)?.id,
 	);
@@ -129,12 +131,12 @@
 <div class="flex min-h-0 flex-1">
 	<div bind:this={scrollEl} class="flex-1 overflow-y-auto px-6 py-6">
 		<div class="mx-auto flex max-w-[80ch] flex-col gap-5">
-			{#if visibleMessages().length === 0}
+			{#if visibleMessages.length === 0}
 				<div class="py-20 text-center text-sm text-(--color-muted)">
 					No messages yet. Send something to begin.
 				</div>
 			{:else}
-				{#each visibleMessages() as message (message.id)}
+				{#each visibleMessages as message (message.id)}
 					<div id="message-{message.id}" data-message-id={message.id}>
 						<MessageBubble
 							{message}

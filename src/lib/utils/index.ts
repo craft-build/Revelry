@@ -64,8 +64,9 @@ export function formatRelativeTime(iso: string): string {
 }
 
 /**
- * Approximate token count using a 4-char-per-token heuristic.
- * The real app will swap this for tiktoken-rs via the backend bridge.
+ * Client-side UI estimate using a 4-char-per-token heuristic.
+ * Used only for the input context bar before a round-trip; accurate
+ * counts come from the backend (tiktoken-rs) via ContextBudget.
  */
 export function estimateTokens(text: string): number {
   if (!text) return 0;
