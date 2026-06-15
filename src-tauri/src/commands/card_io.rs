@@ -10,7 +10,10 @@ use tauri::{AppHandle, Manager};
 pub async fn import_card(app: AppHandle, file_path: String) -> Result<CharacterCardV2, AppError> {
     let path = PathBuf::from(&file_path);
     if !path.exists() {
-        return Err(AppError::Validation(format!("File does not exist: {}", file_path)));
+        return Err(AppError::Validation(format!(
+            "File does not exist: {}",
+            file_path
+        )));
     }
 
     let ext = path
@@ -80,16 +83,20 @@ pub async fn export_card(
                 other
             )));
         }
-        None => return Err(AppError::Validation("Save path must have a .png extension".to_string())),
+        None => {
+            return Err(AppError::Validation(
+                "Save path must have a .png extension".to_string(),
+            ))
+        }
     }
 
     // Security: canonicalize parent directory to resolve `..` and symlinks
     let parent = save_path
         .parent()
         .ok_or_else(|| AppError::validation("Save path has no parent directory"))?;
-    let canonical_parent = parent.canonicalize().map_err(|e| {
-        AppError::Validation(format!("Invalid save directory: {}", e))
-    })?;
+    let canonical_parent = parent
+        .canonicalize()
+        .map_err(|e| AppError::Validation(format!("Invalid save directory: {}", e)))?;
     let safe_save_path = canonical_parent.join(save_path.file_name().unwrap_or_default());
 
     // Reject paths that resolve to sensitive system directories

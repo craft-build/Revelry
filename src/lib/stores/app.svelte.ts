@@ -39,6 +39,7 @@ import {
   getLorebooks as apiGetLorebooks,
   saveLorebook as apiSaveLorebook,
   deleteLorebook as apiDeleteLorebook,
+  importLorebook as apiImportLorebook,
   uploadAvatar as apiUploadAvatar,
   deleteAvatar as apiDeleteAvatar,
   getProviders as apiGetProviders,
@@ -1158,6 +1159,24 @@ class AppState {
     if (!savePath) return; // User cancelled
 
     await apiExportCard(id, savePath);
+  }
+
+  /** Import a lorebook from a CharacterBook V2 JSON file.
+   *  Opens a native file picker, parses + persists via backend, and
+   *  adds the saved lorebook to the library. */
+  async importLorebookFromFile(): Promise<Lorebook> {
+    const filePath = await open({
+      multiple: false,
+      filters: [{ name: "Lorebook", extensions: ["json"] }],
+    });
+
+    if (!filePath) {
+      throw new Error("cancelled");
+    }
+
+    const saved = await apiImportLorebook(filePath);
+    this.lorebooks = [saved, ...this.lorebooks];
+    return saved;
   }
 
   // ── Provider CRUD ──────────────────────────────────────────────────────

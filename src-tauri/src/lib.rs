@@ -17,9 +17,7 @@ pub fn run() {
             std::process::exit(1);
         }
     };
-    let db_path = data_dir
-        .join("com.revelry.desktop")
-        .join("revelry.db");
+    let db_path = data_dir.join("com.revelry.desktop").join("revelry.db");
 
     let db_worker = DbWorker::start(db_path.clone()).unwrap_or_else(|e| {
         eprintln!(
@@ -89,6 +87,7 @@ pub fn run() {
             commands::lorebooks::assign_lorebook_to_conversation,
             commands::lorebooks::remove_lorebook_from_conversation,
             commands::lorebooks::get_conversation_lorebooks,
+            commands::lorebooks::import_lorebook,
             commands::avatars::upload_avatar,
             commands::avatars::delete_avatar,
             commands::keywords::test_lorebook_keywords,

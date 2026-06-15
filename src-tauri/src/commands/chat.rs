@@ -533,7 +533,9 @@ pub async fn start_chat(
             .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
             .map_err(|e| AppError::Database(e.to_string()))?;
     } else {
-        return Err(AppError::validation("Message is empty with no steering instruction."));
+        return Err(AppError::validation(
+            "Message is empty with no steering instruction.",
+        ));
     }
 
     // 3. Load context

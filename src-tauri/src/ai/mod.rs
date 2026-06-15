@@ -109,16 +109,9 @@ pub struct GeneratedCharacterData {
     content = "data"
 )]
 pub enum GenerateCharacterChunk {
-    Token {
-        content: String,
-    },
-    Complete {
-        character: GeneratedCharacterData,
-    },
-    Error {
-        error: String,
-        error_type: String,
-    },
+    Token { content: String },
+    Complete { character: GeneratedCharacterData },
+    Error { error: String, error_type: String },
 }
 
 /// Returns true if the given provider supports the named additional parameter.
@@ -852,8 +845,14 @@ impl AiService {
             ProviderType::OpenAI => {
                 let client = Self::build_openai_client(api_key, base_url)?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -863,8 +862,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -876,8 +881,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -887,8 +898,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -898,8 +915,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -909,8 +932,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -920,8 +949,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -931,8 +966,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -942,8 +983,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -953,8 +1000,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -964,8 +1017,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -975,8 +1034,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -989,8 +1054,14 @@ impl AiService {
                     .map_err(|e| e.to_string())?
                     .completions_api();
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -1000,8 +1071,14 @@ impl AiService {
                     .build()
                     .map_err(|e| e.to_string())?;
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -1014,8 +1091,14 @@ impl AiService {
                     .map_err(|e| e.to_string())?
                     .completions_api();
                 Self::build_and_stream_generation(
-                    client, model_name, system_prompt, params, additional,
-                    prompt, channel, cancel,
+                    client,
+                    model_name,
+                    system_prompt,
+                    params,
+                    additional,
+                    prompt,
+                    channel,
+                    cancel,
                 )
                 .await
             }
@@ -1036,7 +1119,8 @@ impl AiService {
     where
         C: CompletionClient,
         <C as CompletionClient>::CompletionModel: 'static,
-        <<C as CompletionClient>::CompletionModel as CompletionModel>::StreamingResponse: GetTokenUsage,
+        <<C as CompletionClient>::CompletionModel as CompletionModel>::StreamingResponse:
+            GetTokenUsage,
     {
         let mut builder = client.agent(model_name).preamble(system_prompt);
         if let Some(temp) = params.temperature {
@@ -1143,7 +1227,11 @@ impl AiService {
                 Some(serde_json::Value::Bool(b)) => b.to_string(),
                 Some(serde_json::Value::Array(arr)) => arr
                     .iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()).or_else(|| Some(v.to_string())))
+                    .filter_map(|v| {
+                        v.as_str()
+                            .map(|s| s.to_string())
+                            .or_else(|| Some(v.to_string()))
+                    })
                     .collect::<Vec<_>>()
                     .join(", "),
                 Some(serde_json::Value::Object(map)) => {
@@ -1207,7 +1295,7 @@ impl AiService {
         // Strategy 1: Extract from ```json ... ``` fences
         if let Some(start) = raw.find("```json") {
             let json_start = start + 7; // length of "```json"
-            // Skip past the opening fence line (to newline or end)
+                                        // Skip past the opening fence line (to newline or end)
             let content_start = raw[json_start..]
                 .find('\n')
                 .map(|i| json_start + i + 1)

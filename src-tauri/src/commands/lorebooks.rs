@@ -228,3 +228,67 @@ pub async fn get_conversation_lorebooks(
         .map_err(|e| format!("DB worker dropped: {}", e))?
         .map_err(|e| e.to_string())
 }
+
+// ── Lorebook import ────────────────────────────────────────────────────────
+
+/// Import a lorebook from a CharacterBook V2 JSON file.
+///
+/// Reads and parses the file (standalone book or one embedded in a Character
+/// Card V2), persists the lorebook and all of its entries, and returns the
+/// saved lorebook. Imported lorebooks are assigned fresh UUIDs.
+#[tauri::command]
+pub async fn import_lorebook(
+    db: State<'_, DbWorker>,
+    file_path: String,
+) -> Result<Lorebook, String> {
+    let path = std::path::PathBuf::from(&file_path);
+    if !path.exists() {
+        return Err(format!("File does not exist: {}", file_path));
+    }
+
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    if ext != "json" {
+        return Err(format!(
+            "Unsupported file format: .{}. Only .json is supported for lorebook import.",
+            ext
+        ));
+    }
+
+    let json_str =
+        std::fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let (lorebook, entries) =
+        crate::service::lorebook_io::import_from_json(&json_str).map_err(|e| e.to_string())?;
+
+    // Persist the lorebook first (DB canonicalizes timestamps; id is preserved).
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::SaveLorebook {
+        lorebook,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    let saved = reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())?;
+
+    // Persist each entry (already keyed to the lorebook's id).
+    for entry in entries {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::SaveLorebookEntry {
+            entry,
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(saved)
+}

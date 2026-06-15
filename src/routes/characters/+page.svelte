@@ -86,6 +86,27 @@
 		}
 	}
 
+	async function handleLorebookImport() {
+		if (is_importing) return;
+		is_importing = true;
+		try {
+			await app.importLorebookFromFile();
+		} catch (err) {
+			if (err instanceof Error && err.message === 'cancelled') {
+				return;
+			}
+			import_error_message =
+				err instanceof Error
+					? err.message
+					: typeof err === 'string'
+						? err
+						: 'Could not read the lorebook file.';
+			import_error_open = true;
+		} finally {
+			is_importing = false;
+		}
+	}
+
 	function generatedToCard(data: GeneratedCharacterData): CharacterCardType {
 		return {
 			id: crypto.randomUUID(),
@@ -239,25 +260,32 @@
 				</p>
 			</div>
 
-			<div class="flex items-center gap-2">
+		<div class="flex items-center gap-2">
+			{#if tab === 'characters'}
 				<Button variant="secondary" size="sm" onclick={() => (generator_open = true)}>
 					<Sparkles class="size-3.5" />
 					Generate
 				</Button>
-				<Button variant="secondary" size="sm" onclick={handleImport} disabled={is_importing}>
-					{#if is_importing}
-						<span class="size-3.5 animate-spin rounded-full border-2 border-(--color-subtle) border-t-transparent"></span>
-						Importing…
-					{:else}
-						<Upload class="size-3.5" />
-						Import card
-					{/if}
-				</Button>
-				<Button variant="primary" size="sm" onclick={() => tab === 'personas' ? openPersonaCreateEditor() : tab === 'lorebooks' ? openLorebookCreateEditor() : openCreateEditor()}>
-					<Plus class="size-3.5" />
-					New {tab === 'personas' ? 'persona' : tab === 'lorebooks' ? 'lorebook' : 'character'}
-				</Button>
-			</div>
+			{/if}
+			<Button
+				variant="secondary"
+				size="sm"
+				onclick={tab === 'lorebooks' ? handleLorebookImport : handleImport}
+				disabled={is_importing}
+			>
+				{#if is_importing}
+					<span class="size-3.5 animate-spin rounded-full border-2 border-(--color-subtle) border-t-transparent"></span>
+					Importing…
+				{:else}
+					<Upload class="size-3.5" />
+					{tab === 'lorebooks' ? 'Import lorebook' : 'Import card'}
+				{/if}
+			</Button>
+			<Button variant="primary" size="sm" onclick={() => tab === 'personas' ? openPersonaCreateEditor() : tab === 'lorebooks' ? openLorebookCreateEditor() : openCreateEditor()}>
+				<Plus class="size-3.5" />
+				New {tab === 'personas' ? 'persona' : tab === 'lorebooks' ? 'lorebook' : 'character'}
+			</Button>
+		</div>
 		</div>
 	</div>
 

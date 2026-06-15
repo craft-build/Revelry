@@ -739,8 +739,6 @@ impl DbWorker {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

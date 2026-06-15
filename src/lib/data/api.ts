@@ -163,6 +163,10 @@ export async function deleteLorebook(id: string): Promise<void> {
   return invoke<void>("delete_lorebook", { id });
 }
 
+export async function importLorebook(filePath: string): Promise<Lorebook> {
+  return invoke<Lorebook>("import_lorebook", { filePath });
+}
+
 // ── Lorebook entries ───────────────────────────────────────────────────────────
 
 export async function getLorebookEntries(
