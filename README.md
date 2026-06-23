@@ -1,201 +1,162 @@
-# Revelry — UI
+# Revelry
 
-A **SvelteKit + Svelte 5 + Bits.ui** front-end for the Revelry AI roleplay desktop
-application. This implements the user-facing layer described in the v2.0 design
-specification, but swaps out the original GTK4/Relm4/libadwaita stack for a web
-component stack that can be embedded in Tauri (or run directly in the browser
-during development).
+AI roleplay desktop application — immersive, private, provider-agnostic.
 
-The original spec's design philosophy — content-first, progressive disclosure,
-adaptive layout, native-feeling — is preserved. Only the rendering technology
-has changed.
+Built with **Tauri v2** (Rust backend) and **SvelteKit 2 + Svelte 5** (frontend). All data stays local in SQLite. API keys live in your OS keychain, never in the database or code. Supports 15 LLM providers out of the box.
 
----
+## Features
 
-## Desktop Development
+- **Multi-provider AI streaming** — OpenAI, Anthropic, Ollama, Gemini, Cohere, Mistral, Groq, DeepSeek, OpenRouter, xAI, Perplexity, Together, Azure OpenAI, HuggingFace, and any OpenAI-compatible endpoint
+- **Character cards** — full CharacterCardV2 spec compatibility; import/export PNG and JSON
+- **AI character generation** — describe an idea, pick a model, get a complete character card
+- **Chat branching** — fork conversations at any message, navigate between branches
+- **Message editing** — edit-and-resend, regenerate, delete
+- **Message search** — full-text search across all conversations
+- **Lorebooks** — keyword-activated context injection per character or per conversation
+- **Regex scripts** — post-processing rules applied to AI output in real time
+- **User personas** — switchable identity profiles with tiered template compression
+- **Prompt engine** — budget-aware assembly with persona compression, lorebook injection, and oldest-first truncation
+- **Generation presets** — save and reuse temperature, top-p, frequency/presence penalty, stop sequences
+- **Token counting** — accurate tiktoken-based counts with context bar in chat input
+- **Markdown rendering** — full GFM with syntax highlighting (Shiki)
+- **Cross-platform** — macOS (DMG), Linux (AppImage), Windows (NSIS)
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend framework | SvelteKit 2 + Svelte 5 (runes) |
+| Frontend language | TypeScript (strict) |
+| Styling | Tailwind CSS v4 (OKLCH tokens) |
+| UI primitives | bits-ui 2 |
+| Icons | Lucide |
+| Build/bundler | Vite 8 |
+| Package manager | Bun |
+| Desktop runtime | Tauri v2 |
+| Backend language | Rust (2021 edition) |
+| Database | SQLite (rusqlite, bundled) |
+| Migrations | rusqlite-migration |
+| AI client | rig-core 0.37 |
+| Tokenization | tiktoken-rs 0.11 |
+| Async runtime | tokio (multi-thread) |
+| Error handling | thiserror 2 |
+| API key storage | OS keychain (keyring v4) |
+
+## Getting Started
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) runtime
-- [Rust](https://rustup.rs/) toolchain (stable)
+- [Bun](https://bun.sh/) ≥ 1
+- [Rust](https://rustup.rs/) stable toolchain
 - [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform
+
+### Install dependencies
+
+```sh
+bun install
+```
 
 ### Development
 
-```bash
-bun install          # Install JS dependencies
-bun tauri dev        # Start Tauri dev server (Rust + Vite HMR)
+**Frontend only** (no Rust backend — uses mock data):
+
+```sh
+bun dev
 ```
 
-### Production Build
+**Full app** (Rust + frontend together):
 
-```bash
-bun tauri build      # Build production binary
-```
-
-### Other Commands
-
-```bash
-bun run dev          # Vite dev server only (browser)
-bun run build        # SvelteKit static build only
-bun run tauri:check  # Tauri environment info
-bun run tauri:preview # Build + run production binary
-bun run check        # svelte-check + tsc
-bun run format       # prettier write
-```
-
-> **Note:** the project assumes Bun runtime. Network access is required for the
-> initial install (Bits.ui, Tailwind v4, SvelteKit, lucide, Tauri crates).
-
----
-
-## Mapping to the design spec
-
-The original spec's GTK4/libadwaita widgets all have direct counterparts in this
-build (mirroring Appendix B of the design doc):
-
-| Spec widget                             | Web equivalent here                               |
-| --------------------------------------- | ------------------------------------------------- |
-| `AdwApplicationWindow`                  | `src/routes/+layout.svelte`                       |
-| `AdwHeaderBar` + `AdwViewSwitcher`      | `src/lib/components/layout/AppHeader.svelte`      |
-| `AdwOverlaySplitView` (sidebar pattern) | `ConversationSidebar.svelte` + `+layout.svelte`   |
-| `GtkListView` w/ message rows           | `MessageBubble.svelte` rendered in a flex column  |
-| `AdwAvatar`                             | Bits.ui `Avatar` (`src/lib/components/ui/Avatar`) |
-| `GtkPopover` (persona switcher)         | Bits.ui `Popover` (`PersonaSwitcher.svelte`)      |
-| `AdwPreferencesWindow`                  | `src/routes/settings/+page.svelte`                |
-| `GtkFlowBox` (character grid)           | CSS grid in `characters/+page.svelte`             |
-| `GtkTextView` + `AdwClamp` (input)      | `MessageInput.svelte` (auto-grow textarea)        |
-| `AdwToastOverlay`                       | _(stub — wire via Bits.ui Toast in Phase 2)_      |
-| `GtkSearchEntry`                        | `Input` with `Search` icon                        |
-
-The data model in `src/lib/types/index.ts` is a one-to-one TypeScript
-translation of the SQLite schema in §12.1 of the spec — so the same shapes flow
-through whether the backend is Rust+rusqlite (the spec) or a stubbed mock.
-
----
-
-## Project structure
-
-```
-src/
-├── app.css                    # Tailwind v4 theme tokens + base styles
-├── app.html                   # HTML shell (Geist + Fraunces fonts)
-├── lib/
-│   ├── components/
-│   │   ├── ui/                # Bits.ui-styled primitives (Avatar, Button…)
-│   │   ├── layout/            # AppHeader, ConversationSidebar
-│   │   ├── chat/              # ChatHeader, MessageBubble, MessageInput, PersonaSwitcher
-│   │   ├── characters/        # CharacterCard
-│   │   └── personas/          # PersonaCard
-│   ├── stores/
-│   │   └── app.svelte.ts      # Svelte 5 rune-based root state (≈ Relm4 AppModel)
-│   ├── types/index.ts         # TS translation of the SQLite schema
-│   ├── data/mock.ts           # Mock characters/personas/conversations
-│   └── utils/index.ts         # cn(), token estimation, date format, initials
-└── routes/
-    ├── +layout.svelte         # App shell + state hydration + global keys
-    ├── +layout.ts             # SSR off (desktop SPA)
-    ├── +page.svelte           # Welcome state with suggested characters
-    ├── chat/[id]/+page.svelte # Active conversation view
-    ├── chat/[id]/+page.ts     # Loads messages for the conversation
-    ├── characters/+page.svelte# Library: characters & personas tabs
-    └── settings/+page.svelte  # Preferences (providers, generation, etc.)
-```
-
-### Why Svelte 5 runes?
-
-The spec uses Relm4's Elm-style Model/Update/Message architecture. Svelte 5
-runes (`$state`, `$derived`, `$effect`) give us very nearly the same ergonomics:
-a single reactive state object that components subscribe to without manual
-plumbing. `src/lib/stores/app.svelte.ts` is the closest analog to the
-`AppModel` from §6.2.
-
-### Why Bits.ui?
-
-Bits.ui is a **headless** component library (the Svelte equivalent of Radix /
-shadcn). That matters because the GNOME/Adwaita aesthetic the spec calls for is
-specific and opinionated — we need full styling control. Bits.ui handles the
-hard parts (focus management, keyboard navigation, ARIA) without imposing a
-look. Used here for: `Avatar`, `Popover`, `Tooltip`, `Tabs`. Add more as needed
-(`Dialog`, `Select`, `Toast`, `Slider`, `Switch` are the obvious next ones).
-
----
-
-## What's wired vs. stubbed
-
-### Wired
-
-- App shell with header, sidebar, view switcher
-- Conversation list with relative timestamps and search
-- Active conversation view with message rendering and auto-scroll
-- Message input with auto-grow, token estimate, context utilization bar
-- **Mock streaming response** — typing in the chat triggers a fake token-by-
-  token reply with the typewriter caret animation, so the UI is fully testable
-  without a backend
-- Persona switcher popover with active-persona indication
-- Character & persona library with tab switching, search, and grid layout
-- Settings shell with provider list and shortcut reference
-- F9 to toggle sidebar (per spec §4.1.5)
-- Ctrl+Enter and plain Enter to send
-
-### Stubbed (clearly marked in code)
-
-- **Backend bridge** — `MessageInput.svelte` and `chat/[id]/+page.svelte` fake
-  the streaming locally. In production, replace `handleSend` with an IPC call
-  to the Rust chat-engine over Tauri's `invoke()` or a similar transport
-- **Real markdown rendering** — `MessageBubble.svelte` does naive
-  asterisk-italic rendering only. Swap in `marked` / `markdown-it` (or render
-  in Rust via `pulldown-cmark` and pass HTML strings) for the production build
-- **Token counting** — `utils/index.ts:estimateTokens` uses a 4-char heuristic.
-  The real value comes from `tiktoken-rs` via the backend
-- **Character & persona editors** — only the cards and library views exist.
-  The multi-step wizard from §7.4 still needs to be built (use Bits.ui's
-  `Dialog` for the modal shell)
-- **Lorebook UI** — entirely Tier-2 in the spec; deferred
-- **Theme toggle, branch navigation, regex scripting, FTS search, vault mode**
-  — all marked Phase 2/3 in the spec
-
----
-
-## Embedding in Tauri
-
-This UI is built as an SPA (`ssr = false` in the root layout) and already configured
-for Tauri via `@sveltejs/adapter-static` with `fallback: 'index.html'`. The
-`src-tauri/` directory contains the Rust backend scaffold with plugin registrations.
-
-To start developing:
-
-```bash
+```sh
 bun tauri dev
 ```
 
-The Rust backend exposes `invoke()` commands that map to the chat-engine,
-card-service, persona-service, etc. modules from §6.2 of the spec. Currently the
-backend is a minimal scaffold; real IPC commands will be added in Phase 2.
+### Production build
 
-If you'd rather skip Tauri and run it as a web app, use `bun run dev` for the
-Vite dev server on port 1420.
+```sh
+bun tauri build
+```
 
----
+Cross-compile for Windows from other platforms:
 
-## Aesthetic notes
+```sh
+bun run win:build
+```
 
-The look departs from strict Adwaita imitation in two intentional ways:
+## Commands
 
-1. **Dark by default.** Most users running a creative roleplay tool at length
-   are working at night. The spec's "respect system theme" goal is preserved
-   in spirit (the `<html class="dark">` is the default, switchable later via
-   `AdwStyleManager`-equivalent logic).
+| Command | Description |
+| --- | --- |
+| `bun dev` | Start frontend dev server (mock backend) |
+| `bun run build` | Production frontend build |
+| `bun run check` | Type-check with svelte-check |
+| `bun run format` | Format all files with Prettier |
+| `bun run lint` | Check formatting |
+| `bun tauri dev` | Start Tauri dev mode (full stack) |
+| `bun tauri build` | Production desktop build |
+| `cargo check` | Type-check Rust (from `src-tauri/`) |
+| `cargo test` | Run Rust tests (from `src-tauri/`) |
+| `cargo clippy` | Lint Rust code (from `src-tauri/`) |
 
-2. **Fraunces for character names.** A subtle editorial flourish — the
-   serif treatment lets character names feel like they belong in a story
-   rather than a chat app. Body and UI text remain Geist for clarity.
+## Architecture
 
-Both choices respect the "content-first, ruthless about visual noise" principle
-from §4.1; they just adapt it to a web idiom.
+```
+revelry/
+├── src/                      # SvelteKit frontend
+│   ├── lib/
+│   │   ├── components/       # UI components (chat, characters, settings, etc.)
+│   │   ├── stores/           # AppState — single reactive root (Svelte 5 runes)
+│   │   ├── types/            # TypeScript type definitions
+│   │   ├── data/             # Tauri invoke wrappers + dev-mode mocks
+│   │   └── utils/            # cn(), formatRelativeTime(), etc.
+│   └── routes/               # SvelteKit routes (SPA, SSR disabled)
+├── src-tauri/                # Rust backend
+│   └── src/
+│       ├── commands/         # Tauri IPC command handlers
+│       ├── domain/           # Domain types (character, conversation, provider, etc.)
+│       ├── ai/               # AiService — LLM streaming via rig-core
+│       ├── service/          # PromptEngine, TokenCountService, regex, lorebook matching
+│       ├── db/               # DbWorker async actor + SQLite migrations
+│       └── secrets/          # KeyringStore — OS keychain for API keys
+└── docs/                     # Design specification v2.0
+```
 
----
+### Frontend ↔ Backend communication
 
-## License
+All communication goes through **Tauri IPC** — the frontend never accesses the database, filesystem, or LLM APIs directly.
 
-Same as the parent Revelry project.
+- **Request/response**: `invoke("command_name", { args })` for CRUD and settings
+- **Streaming**: `invoke("command_name", { ..., channel })` with `Channel<T>` for AI responses
+
+The API layer (`src/lib/data/api.ts`) provides typed wrappers for every command. In dev mode (`bun dev` without Tauri), mock implementations allow UI development without the Rust backend.
+
+### Key backend patterns
+
+- **DbWorker actor** — all SQLite operations run on a background tokio task via `mpsc` channels with oneshot replies, keeping the Tauri async runtime non-blocking
+- **Cancellation** — chat and character generation use `CancellationToken`; starting a new stream cancels any active one
+- **API key isolation** — keys are stored exclusively in the OS keychain via `KeyringStore`, never in the database or sent to the frontend (providers expose only `has_api_key: boolean`)
+
+## Data Storage
+
+| Data | Location |
+| --- | --- |
+| Conversations, characters, personas, lorebooks, presets, providers, regex scripts, settings | SQLite database at `$DATA_DIR/com.revelry.desktop/revelry.db` |
+| API keys | OS keychain (Keychain Access on macOS, GNOME Keyring on Linux, Credential Manager on Windows) |
+| Avatar images | `$APPDATA/avatars/` |
+
+## Design Documentation
+
+The full design specification v2.0 lives in `docs/`:
+
+- `01-executive-summary.md` — product overview
+- `05-technology-stack.md` — detailed tech decisions
+- `06-system-architecture.md` — system design
+- `07-character-card-system.md` — character card spec
+- `08-ai-provider-integration.md` — provider integration details
+- `11-feature-specifications.md` — feature specs
+- `12-data-model-and-storage.md` — data model and schema
+- `14-development-roadmap.md` — roadmap
+- `15-rig-provider-matrix.md` — provider support matrix
+
+## Status
+
+Revelry is in early development (v0.1.0). Core chat, character management, lorebooks, regex scripts, branching, search, and multi-provider streaming are functional. Markdown rendering, theme switching, and AI character generation are wired. Light theme, vault mode, and some polish items are not yet implemented.

@@ -149,6 +149,15 @@
 		}
 	}
 
+	async function startChat(id: string) {
+		try {
+			const conv = await app.startConversation(id);
+			await goto('/chat/' + conv.id);
+		} catch (err) {
+			console.error('Failed to start conversation:', err);
+		}
+	}
+
 	function openEditEditor(id: string) {
 		const char = app.characters.find((c) => c.id === id);
 		if (char) {
