@@ -86,7 +86,7 @@ pub async fn export_card(
         None => {
             return Err(AppError::Validation(
                 "Save path must have a .png extension".to_string(),
-            ))
+            ));
         }
     }
 

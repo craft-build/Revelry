@@ -19,3 +19,6 @@ gtk_ref/target
 
 # Environment
 .env
+
+# ShipStudio metadata
+.shipstudio/

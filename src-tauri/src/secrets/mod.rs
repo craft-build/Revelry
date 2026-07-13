@@ -1,5 +1,5 @@
 use anyhow::Result;
-use keyring_core::Entry;
+use keyring::v1::Entry;
 
 /// Manages API keys in the OS-native credential store.
 ///
@@ -74,11 +74,10 @@ mod tests {
     use uuid::Uuid;
 
     /// Initialize keyring store before any tests run.
-    /// keyring v4 requires explicit store initialization before Entry::new().
-    /// This is called once before each test via the #[test] attribute.
+    /// keyring 4.1+ initializes lazily; this is now a no-op kept for call-site
+    /// stability.
     fn ensure_keyring_init() {
-        // Best-effort init — may already be initialized or may fail on CI
-        let _ = keyring::use_native_store(true);
+        // No-op: keyring 4.1+ does not require explicit store initialization.
     }
 
     /// Helper to create a unique test provider ID that won't conflict

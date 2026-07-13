@@ -109,7 +109,10 @@ impl TokenCountService {
             match tiktoken_rs::cl100k_base() {
                 Ok(bpe) => *guard = Some(bpe),
                 Err(e) => {
-                    tracing::warn!("Failed to initialize cl100k_base tokenizer: {}. Falling back to character-based estimation.", e);
+                    tracing::warn!(
+                        "Failed to initialize cl100k_base tokenizer: {}. Falling back to character-based estimation.",
+                        e
+                    );
                 }
             }
         }

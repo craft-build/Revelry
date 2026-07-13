@@ -374,7 +374,7 @@
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
 							{#each app.filtered_characters as character (character.id)}
-								<CharacterCard {character} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} />
+								<CharacterCard {character} onchat={startChat} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} />
 							{/each}
 						</div>
 					{/if}

@@ -23,24 +23,24 @@ Built with **Tauri v2** (Rust backend) and **SvelteKit 2 + Svelte 5** (frontend)
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
+| Layer              | Technology                     |
+| ------------------ | ------------------------------ |
 | Frontend framework | SvelteKit 2 + Svelte 5 (runes) |
-| Frontend language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 (OKLCH tokens) |
-| UI primitives | bits-ui 2 |
-| Icons | Lucide |
-| Build/bundler | Vite 8 |
-| Package manager | Bun |
-| Desktop runtime | Tauri v2 |
-| Backend language | Rust (2021 edition) |
-| Database | SQLite (rusqlite, bundled) |
-| Migrations | rusqlite-migration |
-| AI client | rig-core 0.37 |
-| Tokenization | tiktoken-rs 0.11 |
-| Async runtime | tokio (multi-thread) |
-| Error handling | thiserror 2 |
-| API key storage | OS keychain (keyring v4) |
+| Frontend language  | TypeScript (strict)            |
+| Styling            | Tailwind CSS v4 (OKLCH tokens) |
+| UI primitives      | bits-ui 2                      |
+| Icons              | Lucide                         |
+| Build/bundler      | Vite 8                         |
+| Package manager    | Bun                            |
+| Desktop runtime    | Tauri v2                       |
+| Backend language   | Rust (2021 edition)            |
+| Database           | SQLite (rusqlite, bundled)     |
+| Migrations         | rusqlite-migration             |
+| AI client          | rig-core 0.37                  |
+| Tokenization       | tiktoken-rs 0.11               |
+| Async runtime      | tokio (multi-thread)           |
+| Error handling     | thiserror 2                    |
+| API key storage    | OS keychain (keyring v4)       |
 
 ## Getting Started
 
@@ -84,18 +84,18 @@ bun run win:build
 
 ## Commands
 
-| Command | Description |
-| --- | --- |
-| `bun dev` | Start frontend dev server (mock backend) |
-| `bun run build` | Production frontend build |
-| `bun run check` | Type-check with svelte-check |
-| `bun run format` | Format all files with Prettier |
-| `bun run lint` | Check formatting |
-| `bun tauri dev` | Start Tauri dev mode (full stack) |
-| `bun tauri build` | Production desktop build |
-| `cargo check` | Type-check Rust (from `src-tauri/`) |
-| `cargo test` | Run Rust tests (from `src-tauri/`) |
-| `cargo clippy` | Lint Rust code (from `src-tauri/`) |
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `bun dev`         | Start frontend dev server (mock backend) |
+| `bun run build`   | Production frontend build                |
+| `bun run check`   | Type-check with svelte-check             |
+| `bun run format`  | Format all files with Prettier           |
+| `bun run lint`    | Check formatting                         |
+| `bun tauri dev`   | Start Tauri dev mode (full stack)        |
+| `bun tauri build` | Production desktop build                 |
+| `cargo check`     | Type-check Rust (from `src-tauri/`)      |
+| `cargo test`      | Run Rust tests (from `src-tauri/`)       |
+| `cargo clippy`    | Lint Rust code (from `src-tauri/`)       |
 
 ## Architecture
 
@@ -137,11 +137,11 @@ The API layer (`src/lib/data/api.ts`) provides typed wrappers for every command.
 
 ## Data Storage
 
-| Data | Location |
-| --- | --- |
-| Conversations, characters, personas, lorebooks, presets, providers, regex scripts, settings | SQLite database at `$DATA_DIR/com.revelry.desktop/revelry.db` |
-| API keys | OS keychain (Keychain Access on macOS, GNOME Keyring on Linux, Credential Manager on Windows) |
-| Avatar images | `$APPDATA/avatars/` |
+| Data                                                                                        | Location                                                                                      |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Conversations, characters, personas, lorebooks, presets, providers, regex scripts, settings | SQLite database at `$DATA_DIR/com.revelry.desktop/revelry.db`                                 |
+| API keys                                                                                    | OS keychain (Keychain Access on macOS, GNOME Keyring on Linux, Credential Manager on Windows) |
+| Avatar images                                                                               | `$APPDATA/avatars/`                                                                           |
 
 ## Design Documentation
 

@@ -1,11 +1,11 @@
 use crate::domain::conversation::Message as DomainMessage;
 use crate::domain::lorebook::LorebookActivationDetail;
-use crate::domain::provider::{ProviderConfig, ProviderType};
+use crate::domain::provider::{ProviderConfig, ProviderModelEntry, ProviderType};
 use crate::domain::regex_script::RegexScript;
 
 use futures::StreamExt;
 use rig_core::agent::{Agent, MultiTurnStreamItem};
-use rig_core::client::CompletionClient;
+use rig_core::client::{CompletionClient, ModelListingClient};
 use rig_core::completion::{CompletionModel, GetTokenUsage, Message};
 use rig_core::streaming::{StreamedAssistantContent, StreamingChat};
 use serde::Serialize;
@@ -685,6 +685,169 @@ impl AiService {
         }
     }
 
+    /// Fetch the list of available models from a provider's Models API.
+    ///
+    /// Routes to rig-core's native `list_models()` for the 7 providers that
+    /// implement it (OpenAI, Anthropic, Ollama, Gemini, Mistral, DeepSeek,
+    /// OpenRouter). For the OpenAI-compatible family that rig does not natively
+    /// list (Groq, Together, xAI, Perplexity, HuggingFace, Cohere, and any
+    /// custom OpenAI-compatible endpoint), it falls back to an OpenAI client
+    /// pointed at the resolved base URL hitting `GET /models`. Azure OpenAI is
+    /// not supported (different, deployment-based auth scheme).
+    ///
+    /// Results are sorted alphabetically by name and deduped.
+    pub async fn list_provider_models(
+        provider_type: &ProviderType,
+        base_url: Option<&str>,
+        api_key: &str,
+    ) -> Result<Vec<ProviderModelEntry>, String> {
+        use rig_core::model::ModelList;
+
+        let list: ModelList = match provider_type {
+            ProviderType::OpenAI => {
+                let client = Self::build_openai_client(api_key, base_url)?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Anthropic => {
+                let client = rig_core::providers::anthropic::Client::builder()
+                    .api_key(api_key)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Ollama => {
+                let url = base_url.unwrap_or("http://localhost:11434");
+                let client = rig_core::providers::ollama::Client::builder()
+                    .api_key(String::new())
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Gemini => {
+                let client = rig_core::providers::gemini::Client::builder()
+                    .api_key(api_key)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Mistral => {
+                let client = rig_core::providers::mistral::Client::builder()
+                    .api_key(api_key)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::DeepSeek => {
+                let client = rig_core::providers::deepseek::Client::builder()
+                    .api_key(api_key)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::OpenRouter => {
+                let client = rig_core::providers::openrouter::Client::builder()
+                    .api_key(api_key)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            // OpenAI-compatible fallback: these providers expose an
+            // OpenAI-shaped `/models` endpoint even though rig does not
+            // natively list models for them.
+            ProviderType::Groq => {
+                let url = base_url.unwrap_or("https://api.groq.com/openai/v1");
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Together => {
+                let url = base_url.unwrap_or("https://api.together.xyz/v1");
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Xai => {
+                let url = base_url.unwrap_or("https://api.x.ai/v1");
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Perplexity => {
+                let url = base_url.unwrap_or("https://api.perplexity.ai");
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::HuggingFace => {
+                let url = base_url.unwrap_or("https://api-inference.huggingface.co/v1");
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::Cohere => {
+                let url = base_url.unwrap_or("https://api.cohere.com/v1");
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::CustomOpenAICompatible => {
+                let url = base_url.ok_or(
+                    "Base URL is required to detect models for a custom OpenAI-compatible provider.",
+                )?;
+                let client = rig_core::providers::openai::Client::builder()
+                    .api_key(api_key)
+                    .base_url(url)
+                    .build()
+                    .map_err(|e| e.to_string())?;
+                client.list_models().await.map_err(|e| e.to_string())?
+            }
+            ProviderType::AzureOpenAI => {
+                return Err(
+                    "Model detection is not supported for Azure OpenAI. Azure uses deployment-based \
+                     model naming and a different authentication scheme — add models manually."
+                        .to_string(),
+                );
+            }
+        };
+
+        Ok(Self::model_list_to_entries(list))
+    }
+
+    /// Convert a rig `ModelList` into sorted, deduped `ProviderModelEntry` values.
+    /// `id` becomes `name`; `context_length` (u32) becomes `context_window_size` (i64).
+    fn model_list_to_entries(list: rig_core::model::ModelList) -> Vec<ProviderModelEntry> {
+        let mut entries: Vec<ProviderModelEntry> = list
+            .into_iter()
+            .map(|m| ProviderModelEntry {
+                name: m.id,
+                context_window_size: m.context_length.map(|c| c as i64),
+                enabled: true,
+            })
+            .collect();
+        entries.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        entries.dedup_by(|a, b| a.name == b.name);
+        entries
+    }
+
     /// Generic streaming helper that works with any rig completion model.
     /// Uses rig-core 0.37 API: StreamAssistantItem(Text) for tokens,
     /// FinalResponse for completion.
@@ -739,7 +902,7 @@ impl AiService {
                         }
                         Ok(MultiTurnStreamItem::FinalResponse(res)) => {
                             // Apply regex transforms to the completed content
-                            let raw_content = res.response().to_string();
+                            let raw_content = res.output.clone();
                             let transformed_content = if !regex_scripts.is_empty() {
                                 crate::service::regex::apply_regex_scripts(&raw_content, &regex_scripts)
                             } else {
@@ -1646,5 +1809,50 @@ mod tests {
         let params = AiService::from_provider_config(&provider);
         // max_tokens of 0 should map to None (unset)
         assert!(params.max_tokens.is_none());
+    }
+
+    // ── model_list_to_entries tests ──
+
+    #[test]
+    fn test_model_list_to_entries_basic() {
+        use rig_core::model::{Model, ModelList};
+        let list = ModelList::new(vec![
+            Model::from_id("gpt-4o-mini"),
+            Model::from_id("gpt-4o"),
+        ]);
+        let entries = AiService::model_list_to_entries(list);
+        assert_eq!(entries.len(), 2);
+        // Sorted alphabetically by name (id)
+        assert_eq!(entries[0].name, "gpt-4o");
+        assert_eq!(entries[1].name, "gpt-4o-mini");
+        assert!(entries.iter().all(|e| e.enabled));
+        assert!(entries.iter().all(|e| e.context_window_size.is_none()));
+    }
+
+    #[test]
+    fn test_model_list_to_entries_with_context_length() {
+        use rig_core::model::{Model, ModelList};
+        let mut model = Model::from_id("claude-3");
+        model.context_length = Some(200000);
+        let list = ModelList::new(vec![model]);
+        let entries = AiService::model_list_to_entries(list);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].context_window_size, Some(200000));
+    }
+
+    #[test]
+    fn test_model_list_to_entries_dedup_and_case_insensitive_sort() {
+        use rig_core::model::{Model, ModelList};
+        let list = ModelList::new(vec![
+            Model::from_id("zeta"),
+            Model::from_id("Alpha"),
+            Model::from_id("zeta"), // duplicate
+        ]);
+        let entries = AiService::model_list_to_entries(list);
+        // Deduped to 2 entries
+        assert_eq!(entries.len(), 2);
+        // Case-insensitive sort: Alpha < zeta
+        assert_eq!(entries[0].name, "Alpha");
+        assert_eq!(entries[1].name, "zeta");
     }
 }

@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use crate::ai::AiService;
 use crate::db::{DbCommand, DbWorker};
-use crate::domain::provider::ProviderConfig;
+use crate::domain::provider::{ProviderConfig, ProviderModelEntry, ProviderType};
 
 /// Provider configuration with key status.
 /// Returned by get_providers so the frontend knows if a key is set
@@ -138,4 +139,49 @@ pub async fn update_conversation_provider(
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?
         .map_err(|e| e.to_string())
+}
+
+/// Detect available models from a provider's Models API.
+///
+/// Resolves the API key by preferring a passed `api_key` (create flow, where
+/// the key isn't in the keyring yet) and falling back to the keyring via
+/// `provider_id` (edit flow). Ollama is allowed with an empty key.
+///
+/// Returns a sorted, deduped list of `ProviderModelEntry` values.
+#[tauri::command]
+pub async fn list_provider_models(
+    provider_type: ProviderType,
+    base_url: Option<String>,
+    provider_id: Option<String>,
+    api_key: Option<String>,
+) -> Result<Vec<ProviderModelEntry>, String> {
+    // Resolve the API key: prefer an explicitly passed key (create mode),
+    // otherwise load from the keyring (edit mode). Ollama needs no key.
+    let key = if provider_type == ProviderType::Ollama {
+        String::new()
+    } else if let Some(k) = api_key {
+        if k.trim().is_empty() {
+            return Err(
+                "An API key is required to detect models. Add a key and try again.".to_string(),
+            );
+        }
+        k
+    } else if let Some(pid) = provider_id {
+        let pid_clone = pid.clone();
+        tokio::task::spawn_blocking(move || crate::secrets::KeyringStore::load_key(&pid_clone))
+            .await
+            .map_err(|e| format!("Keyring task failed: {}", e))?
+            .map_err(|e| {
+                format!(
+                    "No API key found for this provider. Add a key and try again. ({})",
+                    e
+                )
+            })?
+    } else {
+        return Err(
+            "An API key is required to detect models. Add a key and try again.".to_string(),
+        );
+    };
+
+    AiService::list_provider_models(&provider_type, base_url.as_deref(), &key).await
 }

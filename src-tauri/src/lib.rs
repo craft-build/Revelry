@@ -27,15 +27,16 @@ pub fn run() {
         std::process::exit(1);
     });
 
-    // Initialize keyring store (v4 requires explicit init before Entry::new())
-    if let Err(e) = keyring::use_native_store(true) {
-        tracing::warn!(
-            "Failed to initialize keyring: {}. Keyring features will be disabled.",
-            e
-        );
-    }
+    // Keyring 4.1+ initializes lazily on first Entry::new(); no explicit
+    // store init/release is needed. Keyring availability is checked per-call
+    // via KeyringStore::is_available().
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+    #[cfg(debug_assertions)]
+    {
+        builder = builder.plugin(tauri_plugin_webdriver_automation::init());
+    }
+    builder
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
@@ -99,6 +100,7 @@ pub fn run() {
             commands::providers::delete_api_key,
             commands::providers::check_keyring_available,
             commands::providers::update_conversation_provider,
+            commands::providers::list_provider_models,
             commands::chat::start_chat,
             commands::chat::stop_generation,
             commands::chat::regenerate,
@@ -117,7 +119,4 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-
-    // Release keyring store on shutdown (v4 requires explicit cleanup)
-    keyring::release_store();
 }

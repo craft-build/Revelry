@@ -14,6 +14,7 @@ import type {
   SearchResult,
   UserPersona,
   Provider,
+  ProviderType,
   ProviderModelEntry,
   GenerationPreset,
   Lorebook,
@@ -254,6 +255,26 @@ export async function saveProvider(provider: Provider): Promise<Provider> {
 
 export async function deleteProvider(id: string): Promise<void> {
   return invoke<void>("delete_provider", { id });
+}
+
+/**
+ * Detect available models from a provider's Models API.
+ *
+ * No dev-mode mock: this hits a real network endpoint, so a mock would mislead.
+ * Throws if called without the Tauri backend (consistent with keyring commands).
+ */
+export async function listProviderModels(args: {
+  providerType: ProviderType;
+  baseUrl?: string;
+  providerId?: string;
+  apiKey?: string;
+}): Promise<ProviderModelEntry[]> {
+  return invoke<ProviderModelEntry[]>("list_provider_models", {
+    providerType: args.providerType,
+    baseUrl: args.baseUrl ?? null,
+    providerId: args.providerId ?? null,
+    apiKey: args.apiKey ?? null,
+  });
 }
 
 // ── Keyring ──────────────────────────────────────────────────────────────────

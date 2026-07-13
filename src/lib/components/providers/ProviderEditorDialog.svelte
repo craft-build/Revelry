@@ -9,8 +9,9 @@
 	} from '$lib/components/ui';
 	import { ModelEntryRow } from '$lib/components/providers';
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
-	import { AlertCircle, Plus, Eye, EyeOff, Loader2 } from '@lucide/svelte';
+	import { AlertCircle, Plus, Eye, EyeOff, Loader2, ScanSearch } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
+	import { listProviderModels } from '$lib/data/api';
 
 	interface Props {
 		open?: boolean;
@@ -44,6 +45,12 @@
 	let prev_provider_type = $state<ProviderType | ''>('');
 	let type_change_confirm_open = $state(false);
 
+	// ── Detect models state ─────────────────────────────────────────────────
+	let is_detecting = $state(false);
+	let detect_error = $state('');
+	let replace_models_confirm_open = $state(false);
+	let pending_detected_models = $state<ProviderModelEntry[]>([]);
+
 	// ── Validation errors ──────────────────────────────────────────────────
 	let name_error = $state('');
 	let type_error = $state('');
@@ -71,6 +78,16 @@
 	}
 
 	let is_dirty = $derived(snapshot() !== initial_snapshot);
+
+	// Detection is offered when a type is chosen, isn't Azure (different auth),
+	// and either a key is available (entered in create mode, or stored in edit
+	// mode) or the provider is Ollama (no key needed).
+	let can_detect_models = $derived(
+		!!form_provider_type &&
+			form_provider_type !== 'azure_openai' &&
+			(isOllamaType() ||
+				(mode === 'edit' ? !!provider?.has_api_key : form_api_key.trim().length > 0))
+	);
 
 	// ── Provider type defaults ──────────────────────────────────────────────
 	const type_defaults: Record<string, { base_url: string | null; model: string }> = {
@@ -132,6 +149,7 @@
 			top_p_error = '';
 			max_tokens_error = '';
 			backend_error = '';
+			detect_error = '';
 			initial_snapshot = snapshot();
 		}
 		was_open = open;
@@ -237,6 +255,63 @@
 
 	function updateModelEnabled(index: number, value: boolean) {
 		form_models = form_models.map((m, i) => (i === index ? { ...m, enabled: value } : m));
+	}
+
+	// ── Detect models ────────────────────────────────────────────────────
+	async function handleDetectModels() {
+		if (is_detecting || !form_provider_type) return;
+		is_detecting = true;
+		detect_error = '';
+		try {
+			const detected = await listProviderModels({
+				providerType: form_provider_type as ProviderType,
+				baseUrl: form_base_url.trim() || undefined,
+				providerId: mode === 'edit' ? provider?.id : undefined,
+				apiKey: form_api_key.trim() || undefined
+			});
+			if (detected.length === 0) {
+				detect_error = 'No models were returned by this provider.';
+				return;
+			}
+			// If the current models look user-modified, confirm before replacing.
+			const modelsDirty =
+				form_models.length !== 1 ||
+				form_models[0]?.name !== (type_defaults[form_provider_type]?.model ?? '') ||
+				form_models[0]?.context_window_size != null;
+			if (modelsDirty && form_models.length > 0) {
+				pending_detected_models = detected;
+				replace_models_confirm_open = true;
+			} else {
+				applyDetectedModels(detected);
+			}
+		} catch (err) {
+			detect_error =
+				err instanceof Error ? err.message : "Couldn't detect models. Something went wrong.";
+		} finally {
+			is_detecting = false;
+		}
+	}
+
+	function applyDetectedModels(detected: ProviderModelEntry[]) {
+		// First detected model becomes the default (enabled); rest also enabled
+		// so the user can switch among them. Matches existing add-default behavior.
+		form_models = detected.map((m, i) => ({
+			name: m.name,
+			context_window_size: m.context_window_size ?? null,
+			enabled: i === 0 ? true : m.enabled
+		}));
+		detect_error = '';
+	}
+
+	function handleReplaceModelsConfirm() {
+		replace_models_confirm_open = false;
+		applyDetectedModels(pending_detected_models);
+		pending_detected_models = [];
+	}
+
+	function handleReplaceModelsCancel() {
+		replace_models_confirm_open = false;
+		pending_detected_models = [];
 	}
 
 	// ── Validation ────────────────────────────────────────────────────────
@@ -540,18 +615,60 @@
 				{/each}
 			</div>
 			{#if form_models.length > 0}
-				<Button variant="secondary" size="sm" onclick={addModel} disabled={is_saving}>
-					<Plus class="size-3.5" />
-					Add model
-				</Button>
+				<div class="flex flex-wrap items-center gap-2">
+					<Button variant="secondary" size="sm" onclick={addModel} disabled={is_saving || is_detecting}>
+						<Plus class="size-3.5" />
+						Add model
+					</Button>
+					{#if can_detect_models}
+						<Button
+							variant="secondary"
+							size="sm"
+							onclick={handleDetectModels}
+							disabled={is_saving || is_detecting}
+						>
+							{#if is_detecting}
+								<Loader2 class="size-3.5 animate-spin" />
+								Detecting…
+							{:else}
+								<ScanSearch class="size-3.5" />
+								Detect models
+							{/if}
+						</Button>
+					{/if}
+				</div>
 			{:else}
 				<div class="rounded-(--radius-md) border border-dashed border-(--color-border) px-4 py-5 text-center">
 					<p class="text-sm font-medium text-(--color-foreground)">No models added.</p>
 					<p class="mt-1 text-xs text-(--color-muted)">Add at least one model that this provider supports. The default model is pre-filled.</p>
-					<Button variant="secondary" size="sm" class="mt-3" onclick={addModel} disabled={is_saving}>
-						<Plus class="size-3.5" />
-						Add model
-					</Button>
+					<div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+						<Button variant="secondary" size="sm" onclick={addModel} disabled={is_saving || is_detecting}>
+							<Plus class="size-3.5" />
+							Add model
+						</Button>
+						{#if can_detect_models}
+							<Button
+								variant="secondary"
+								size="sm"
+								onclick={handleDetectModels}
+								disabled={is_saving || is_detecting}
+							>
+								{#if is_detecting}
+									<Loader2 class="size-3.5 animate-spin" />
+									Detecting…
+								{:else}
+									<ScanSearch class="size-3.5" />
+									Detect models
+								{/if}
+							</Button>
+						{/if}
+					</div>
+				</div>
+			{/if}
+			{#if detect_error}
+				<div class="flex items-start gap-2 rounded-(--radius-md) border border-(--color-destructive)/30 bg-(--color-destructive)/10 px-3 py-2 text-sm text-(--color-destructive)">
+					<AlertCircle class="mt-0.5 size-4 shrink-0" />
+					<span class="min-w-0 break-words">{detect_error}</span>
 				</div>
 			{/if}
 		</div>
@@ -648,4 +765,14 @@ id="provider-max-tokens"
 	cancel_label="Keep current"
 	onconfirm={handleTypeChangeConfirm}
 	oncancel={handleTypeChangeCancel}
+/>
+
+<DeleteConfirmationDialog
+	bind:open={replace_models_confirm_open}
+	title="Replace existing models?"
+	description={`Replace your current {form_models.length} model(s) with the {pending_detected_models.length} detected model(s)? This will discard your manually entered models.`}
+	confirm_label="Replace"
+	cancel_label="Keep current"
+	onconfirm={handleReplaceModelsConfirm}
+	oncancel={handleReplaceModelsCancel}
 />
