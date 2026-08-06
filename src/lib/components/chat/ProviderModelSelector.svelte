@@ -33,7 +33,7 @@
 		class="inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-elevated) px-2.5 text-xs font-medium hover:bg-(--color-surface-hover) disabled:cursor-not-allowed disabled:opacity-50"
 		disabled={!app.active_conversation}
 	>
-		<Sparkles class="size-3 text-(--color-accent)" />
+		<Sparkles class="size-3 text-(--color-accent-vivid)" />
 		<span class="font-mono text-[11px]">{display_label}</span>
 	</Popover.Trigger>
 
@@ -54,7 +54,7 @@
 				<p>No providers configured.</p>
 				<a
 					href="/settings"
-					class="mt-1.5 inline-flex items-center gap-1 text-(--color-accent) hover:underline"
+					class="mt-1.5 inline-flex items-center gap-1 text-(--color-accent-vivid) hover:underline"
 				>
 					<Settings class="size-3" />
 					Add a provider
@@ -87,7 +87,7 @@
 									>
 										<span class="truncate font-mono text-[11px]">{model.name}</span>
 										{#if active}
-											<Check class="ml-auto size-3.5 shrink-0 text-(--color-accent)" />
+											<Check class="ml-auto size-3.5 shrink-0 text-(--color-accent-vivid)" />
 										{/if}
 									</button>
 								</li>

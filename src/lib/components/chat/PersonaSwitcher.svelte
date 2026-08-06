@@ -62,7 +62,7 @@
 							{/if}
 						</div>
 						{#if active}
-							<Check class="size-3.5 shrink-0 text-(--color-accent)" />
+							<Check class="size-3.5 shrink-0 text-(--color-accent-vivid)" />
 						{/if}
 					</button>
 				</li>

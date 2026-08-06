@@ -22,7 +22,7 @@
 			{side}
 			sideOffset={6}
 			class={cn(
-				'z-50 rounded-(--radius-sm) border border-(--color-border) bg-(--color-surface-elevated) px-2.5 py-1.5 text-xs text-(--color-foreground) shadow-lg',
+				'z-50 rounded-(--radius-sm) border border-(--color-border) bg-(--color-surface-elevated) px-2.5 py-1.5 text-xs text-(--color-foreground) shadow-md backdrop-blur-[20px]',
 				className
 			)}
 		>

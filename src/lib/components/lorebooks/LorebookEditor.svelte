@@ -487,7 +487,7 @@
 									{#if test_results.length > 0 && has_match}
 										<div class="mt-1 flex flex-wrap gap-1">
 											{#each matched as key (key)}
-												<span class="inline-flex items-center rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent)">
+												<span class="inline-flex items-center rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent-vivid)">
 													{key}
 												</span>
 											{/each}
@@ -667,7 +667,7 @@
 			<button
 				type="button"
 				onclick={() => (test_panel_open = !test_panel_open)}
-				class="flex w-full items-center gap-2 text-sm font-medium text-(--color-foreground) transition-colors hover:text-(--color-accent)"
+				class="flex w-full items-center gap-2 text-sm font-medium text-(--color-foreground) transition-colors hover:text-(--color-accent-vivid)"
 			>
 				{#if test_panel_open}
 					<ChevronDown class="size-4" />
@@ -714,7 +714,7 @@
 										class="flex items-start gap-2 rounded-(--radius-sm) px-2 py-1.5 {result.matched_keys.length > 0 ? 'bg-(--color-accent)/5' : 'bg-(--color-surface-elevated) opacity-50'}"
 									>
 										{#if result.matched_keys.length > 0}
-											<Check class="mt-0.5 size-3.5 shrink-0 text-(--color-accent)" />
+											<Check class="mt-0.5 size-3.5 shrink-0 text-(--color-accent-vivid)" />
 										{:else}
 											<XIcon class="mt-0.5 size-3.5 shrink-0 text-(--color-subtle)" />
 										{/if}
@@ -725,7 +725,7 @@
 											{#if result.matched_keys.length > 0}
 												<div class="mt-1 flex flex-wrap gap-1">
 													{#each result.matched_keys as key (key)}
-														<span class="inline-flex items-center rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent)">
+														<span class="inline-flex items-center rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent-vivid)">
 															{key}
 														</span>
 													{/each}

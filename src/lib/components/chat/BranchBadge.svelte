@@ -40,7 +40,7 @@
 	class={cn(
 		'inline-flex items-center gap-0.5 rounded-(--radius-sm)',
 		'border border-(--color-accent)/30 bg-(--color-accent)/10',
-		'text-(--color-accent) transition-colors',
+		'text-(--color-accent-vivid) transition-colors',
 		className,
 	)}
 >

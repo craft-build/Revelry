@@ -106,7 +106,7 @@
 						class={cn(
 							'inline-flex items-center gap-1.5 rounded-(--radius-md) px-2 py-1 text-xs transition-colors',
 							app.active_branch_id
-								? 'bg-(--color-accent)/10 text-(--color-accent) border border-(--color-accent)/30'
+								? 'bg-(--color-accent)/10 text-(--color-accent-vivid) border border-(--color-accent)/30'
 								: 'text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
 						)}
 						aria-label="Switch branch"
@@ -146,7 +146,7 @@
 								<div class="text-[11px] text-(--color-muted) truncate">{getPreviewSnippet(null)}</div>
 							</div>
 							{#if app.active_branch_id === null}
-								<Check class="size-3.5 shrink-0 text-(--color-accent)" />
+								<Check class="size-3.5 shrink-0 text-(--color-accent-vivid)" />
 							{/if}
 						</button>
 
@@ -192,7 +192,7 @@
 										<div class="text-[11px] text-(--color-muted) truncate">{getPreviewSnippet(branch.id)}</div>
 									</div>
 									{#if app.active_branch_id === branch.id}
-										<Check class="size-3.5 shrink-0 text-(--color-accent)" />
+										<Check class="size-3.5 shrink-0 text-(--color-accent-vivid)" />
 									{:else}
 										<button
 											type="button"
@@ -220,7 +220,7 @@
 				class={cn(
 					'inline-flex size-8 items-center justify-center rounded-(--radius-md) transition-colors',
 					app.generation_panel_open
-						? 'bg-(--color-accent)/10 text-(--color-accent)'
+						? 'bg-(--color-accent)/10 text-(--color-accent-vivid)'
 						: 'text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
 				)}
 				aria-label="Generation settings"

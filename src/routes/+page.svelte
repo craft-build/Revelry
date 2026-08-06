@@ -59,7 +59,7 @@
 							{char.description}
 						</p>
 					</div>
-					<div class="mt-auto flex items-center gap-1 pt-1 text-[11px] font-medium text-(--color-accent)">
+					<div class="mt-auto flex items-center gap-1 pt-1 text-[11px] font-medium text-(--color-accent-vivid)">
 						<span>Begin</span>
 						<ArrowRight
 							class="size-3 transition-transform group-hover:translate-x-0.5"

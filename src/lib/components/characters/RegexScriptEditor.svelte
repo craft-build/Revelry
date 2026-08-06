@@ -246,7 +246,7 @@
 				<button
 					type="button"
 					onclick={handleUndo}
-					class="text-xs font-medium text-(--color-accent) hover:underline"
+					class="text-xs font-medium text-(--color-accent-vivid) hover:underline"
 				>
 					Undo
 				</button>
@@ -414,7 +414,7 @@
 			<button
 				type="button"
 				onclick={() => (test_panel_open = !test_panel_open)}
-				class="flex w-full items-center gap-2 text-sm font-medium text-(--color-foreground) transition-colors hover:text-(--color-accent)"
+				class="flex w-full items-center gap-2 text-sm font-medium text-(--color-foreground) transition-colors hover:text-(--color-accent-vivid)"
 			>
 				{#if test_panel_open}
 					<ChevronDown class="size-4" />
@@ -459,7 +459,7 @@
 							</div>
 							<p class={cn(
 								'text-xs',
-								test_result.match_count > 0 ? 'text-(--color-accent)' : 'text-(--color-subtle)',
+								test_result.match_count > 0 ? 'text-(--color-accent-vivid)' : 'text-(--color-subtle)',
 							)}>
 								{test_result.match_count > 0
 									? `${test_result.match_count} match${test_result.match_count !== 1 ? 'es' : ''} found`

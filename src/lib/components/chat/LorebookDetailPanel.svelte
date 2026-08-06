@@ -32,7 +32,7 @@
 			class={cn(
 				'uppercase tracking-wider',
 				detailCount > 0
-					? 'text-(--color-accent)'
+					? 'text-(--color-accent-vivid)'
 					: 'text-(--color-subtle)',
 			)}
 		>

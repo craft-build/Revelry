@@ -351,7 +351,8 @@
 				<div class="rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-6">
 					<div class="flex items-center gap-3">
 						<div
-							class="grid size-12 place-items-center rounded-(--radius-lg) bg-gradient-to-br from-(--color-accent) to-(--color-accent-muted)"
+							class="grid size-12 place-items-center rounded-(--radius-lg)"
+							style="background: var(--gradient-brand)"
 						></div>
 						<div>
 							<div class="font-display text-xl font-semibold tracking-tight">Revelry</div>

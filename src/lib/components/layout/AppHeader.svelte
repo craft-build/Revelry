@@ -14,7 +14,8 @@
 </script>
 
 <header
-	class="drag-region flex h-12 shrink-0 items-center gap-2 border-b border-(--color-border) bg-(--color-surface) px-3"
+	data-tauri-drag-region
+	class="drag-region relative flex h-12 shrink-0 items-center gap-2 border-b border-(--color-border) bg-(--color-surface) py-0 pr-3 pl-[6rem]"
 >
 	<!-- Sidebar toggle -->
 	<div class="no-drag">
@@ -36,17 +37,17 @@
 		<span class="font-display text-sm font-semibold tracking-wide">Revelry</span>
 	</div>
 
-	<!-- View switcher (AdwViewSwitcher equivalent) -->
-	<nav class="no-drag mx-auto flex items-center gap-1 rounded-(--radius-md) bg-(--color-surface-elevated) p-1">
+	<!-- View switcher — centered pill segment, per the design system's TopNav -->
+	<nav class="no-drag absolute left-1/2 flex -translate-x-1/2 items-center gap-1">
 		{#each views as view (view.href)}
 			{@const active = view.match(page.url.pathname)}
 			<a
 				href={view.href}
 				class={cn(
-					'inline-flex h-7 items-center gap-1.5 rounded-(--radius-sm) px-3 text-xs font-medium transition-colors',
+					'inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) px-4 text-sm font-medium transition-colors',
 					active
-						? 'bg-(--color-surface) text-(--color-foreground) shadow-sm'
-						: 'text-(--color-muted) hover:text-(--color-foreground)'
+						? 'bg-(--color-surface-elevated) text-(--color-foreground)'
+						: 'text-(--color-subtle) hover:text-(--color-foreground)'
 				)}
 			>
 				<view.icon class="size-3.5" />
@@ -56,5 +57,5 @@
 	</nav>
 
 	<!-- Right cluster — placeholder for future actions -->
-	<div class="no-drag w-[88px]"></div>
+	<div class="no-drag w-[76px]"></div>
 </header>

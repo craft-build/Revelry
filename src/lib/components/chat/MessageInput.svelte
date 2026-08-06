@@ -97,7 +97,7 @@
 				<button
 					type="button"
 					onclick={() => oncancel?.()}
-					class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-sm) bg-(--color-destructive) text-white hover:bg-(--color-destructive)/90"
+					class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-destructive) text-white hover:bg-(--color-destructive)/90"
 					aria-label="Stop generation"
 				>
 					<Square class="size-3.5" fill="currentColor" />
@@ -107,7 +107,7 @@
 					type="button"
 					onclick={handleSubmit}
 					disabled={!text.trim()}
-					class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-sm) bg-(--color-accent) text-(--color-accent-fg) hover:bg-(--color-accent)/90 disabled:cursor-not-allowed disabled:opacity-50"
+					class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-accent) text-(--color-accent-fg) hover:bg-(--color-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
 					aria-label="Send"
 				>
 					<Send class="size-3.5" />

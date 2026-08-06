@@ -36,11 +36,12 @@
 
 <AvatarPrimitive.Root
 	class={cn(
-		'relative inline-flex shrink-0 overflow-hidden rounded-full bg-(--color-surface-elevated) font-medium text-(--color-muted)',
+		'relative inline-flex shrink-0 overflow-hidden rounded-full font-medium text-white',
 		sizeClasses[size],
-		ring && 'ring-2 ring-(--color-accent) ring-offset-2 ring-offset-(--color-background)',
+		ring && 'ring-2 ring-(--color-accent-vivid) ring-offset-2 ring-offset-(--color-background)',
 		className
 	)}
+	style="background: var(--gradient-brand)"
 >
 	{#if resolved_src && !img_failed}
 		<AvatarPrimitive.Image
@@ -51,7 +52,7 @@
 		/>
 	{/if}
 	<AvatarPrimitive.Fallback
-		class="flex size-full items-center justify-center font-display tracking-wider"
+		class="flex size-full items-center justify-center font-display font-semibold tracking-wider"
 	>
 		{avatarInitials(name)}
 	</AvatarPrimitive.Fallback>

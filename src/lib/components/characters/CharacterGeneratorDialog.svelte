@@ -135,7 +135,7 @@
 				{#if availableProviders.length === 0}
 					<p class="text-sm text-(--color-muted)">
 						No enabled providers with API keys configured.
-						<a href="/settings" class="inline-flex items-center gap-1 text-(--color-accent) hover:underline">
+						<a href="/settings" class="inline-flex items-center gap-1 text-(--color-accent-vivid) hover:underline">
 							<Settings class="size-3" />
 							Add a provider
 						</a>
@@ -146,7 +146,7 @@
 							class="inline-flex h-9 w-full items-center gap-1.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-elevated) px-3 text-sm hover:bg-(--color-surface-hover) disabled:cursor-not-allowed disabled:opacity-50"
 							disabled={phase === 'generating'}
 						>
-							<Sparkles class="size-3.5 text-(--color-accent)" />
+							<Sparkles class="size-3.5 text-(--color-accent-vivid)" />
 							<span class="font-mono text-xs">{display_label}</span>
 						</Popover.Trigger>
 
@@ -187,7 +187,7 @@
 													>
 														<span class="truncate font-mono text-[11px]">{model.name}</span>
 														{#if active}
-															<Check class="ml-auto size-3.5 shrink-0 text-(--color-accent)" />
+															<Check class="ml-auto size-3.5 shrink-0 text-(--color-accent-vivid)" />
 														{/if}
 													</button>
 												</li>

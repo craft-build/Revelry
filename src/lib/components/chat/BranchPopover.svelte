@@ -91,7 +91,7 @@
 					<div class="text-[11px] text-(--color-muted) truncate">{getMainPreview()}</div>
 				</div>
 				{#if activeBranchId === null}
-					<Check class="size-3.5 shrink-0 text-(--color-accent)" />
+					<Check class="size-3.5 shrink-0 text-(--color-accent-vivid)" />
 				{/if}
 			</button>
 
@@ -137,7 +137,7 @@
 							<div class="text-[11px] text-(--color-muted) truncate">{getPreviewSnippet(branch)}</div>
 						</div>
 						{#if activeBranchId === branch.id}
-							<Check class="size-3.5 shrink-0 text-(--color-accent)" />
+							<Check class="size-3.5 shrink-0 text-(--color-accent-vivid)" />
 						{:else}
 							<button
 								type="button"

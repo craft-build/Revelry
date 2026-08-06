@@ -14,7 +14,7 @@
 <select
 	bind:value
 	class={cn(
-		'flex h-10 w-full items-center rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-3 py-2 text-sm focus-visible:border-(--color-accent) focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent) disabled:cursor-not-allowed disabled:opacity-50',
+		'flex h-10 w-full items-center rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-3 py-2 text-sm text-(--color-foreground) transition-shadow duration-150 focus-visible:border-(--color-accent) focus-visible:outline-none focus-visible:shadow-(--shadow-glow-violet) disabled:cursor-not-allowed disabled:opacity-50',
 		className
 	)}
 	{...rest}

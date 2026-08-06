@@ -13,7 +13,7 @@
 </script>
 
 <article
-	class="group relative flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 transition-all hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated)"
+	class="group relative flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 transition-all hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated) hover:shadow-md"
 >
 	<div class="flex items-start gap-3">
 		<Avatar name={persona.name} src={persona.avatar_path} size="lg" />

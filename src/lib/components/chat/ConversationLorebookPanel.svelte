@@ -41,7 +41,7 @@
 			class={cn(
 				'inline-flex items-center gap-1.5 rounded-(--radius-md) px-2 py-1 text-xs transition-colors',
 				app.conversation_lorebooks.length > 0
-					? 'bg-(--color-accent)/10 text-(--color-accent) border border-(--color-accent)/30'
+					? 'bg-(--color-accent)/10 text-(--color-accent-vivid) border border-(--color-accent)/30'
 					: 'text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
 			)}
 			aria-label="Conversation lorebooks"
@@ -95,7 +95,7 @@
 									class="size-3.5 rounded border-(--color-border) bg-(--color-surface-input) accent-(--color-accent)"
 								/>
 								<span class="min-w-0 flex-1 truncate text-sm text-(--color-foreground)">{lorebook.name}</span>
-								<span class="shrink-0 rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent)">
+								<span class="shrink-0 rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent-vivid)">
 									Character
 								</span>
 							</label>

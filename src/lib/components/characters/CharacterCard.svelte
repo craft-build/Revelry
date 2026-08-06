@@ -15,7 +15,7 @@
 </script>
 
 <article
-	class="group relative flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 transition-all hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated)"
+	class="group relative flex flex-col gap-3 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 transition-all hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated) hover:shadow-md"
 >
 	<!-- Top: avatar + name -->
 	<div class="flex items-start gap-3">
@@ -49,7 +49,7 @@
 		<button
 			type="button"
 			onclick={() => onchat?.(character.id)}
-			class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-(--radius-md) bg-(--color-accent) px-3 text-xs font-medium text-(--color-accent-fg) hover:bg-(--color-accent)/90"
+			class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-(--radius-lg) bg-(--color-accent) px-3 text-xs font-semibold text-(--color-accent-fg) hover:bg-(--color-accent-hover)"
 		>
 			<MessageSquare class="size-3.5" />
 			Start chat

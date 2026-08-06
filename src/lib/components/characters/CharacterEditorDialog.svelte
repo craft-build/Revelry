@@ -477,7 +477,7 @@
 									class="flex w-full items-center gap-2 overflow-hidden rounded-(--radius-md) border border-(--color-border) bg-(--color-surface) px-3 py-2 text-left transition-colors hover:bg-(--color-surface-hover)"
 									onclick={() => addLorebook(lorebook)}
 								>
-									<Plus class="size-4 shrink-0 text-(--color-accent)" />
+									<Plus class="size-4 shrink-0 text-(--color-accent-vivid)" />
 									<span class="min-w-0 shrink truncate text-sm">{lorebook.name}</span>
 									{#if lorebook.description}
 										<span class="min-w-0 flex-1 truncate text-xs text-(--color-muted)">{lorebook.description}</span>

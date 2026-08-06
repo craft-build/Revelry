@@ -208,7 +208,7 @@
 								<button
 									type="button"
 									onclick={() => app.regenerate()}
-									class="text-xs text-(--color-accent) hover:underline"
+									class="text-xs text-(--color-accent-vivid) hover:underline"
 								>
 									Retry
 								</button>
@@ -220,7 +220,7 @@
 								<button
 									type="button"
 									onclick={() => { app.focus_provider_selector = true; }}
-									class="text-xs text-(--color-accent) hover:underline"
+									class="text-xs text-(--color-accent-vivid) hover:underline"
 								>
 									Switch provider
 								</button>
@@ -272,7 +272,7 @@
 				class={cn(
 					'rounded-(--radius-lg) border px-4 py-3 text-[15px] leading-relaxed',
 					isUser
-						? 'border-(--color-border) bg-(--color-bubble-user) text-(--color-foreground)'
+						? 'border-transparent bg-(--color-bubble-user) text-(--color-accent-fg)'
 						: 'border-(--color-border) bg-(--color-bubble-character) text-(--color-foreground)',
 					message.is_streaming && message.content && 'streaming-caret'
 				)}
