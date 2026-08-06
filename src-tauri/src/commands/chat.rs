@@ -4,9 +4,9 @@ use tauri::ipc::Channel;
 use tauri::State;
 use tokio_util::sync::CancellationToken;
 
-use crate::ai::{AiService, BudgetInfo, GenerationParams, StreamChunk};
+use crate::ai::{AiService, BudgetInfo, GenerationParams, MessagePersistence, StreamChunk};
 use crate::db::{DbCommand, DbWorker};
-use crate::domain::conversation::{Message as DomainMessage, MessageRole};
+use crate::domain::conversation::{Message as DomainMessage, MessageBranch, MessageRole};
 use crate::domain::lorebook::LorebookActivationDetail;
 use crate::domain::regex_script::RegexScript;
 use crate::error::AppError;
@@ -28,12 +28,13 @@ struct ChatContext {
     active_model_name: String,
     messages: Vec<DomainMessage>,
     api_key: String,
-    /// Lorebook entries from character + conversation assigned lorebooks.
+    /// Lorebook entries from character + conversation assigned lorebooks,
+    /// merged with entries parsed from the character's embedded `character_book`.
+    /// Junction-table (explicitly assigned) entries win on id collision.
     lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry>,
-    /// IDs of lorebooks assigned to the character.
-    character_lorebook_ids: Vec<String>,
-    /// IDs of lorebooks assigned to the conversation.
-    conversation_lorebook_ids: Vec<String>,
+    /// Lorebook id → display name, for activation-detail reporting.
+    /// Covers junction-table lorebooks and the embedded character book.
+    lorebook_name_map: std::collections::HashMap<String, String>,
     /// Regex scripts for the character.
     regex_scripts: Vec<RegexScript>,
     /// Generation preset assigned to the conversation (if any).
@@ -254,7 +255,7 @@ async fn load_chat_context(
         .chain(conversation_lorebook_ids.iter())
         .cloned()
         .collect();
-    let lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry> =
+    let mut lorebook_entries: Vec<crate::domain::lorebook::LorebookEntry> =
         if !all_lorebook_ids.is_empty() {
             let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
             db.send(DbCommand::LoadLorebookEntriesForLorebooks {
@@ -269,6 +270,36 @@ async fn load_chat_context(
         } else {
             Vec::new()
         };
+
+    // 9b. Merge entries from the character's embedded character_book.
+    // Junction-table (explicitly assigned) entries win on id collision; embedded
+    // entries are only added when no junction entry shares their id.
+    let mut lorebook_name_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for lb in character_lorebooks
+        .iter()
+        .chain(conversation_lorebooks.iter())
+    {
+        lorebook_name_map.insert(lb.id.clone(), lb.name.clone());
+    }
+    let existing_entry_ids: std::collections::HashSet<String> =
+        lorebook_entries.iter().map(|e| e.id.clone()).collect();
+    if let Some(ref ch) = character {
+        let embedded = ch.character_book_entries();
+        if !embedded.is_empty() {
+            // Register the embedded book's display name once.
+            if let Some(first) = embedded.first() {
+                lorebook_name_map
+                    .entry(first.lorebook_id.clone())
+                    .or_insert_with(|| first.lorebook_id.clone());
+            }
+            for entry in embedded {
+                if !existing_entry_ids.contains(&entry.id) {
+                    lorebook_entries.push(entry);
+                }
+            }
+        }
+    }
 
     // 10. Load regex scripts for the character
     let regex_scripts: Vec<RegexScript> = if let Some(ref ch) = character {
@@ -313,8 +344,7 @@ async fn load_chat_context(
         messages,
         api_key,
         lorebook_entries,
-        character_lorebook_ids,
-        conversation_lorebook_ids,
+        lorebook_name_map,
         regex_scripts,
         generation_preset,
         override_max_tokens: conversation.override_max_tokens,
@@ -345,6 +375,7 @@ fn assemble_prompt(
             ctx.persona.as_ref(),
             messages,
             &ctx.lorebook_entries,
+            &ctx.lorebook_name_map,
             &token_svc,
             context_window,
         ),
@@ -369,14 +400,8 @@ fn assemble_prompt(
             crate::service::prompt::AssembledPrompt {
                 preamble,
                 chat_history,
-                context_utilization: if context_window > 0 {
-                    (tokens_used as f64) / (context_window as f64)
-                } else {
-                    0.0
-                },
                 tokens_used,
                 truncated_messages: 0,
-                active_lorebook_count: 0,
                 lorebook_details: Vec::new(),
             }
         }
@@ -424,6 +449,41 @@ fn assemble_prompt(
     }
 
     (preamble, assembled.chat_history, budget, lorebook_details)
+}
+
+/// Saves an empty assistant placeholder message and returns a persistence
+/// handle carrying the DbWorker command sender. The AI layer uses it to flush
+/// streamed content increments directly to SQLite, so a crash/close mid-stream
+/// leaves the latest partial in the database instead of losing the response.
+async fn save_assistant_placeholder(
+    db: &State<'_, DbWorker>,
+    conversation_id: &str,
+    ai_message_id: &str,
+    sort_order: i32,
+    branch_id: Option<&str>,
+) -> Result<MessagePersistence, AppError> {
+    let placeholder = DomainMessage {
+        id: ai_message_id.to_string(),
+        conversation_id: conversation_id.to_string(),
+        role: MessageRole::Assistant,
+        content: String::new(),
+        sort_order,
+        timestamp: Timestamp::now(),
+        branch_id: branch_id.map(|b| b.to_string()),
+    };
+    {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::SaveMessage {
+            message: placeholder.clone(),
+            reply: reply_tx,
+        })
+        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
+        reply_rx
+            .await
+            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+            .map_err(|e| AppError::Database(e.to_string()))?;
+    }
+    Ok(MessagePersistence::new(db.sender(), placeholder))
 }
 
 #[tauri::command]
@@ -537,7 +597,7 @@ pub async fn start_chat(
     }
 
     // 3. Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id).await? {
+    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id.clone()).await? {
         Some(c) => c,
         None => return Ok(()), // Error already sent via channel
     };
@@ -555,6 +615,25 @@ pub async fn start_chat(
         ctx.override_max_tokens,
     );
     let regex_scripts = ctx.regex_scripts.clone();
+
+    // Save an assistant placeholder so the AI layer can flush streamed content
+    // increments to the database (crash-safe persistence).
+    let ai_sort_order = ctx
+        .messages
+        .iter()
+        .map(|m| m.sort_order)
+        .max()
+        .unwrap_or(-1)
+        + 1;
+    let persistence = save_assistant_placeholder(
+        &db,
+        &conversation_id,
+        &ai_message_id,
+        ai_sort_order,
+        branch_id.as_deref(),
+    )
+    .await?;
+
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock()?;
@@ -576,6 +655,7 @@ pub async fn start_chat(
             budget,
             regex_scripts,
             lorebook_details,
+            Some(persistence),
         );
     });
 
@@ -604,7 +684,7 @@ pub async fn regenerate(
     conversation_id: String,
     ai_message_id: String,
     branch_id: Option<String>,
-) -> Result<(), AppError> {
+) -> Result<Option<String>, AppError> {
     // Cancel any existing stream
     {
         let mut token_guard = cancel_state.token.lock()?;
@@ -613,7 +693,7 @@ pub async fn regenerate(
         }
     }
 
-    // Load messages for this conversation
+    // Load messages for this conversation (current branch view)
     let messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
@@ -628,37 +708,80 @@ pub async fn regenerate(
             .map_err(|e| AppError::Database(e.to_string()))?
     };
 
-    // Find the last AI message and delete it
-    let last_ai_msg = messages
+    // Find the index of the last AI message in the current view.
+    let last_ai_idx = messages
         .iter()
-        .rev()
-        .find(|m| m.role == MessageRole::Assistant);
+        .rposition(|m| m.role == MessageRole::Assistant);
 
-    if let Some(ai_msg) = last_ai_msg {
-        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-        db.send(DbCommand::DeleteMessage {
-            id: ai_msg.id.clone(),
-            reply: reply_tx,
-        })
-        .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
-        reply_rx
-            .await
-            .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
-            .map_err(|e| AppError::Database(e.to_string()))?;
-    }
+    // Regenerate by forking a new branch from the message preceding the last
+    // AI response, so the old response is preserved on the prior branch instead
+    // of being hard-deleted. When the AI message is the first message in the
+    // view (no predecessor to fork from), fall back to deleting it.
+    let effective_branch_id: Option<String> = match last_ai_idx {
+        Some(idx) if idx > 0 => {
+            let parent_message_id = messages[idx - 1].id.clone();
 
-    // Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id.clone()).await? {
-        Some(c) => c,
-        None => return Ok(()),
+            // Count existing branches for auto-labeling
+            let count = {
+                let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+                db.send(DbCommand::CountBranches {
+                    conversation_id: conversation_id.clone(),
+                    reply: reply_tx,
+                })
+                .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
+                reply_rx
+                    .await
+                    .map_err(|e| {
+                        AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e))
+                    })?
+                    .map_err(|e| AppError::Database(e.to_string()))?
+            };
+            let label = format!("Branch {}", count + 1);
+            let branch = MessageBranch::new(conversation_id.clone(), parent_message_id, label);
+            let new_branch_id = branch.id.clone();
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::CreateBranch {
+                branch,
+                reply: reply_tx,
+            })
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
+            reply_rx
+                .await
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
+            Some(new_branch_id)
+        }
+        Some(idx) => {
+            // AI is the first message in the view — no predecessor to fork from.
+            let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+            db.send(DbCommand::DeleteMessage {
+                id: messages[idx].id.clone(),
+                reply: reply_tx,
+            })
+            .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
+            reply_rx
+                .await
+                .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
+                .map_err(|e| AppError::Database(e.to_string()))?;
+            branch_id
+        }
+        None => branch_id,
     };
 
-    // Reload messages after deletion
+    // Load context for the effective branch
+    let ctx = match load_chat_context(&db, &channel, &conversation_id, effective_branch_id.clone())
+        .await?
+    {
+        Some(c) => c,
+        None => return Ok(effective_branch_id),
+    };
+
+    // Reload messages for the effective branch
     let updated_messages = {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::LoadMessages {
             conversation_id: conversation_id.clone(),
-            branch_id: branch_id.clone(),
+            branch_id: effective_branch_id.clone(),
             reply: reply_tx,
         })
         .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
@@ -681,6 +804,24 @@ pub async fn regenerate(
         ctx.override_max_tokens,
     );
     let regex_scripts = ctx.regex_scripts.clone();
+
+    // Save an assistant placeholder so the AI layer can flush streamed content
+    // increments to the database (crash-safe persistence).
+    let ai_sort_order = updated_messages
+        .iter()
+        .map(|m| m.sort_order)
+        .max()
+        .unwrap_or(-1)
+        + 1;
+    let persistence = save_assistant_placeholder(
+        &db,
+        &conversation_id,
+        &ai_message_id,
+        ai_sort_order,
+        effective_branch_id.as_deref(),
+    )
+    .await?;
+
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock()?;
@@ -702,10 +843,11 @@ pub async fn regenerate(
             budget,
             regex_scripts,
             lorebook_details,
+            Some(persistence),
         );
     });
 
-    Ok(())
+    Ok(effective_branch_id)
 }
 
 #[tauri::command]
@@ -811,6 +953,24 @@ pub async fn edit_and_resend(
         ctx.override_max_tokens,
     );
     let regex_scripts = ctx.regex_scripts.clone();
+
+    // Save an assistant placeholder so the AI layer can flush streamed content
+    // increments to the database (crash-safe persistence).
+    let ai_sort_order = updated_messages
+        .iter()
+        .map(|m| m.sort_order)
+        .max()
+        .unwrap_or(-1)
+        + 1;
+    let persistence = save_assistant_placeholder(
+        &db,
+        &conversation_id,
+        &ai_message_id,
+        ai_sort_order,
+        branch_id.as_deref(),
+    )
+    .await?;
+
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = cancel_state.token.lock()?;
@@ -832,6 +992,7 @@ pub async fn edit_and_resend(
             budget,
             regex_scripts,
             lorebook_details,
+            Some(persistence),
         );
     });
 

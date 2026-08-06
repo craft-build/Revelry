@@ -183,14 +183,20 @@ pub fn delete_message(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
-/// Branch-aware delete of messages after a sort_order threshold.
-/// Only deletes messages matching the given branch_id (or NULL for root).
-/// Used by edit/resend to truncate the conversation from the edit point.
-/// Also updates the conversation's last_message_preview to the latest remaining message.
-/// Used by edit/resend to update the edited message before re-streaming.
+/// Updates a message's content (used by edit/resend and incremental persistence
+/// of streamed AI messages). Also refreshes the conversation's
+/// last_message_preview and updated_at so the conversation list reflects the
+/// latest content without relying on frontend-side saves.
 pub fn update_message_content(conn: &Connection, id: &str, content: &str) -> Result<()> {
     conn.prepare_cached("UPDATE messages SET content = ?1 WHERE id = ?2")?
         .execute(params![content, id])?;
+    let now = Timestamp::now();
+    let preview: String = content.chars().take(100).collect();
+    conn.prepare_cached(
+        "UPDATE conversations SET last_message_preview = ?1, updated_at = ?2
+         WHERE id = (SELECT conversation_id FROM messages WHERE id = ?3)",
+    )?
+    .execute(params![preview, now.to_string(), id])?;
     Ok(())
 }
 
@@ -265,6 +271,14 @@ pub fn update_conversation_generation(
         now.to_string(),
         conversation_id
     ])?;
+    Ok(())
+}
+
+/// Renames a conversation (updates title + updated_at).
+pub fn rename_conversation(conn: &Connection, id: &str, title: &str) -> Result<()> {
+    let now = Timestamp::now();
+    conn.prepare_cached("UPDATE conversations SET title = ?1, updated_at = ?2 WHERE id = ?3")?
+        .execute(params![title, now.to_string(), id])?;
     Ok(())
 }
 
@@ -950,7 +964,7 @@ mod tests {
 
         let messages = load_messages(&conn, &conversation.id, None).expect("Load should succeed");
         // initial message at sort_order=0 from first_mes
-        let initial_msg_id = &messages[0].id;
+        let _initial_msg_id = &messages[0].id;
 
         // Add more main-branch messages BEFORE the fork (sort_order 1, 2)
         let root_msg_1 = Message::with_order(

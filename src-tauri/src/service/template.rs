@@ -59,47 +59,6 @@ pub fn resolve_variables(
     result
 }
 
-/// Builds the persona injection block for the AI prompt.
-///
-/// Format:
-///   You are interacting with {{user}}, who is:
-///   Name: Alice
-///   Personality: Bold and charismatic
-///   Appearance: Red hair
-///   Background: A wandering mage
-///   Role: Mage
-///   Relationships: Friend of Bob
-///   Speech Style: Formal
-///
-/// Only non-empty fields are included. Empty fields are omitted entirely.
-/// {{user}} in the header is left as a raw template variable — it will be
-/// resolved later by PromptEngine::assemble().
-pub fn build_persona_block(persona: &Persona) -> String {
-    let mut lines = Vec::new();
-
-    // Header line (raw {{user}} — resolved later by PromptEngine)
-    lines.push("You are interacting with {{user}}, who is:".to_string());
-
-    // Field order: name, personality, appearance, background, role_description, relationships, speech_style
-    let fields: Vec<(&str, &str)> = vec![
-        ("Name", &persona.name),
-        ("Personality", &persona.personality),
-        ("Appearance", &persona.appearance),
-        ("Background", &persona.background),
-        ("Role", &persona.role_description),
-        ("Relationships", &persona.relationships),
-        ("Speech Style", &persona.speech_style),
-    ];
-
-    for (label, value) in fields {
-        if !value.is_empty() {
-            lines.push(format!("{}: {}", label, value));
-        }
-    }
-
-    lines.join("\n")
-}
-
 /// Builds a compressed persona injection block based on the compression tier per D-06.
 ///
 /// Compression tiers:
@@ -277,50 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn test_build_persona_block_full() {
-        let mut persona = make_test_persona("Alice", "Bold and charismatic");
-        persona.appearance = "Red hair, blue eyes".to_string();
-        persona.background = "A wandering mage".to_string();
-        persona.role_description = "Mage".to_string();
-        persona.relationships = "Friend of Bob".to_string();
-        persona.speech_style = "Formal".to_string();
-
-        let block = build_persona_block(&persona);
-        assert!(block.contains("You are interacting with {{user}}, who is:"));
-        assert!(block.contains("Name: Alice"));
-        assert!(block.contains("Personality: Bold and charismatic"));
-        assert!(block.contains("Appearance: Red hair, blue eyes"));
-        assert!(block.contains("Background: A wandering mage"));
-        assert!(block.contains("Role: Mage"));
-        assert!(block.contains("Relationships: Friend of Bob"));
-        assert!(block.contains("Speech Style: Formal"));
-    }
-
-    #[test]
-    fn test_build_persona_block_omits_empty_fields() {
-        let persona = make_test_persona("Alice", "Bold");
-        // Only name and personality are set
-
-        let block = build_persona_block(&persona);
-        assert!(block.contains("Name: Alice"));
-        assert!(block.contains("Personality: Bold"));
-        assert!(!block.contains("Appearance:"));
-        assert!(!block.contains("Background:"));
-        assert!(!block.contains("Role:"));
-        assert!(!block.contains("Relationships:"));
-        assert!(!block.contains("Speech Style:"));
-    }
-
-    #[test]
-    fn test_build_persona_block_header_raw_user() {
-        let persona = make_test_persona("Alice", "Friendly");
-        let block = build_persona_block(&persona);
-        assert!(block.contains("You are interacting with {{user}}, who is:"));
-        // {{user}} should not be resolved in build_persona_block — that's done later
-    }
-
-    #[test]
-    fn test_persona_compression_full_same_as_uncompressed() {
+    fn test_persona_compression_full_includes_all_fields() {
         let mut persona = make_test_persona("Alice", "Bold and charismatic");
         persona.appearance = "Red hair".to_string();
         persona.background = "A wandering mage".to_string();
@@ -329,12 +245,15 @@ mod tests {
         persona.speech_style = "Formal".to_string();
 
         let block_full = build_persona_block_compressed(&persona, PersonaCompressionTier::Full);
-        let block_uncompressed = build_persona_block(&persona);
 
-        assert_eq!(
-            block_full, block_uncompressed,
-            "Full tier should match uncompressed persona block"
-        );
+        assert!(block_full.contains("You are interacting with {{user}}, who is:"));
+        assert!(block_full.contains("Name: Alice"));
+        assert!(block_full.contains("Personality: Bold and charismatic"));
+        assert!(block_full.contains("Appearance: Red hair"));
+        assert!(block_full.contains("Background: A wandering mage"));
+        assert!(block_full.contains("Role: Mage"));
+        assert!(block_full.contains("Relationships: Friend of Bob"));
+        assert!(block_full.contains("Speech Style: Formal"));
     }
 
     #[test]

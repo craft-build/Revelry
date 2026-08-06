@@ -102,6 +102,11 @@ pub enum DbCommand {
         model_name: Option<String>,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
+    RenameConversation {
+        id: String,
+        title: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
 
     // Message operations
     LoadMessages {
@@ -179,10 +184,6 @@ pub enum DbCommand {
     // Lorebook operations
     LoadLorebooks {
         reply: oneshot::Sender<anyhow::Result<Vec<Lorebook>>>,
-    },
-    LoadLorebook {
-        id: String,
-        reply: oneshot::Sender<anyhow::Result<Option<Lorebook>>>,
     },
     SaveLorebook {
         lorebook: Lorebook,
@@ -356,6 +357,17 @@ impl DbWorker {
             .map_err(|e| format!("Failed to send DB command: {}", e))
     }
 
+    /// Returns a clone of the command sender for fire-and-forget DB writes
+    /// from outside the Tauri command layer (e.g. incremental persistence of
+    /// streamed AI messages). The std mpsc channel is unbounded, so `send`
+    /// never blocks.
+    pub fn sender(&self) -> mpsc::Sender<DbCommand> {
+        self.sender
+            .lock()
+            .map(|g| g.clone())
+            .unwrap_or_else(|e| e.into_inner().clone())
+    }
+
     /// Handles a single DbCommand on the background thread.
     /// Calls real CRUD functions from the db sub-modules and sends
     /// the result back through the oneshot reply channel.
@@ -452,6 +464,10 @@ impl DbWorker {
                 );
                 let _ = reply.send(result);
             }
+            DbCommand::RenameConversation { id, title, reply } => {
+                let result = conversations::rename_conversation(conn, &id, &title);
+                let _ = reply.send(result);
+            }
             DbCommand::LoadMessages {
                 conversation_id,
                 branch_id,
@@ -525,10 +541,6 @@ impl DbWorker {
             // Lorebook operations
             DbCommand::LoadLorebooks { reply } => {
                 let result = lorebook::load_lorebooks(conn);
-                let _ = reply.send(result);
-            }
-            DbCommand::LoadLorebook { id, reply } => {
-                let result = lorebook::load_lorebook(conn, &id);
                 let _ = reply.send(result);
             }
             DbCommand::SaveLorebook { lorebook, reply } => {

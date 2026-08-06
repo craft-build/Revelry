@@ -78,6 +78,13 @@ export async function deleteConversation(id: string): Promise<void> {
   return invoke<void>("delete_conversation", { id });
 }
 
+export async function renameConversation(
+  id: string,
+  title: string,
+): Promise<void> {
+  return invoke<void>("rename_conversation", { id, title });
+}
+
 // ── Messages ──────────────────────────────────────────────────────────────────
 
 export async function getMessages(
@@ -235,11 +242,13 @@ export async function testLorebookKeywords(
   keys: string[],
   secondaryKeys: string[],
   text: string,
+  activationState?: string | null,
 ): Promise<KeywordTestResult> {
   return invoke<KeywordTestResult>("test_lorebook_keywords", {
     keys,
     secondaryKeys,
     text,
+    activationState: activationState ?? null,
   });
 }
 
@@ -327,8 +336,8 @@ export async function regenerate(
   aiMessageId: string,
   onEvent: Channel<StreamChunk>,
   branchId?: string | null,
-): Promise<void> {
-  return invoke<void>("regenerate", {
+): Promise<string | null> {
+  return invoke<string | null>("regenerate", {
     conversationId,
     aiMessageId,
     branchId: branchId ?? null,
@@ -379,14 +388,6 @@ export async function forkConversation(
   });
 }
 
-export async function getBranchesForMessage(
-  parentMessageId: string,
-): Promise<MessageBranch[]> {
-  return invoke<MessageBranch[]>("get_branches_for_message", {
-    parentMessageId,
-  });
-}
-
 export async function getBranchesForConversation(
   conversationId: string,
 ): Promise<MessageBranch[]> {
@@ -397,6 +398,12 @@ export async function getBranchesForConversation(
 
 export async function deleteBranch(branchId: string): Promise<void> {
   return invoke<void>("delete_branch", { branchId });
+}
+
+export async function searchConversations(
+  query: string,
+): Promise<Conversation[]> {
+  return invoke<Conversation[]>("search_conversations", { query });
 }
 
 export async function searchMessages(query: string): Promise<SearchResult[]> {
@@ -433,6 +440,13 @@ export async function applySingleRegex(
     flags,
     sampleText,
   });
+}
+
+export async function validateRegexPattern(
+  pattern: string,
+  flags: string,
+): Promise<void> {
+  return invoke<void>("validate_regex_pattern", { pattern, flags });
 }
 
 // ── Conversation-lorebook junction ────────────────────────────────────────────

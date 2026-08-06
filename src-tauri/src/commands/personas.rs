@@ -41,20 +41,3 @@ pub async fn delete_persona(db: State<'_, DbWorker>, id: String) -> Result<(), S
         .map_err(|e| format!("DB worker dropped: {}", e))?
         .map_err(|e| e.to_string())
 }
-
-#[tauri::command]
-pub async fn search_personas(
-    db: State<'_, DbWorker>,
-    query: String,
-) -> Result<Vec<Persona>, String> {
-    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-    db.send(DbCommand::SearchPersonas {
-        query,
-        reply: reply_tx,
-    })
-    .map_err(|e| e.to_string())?;
-    reply_rx
-        .await
-        .map_err(|e| format!("DB worker dropped: {}", e))?
-        .map_err(|e| e.to_string())
-}

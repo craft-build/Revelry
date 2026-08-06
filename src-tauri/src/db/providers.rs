@@ -189,6 +189,7 @@ mod tests {
             frequency_penalty: None,
             presence_penalty: None,
             stop_sequences: None,
+            ..Default::default()
         });
         insert_provider(&conn, &provider).expect("Insert should succeed");
 

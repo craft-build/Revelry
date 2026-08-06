@@ -1,3 +1,5 @@
+use crate::db::DbCommand;
+use crate::domain::conversation::Message as DomainMessage;
 use crate::domain::lorebook::LorebookActivationDetail;
 use crate::domain::provider::{ProviderConfig, ProviderModelEntry, ProviderType};
 use crate::domain::regex_script::RegexScript;
@@ -71,6 +73,7 @@ pub enum StreamChunk {
         tokens_used: usize,
         tokens_limit: usize,
         truncated_count: usize,
+        cancelled: bool,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         lorebook_details: Vec<LorebookActivationDetail>,
     },
@@ -158,6 +161,33 @@ fn classify_error(err: &str) -> String {
     }
 }
 
+/// Handle for persisting a streamed assistant message from within the AI layer.
+/// Carries a clone of the DbWorker command sender (std mpsc — sends are
+/// non-blocking) and the placeholder message saved before streaming started.
+/// Content updates are throttled by the caller; each flush is fire-and-forget.
+#[derive(Clone)]
+pub struct MessagePersistence {
+    pub sender: std::sync::mpsc::Sender<DbCommand>,
+    pub message: DomainMessage,
+}
+
+impl MessagePersistence {
+    pub fn new(sender: std::sync::mpsc::Sender<DbCommand>, message: DomainMessage) -> Self {
+        Self { sender, message }
+    }
+
+    /// Fire-and-forget content flush. The oneshot receiver is dropped
+    /// immediately; send errors (worker gone) are benign and ignored.
+    pub fn flush(&self, content: &str) {
+        let (reply_tx, _reply_rx) = tokio::sync::oneshot::channel();
+        let _ = self.sender.send(DbCommand::UpdateMessageContent {
+            id: self.message.id.clone(),
+            content: content.to_string(),
+            reply: reply_tx,
+        });
+    }
+}
+
 /// Service for AI operations.
 /// Provides utilities for building prompts and handling streaming responses.
 pub struct AiService;
@@ -165,7 +195,7 @@ pub struct AiService;
 /// Helper macro to build a rig agent from a provider client with consistent parameter handling.
 /// Each provider arm follows the same pattern: client → agent(model) → preamble → params → build.
 macro_rules! build_agent_and_stream {
-    ($client:expr, $model_name:expr, $system_prompt:expr, $params:expr, $additional:expr, $prompt:expr, $history:expr, $channel:expr, $message_id:expr, $cancel:expr, $budget:expr, $regex_scripts:expr, $lorebook_details:expr) => {{
+    ($client:expr, $model_name:expr, $system_prompt:expr, $params:expr, $additional:expr, $prompt:expr, $history:expr, $channel:expr, $message_id:expr, $cancel:expr, $budget:expr, $regex_scripts:expr, $lorebook_details:expr, $persistence:expr) => {{
         let mut builder = $client.agent($model_name).preamble($system_prompt);
         if let Some(temp) = $params.temperature {
             builder = builder.temperature(temp);
@@ -187,6 +217,7 @@ macro_rules! build_agent_and_stream {
             $budget,
             $regex_scripts,
             $lorebook_details,
+            $persistence,
         )
         .await;
     }};
@@ -238,6 +269,7 @@ impl AiService {
         budget: BudgetInfo,
         regex_scripts: Vec<RegexScript>,
         lorebook_details: Vec<LorebookActivationDetail>,
+        persistence: Option<MessagePersistence>,
     ) {
         let provider_type = provider.provider_type.clone();
         let base_url = provider.base_url.clone();
@@ -264,6 +296,7 @@ impl AiService {
                 budget,
                 regex_scripts,
                 lorebook_details,
+                persistence,
             )
             .await
             {
@@ -301,6 +334,7 @@ impl AiService {
         budget: BudgetInfo,
         regex_scripts: Vec<RegexScript>,
         lorebook_details: Vec<LorebookActivationDetail>,
+        persistence: Option<MessagePersistence>,
     ) -> Result<(), String> {
         // Build provider-specific additional_params JSON (D-02)
         let additional = Self::build_additional_params(provider_type, params);
@@ -321,7 +355,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Anthropic => {
@@ -342,7 +377,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Ollama => {
@@ -365,7 +401,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Gemini => {
@@ -386,7 +423,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Cohere => {
@@ -407,7 +445,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Mistral => {
@@ -428,7 +467,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Groq => {
@@ -449,7 +489,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::DeepSeek => {
@@ -470,7 +511,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::OpenRouter => {
@@ -491,7 +533,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Xai => {
@@ -512,7 +555,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Perplexity => {
@@ -533,7 +577,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::Together => {
@@ -554,7 +599,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::AzureOpenAI => {
@@ -578,7 +624,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::HuggingFace => {
@@ -599,7 +646,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
             ProviderType::CustomOpenAICompatible => {
@@ -623,7 +671,8 @@ impl AiService {
                     cancel,
                     budget.clone(),
                     regex_scripts.clone(),
-                    lorebook_details.clone()
+                    lorebook_details.clone(),
+                    persistence.clone()
                 );
             }
         }
@@ -861,6 +910,7 @@ impl AiService {
         budget: BudgetInfo,
         regex_scripts: Vec<RegexScript>,
         lorebook_details: Vec<LorebookActivationDetail>,
+        persistence: Option<MessagePersistence>,
     ) where
         M: CompletionModel + 'static,
         M::StreamingResponse: GetTokenUsage,
@@ -871,66 +921,114 @@ impl AiService {
         let channel_clone = channel.clone();
         let cancel_clone = cancel.clone();
 
-        tokio::select! {
-            _ = cancel_clone.cancelled() => {
-                // Stream was cancelled — send partial Complete with cancelled stop_reason
-                let _ = channel_clone.send(StreamChunk::Complete {
-                    message_id: msg_id,
-                    content: String::new(),
-                    stop_reason: "cancelled".to_string(),
-                    tokens_used: budget.tokens_used,
-                    tokens_limit: budget.tokens_limit,
-                    truncated_count: budget.truncated_count,
-                    lorebook_details: Vec::new(),
-                });
-            }
-            _ = async {
-                while let Some(item) = stream.next().await {
+        let mut accumulated = String::new();
+
+        loop {
+            tokio::select! {
+                _ = cancel_clone.cancelled() => {
+                    if let Some(p) = &persistence {
+                        p.flush(&accumulated);
+                    }
+                    let _ = channel_clone.send(StreamChunk::Complete {
+                        message_id: msg_id.clone(),
+                        content: accumulated,
+                        stop_reason: "cancelled".to_string(),
+                        tokens_used: budget.tokens_used,
+                        tokens_limit: budget.tokens_limit,
+                        truncated_count: budget.truncated_count,
+                        lorebook_details: Vec::new(),
+                        cancelled: true,
+                    });
+                    return;
+                }
+                item = stream.next() => {
                     match item {
-                        Ok(MultiTurnStreamItem::StreamAssistantItem(
+                        None => {
+                            if let Some(p) = &persistence {
+                                p.flush(&accumulated);
+                            }
+                            let _ = channel_clone.send(StreamChunk::Complete {
+                                message_id: msg_id,
+                                content: accumulated,
+                                stop_reason: "end".to_string(),
+                                tokens_used: budget.tokens_used,
+                                tokens_limit: budget.tokens_limit,
+                                truncated_count: budget.truncated_count,
+                                lorebook_details,
+                                cancelled: false,
+                            });
+                            return;
+                        }
+                        Some(Ok(MultiTurnStreamItem::StreamAssistantItem(
                             StreamedAssistantContent::Text(text),
-                        )) => {
+                        ))) => {
+                            accumulated.push_str(&text.text);
+                            // Persist on every token (fire-and-forget) so a
+                            // crash/close mid-stream leaves the latest partial
+                            // in SQLite — the only loss window is the DbWorker's
+                            // inherent processing lag, not an artificial delay.
+                            if let Some(p) = &persistence {
+                                p.flush(&accumulated);
+                            }
                             if channel_clone
                                 .send(StreamChunk::Token {
-                                    content: text.text.clone(),
+                                    content: text.text,
                                 })
                                 .is_err()
                             {
                                 break;
                             }
                         }
-                        Ok(MultiTurnStreamItem::FinalResponse(res)) => {
-                            // Apply regex transforms to the completed content
+                        Some(Ok(MultiTurnStreamItem::FinalResponse(res))) => {
                             let raw_content = res.output.clone();
                             let transformed_content = if !regex_scripts.is_empty() {
                                 crate::service::regex::apply_regex_scripts(&raw_content, &regex_scripts)
                             } else {
                                 raw_content
                             };
-
+                            let final_content = if transformed_content.is_empty() {
+                                accumulated
+                            } else {
+                                transformed_content
+                            };
+                            if let Some(p) = &persistence {
+                                p.flush(&final_content);
+                            }
+                            // Extract response token usage from the provider
+                            // when reported; otherwise estimate via tiktoken.
+                            // The reported `tokens_used` is prompt budget +
+                            // response tokens (total context consumed).
+                            let usage = res.usage;
+                            let response_tokens = if usage.output_tokens > 0 {
+                                usage.output_tokens as usize
+                            } else {
+                                crate::service::token_count::TokenCountService::new()
+                                    .count_tokens(&final_content)
+                            };
                             let _ = channel_clone.send(StreamChunk::Complete {
-                                message_id: msg_id.clone(),
-                                content: transformed_content,
+                                message_id: msg_id,
+                                content: final_content,
                                 stop_reason: "end".to_string(),
-                                tokens_used: budget.tokens_used,
+                                tokens_used: budget.tokens_used.saturating_add(response_tokens),
                                 tokens_limit: budget.tokens_limit,
                                 truncated_count: budget.truncated_count,
                                 lorebook_details,
+                                cancelled: false,
                             });
-                            break;
+                            return;
                         }
-                        Ok(_) => {}
-                        Err(e) => {
+                        Some(Ok(_)) => {}
+                        Some(Err(e)) => {
                             let err_str = e.to_string();
                             let _ = channel_clone.send(StreamChunk::Error {
                                 error: err_str.clone(),
                                 error_type: classify_error(&err_str),
                             });
-                            break;
+                            return;
                         }
                     }
                 }
-            } => {}
+            }
         }
     }
 
@@ -1721,6 +1819,7 @@ mod tests {
             tokens_limit: 128000,
             truncated_count: 2,
             lorebook_details: Vec::new(),
+            cancelled: false,
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
         let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");
@@ -1729,6 +1828,7 @@ mod tests {
         assert_eq!(parsed["data"]["tokensUsed"], 4200);
         assert_eq!(parsed["data"]["tokensLimit"], 128000);
         assert_eq!(parsed["data"]["truncatedCount"], 2);
+        assert_eq!(parsed["data"]["cancelled"], false);
         // Empty lorebook_details should be skipped by serde skip_serializing_if
         assert!(
             parsed["data"].get("lorebookDetails").is_none()
@@ -1737,6 +1837,27 @@ mod tests {
                     .unwrap()
                     .is_empty()
         );
+    }
+
+    #[test]
+    fn test_stream_chunk_serde_complete_cancelled() {
+        let chunk = StreamChunk::Complete {
+            message_id: "msg-cancel".to_string(),
+            content: "Partial".to_string(),
+            stop_reason: "cancelled".to_string(),
+            tokens_used: 10,
+            tokens_limit: 8000,
+            truncated_count: 0,
+            lorebook_details: Vec::new(),
+            cancelled: true,
+        };
+        let json = serde_json::to_string(&chunk).expect("serialize failed");
+        let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");
+        assert_eq!(parsed["event"], "complete");
+        assert_eq!(parsed["data"]["messageId"], "msg-cancel");
+        assert_eq!(parsed["data"]["content"], "Partial");
+        assert_eq!(parsed["data"]["stopReason"], "cancelled");
+        assert_eq!(parsed["data"]["cancelled"], true);
     }
 
     #[test]
@@ -1785,6 +1906,7 @@ mod tests {
             frequency_penalty: Some(0.5),
             presence_penalty: Some(0.3),
             stop_sequences: None,
+            ..Default::default()
         });
         let params = AiService::from_provider_config(&provider);
         assert_eq!(params.temperature, Some(0.7));
@@ -1804,6 +1926,7 @@ mod tests {
             frequency_penalty: None,
             presence_penalty: None,
             stop_sequences: None,
+            ..Default::default()
         });
         let params = AiService::from_provider_config(&provider);
         // max_tokens of 0 should map to None (unset)

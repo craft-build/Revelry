@@ -33,9 +33,6 @@ pub enum AppError {
     #[error("Keyring error: {0}")]
     Keyring(String),
 
-    #[error("AI service error: {0}")]
-    AiService(String),
-
     #[error("Path traversal detected: {0}")]
     PathTraversal(PathBuf),
 
@@ -47,10 +44,6 @@ pub enum AppError {
 }
 
 impl AppError {
-    pub fn db(msg: impl Into<String>) -> Self {
-        Self::Database(msg.into())
-    }
-
     pub fn not_found(msg: impl Into<String>) -> Self {
         Self::NotFound(msg.into())
     }
@@ -61,14 +54,6 @@ impl AppError {
 
     pub fn keyring(msg: impl Into<String>) -> Self {
         Self::Keyring(msg.into())
-    }
-
-    pub fn ai(msg: impl Into<String>) -> Self {
-        Self::AiService(msg.into())
-    }
-
-    pub fn poisoned(msg: impl Into<String>) -> Self {
-        Self::Poisoned(msg.into())
     }
 
     pub fn other(msg: impl Into<String>) -> Self {
@@ -91,6 +76,3 @@ impl serde::Serialize for AppError {
         serializer.serialize_str(&self.to_string())
     }
 }
-
-/// Convenience alias for results using AppError.
-pub type AppResult<T> = Result<T, AppError>;

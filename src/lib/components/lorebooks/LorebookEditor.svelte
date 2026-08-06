@@ -372,11 +372,15 @@
 			// Test each entry individually
 			const results: KeywordTestResult[] = [];
 			for (const entry of entries) {
-				if (entry.keys.length === 0) continue;
+				// `always` entries activate unconditionally (no keys needed); skip
+				// only keyword-gated entries that have no primary keys to test.
+				if (entry.activation_state !== 'always' && entry.keys.length === 0)
+					continue;
 				const result = await apiTestLorebookKeywords(
 					entry.keys,
 					entry.secondary_keys ?? [],
-					test_sample_text.trim()
+					test_sample_text.trim(),
+					entry.activation_state
 				);
 				results.push(result);
 			}

@@ -47,11 +47,6 @@ pub fn import_from_json(json_str: &str) -> Result<CharacterCardV2> {
     ))
 }
 
-/// Export a character card as a pretty-printed JSON string.
-pub fn export_to_json(character: &CharacterCardV2) -> Result<String> {
-    Ok(serde_json::to_string_pretty(character)?)
-}
-
 /// Import a character card from PNG bytes.
 ///
 /// Extracts the tEXt chunk with key "chara", base64-decodes it,

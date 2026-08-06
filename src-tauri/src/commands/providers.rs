@@ -94,18 +94,6 @@ pub async fn save_api_key(provider_id: String, api_key: String) -> Result<(), St
 }
 
 #[tauri::command]
-pub async fn has_api_key(provider_id: String) -> Result<bool, String> {
-    tokio::task::spawn_blocking(move || {
-        match crate::secrets::KeyringStore::load_key(&provider_id) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
-    })
-    .await
-    .map_err(|e| format!("Keyring check failed: {}", e))?
-}
-
-#[tauri::command]
 pub async fn delete_api_key(provider_id: String) -> Result<(), String> {
     tokio::task::spawn_blocking(move || crate::secrets::KeyringStore::delete_key(&provider_id))
         .await

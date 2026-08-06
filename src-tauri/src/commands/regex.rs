@@ -63,31 +63,14 @@ pub async fn apply_single_regex(
     flags: String,
     sample_text: String,
 ) -> Result<serde_json::Value, String> {
-    // Validate pattern
     crate::service::regex::validate_regex_flags(&flags).map_err(|e| e.to_string())?;
-    let re = crate::service::regex::validate_regex_pattern(&pattern, &flags)
-        .map_err(|e| e.to_string())?;
-
-    let is_global = flags.contains('g');
-    if is_global {
-        let result = re
-            .replace_all(&sample_text, replace_pattern.as_str())
-            .to_string();
-        let match_count = re.find_iter(&sample_text).count();
-        Ok(serde_json::json!({
-            "output": result,
-            "match_count": match_count,
-        }))
-    } else {
-        let result = re
-            .replace(&sample_text, replace_pattern.as_str())
-            .to_string();
-        let match_count = if re.is_match(&sample_text) { 1 } else { 0 };
-        Ok(serde_json::json!({
-            "output": result,
-            "match_count": match_count,
-        }))
-    }
+    let (output, match_count) =
+        crate::service::regex::apply_single_regex(&sample_text, &pattern, &replace_pattern, &flags)
+            .map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({
+        "output": output,
+        "match_count": match_count,
+    }))
 }
 
 #[tauri::command]

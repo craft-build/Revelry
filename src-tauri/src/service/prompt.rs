@@ -11,14 +11,10 @@ use crate::service::token_count::TokenCountService;
 pub struct AssembledPrompt {
     pub preamble: String,
     pub chat_history: Vec<rig::completion::Message>,
-    /// Context utilization ratio (0.0 to 1.0) — what fraction of the context window is used.
-    pub context_utilization: f64,
     /// Total tokens used in the assembled prompt (preamble + history + overhead).
     pub tokens_used: usize,
     /// Number of messages truncated from history due to budget constraints.
     pub truncated_messages: usize,
-    /// Number of lorebook entries activated and injected.
-    pub active_lorebook_count: usize,
     /// Details of activated lorebook entries for the Complete chunk payload.
     pub lorebook_details: Vec<LorebookActivationDetail>,
 }
@@ -27,52 +23,6 @@ pub struct AssembledPrompt {
 pub struct PromptEngine;
 
 impl PromptEngine {
-    /// Assembles a prompt from a character, optional persona, and conversation messages.
-    /// Returns an AssembledPrompt with the system prompt and chat history.
-    ///
-    /// The persona block is injected between the character system prompt and
-    /// conversation history, then all template variables are resolved.
-    ///
-    /// This method does NOT enforce a budget — it includes all content without truncation.
-    /// For budget-aware assembly, use `assemble_with_budget`.
-    pub fn assemble(
-        character: &CharacterCardV2,
-        persona: Option<&Persona>,
-        messages: &[Message],
-    ) -> AssembledPrompt {
-        let preamble = build_system_prompt_with_persona(character, persona);
-        let chat_history = build_chat_history(messages, persona, Some(character));
-
-        AssembledPrompt {
-            preamble,
-            chat_history,
-            context_utilization: 0.0,
-            tokens_used: 0,
-            truncated_messages: 0,
-            active_lorebook_count: 0,
-            lorebook_details: Vec::new(),
-        }
-    }
-
-    /// Assembles a prompt for the first message (no chat history).
-    /// Used when starting a new conversation.
-    pub fn assemble_initial(
-        character: &CharacterCardV2,
-        persona: Option<&Persona>,
-    ) -> AssembledPrompt {
-        let preamble = build_system_prompt_with_persona(character, persona);
-
-        AssembledPrompt {
-            preamble,
-            chat_history: Vec::new(),
-            context_utilization: 0.0,
-            tokens_used: 0,
-            truncated_messages: 0,
-            active_lorebook_count: 0,
-            lorebook_details: Vec::new(),
-        }
-    }
-
     /// Budget-aware prompt assembly per D-04, D-05, D-06, D-07.
     ///
     /// Priority layer order (D-04):
@@ -82,12 +32,16 @@ impl PromptEngine {
     /// 4. History layer: oldest messages truncated first (D-05)
     /// 5. Post-history instructions: placed after history, dropped if no room
     ///
+    /// `lorebook_name_map` resolves lorebook ids → display names for the
+    /// activation details (junction lorebooks + the embedded character book).
+    ///
     /// Returns an AssembledPrompt with context utilization tracking.
     pub fn assemble_with_budget(
         character: &CharacterCardV2,
         persona: Option<&Persona>,
         messages: &[Message],
         lorebook_entries: &[LorebookEntry],
+        lorebook_name_map: &std::collections::HashMap<String, String>,
         token_service: &TokenCountService,
         context_window: i64,
     ) -> AssembledPrompt {
@@ -114,7 +68,6 @@ impl PromptEngine {
             lorebook_token_budget,
             token_service,
         );
-        let active_lorebook_count = activated_entries.len();
 
         // Count lorebook tokens
         let lorebook_tokens: usize = activated_entries
@@ -195,14 +148,17 @@ impl PromptEngine {
         let raw_preamble = preamble_parts.join("\n\n");
         let preamble = template::resolve_variables(&raw_preamble, persona, character);
 
-        // Build lorebook activation details for the Complete chunk
-        // Note: lorebook_name resolution requires DB access which isn't available here.
-        // The lorebook_names map would need to be passed from ChatContext.
-        // For now, we populate what we can from the activated entries themselves.
+        // Build lorebook activation details for the Complete chunk.
+        // The lorebook_name map (passed from ChatContext) resolves lorebook ids
+        // to display names for both junction-table lorebooks and the embedded
+        // character book.
         let lorebook_details: Vec<LorebookActivationDetail> = activated_entries
             .iter()
             .map(|e| LorebookActivationDetail {
-                lorebook_name: e.entry.lorebook_id.clone(), // ID used as fallback name
+                lorebook_name: lorebook_name_map
+                    .get(&e.entry.lorebook_id)
+                    .cloned()
+                    .unwrap_or_else(|| e.entry.lorebook_id.clone()),
                 entry_name: e.entry.keys.first().cloned().unwrap_or_default(),
                 content_snippet: e.injected_content.chars().take(30).collect(),
                 token_cost: token_service.count_tokens(&e.injected_content),
@@ -217,20 +173,11 @@ impl PromptEngine {
             })
             .collect();
 
-        // Calculate context utilization
-        let context_utilization = if budget > 0 {
-            (tokens_used as f64) / (budget as f64)
-        } else {
-            0.0
-        };
-
         AssembledPrompt {
             preamble,
             chat_history,
-            context_utilization: context_utilization.min(1.0),
             tokens_used,
             truncated_messages,
-            active_lorebook_count,
             lorebook_details,
         }
     }
@@ -264,6 +211,8 @@ fn select_persona_tier(
 
 /// Builds the sticky system prompt (never truncated): system_prompt + character fields
 /// but NOT post_history_instructions (those go after history in D-04 priority order).
+/// Includes `mes_example` as an example-dialogue block placed after the
+/// scenario/description context, mirroring how character cards define voice/tone.
 fn build_sticky_prompt(character: &CharacterCardV2) -> String {
     let mut parts = Vec::new();
 
@@ -278,6 +227,9 @@ fn build_sticky_prompt(character: &CharacterCardV2) -> String {
     }
     if !character.description.is_empty() {
         parts.push(format!("Description: {}", character.description));
+    }
+    if !character.mes_example.is_empty() {
+        parts.push(format!("Example dialogue:\n{}", character.mes_example));
     }
 
     if parts.is_empty() {
@@ -332,75 +284,6 @@ fn truncate_history_oldest_first(
         messages: included,
         tokens_used,
         truncated_count,
-    }
-}
-
-/// Builds the system prompt from character data, optionally including a persona block.
-/// Template variables ({{user}}, {{char}}, {{persona.*}}) are resolved in the final output.
-fn build_system_prompt_with_persona(
-    character: &CharacterCardV2,
-    persona: Option<&Persona>,
-) -> String {
-    let mut parts = Vec::new();
-
-    // 1. Character system prompt
-    let character_prompt = build_system_prompt(character);
-    if !character_prompt.is_empty() {
-        parts.push(character_prompt);
-    }
-
-    // 2. Persona block (injected between character and history)
-    if let Some(p) = persona {
-        let persona_block = template::build_persona_block(p);
-        if !persona_block.is_empty() {
-            parts.push(persona_block);
-        }
-    }
-
-    // Join parts
-    let raw_preamble = parts.join("\n\n");
-
-    // Resolve all template variables
-    template::resolve_variables(&raw_preamble, persona, character)
-}
-
-/// Builds the character-only system prompt (no persona, no template resolution).
-fn build_system_prompt(character: &CharacterCardV2) -> String {
-    let mut parts = Vec::new();
-
-    // Use the character's system_prompt if available
-    if !character.system_prompt.is_empty() {
-        parts.push(character.system_prompt.clone());
-    }
-
-    // Add personality context
-    if !character.personality.is_empty() {
-        parts.push(format!("Personality: {}", character.personality));
-    }
-
-    // Add scenario context
-    if !character.scenario.is_empty() {
-        parts.push(format!("Scenario: {}", character.scenario));
-    }
-
-    // Add description context
-    if !character.description.is_empty() {
-        parts.push(format!("Description: {}", character.description));
-    }
-
-    // Add post-history instructions if available
-    if !character.post_history_instructions.is_empty() {
-        parts.push(format!(
-            "Instructions: {}",
-            character.post_history_instructions
-        ));
-    }
-
-    if parts.is_empty() {
-        // Fallback: use the character name as minimal context
-        format!("You are {}. Respond in character.", character.name)
-    } else {
-        parts.join("\n\n")
     }
 }
 
@@ -466,89 +349,6 @@ mod tests {
 
     fn token_service() -> TokenCountService {
         TokenCountService::new()
-    }
-
-    #[test]
-    fn test_assemble_initial() {
-        let character = make_test_character();
-        let prompt = PromptEngine::assemble_initial(&character, None);
-
-        assert!(!prompt.preamble.is_empty());
-        assert!(prompt.preamble.contains("helpful assistant"));
-        assert!(prompt.chat_history.is_empty());
-    }
-
-    #[test]
-    fn test_assemble_with_messages() {
-        let character = make_test_character();
-        let messages = vec![
-            make_test_message(MessageRole::User, "Hello!"),
-            make_test_message(MessageRole::Assistant, "Hi there!"),
-        ];
-
-        let prompt = PromptEngine::assemble(&character, None, &messages);
-
-        assert!(!prompt.preamble.is_empty());
-        assert_eq!(prompt.chat_history.len(), 2);
-    }
-
-    #[test]
-    fn test_assemble_initial_with_persona() {
-        let character = make_test_character();
-        let persona = Persona::new("Alice".to_string(), "Bold and charismatic".to_string());
-        let prompt = PromptEngine::assemble_initial(&character, Some(&persona));
-
-        assert!(prompt
-            .preamble
-            .contains("You are interacting with Alice, who is:"));
-        assert!(prompt.preamble.contains("Name: Alice"));
-        assert!(prompt
-            .preamble
-            .contains("Personality: Bold and charismatic"));
-    }
-
-    #[test]
-    fn test_assemble_with_persona_resolves_user_in_character_fields() {
-        let mut character = make_test_character();
-        character.system_prompt = "You are {{user}}'s assistant.".to_string();
-        let persona = Persona::new("Alice".to_string(), "Friendly".to_string());
-        let messages = vec![make_test_message(MessageRole::User, "Hello!")];
-
-        let prompt = PromptEngine::assemble(&character, Some(&persona), &messages);
-
-        // {{user}} in the character's system_prompt should be resolved
-        assert!(
-            prompt.preamble.contains("You are Alice's assistant."),
-            "Expected Alice in system prompt, got: {}",
-            prompt.preamble
-        );
-    }
-
-    #[test]
-    fn test_build_system_prompt_full() {
-        let character = make_test_character();
-        let preamble = build_system_prompt(&character);
-
-        assert!(preamble.contains("helpful assistant"));
-        assert!(preamble.contains("Personality:"));
-        assert!(preamble.contains("Scenario:"));
-        assert!(preamble.contains("Description:"));
-        assert!(preamble.contains("Instructions:"));
-    }
-
-    #[test]
-    fn test_build_system_prompt_minimal() {
-        let mut character = CharacterCardV2::new("Minimal".to_string());
-        character.system_prompt = String::new();
-        character.personality = String::new();
-        character.scenario = String::new();
-        character.description = String::new();
-        character.post_history_instructions = String::new();
-
-        let preamble = build_system_prompt(&character);
-
-        assert!(preamble.contains("Minimal"));
-        assert!(preamble.contains("Respond in character"));
     }
 
     #[test]
@@ -629,7 +429,7 @@ mod tests {
     // ── Budget-aware assembly tests ──
 
     #[test]
-    fn test_assemble_with_budget_has_context_utilization() {
+    fn test_assemble_with_budget_tracks_tokens_used() {
         let character = make_test_character();
         let messages = vec![make_test_message(MessageRole::User, "Hello!")];
         let token_svc = token_service();
@@ -640,17 +440,14 @@ mod tests {
             None,
             &messages,
             &[],
+            &std::collections::HashMap::new(),
             &token_svc,
             context_window,
         );
 
         assert!(
-            prompt.context_utilization > 0.0,
-            "context_utilization should be > 0 when there is content"
-        );
-        assert!(
-            prompt.context_utilization <= 1.0,
-            "context_utilization should be <= 1.0"
+            prompt.tokens_used > 0,
+            "tokens_used should be > 0 when there is content"
         );
     }
 
@@ -660,8 +457,15 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "Hello!")];
         let token_svc = token_service();
 
-        let prompt =
-            PromptEngine::assemble_with_budget(&character, None, &messages, &[], &token_svc, 8192);
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &std::collections::HashMap::new(),
+            &token_svc,
+            8192,
+        );
 
         assert!(
             prompt.preamble.contains("helpful assistant"),
@@ -692,6 +496,7 @@ mod tests {
             Some(&persona),
             &messages,
             &[],
+            &std::collections::HashMap::new(),
             &token_svc,
             8192,
         );
@@ -730,6 +535,7 @@ mod tests {
             None,
             &messages,
             &[],
+            &std::collections::HashMap::new(),
             &token_svc,
             500, // Small budget — should truncate
         );
@@ -766,8 +572,15 @@ mod tests {
             .collect();
         let token_svc = token_service();
 
-        let prompt =
-            PromptEngine::assemble_with_budget(&character, None, &messages, &[], &token_svc, 300);
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &std::collections::HashMap::new(),
+            &token_svc,
+            300,
+        );
 
         // truncated_messages should be tracked
         let total = prompt.chat_history.len() + prompt.truncated_messages;
@@ -783,8 +596,15 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "Hello!")];
         let token_svc = token_service();
 
-        let prompt =
-            PromptEngine::assemble_with_budget(&character, None, &messages, &[], &token_svc, 8192);
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &std::collections::HashMap::new(),
+            &token_svc,
+            8192,
+        );
 
         // Post-history instructions should appear in the preamble
         assert!(
@@ -794,18 +614,30 @@ mod tests {
     }
 
     #[test]
-    fn test_assemble_without_budget_behaves_same() {
-        let character = make_test_character();
-        let messages = vec![
-            make_test_message(MessageRole::User, "Hello!"),
-            make_test_message(MessageRole::Assistant, "Hi there!"),
-        ];
+    fn test_mes_example_injected_into_prompt() {
+        let mut character = make_test_character();
+        character.mes_example = "<START>\n{{user}}: Hi\n{{char}}: Hello there".to_string();
+        let messages = vec![make_test_message(MessageRole::User, "Hello!")];
+        let token_svc = token_service();
 
-        let prompt = PromptEngine::assemble(&character, None, &messages);
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &std::collections::HashMap::new(),
+            &token_svc,
+            8192,
+        );
 
-        assert_eq!(prompt.chat_history.len(), 2);
-        assert_eq!(prompt.truncated_messages, 0);
-        assert_eq!(prompt.context_utilization, 0.0); // No budget tracking in assemble()
+        assert!(
+            prompt.preamble.contains("Example dialogue:"),
+            "mes_example should be injected as an example-dialogue block"
+        );
+        assert!(
+            prompt.preamble.contains(": Hi"),
+            "mes_example content should appear in the preamble ({{user}} resolved to the persona name)"
+        );
     }
 
     // Phase 9: add lorebook activation tests
@@ -825,17 +657,21 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "I saw a dragon!")];
         let token_svc = token_service();
 
+        let mut lorebook_names = std::collections::HashMap::new();
+        lorebook_names.insert("lorebook-1".to_string(), "World Lore".to_string());
         let prompt = PromptEngine::assemble_with_budget(
             &character,
             None,
             &messages,
             &[entry.clone()],
+            &lorebook_names,
             &token_svc,
             8192,
         );
 
         assert_eq!(
-            prompt.active_lorebook_count, 1,
+            prompt.lorebook_details.len(),
+            1,
             "One lorebook entry should be activated when keyword matches"
         );
         assert!(
@@ -850,6 +686,10 @@ mod tests {
         assert_eq!(
             prompt.lorebook_details[0].entry_name, "dragon",
             "entry_name should be the first key"
+        );
+        assert_eq!(
+            prompt.lorebook_details[0].lorebook_name, "World Lore",
+            "lorebook_name should resolve from the name map"
         );
     }
 }

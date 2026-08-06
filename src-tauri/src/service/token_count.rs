@@ -1,4 +1,3 @@
-use crate::domain::conversation::Message;
 use crate::domain::provider::ProviderConfig;
 use std::sync::Mutex;
 use tiktoken_rs::CoreBPE;
@@ -40,11 +39,12 @@ impl TokenCountService {
         count + count / 10
     }
 
-    /// Resolves the context window size for a provider using a 4-tier fallback:
+    /// Resolves the context window size for a provider using a 5-tier fallback:
     /// 1. If provider.context_window_size is Some(n) and n > 0, return n (provider-level override)
     /// 2. Per-model entry override from provider.models matching the active model name
-    /// 3. Look up active model name in built-in defaults table
-    /// 4. Fall back to DEFAULT_CONTEXT_WINDOW
+    /// 3. If provider.default_params.context_length is Some(n) and n > 0, return n
+    /// 4. Look up active model name in built-in defaults table
+    /// 5. Fall back to DEFAULT_CONTEXT_WINDOW
     /// Per D-02.
     pub fn resolve_context_window_size(
         &self,
@@ -67,7 +67,16 @@ impl TokenCountService {
             }
         }
 
-        // Tier 3: Built-in model defaults
+        // Tier 3: context_length from provider default generation params
+        if let Some(params) = &provider.default_params {
+            if let Some(size) = params.context_length {
+                if size > 0 {
+                    return size as i64;
+                }
+            }
+        }
+
+        // Tier 4: Built-in model defaults
         let defaults = built_in_model_context_windows();
         for (pattern, size) in defaults {
             if active_model_name.contains(pattern) {
@@ -75,22 +84,8 @@ impl TokenCountService {
             }
         }
 
-        // Tier 4: Default fallback
+        // Tier 5: Default fallback
         DEFAULT_CONTEXT_WINDOW
-    }
-
-    /// Counts the total tokens used by a preamble and a list of messages.
-    /// Each message has ~4 tokens of role overhead plus its content tokens.
-    pub fn count_message_tokens(&self, preamble: &str, messages: &[Message]) -> usize {
-        let preamble_tokens = self.count_tokens(preamble);
-        let message_tokens: usize = messages
-            .iter()
-            .map(|msg| {
-                // Role overhead (~4 tokens) + content tokens
-                4 + self.count_tokens(&msg.content)
-            })
-            .sum();
-        preamble_tokens + message_tokens
     }
 
     /// Lazily initializes and returns a reference to the cached BPE tokenizer.
@@ -240,6 +235,33 @@ mod tests {
         assert_eq!(
             size, DEFAULT_CONTEXT_WINDOW,
             "Should fall back to DEFAULT for unknown model"
+        );
+    }
+
+    #[test]
+    fn test_resolve_context_window_context_length_tier() {
+        let service = TokenCountService::new();
+        let mut provider = ProviderConfig::new("Test".to_string(), ProviderType::OpenAI);
+        provider.model_name = "some-unknown-model-v1".to_string();
+        provider.models = Vec::new();
+        provider.default_params = Some(crate::domain::provider::GenerationParams {
+            temperature: None,
+            top_p: None,
+            max_tokens: None,
+            frequency_penalty: None,
+            presence_penalty: None,
+            stop_sequences: None,
+            context_length: Some(32768),
+        });
+        let size = service.resolve_context_window_size(&provider, &provider.model_name);
+        assert_eq!(size, 32768, "Should return context_length when set");
+
+        // Provider-level override still wins over context_length
+        provider.context_window_size = Some(50000);
+        let size = service.resolve_context_window_size(&provider, &provider.model_name);
+        assert_eq!(
+            size, 50000,
+            "Provider override should win over context_length"
         );
     }
 

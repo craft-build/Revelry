@@ -66,18 +66,25 @@ pub fn apply_regex_scripts(text: &str, scripts: &[RegexScript]) -> String {
 }
 
 /// Applies a single regex find/replace to input text (for test panel preview).
+/// Returns (output_text, match_count). match_count reflects the number of
+/// replacements made: all matches for the `g` flag, otherwise 0 or 1.
 pub fn apply_single_regex(
     text: &str,
     pattern: &str,
     replace: &str,
     flags: &str,
-) -> Result<String, String> {
+) -> Result<(String, usize), String> {
     let re = validate_regex_pattern(pattern, flags)?;
     let is_global = flags.contains('g');
     if is_global {
-        Ok(re.replace_all(text, replace).to_string())
+        let match_count = re.find_iter(text).count();
+        Ok((re.replace_all(text, replace).to_string(), match_count))
     } else {
-        Ok(re.replace(text, replace).to_string())
+        let matched = re.is_match(text);
+        Ok((
+            re.replace(text, replace).to_string(),
+            if matched { 1 } else { 0 },
+        ))
     }
 }
 
@@ -211,7 +218,7 @@ mod tests {
     #[test]
     fn test_apply_single_regex() {
         let result = apply_single_regex("hello world", "hello", "hi", "gi");
-        assert_eq!(result, Ok("hi world".to_string()));
+        assert_eq!(result, Ok(("hi world".to_string(), 1)));
     }
 
     #[test]

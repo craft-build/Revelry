@@ -61,21 +61,26 @@ pub fn activate_lorebook_entries(
         .collect::<Vec<_>>()
         .join(" ");
 
-    // Step 3: Initial keyword scan — check if ANY key or secondary_key appears in the
-    // appropriate scan text based on activation_state
+    // Step 3: Initial keyword scan — entries activate when their primary keys
+    // match the appropriate scan text (per activation_state role filtering).
+    // `Always` entries are injected unconditionally (SillyTavern "constant"),
+    // regardless of keyword hits. Secondary keys gate activation when present.
     let mut activated_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut activated_entries: Vec<LorebookEntry> = Vec::new();
 
     for entry in &enabled_entries {
-        let scan_text = match entry.activation_state {
-            LorebookActivation::Always => &scan_text_all,
-            LorebookActivation::CharacterOnly => &scan_text_character_only,
-            LorebookActivation::UserOnly => &scan_text_user_only,
+        let matches = if entry.activation_state == LorebookActivation::Always {
+            true
+        } else {
+            let scan_text = match entry.activation_state {
+                LorebookActivation::Always => &scan_text_all,
+                LorebookActivation::CharacterOnly => &scan_text_character_only,
+                LorebookActivation::UserOnly => &scan_text_user_only,
+            };
+            keyword_matches(&entry.keys, &entry.secondary_keys, scan_text)
         };
 
-        if keyword_matches(&entry.keys, scan_text)
-            || keyword_matches(&entry.secondary_keys, scan_text)
-        {
+        if matches {
             activated_ids.insert(entry.id.clone());
             activated_entries.push((*entry).clone());
         }
@@ -93,13 +98,12 @@ pub fn activate_lorebook_entries(
             .collect::<Vec<_>>()
             .join(" ");
 
-        // Check each enabled entry that hasn't been activated yet
+        // Check each enabled entry that hasn't been activated yet.
+        // `Always` entries are already activated in the initial pass, so here
+        // only keyword-gated entries (CharacterOnly/UserOnly) are considered.
         for entry in &enabled_entries {
             if !activated_ids.contains(&entry.id) {
-                // For recursive activation, use activated content as scan text
-                if keyword_matches(&entry.keys, &activated_content)
-                    || keyword_matches(&entry.secondary_keys, &activated_content)
-                {
+                if keyword_matches(&entry.keys, &entry.secondary_keys, &activated_content) {
                     activated_ids.insert(entry.id.clone());
                     new_activations.push((*entry).clone());
                 }
@@ -254,13 +258,46 @@ pub fn inject_lorebook_entries(
     (result_before, result_after)
 }
 
-/// Checks if ANY keyword appears in the text (OR logic, case-insensitive).
-fn keyword_matches(keywords: &[String], text: &str) -> bool {
+/// Canonical keyword-matching semantics (SillyTavern-style), shared by the
+/// runtime lorebook activator and the test panel so preview == runtime.
+///
+/// - Primary `keys`: each key string may itself be a comma-separated group;
+///   every sub-key in a group must appear in the text (AND within a group), and
+///   any group matching is enough (OR across groups). At least one primary group
+///   must match for the entry to activate.
+/// - Secondary `secondary_keys`: when present, they gate activation (any
+///   secondary key must also match) but never activate an entry on their own.
+pub fn keyword_matches(keys: &[String], secondary_keys: &[String], text: &str) -> bool {
     let text_lower = text.to_lowercase();
-    keywords.iter().any(|kw| {
-        let kw_lower = kw.to_lowercase();
-        !kw_lower.is_empty() && text_lower.contains(&kw_lower)
-    })
+
+    // Primary keys: AND within a comma-separated group, OR across groups.
+    let primary_match = keys.iter().any(|key| {
+        let sub_keys: Vec<&str> = key
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if sub_keys.is_empty() {
+            // Treat an empty/whitespace key string as a single empty token that
+            // never matches, so an entry with only empty keys doesn't auto-fire.
+            return false;
+        }
+        sub_keys
+            .iter()
+            .all(|sk| text_lower.contains(&sk.to_lowercase()))
+    });
+
+    if !primary_match {
+        return false;
+    }
+
+    // Secondary keys gate activation but never activate alone.
+    if secondary_keys.is_empty() {
+        return true;
+    }
+    secondary_keys
+        .iter()
+        .any(|sk| !sk.trim().is_empty() && text_lower.contains(&sk.to_lowercase()))
 }
 
 /// Truncates text to fit within a token budget by removing characters from the end.
@@ -366,12 +403,15 @@ mod tests {
 
     #[test]
     fn test_keyword_not_present_no_activation() {
-        let entry = make_test_entry(
+        // Use a keyword-gated activation state (CharacterOnly) so absence of the
+        // keyword means no activation. (`Always` entries activate unconditionally.)
+        let mut entry = make_test_entry(
             "Dragon Lore",
             vec!["dragon"],
             "Dragons are ancient creatures.",
         );
-        let messages = vec![make_test_message(MessageRole::User, "I saw a cat!")];
+        entry.activation_state = LorebookActivation::CharacterOnly;
+        let messages = vec![make_test_message(MessageRole::Assistant, "I saw a cat!")];
 
         let activated =
             activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
@@ -429,7 +469,9 @@ mod tests {
 
     #[test]
     fn test_scan_depth_limits_scope() {
-        let entry = make_test_entry("Recent Only", vec!["dragon"], "Dragons exist.");
+        let mut entry = make_test_entry("Recent Only", vec!["dragon"], "Dragons exist.");
+        // Keyword-gated so scan scope actually matters (Always would activate regardless).
+        entry.activation_state = LorebookActivation::CharacterOnly;
         let messages = vec![
             make_test_message(MessageRole::User, "Hello there"),
             make_test_message(MessageRole::Assistant, "Hi!"),
@@ -445,18 +487,21 @@ mod tests {
             "With scan_depth=1, keyword in 3rd-from-last message should not activate"
         );
 
-        // scan_depth=3: "dragon" is within scan scope
+        // scan_depth=3: "dragon" is in scope, but CharacterOnly scans only
+        // assistant messages (none contain "dragon"), so it stays inactive.
         let activated =
             activate_lorebook_entries(&[entry], &messages, 3, 2, 10000, &token_service());
-        assert_eq!(
-            activated.len(),
-            1,
-            "With scan_depth=3, keyword should be found"
+        assert!(
+            activated.is_empty(),
+            "CharacterOnly scans assistant messages; none contain the keyword"
         );
     }
 
     #[test]
     fn test_recursive_activation() {
+        // A is the seed (Always). B is keyword-gated (CharacterOnly) on
+        // "dungeon", which only appears in A's injected content — so B can
+        // only activate via recursive activation from A.
         let entry_a = make_test_entry_with_details(
             "A",
             vec!["castle"],
@@ -478,12 +523,12 @@ mod tests {
             None,
             1,
             vec![],
-            LorebookActivation::Always,
+            LorebookActivation::CharacterOnly,
             LorebookPosition::AfterChar,
         );
 
         let messages = vec![make_test_message(
-            MessageRole::User,
+            MessageRole::Assistant,
             "I approach the castle.",
         )];
 
@@ -505,6 +550,8 @@ mod tests {
 
     #[test]
     fn test_recursive_max_depth_prevents_infinite_loop() {
+        // A is the seed (Always, activates unconditionally). B is keyword-gated
+        // (CharacterOnly) so it can ONLY activate via recursion from A's content.
         let entry_a = make_test_entry_with_details(
             "A",
             vec!["castle"],
@@ -526,16 +573,18 @@ mod tests {
             None,
             1,
             vec![],
-            LorebookActivation::Always,
+            LorebookActivation::CharacterOnly,
             LorebookPosition::AfterChar,
         );
 
         let messages = vec![make_test_message(
-            MessageRole::User,
+            MessageRole::Assistant,
             "I approach the castle.",
         )];
 
-        // max_recursive_depth=0: only initial scan, no recursive activation
+        // max_recursive_depth=0: only initial scan, no recursive activation.
+        // A activates (Always); B does not (keyword "dungeon" not in scan text,
+        // and no recursion runs).
         let activated = activate_lorebook_entries(
             &[entry_a.clone(), entry_b.clone()],
             &messages,
@@ -948,24 +997,126 @@ mod tests {
     #[test]
     fn test_keyword_matches_or_logic() {
         let keywords = vec!["dragon".to_string(), "fire".to_string()];
-        assert!(keyword_matches(&keywords, "the dragon flies"));
-        assert!(keyword_matches(&keywords, "the fire burns"));
-        assert!(!keyword_matches(&keywords, "the cat sleeps"));
+        assert!(keyword_matches(&keywords, &[], "the dragon flies"));
+        assert!(keyword_matches(&keywords, &[], "the fire burns"));
+        assert!(!keyword_matches(&keywords, &[], "the cat sleeps"));
     }
 
     #[test]
     fn test_keyword_matches_case_insensitive() {
         let keywords = vec!["Dragon".to_string()];
-        assert!(keyword_matches(&keywords, "the dragon flies"));
-        assert!(keyword_matches(&keywords, "the DRAGON flies"));
+        assert!(keyword_matches(&keywords, &[], "the dragon flies"));
+        assert!(keyword_matches(&keywords, &[], "the DRAGON flies"));
     }
 
     #[test]
     fn test_keyword_matches_empty_keyword() {
         let keywords = vec![String::new(), "valid".to_string()];
-        assert!(keyword_matches(&keywords, "a valid point"));
+        assert!(keyword_matches(&keywords, &[], "a valid point"));
         // Empty keyword should not match
         let empty_only = vec![String::new()];
-        assert!(!keyword_matches(&empty_only, "any text"));
+        assert!(!keyword_matches(&empty_only, &[], "any text"));
+    }
+
+    #[test]
+    fn test_keyword_matches_comma_group_and_logic() {
+        // Comma-separated group: all sub-keys must match (AND within group).
+        let keys = vec!["dragon, fire".to_string()];
+        assert!(keyword_matches(&keys, &[], "the dragon breathes fire"));
+        assert!(
+            !keyword_matches(&keys, &[], "the dragon sleeps"),
+            "AND within a comma group: only one sub-key present"
+        );
+    }
+
+    #[test]
+    fn test_keyword_matches_multi_group_or_logic() {
+        // OR across key groups.
+        let keys = vec!["dragon".to_string(), "wizard, staff".to_string()];
+        assert!(keyword_matches(&keys, &[], "a dragon"));
+        assert!(keyword_matches(&keys, &[], "the wizard holds a staff"));
+        assert!(!keyword_matches(&keys, &[], "the wizard sleeps"));
+    }
+
+    #[test]
+    fn test_keyword_matches_secondary_only_no_activation() {
+        // Secondary keys never activate alone.
+        let keys = vec!["primary".to_string()];
+        let secondary = vec!["secondary".to_string()];
+        assert!(
+            !keyword_matches(&keys, &secondary, "only the secondary appears"),
+            "Secondary-only must not activate"
+        );
+    }
+
+    #[test]
+    fn test_keyword_matches_secondary_gates_primary() {
+        // Primary matches but secondary present and absent → no activation.
+        let keys = vec!["primary".to_string()];
+        let secondary = vec!["secondary".to_string()];
+        assert!(
+            !keyword_matches(&keys, &secondary, "the primary is here"),
+            "Primary match with absent gating secondary must not activate"
+        );
+        assert!(
+            keyword_matches(&keys, &secondary, "primary and secondary both"),
+            "Primary + matching secondary activates"
+        );
+    }
+
+    #[test]
+    fn test_always_entry_activates_without_keywords() {
+        // `Always` entries activate unconditionally (SillyTavern "constant").
+        let entry = make_test_entry_with_details(
+            "Constant",
+            vec![], // no keys
+            "Constant content.",
+            4,
+            true,
+            None,
+            0,
+            vec![],
+            LorebookActivation::Always,
+            LorebookPosition::AfterChar,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::User,
+            "totally unrelated text",
+        )];
+        let activated =
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+        assert_eq!(
+            activated.len(),
+            1,
+            "Always entry must activate without keywords"
+        );
+    }
+
+    #[test]
+    fn test_character_only_keyword_gated_not_constant() {
+        // CharacterOnly with no keyword hit does NOT activate (proves Always is
+        // special-cased, not all entries).
+        let entry = make_test_entry_with_details(
+            "Gated",
+            vec!["magic"],
+            "Magic content.",
+            4,
+            true,
+            None,
+            0,
+            vec![],
+            LorebookActivation::CharacterOnly,
+            LorebookPosition::AfterChar,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::User,
+            "nothing relevant here",
+        )];
+        let activated =
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+        assert!(
+            activated.is_empty(),
+            "CharacterOnly must require a keyword hit"
+        );
     }
 }

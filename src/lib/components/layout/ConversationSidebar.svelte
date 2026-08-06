@@ -20,8 +20,9 @@
 	let renaming_title = $state('');
 	let rename_input: HTMLInputElement | undefined = $state();
 
-	// Dual-mode: empty search shows all conversations (no backend call)
-	// Non-empty search uses backend FTS5 results from app.search_results
+	// Dual-mode: empty search shows all conversations (no backend call).
+	// Non-empty search shows backend FTS5 message results (app.search_results)
+	// plus conversations whose titles match (app.searched_conversations).
 	let filtered = $derived(
 		(() => {
 			const q = search.trim();
@@ -30,8 +31,14 @@
 					conversations: app.conversations,
 					searchMode: false,
 					results: [] as SearchResult[],
+					titleConversations: [] as import('$lib/types').Conversation[],
 				};
-			return { conversations: [], searchMode: true, results: app.search_results };
+			return {
+				conversations: [],
+				searchMode: true,
+				results: app.search_results,
+				titleConversations: app.searched_conversations,
+			};
 		})(),
 	);
 
@@ -48,12 +55,13 @@
 		})(),
 	);
 
-	// Debounced backend search
+	// Debounced backend search (message FTS5 + conversation title matches).
 	$effect(() => {
 		const q = search.trim();
 		if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
 		if (!q) {
 			app.search_results = [];
+			app.searched_conversations = [];
 			return;
 		}
 		searchDebounceTimer = setTimeout(() => {
@@ -89,12 +97,16 @@
 		setTimeout(() => rename_input?.focus(), 0);
 	}
 
-	function commitRename() {
+	async function commitRename() {
 		if (!renaming_id || !renaming_title.trim()) {
 			renaming_id = null;
 			return;
 		}
-		app.renameConversation(renaming_id, renaming_title.trim());
+		try {
+			await app.renameConversation(renaming_id, renaming_title.trim());
+		} catch {
+			// Store reverts local state and logs on failure.
+		}
 		renaming_id = null;
 	}
 
@@ -132,7 +144,7 @@
 				<div class="flex h-full items-center justify-center">
 					<p class="text-xs text-(--color-muted)">Searching...</p>
 				</div>
-			{:else if filtered.results.length === 0}
+			{:else if filtered.results.length === 0 && filtered.titleConversations.length === 0}
 				<div class="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
 					<MessageSquareDashed class="size-6 text-(--color-subtle)" />
 					<p class="text-xs text-(--color-muted)">No conversations match.</p>
@@ -183,6 +195,41 @@
 									{/each}
 								</div>
 							</button>
+						</li>
+					{/each}
+					{#each filtered.titleConversations.filter(
+							(tc) => !groupedSearchResults.has(tc.id),
+						) as conv (conv.id)}
+						{@const char = characterFor(conv.character_id)}
+						{@const active = conv.id === app.active_conversation_id}
+						<li class="group/conv relative">
+							<a
+								href={`/chat/${conv.id}`}
+								class={cn(
+									'group flex gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors',
+									active ? 'bg-(--color-surface-elevated)' : 'hover:bg-(--color-surface-hover)'
+								)}
+							>
+								<Avatar
+									name={char?.name ?? '?'}
+									src={char?.avatar_path}
+									size="sm"
+									class="mt-0.5"
+								/>
+								<div class="min-w-0 flex-1">
+									<span
+										class={cn(
+											'truncate text-xs font-medium block',
+											active ? 'text-(--color-foreground)' : 'text-(--color-foreground)/90'
+										)}
+									>
+										{conv.title}
+									</span>
+									<p class="mt-0.5 line-clamp-1 text-[11px] leading-tight text-(--color-subtle)">
+										Title match
+									</p>
+								</div>
+							</a>
 						</li>
 					{/each}
 				</ul>

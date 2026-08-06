@@ -68,7 +68,8 @@ import {
   getBranchesForConversation as apiGetBranchesForConversation,
   deleteBranch as apiDeleteBranch,
   searchMessages as apiSearchMessages,
-  saveMessage as apiSaveMessage,
+  searchConversations as apiSearchConversations,
+  renameConversation as apiRenameConversation,
   importCard as apiImportCard,
   exportCard as apiExportCard,
   generateCharacter as apiGenerateCharacter,
@@ -130,6 +131,10 @@ class AppState {
   active_branch_id = $state<string | null>(null);
   branches = $state<MessageBranch[]>([]);
   search_results = $state<SearchResult[]>([]);
+  /** Conversations whose titles match the active search (alongside FTS message
+   *  results). Populated by searchMessagesAction so the sidebar can surface
+   *  title matches even when no message body matches. */
+  searched_conversations = $state<Conversation[]>([]);
   is_searching = $state<boolean>(false);
 
   // ── Regex & lorebook state ───────────────────────────────────────────────
@@ -703,18 +708,27 @@ class AppState {
     await this.switchBranch(ordered[nextIdx]);
   }
 
-  /** Search across all conversations and messages via backend FTS5. */
+  /** Search across all conversations and messages via backend FTS5, and also
+   *  fetch title-matched conversations via search_conversations so the sidebar
+   *  can surface conversations whose names match even without a message hit. */
   async searchMessagesAction(query: string): Promise<void> {
     if (!query.trim()) {
       this.search_results = [];
+      this.searched_conversations = [];
       return;
     }
     this.is_searching = true;
     try {
-      this.search_results = await apiSearchMessages(query.trim());
+      const [messageResults, conversationResults] = await Promise.all([
+        apiSearchMessages(query.trim()),
+        apiSearchConversations(query.trim()),
+      ]);
+      this.search_results = messageResults;
+      this.searched_conversations = conversationResults;
     } catch (err) {
       console.error("Search failed:", err);
       this.search_results = [];
+      this.searched_conversations = [];
     } finally {
       this.is_searching = false;
     }
@@ -752,11 +766,23 @@ class AppState {
     }
   }
 
-  /** Rename a conversation in the local state. Backend persist is TODO. */
-  renameConversation(id: string, title: string) {
+  /** Rename a conversation locally and persist the new title to the backend. */
+  async renameConversation(id: string, title: string): Promise<void> {
+    const prevTitle = this.conversations.find((c) => c.id === id)?.title;
     this.conversations = this.conversations.map((c) =>
       c.id === id ? { ...c, title } : c,
     );
+    try {
+      await apiRenameConversation(id, title);
+    } catch (err) {
+      console.error("Failed to persist conversation rename:", err);
+      if (prevTitle !== undefined) {
+        this.conversations = this.conversations.map((c) =>
+          c.id === id ? { ...c, title: prevTitle } : c,
+        );
+      }
+      throw err;
+    }
   }
 
   // ── Character CRUD ──────────────────────────────────────────────────────
@@ -1366,12 +1392,10 @@ class AppState {
           if (chunk.data.lorebookDetails) {
             this.lorebook_details = chunk.data.lorebookDetails;
           }
-          // Persist the completed AI message to the database
+          // The backend persists the streamed assistant message itself
+          // (placeholder + incremental flushes), so no frontend save here.
           const completedMsg = this.messages.find((m) => m.id === aiId);
           if (completedMsg) {
-            apiSaveMessage(completedMsg).catch((err) =>
-              console.error("Failed to save AI message:", err),
-            );
             this.updateConversationPreview(
               completedMsg.conversation_id,
               completedMsg.content,
@@ -1575,12 +1599,23 @@ class AppState {
     const onEvent = this.createStreamHandler(aiId);
 
     try {
-      await apiRegenerate(
+      const newBranchId = await apiRegenerate(
         this.active_conversation_id,
         aiId,
         onEvent,
         this.active_branch_id,
       );
+      // Backend may fork a new branch (preserving the old response) and return
+      // its id. Switch the active branch so the placeholder lands on the right
+      // branch; the local view already matches the new branch's fork-point view,
+      // so no message reload is needed (avoids racing in-flight stream tokens).
+      if (newBranchId) {
+        this.active_branch_id = newBranchId;
+        this.messages = this.messages.map((m) =>
+          m.id === aiId ? { ...m, branch_id: newBranchId } : m,
+        );
+        await this.loadBranchesForConversation(this.active_conversation_id);
+      }
     } catch (err) {
       console.error("regenerate failed:", err);
       const errorContent =

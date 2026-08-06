@@ -367,6 +367,16 @@ pub fn configure_connection(conn: &rusqlite::Connection) -> Result<(), rusqlite_
             query: "PRAGMA journal_mode=WAL".into(),
             err: e.into(),
         })?;
+    // synchronous=NORMAL (the recommended companion to WAL) avoids an fsync
+    // per commit. A process crash/close never loses committed WAL data; only a
+    // power loss could drop the very last transaction. This keeps frequent
+    // per-token writes (streamed-message persistence) cheap without risking
+    // database corruption.
+    conn.pragma_update(None, "synchronous", "NORMAL")
+        .map_err(|e| rusqlite_migration::Error::RusqliteError {
+            query: "PRAGMA synchronous=NORMAL".into(),
+            err: e,
+        })?;
     conn.pragma_update(None, "busy_timeout", 5000)
         .map_err(|e| rusqlite_migration::Error::RusqliteError {
             query: "PRAGMA busy_timeout=5000".into(),

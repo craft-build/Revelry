@@ -116,6 +116,153 @@ impl CharacterCardV2 {
             updated_at: now,
         }
     }
+
+    /// Parses the embedded `character_book` (SillyTavern CharacterCardV2 spec)
+    /// into `LorebookEntry` values for prompt activation. Returns an empty vec
+    /// when the book is absent, empty, or malformed (parsing is best-effort and
+    /// never panics on unexpected shapes). Each parsed entry is assigned a
+    /// synthetic `lorebook_id` (the book's `name`, or the character id) so it can
+    /// be merged with junction-table entries and reported in activation details.
+    pub fn character_book_entries(&self) -> Vec<crate::domain::lorebook::LorebookEntry> {
+        use crate::domain::lorebook::{LorebookActivation, LorebookEntry, LorebookPosition};
+
+        let entries_val = match self.character_book.get("entries") {
+            Some(v) => v,
+            None => return Vec::new(),
+        };
+
+        // The spec allows `entries` as either an array or an object keyed by
+        // entry id; normalize both to a vec of owned entry values.
+        let entry_values: Vec<serde_json::Value> = match entries_val {
+            serde_json::Value::Array(arr) => arr.clone(),
+            serde_json::Value::Object(map) => map.values().cloned().collect(),
+            _ => Vec::new(),
+        };
+
+        let book_name = self
+            .character_book
+            .get("name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| format!("{}-embedded", self.id));
+
+        let now = Timestamp::now();
+        let mut result = Vec::new();
+        for (idx, raw) in entry_values.iter().enumerate() {
+            // Deserialize with permissive defaults so partial/odd entries survive.
+            let id = raw
+                .get("id")
+                .and_then(|v| v.as_u64())
+                .map(|n| n.to_string())
+                .or_else(|| {
+                    raw.get("id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                })
+                .unwrap_or_else(|| format!("cb-entry-{idx}"));
+
+            let keys = raw
+                .get("keys")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+
+            let secondary_keys = raw
+                .get("secondary_keys")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+
+            let content = raw
+                .get("content")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+
+            let comment = raw
+                .get("comment")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+
+            let position = raw
+                .get("position")
+                .and_then(|v| v.as_str())
+                .map(|s| match s {
+                    "before_char" => LorebookPosition::BeforeChar,
+                    "after_char" => LorebookPosition::AfterChar,
+                    _ => LorebookPosition::AtDepth,
+                })
+                .unwrap_or(LorebookPosition::AtDepth);
+
+            let depth = raw
+                .get("depth")
+                .and_then(|v| v.as_i64())
+                .map(|n| n as i32)
+                .unwrap_or(4);
+
+            let activation_state = raw
+                .get("constant")
+                .and_then(|v| v.as_bool())
+                .map(|c| {
+                    if c {
+                        LorebookActivation::Always
+                    } else {
+                        LorebookActivation::CharacterOnly
+                    }
+                })
+                .unwrap_or(LorebookActivation::CharacterOnly);
+
+            let enabled = raw
+                .get("disable")
+                .and_then(|v| v.as_bool())
+                .map(|d| !d)
+                .unwrap_or(true);
+
+            let sort_order = raw
+                .get("order")
+                .and_then(|v| v.as_i64())
+                .map(|n| n as i32)
+                .unwrap_or(idx as i32);
+
+            let token_budget = raw
+                .get("token_budget")
+                .and_then(|v| v.as_i64())
+                .filter(|n| *n > 0);
+
+            result.push(LorebookEntry {
+                id: format!("{}-{}", book_name, id),
+                lorebook_id: book_name.clone(),
+                keys,
+                secondary_keys,
+                content,
+                position,
+                depth,
+                activation_state,
+                token_budget,
+                sort_order,
+                enabled,
+                extensions: raw
+                    .get("extensions")
+                    .cloned()
+                    .unwrap_or(serde_json::json!({})),
+                created_at: now,
+                updated_at: now,
+            });
+            // `comment` is intentionally not stored on LorebookEntry (no field);
+            // entry_name in activation details falls back to the first key.
+            let _ = comment;
+        }
+        result
+    }
 }
 
 /// Wrapper for the Character Card V2 spec format used in PNG tEXt chunks.
@@ -373,5 +520,106 @@ mod tests {
             serde_json::from_str(&json).expect("deserialize failed");
         assert_eq!(deserialized.lorebook_scan_depth, 5);
         assert_eq!(deserialized.lorebook_recursive_depth, 3);
+    }
+
+    #[test]
+    fn test_character_book_entries_parses_array_entries() {
+        let mut character = CharacterCardV2::new("Embedded Book".to_string());
+        character.character_book = serde_json::json!({
+            "name": "World Lore",
+            "entries": [
+                {
+                    "id": 1,
+                    "keys": ["dragon"],
+                    "secondary_keys": ["fire"],
+                    "content": "Dragons breathe fire.",
+                    "comment": "Dragon entry",
+                    "position": "after_char",
+                    "depth": 4,
+                    "constant": true,
+                    "disable": false,
+                    "order": 10,
+                    "token_budget": 200
+                },
+                {
+                    "id": 2,
+                    "keys": ["ocean", "wave"],
+                    "content": "The sea is vast.",
+                    "position": "at_depth",
+                    "depth": 2,
+                    "constant": false
+                }
+            ]
+        });
+
+        let entries = character.character_book_entries();
+        assert_eq!(entries.len(), 2, "both array entries should parse");
+
+        let dragon = entries
+            .iter()
+            .find(|e| e.content.contains("Dragons"))
+            .expect("dragon entry present");
+        assert_eq!(dragon.keys, vec!["dragon".to_string()]);
+        assert_eq!(dragon.secondary_keys, vec!["fire".to_string()]);
+        assert_eq!(dragon.lorebook_id, "World Lore");
+        assert!(dragon.enabled);
+        assert_eq!(
+            dragon.activation_state,
+            crate::domain::lorebook::LorebookActivation::Always,
+            "constant=true maps to Always"
+        );
+        assert_eq!(dragon.token_budget, Some(200));
+
+        let ocean = entries
+            .iter()
+            .find(|e| e.content.contains("The sea"))
+            .expect("ocean entry present");
+        // Comma-style keys within a single string already parse as one group
+        // at the matching layer; here they're stored as separate key strings.
+        assert_eq!(ocean.keys.len(), 2);
+        assert_eq!(
+            ocean.activation_state,
+            crate::domain::lorebook::LorebookActivation::CharacterOnly,
+            "constant=false maps to CharacterOnly"
+        );
+    }
+
+    #[test]
+    fn test_character_book_entries_parses_object_entries() {
+        let mut character = CharacterCardV2::new("Obj Book".to_string());
+        character.character_book = serde_json::json!({
+            "entries": {
+                "0": {"keys": ["castle"], "content": "A tall castle."},
+                "1": {"keys": ["forest"], "content": "A dark forest."}
+            }
+        });
+
+        let entries = character.character_book_entries();
+        assert_eq!(entries.len(), 2, "object-keyed entries should parse");
+        assert!(entries.iter().any(|e| e.content.contains("castle")));
+        assert!(entries.iter().any(|e| e.content.contains("forest")));
+    }
+
+    #[test]
+    fn test_character_book_entries_empty_when_no_book() {
+        let character = CharacterCardV2::new("No Book".to_string());
+        assert!(character.character_book_entries().is_empty());
+    }
+
+    #[test]
+    fn test_character_book_entries_skips_disabled() {
+        let mut character = CharacterCardV2::new("Disabled".to_string());
+        character.character_book = serde_json::json!({
+            "entries": [
+                {"keys": ["a"], "content": "active", "disable": false},
+                {"keys": ["b"], "content": "inactive", "disable": true}
+            ]
+        });
+        let entries = character.character_book_entries();
+        assert_eq!(entries.len(), 2, "all entries parse");
+        let active = entries.iter().find(|e| e.content == "active").unwrap();
+        assert!(active.enabled);
+        let inactive = entries.iter().find(|e| e.content == "inactive").unwrap();
+        assert!(!inactive.enabled, "disable=true → enabled=false");
     }
 }

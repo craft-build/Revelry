@@ -110,7 +110,7 @@ fn default_enabled() -> bool {
 
 /// Default generation parameters for a provider.
 /// These are shared across all models under the provider.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct GenerationParams {
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
@@ -122,6 +122,10 @@ pub struct GenerationParams {
     pub presence_penalty: Option<f64>,
     #[serde(default)]
     pub stop_sequences: Option<Vec<String>>,
+    /// Context window override sent by the frontend. Used as a tier in
+    /// context-window resolution (between per-model entries and built-in defaults).
+    #[serde(default)]
+    pub context_length: Option<u32>,
 }
 
 /// Configuration for an AI provider stored in the database.

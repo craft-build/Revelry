@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { RegexScript, RegexTestResult } from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
+	import { validateRegexPattern as apiValidateRegexPattern } from '$lib/data/api';
 	import { Button, Input, Textarea } from '$lib/components/ui';
 	import {
 		Plus,
@@ -117,6 +118,15 @@
 	async function handleSave() {
 		if (is_saving || !selectedScriptId) return;
 		pattern_error = null;
+
+		// Validate the pattern/flags before saving so invalid regex never
+		// reaches the backend save path (mirrors the test-panel validation).
+		try {
+			await apiValidateRegexPattern(form_find_pattern, form_flags);
+		} catch (err) {
+			pattern_error = err instanceof Error ? err.message : String(err);
+			return;
+		}
 
 		const script: RegexScript = {
 			id: selectedScriptId!,

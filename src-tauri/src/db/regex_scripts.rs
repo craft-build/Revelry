@@ -17,19 +17,6 @@ pub fn load_regex_scripts(conn: &Connection, character_id: &str) -> Result<Vec<R
     Ok(scripts)
 }
 
-/// Loads all regex scripts (for testing).
-pub fn load_all_regex_scripts(conn: &Connection) -> Result<Vec<RegexScript>> {
-    let mut stmt = conn.prepare_cached(
-        "SELECT id, character_id, name, find_pattern, replace_pattern, flags,
-                sort_order, enabled, created_at, updated_at
-         FROM regex_scripts ORDER BY character_id, sort_order ASC",
-    )?;
-    let scripts = stmt
-        .query_map([], |row| row_to_regex_script(row))?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(scripts)
-}
-
 /// Inserts a new regex script into the database.
 /// `enabled` is stored as INTEGER (1/0) per SQLite convention.
 pub fn insert_regex_script(conn: &Connection, script: &RegexScript) -> Result<()> {

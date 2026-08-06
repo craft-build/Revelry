@@ -46,6 +46,25 @@ pub async fn delete_conversation(db: State<'_, DbWorker>, id: String) -> Result<
 }
 
 #[tauri::command]
+pub async fn rename_conversation(
+    db: State<'_, DbWorker>,
+    id: String,
+    title: String,
+) -> Result<(), String> {
+    let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+    db.send(DbCommand::RenameConversation {
+        id,
+        title,
+        reply: reply_tx,
+    })
+    .map_err(|e| e.to_string())?;
+    reply_rx
+        .await
+        .map_err(|e| format!("DB worker dropped: {}", e))?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn search_conversations(
     db: State<'_, DbWorker>,
     query: String,
