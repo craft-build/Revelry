@@ -190,7 +190,7 @@ pub fn inject_lorebook_entries(
     preamble_before_char: &str,
     preamble_after_char: &str,
     entries: &[ActivatedEntry],
-    messages: &mut Vec<rig_core::completion::Message>,
+    messages: &mut Vec<rig::completion::Message>,
 ) -> (String, String) {
     let mut before_additions = Vec::new();
     let mut after_additions = Vec::new();
@@ -247,7 +247,7 @@ pub fn inject_lorebook_entries(
             messages.len() - depth as usize
         };
         // Insert as a system message
-        let msg = rig_core::completion::Message::system(&content);
+        let msg = rig::completion::Message::system(&content);
         messages.insert(insert_pos, msg);
     }
 
@@ -868,7 +868,7 @@ mod tests {
             injected_content: "Lore content here".to_string(),
             effective_depth: 4,
         };
-        let mut messages: Vec<rig_core::completion::Message> = vec![];
+        let mut messages: Vec<rig::completion::Message> = vec![];
 
         let (before, after) = inject_lorebook_entries(
             "System prompt",
@@ -892,7 +892,7 @@ mod tests {
             injected_content: "Lore content here".to_string(),
             effective_depth: 4,
         };
-        let mut messages: Vec<rig_core::completion::Message> = vec![];
+        let mut messages: Vec<rig::completion::Message> = vec![];
 
         let (before, after) = inject_lorebook_entries(
             "System prompt",
@@ -927,8 +927,8 @@ mod tests {
             effective_depth: 1,
         };
         let mut messages = vec![
-            rig_core::completion::Message::user("First"),
-            rig_core::completion::Message::assistant("Second"),
+            rig::completion::Message::user("First"),
+            rig::completion::Message::assistant("Second"),
         ];
 
         let (before, after) =
@@ -941,7 +941,7 @@ mod tests {
         // After insertion, the system message is at position 1
         assert!(matches!(
             messages[1],
-            rig_core::completion::Message::System { .. }
+            rig::completion::Message::System { .. }
         ));
     }
 

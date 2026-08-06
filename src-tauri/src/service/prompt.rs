@@ -10,7 +10,7 @@ use crate::service::token_count::TokenCountService;
 #[derive(Clone, Debug)]
 pub struct AssembledPrompt {
     pub preamble: String,
-    pub chat_history: Vec<rig_core::completion::Message>,
+    pub chat_history: Vec<rig::completion::Message>,
     /// Context utilization ratio (0.0 to 1.0) — what fraction of the context window is used.
     pub context_utilization: f64,
     /// Total tokens used in the assembled prompt (preamble + history + overhead).
@@ -411,7 +411,7 @@ fn build_chat_history(
     messages: &[Message],
     persona: Option<&Persona>,
     character: Option<&CharacterCardV2>,
-) -> Vec<rig_core::completion::Message> {
+) -> Vec<rig::completion::Message> {
     messages
         .iter()
         .filter(|m| !m.content.is_empty()) // Skip empty messages
@@ -426,9 +426,9 @@ fn build_chat_history(
                 msg.content.clone()
             };
             match msg.role {
-                MessageRole::User => rig_core::completion::Message::user(&content),
-                MessageRole::Assistant => rig_core::completion::Message::assistant(&content),
-                MessageRole::System => rig_core::completion::Message::system(&content),
+                MessageRole::User => rig::completion::Message::user(&content),
+                MessageRole::Assistant => rig::completion::Message::assistant(&content),
+                MessageRole::System => rig::completion::Message::system(&content),
             }
         })
         .collect()
@@ -587,7 +587,7 @@ mod tests {
         assert_eq!(history.len(), 1);
         // {{user}} should be resolved to "User" (no persona → default "User")
         let content = match &history[0] {
-            rig_core::completion::Message::System { content } => content.clone(),
+            rig::completion::Message::System { content } => content.clone(),
             _ => panic!("Expected system message"),
         };
         assert!(

@@ -1,13 +1,12 @@
-use crate::domain::conversation::Message as DomainMessage;
 use crate::domain::lorebook::LorebookActivationDetail;
 use crate::domain::provider::{ProviderConfig, ProviderModelEntry, ProviderType};
 use crate::domain::regex_script::RegexScript;
 
 use futures::StreamExt;
-use rig_core::agent::{Agent, MultiTurnStreamItem};
-use rig_core::client::{CompletionClient, ModelListingClient};
-use rig_core::completion::{CompletionModel, GetTokenUsage, Message};
-use rig_core::streaming::{StreamedAssistantContent, StreamingChat};
+use rig::agent::{Agent, MultiTurnStreamItem};
+use rig::client::{AgentClientExt, CompletionClient, ModelListingClient};
+use rig::completion::{CompletionModel, GetTokenUsage, Message};
+use rig::streaming::{StreamedAssistantContent, StreamingChat};
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
@@ -326,7 +325,7 @@ impl AiService {
                 );
             }
             ProviderType::Anthropic => {
-                let client = rig_core::providers::anthropic::Client::builder()
+                let client = rig::providers::anthropic::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -348,7 +347,7 @@ impl AiService {
             }
             ProviderType::Ollama => {
                 let url = base_url.unwrap_or("http://localhost:11434");
-                let client = rig_core::providers::ollama::Client::builder()
+                let client = rig::providers::ollama::Client::builder()
                     .api_key(String::new())
                     .base_url(url)
                     .build()
@@ -370,7 +369,7 @@ impl AiService {
                 );
             }
             ProviderType::Gemini => {
-                let client = rig_core::providers::gemini::Client::builder()
+                let client = rig::providers::gemini::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -391,7 +390,7 @@ impl AiService {
                 );
             }
             ProviderType::Cohere => {
-                let client = rig_core::providers::cohere::Client::builder()
+                let client = rig::providers::cohere::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -412,7 +411,7 @@ impl AiService {
                 );
             }
             ProviderType::Mistral => {
-                let client = rig_core::providers::mistral::Client::builder()
+                let client = rig::providers::mistral::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -433,7 +432,7 @@ impl AiService {
                 );
             }
             ProviderType::Groq => {
-                let client = rig_core::providers::groq::Client::builder()
+                let client = rig::providers::groq::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -454,7 +453,7 @@ impl AiService {
                 );
             }
             ProviderType::DeepSeek => {
-                let client = rig_core::providers::deepseek::Client::builder()
+                let client = rig::providers::deepseek::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -475,7 +474,7 @@ impl AiService {
                 );
             }
             ProviderType::OpenRouter => {
-                let client = rig_core::providers::openrouter::Client::builder()
+                let client = rig::providers::openrouter::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -496,7 +495,7 @@ impl AiService {
                 );
             }
             ProviderType::Xai => {
-                let client = rig_core::providers::xai::Client::builder()
+                let client = rig::providers::xai::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -517,7 +516,7 @@ impl AiService {
                 );
             }
             ProviderType::Perplexity => {
-                let client = rig_core::providers::perplexity::Client::builder()
+                let client = rig::providers::perplexity::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -538,7 +537,7 @@ impl AiService {
                 );
             }
             ProviderType::Together => {
-                let client = rig_core::providers::together::Client::builder()
+                let client = rig::providers::together::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -560,7 +559,7 @@ impl AiService {
             }
             ProviderType::AzureOpenAI => {
                 let url = base_url.ok_or("Base URL required for Azure OpenAI")?;
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -583,7 +582,7 @@ impl AiService {
                 );
             }
             ProviderType::HuggingFace => {
-                let client = rig_core::providers::huggingface::Client::builder()
+                let client = rig::providers::huggingface::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -605,7 +604,7 @@ impl AiService {
             }
             ProviderType::CustomOpenAICompatible => {
                 let url = base_url.ok_or("Base URL required for custom provider")?;
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -670,15 +669,15 @@ impl AiService {
     fn build_openai_client(
         api_key: &str,
         base_url: Option<&str>,
-    ) -> Result<rig_core::providers::openai::Client, String> {
+    ) -> Result<rig::providers::openai::Client, String> {
         if let Some(url) = base_url {
-            rig_core::providers::openai::Client::builder()
+            rig::providers::openai::Client::builder()
                 .api_key(api_key)
                 .base_url(url)
                 .build()
                 .map_err(|e| e.to_string())
         } else {
-            rig_core::providers::openai::Client::builder()
+            rig::providers::openai::Client::builder()
                 .api_key(api_key)
                 .build()
                 .map_err(|e| e.to_string())
@@ -701,7 +700,7 @@ impl AiService {
         base_url: Option<&str>,
         api_key: &str,
     ) -> Result<Vec<ProviderModelEntry>, String> {
-        use rig_core::model::ModelList;
+        use rig::model::ModelList;
 
         let list: ModelList = match provider_type {
             ProviderType::OpenAI => {
@@ -709,7 +708,7 @@ impl AiService {
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Anthropic => {
-                let client = rig_core::providers::anthropic::Client::builder()
+                let client = rig::providers::anthropic::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -717,7 +716,7 @@ impl AiService {
             }
             ProviderType::Ollama => {
                 let url = base_url.unwrap_or("http://localhost:11434");
-                let client = rig_core::providers::ollama::Client::builder()
+                let client = rig::providers::ollama::Client::builder()
                     .api_key(String::new())
                     .base_url(url)
                     .build()
@@ -725,28 +724,28 @@ impl AiService {
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Gemini => {
-                let client = rig_core::providers::gemini::Client::builder()
+                let client = rig::providers::gemini::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Mistral => {
-                let client = rig_core::providers::mistral::Client::builder()
+                let client = rig::providers::mistral::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::DeepSeek => {
-                let client = rig_core::providers::deepseek::Client::builder()
+                let client = rig::providers::deepseek::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::OpenRouter => {
-                let client = rig_core::providers::openrouter::Client::builder()
+                let client = rig::providers::openrouter::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -757,7 +756,7 @@ impl AiService {
             // natively list models for them.
             ProviderType::Groq => {
                 let url = base_url.unwrap_or("https://api.groq.com/openai/v1");
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -766,7 +765,7 @@ impl AiService {
             }
             ProviderType::Together => {
                 let url = base_url.unwrap_or("https://api.together.xyz/v1");
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -775,7 +774,7 @@ impl AiService {
             }
             ProviderType::Xai => {
                 let url = base_url.unwrap_or("https://api.x.ai/v1");
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -784,7 +783,7 @@ impl AiService {
             }
             ProviderType::Perplexity => {
                 let url = base_url.unwrap_or("https://api.perplexity.ai");
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -793,7 +792,7 @@ impl AiService {
             }
             ProviderType::HuggingFace => {
                 let url = base_url.unwrap_or("https://api-inference.huggingface.co/v1");
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -802,7 +801,7 @@ impl AiService {
             }
             ProviderType::Cohere => {
                 let url = base_url.unwrap_or("https://api.cohere.com/v1");
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -813,7 +812,7 @@ impl AiService {
                 let url = base_url.ok_or(
                     "Base URL is required to detect models for a custom OpenAI-compatible provider.",
                 )?;
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -834,7 +833,7 @@ impl AiService {
 
     /// Convert a rig `ModelList` into sorted, deduped `ProviderModelEntry` values.
     /// `id` becomes `name`; `context_length` (u32) becomes `context_window_size` (i64).
-    fn model_list_to_entries(list: rig_core::model::ModelList) -> Vec<ProviderModelEntry> {
+    fn model_list_to_entries(list: rig::model::ModelList) -> Vec<ProviderModelEntry> {
         let mut entries: Vec<ProviderModelEntry> = list
             .into_iter()
             .map(|m| ProviderModelEntry {
@@ -1020,7 +1019,7 @@ impl AiService {
                 .await
             }
             ProviderType::Anthropic => {
-                let client = rig_core::providers::anthropic::Client::builder()
+                let client = rig::providers::anthropic::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1038,7 +1037,7 @@ impl AiService {
             }
             ProviderType::Ollama => {
                 let url = base_url.unwrap_or("http://localhost:11434");
-                let client = rig_core::providers::ollama::Client::builder()
+                let client = rig::providers::ollama::Client::builder()
                     .api_key(String::new())
                     .base_url(url)
                     .build()
@@ -1056,7 +1055,7 @@ impl AiService {
                 .await
             }
             ProviderType::Gemini => {
-                let client = rig_core::providers::gemini::Client::builder()
+                let client = rig::providers::gemini::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1073,7 +1072,7 @@ impl AiService {
                 .await
             }
             ProviderType::Cohere => {
-                let client = rig_core::providers::cohere::Client::builder()
+                let client = rig::providers::cohere::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1090,7 +1089,7 @@ impl AiService {
                 .await
             }
             ProviderType::Mistral => {
-                let client = rig_core::providers::mistral::Client::builder()
+                let client = rig::providers::mistral::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1107,7 +1106,7 @@ impl AiService {
                 .await
             }
             ProviderType::Groq => {
-                let client = rig_core::providers::groq::Client::builder()
+                let client = rig::providers::groq::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1124,7 +1123,7 @@ impl AiService {
                 .await
             }
             ProviderType::DeepSeek => {
-                let client = rig_core::providers::deepseek::Client::builder()
+                let client = rig::providers::deepseek::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1141,7 +1140,7 @@ impl AiService {
                 .await
             }
             ProviderType::OpenRouter => {
-                let client = rig_core::providers::openrouter::Client::builder()
+                let client = rig::providers::openrouter::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1158,7 +1157,7 @@ impl AiService {
                 .await
             }
             ProviderType::Xai => {
-                let client = rig_core::providers::xai::Client::builder()
+                let client = rig::providers::xai::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1175,7 +1174,7 @@ impl AiService {
                 .await
             }
             ProviderType::Perplexity => {
-                let client = rig_core::providers::perplexity::Client::builder()
+                let client = rig::providers::perplexity::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1192,7 +1191,7 @@ impl AiService {
                 .await
             }
             ProviderType::Together => {
-                let client = rig_core::providers::together::Client::builder()
+                let client = rig::providers::together::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1210,7 +1209,7 @@ impl AiService {
             }
             ProviderType::AzureOpenAI => {
                 let url = base_url.ok_or("Base URL required for Azure OpenAI")?;
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -1229,7 +1228,7 @@ impl AiService {
                 .await
             }
             ProviderType::HuggingFace => {
-                let client = rig_core::providers::huggingface::Client::builder()
+                let client = rig::providers::huggingface::Client::builder()
                     .api_key(api_key)
                     .build()
                     .map_err(|e| e.to_string())?;
@@ -1247,7 +1246,7 @@ impl AiService {
             }
             ProviderType::CustomOpenAICompatible => {
                 let url = base_url.ok_or("Base URL required for custom provider")?;
-                let client = rig_core::providers::openai::Client::builder()
+                let client = rig::providers::openai::Client::builder()
                     .api_key(api_key)
                     .base_url(url)
                     .build()
@@ -1815,7 +1814,7 @@ mod tests {
 
     #[test]
     fn test_model_list_to_entries_basic() {
-        use rig_core::model::{Model, ModelList};
+        use rig::model::{Model, ModelList};
         let list = ModelList::new(vec![
             Model::from_id("gpt-4o-mini"),
             Model::from_id("gpt-4o"),
@@ -1831,7 +1830,7 @@ mod tests {
 
     #[test]
     fn test_model_list_to_entries_with_context_length() {
-        use rig_core::model::{Model, ModelList};
+        use rig::model::{Model, ModelList};
         let mut model = Model::from_id("claude-3");
         model.context_length = Some(200000);
         let list = ModelList::new(vec![model]);
@@ -1842,7 +1841,7 @@ mod tests {
 
     #[test]
     fn test_model_list_to_entries_dedup_and_case_insensitive_sort() {
-        use rig_core::model::{Model, ModelList};
+        use rig::model::{Model, ModelList};
         let list = ModelList::new(vec![
             Model::from_id("zeta"),
             Model::from_id("Alpha"),

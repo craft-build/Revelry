@@ -331,7 +331,7 @@ fn assemble_prompt(
     target_response_length: Option<u64>,
 ) -> (
     String,
-    Vec<rig_core::completion::Message>,
+    Vec<rig::completion::Message>,
     BudgetInfo,
     Vec<LorebookActivationDetail>,
 ) {
@@ -351,15 +351,13 @@ fn assemble_prompt(
         None => {
             // No character — use minimal fallback prompt
             let preamble = "You are a helpful assistant.".to_string();
-            let chat_history: Vec<rig_core::completion::Message> = messages
+            let chat_history: Vec<rig::completion::Message> = messages
                 .iter()
                 .filter(|m| !m.content.is_empty())
                 .map(|msg| match msg.role {
-                    MessageRole::User => rig_core::completion::Message::user(&msg.content),
-                    MessageRole::Assistant => {
-                        rig_core::completion::Message::assistant(&msg.content)
-                    }
-                    MessageRole::System => rig_core::completion::Message::system(&msg.content),
+                    MessageRole::User => rig::completion::Message::user(&msg.content),
+                    MessageRole::Assistant => rig::completion::Message::assistant(&msg.content),
+                    MessageRole::System => rig::completion::Message::system(&msg.content),
                 })
                 .collect();
             let preamble_tokens = token_svc.count_tokens(&preamble);
