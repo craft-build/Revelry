@@ -1,7 +1,6 @@
 use crate::db::models::row_to_character;
 use crate::domain::character::CharacterCardV2;
 use anyhow::Result;
-use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Inserts a new character into the database.
@@ -60,7 +59,7 @@ pub fn load_characters(conn: &Connection) -> Result<Vec<CharacterCardV2>> {
          created_at, updated_at
          FROM characters ORDER BY updated_at DESC",
     )?;
-    let characters = stmt.query_map([], |row| row_to_character(row))?;
+    let characters = stmt.query_map([], row_to_character)?;
     let mut result = Vec::new();
     for character in characters {
         result.push(character?);
@@ -78,7 +77,7 @@ pub fn load_character(conn: &Connection, id: &str) -> Result<Option<CharacterCar
          created_at, updated_at
          FROM characters WHERE id = ?1",
     )?;
-    let mut characters = stmt.query_map(params![id], |row| row_to_character(row))?;
+    let mut characters = stmt.query_map(params![id], row_to_character)?;
     match characters.next() {
         Some(c) => Ok(Some(c?)),
         None => Ok(None),
@@ -157,7 +156,7 @@ pub fn search_characters(conn: &Connection, query: &str) -> Result<Vec<Character
          WHERE characters_fts MATCH ?1
          ORDER BY rank",
     )?;
-    let characters = stmt.query_map(params![sanitized], |row| row_to_character(row))?;
+    let characters = stmt.query_map(params![sanitized], row_to_character)?;
     let mut result = Vec::new();
     for character in characters {
         result.push(character?);
@@ -236,7 +235,7 @@ mod tests {
         character.name = "Updated".to_string();
         character.description = "A brave hero".to_string();
         character.tags = vec!["fantasy".to_string(), "warrior".to_string()];
-        character.updated_at = Timestamp::now();
+        character.updated_at = jiff::Timestamp::now();
         update_character(&conn, &character).expect("Update should succeed");
 
         let loaded = load_character(&conn, &character.id)
@@ -254,7 +253,7 @@ mod tests {
         insert_character(&conn, &character).expect("Insert should succeed");
 
         character.default_preset_id = Some("builtin-creative".to_string());
-        character.updated_at = Timestamp::now();
+        character.updated_at = jiff::Timestamp::now();
         update_character(&conn, &character).expect("Update should succeed");
 
         let loaded = load_character(&conn, &character.id)
@@ -346,7 +345,7 @@ mod tests {
 
         // Update tags to include "updated"
         c.tags = vec!["updated".to_string()];
-        c.updated_at = Timestamp::now();
+        c.updated_at = jiff::Timestamp::now();
         update_character(&conn, &c).expect("Update");
 
         // Now search should find it

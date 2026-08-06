@@ -1,7 +1,6 @@
 use crate::db::models::row_to_persona;
 use crate::domain::persona::Persona;
 use anyhow::Result;
-use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Inserts a new persona into the database.
@@ -38,7 +37,7 @@ pub fn load_personas(conn: &Connection) -> Result<Vec<Persona>> {
          relationships, speech_style, tags, avatar_path, created_at, updated_at
          FROM personas ORDER BY updated_at DESC",
     )?;
-    let personas = stmt.query_map([], |row| row_to_persona(row))?;
+    let personas = stmt.query_map([], row_to_persona)?;
     let mut result = Vec::new();
     for persona in personas {
         result.push(persona?);
@@ -53,7 +52,7 @@ pub fn load_persona(conn: &Connection, id: &str) -> Result<Option<Persona>> {
          relationships, speech_style, tags, avatar_path, created_at, updated_at
          FROM personas WHERE id = ?1",
     )?;
-    let mut personas = stmt.query_map(params![id], |row| row_to_persona(row))?;
+    let mut personas = stmt.query_map(params![id], row_to_persona)?;
     match personas.next() {
         Some(p) => Ok(Some(p?)),
         None => Ok(None),
@@ -102,7 +101,7 @@ pub fn search_personas(conn: &Connection, query: &str) -> Result<Vec<Persona>> {
          WHERE name LIKE ?1 ESCAPE '\\' OR personality LIKE ?1 ESCAPE '\\'
          ORDER BY updated_at DESC",
     )?;
-    let personas = stmt.query_map(params![pattern], |row| row_to_persona(row))?;
+    let personas = stmt.query_map(params![pattern], row_to_persona)?;
     let mut result = Vec::new();
     for persona in personas {
         result.push(persona?);
@@ -169,7 +168,7 @@ mod tests {
         persona.personality = "Updated personality".to_string();
         persona.appearance = "Blue hair".to_string();
         persona.tags = vec!["fantasy".to_string(), "mage".to_string()];
-        persona.updated_at = Timestamp::now();
+        persona.updated_at = jiff::Timestamp::now();
         update_persona(&conn, &persona).expect("Update should succeed");
 
         let loaded = load_persona(&conn, &persona.id)

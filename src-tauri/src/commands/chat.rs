@@ -486,6 +486,7 @@ async fn save_assistant_placeholder(
     Ok(MessagePersistence::new(db.sender(), placeholder))
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_chat(
     db: State<'_, DbWorker>,
@@ -850,6 +851,7 @@ pub async fn regenerate(
     Ok(effective_branch_id)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn edit_and_resend(
     db: State<'_, DbWorker>,

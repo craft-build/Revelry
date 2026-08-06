@@ -102,11 +102,11 @@ pub fn activate_lorebook_entries(
         // `Always` entries are already activated in the initial pass, so here
         // only keyword-gated entries (CharacterOnly/UserOnly) are considered.
         for entry in &enabled_entries {
-            if !activated_ids.contains(&entry.id) {
-                if keyword_matches(&entry.keys, &entry.secondary_keys, &activated_content) {
-                    activated_ids.insert(entry.id.clone());
-                    new_activations.push((*entry).clone());
-                }
+            if !activated_ids.contains(&entry.id)
+                && keyword_matches(&entry.keys, &entry.secondary_keys, &activated_content)
+            {
+                activated_ids.insert(entry.id.clone());
+                new_activations.push((*entry).clone());
             }
         }
 
@@ -242,7 +242,7 @@ pub fn inject_lorebook_entries(
     }
 
     // Inject depth-based entries into messages (from highest depth to lowest to preserve indices)
-    depth_injections.sort_by(|a, b| b.0.cmp(&a.0));
+    depth_injections.sort_by_key(|a| std::cmp::Reverse(a.0));
 
     for (depth, content) in depth_injections {
         let insert_pos = if depth as usize >= messages.len() {

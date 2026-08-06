@@ -7,16 +7,12 @@ use uuid::Uuid;
 /// Position where a lorebook entry is inserted relative to the character card.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum LorebookPosition {
     BeforeChar,
+    #[default]
     AfterChar,
     AtDepth,
-}
-
-impl Default for LorebookPosition {
-    fn default() -> Self {
-        LorebookPosition::AfterChar
-    }
 }
 
 impl fmt::Display for LorebookPosition {
@@ -45,16 +41,12 @@ impl FromStr for LorebookPosition {
 /// Activation condition for a lorebook entry.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum LorebookActivation {
+    #[default]
     Always,
     CharacterOnly,
     UserOnly,
-}
-
-impl Default for LorebookActivation {
-    fn default() -> Self {
-        LorebookActivation::Always
-    }
 }
 
 impl fmt::Display for LorebookActivation {

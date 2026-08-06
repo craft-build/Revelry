@@ -45,10 +45,7 @@ impl ProviderType {
     /// Returns true for providers that require an API key (cloud providers and custom).
     /// Returns false for Ollama (local provider).
     pub fn requires_api_key(&self) -> bool {
-        match self {
-            ProviderType::Ollama => false,
-            _ => true,
-        }
+        !matches!(self, ProviderType::Ollama)
     }
 
     /// Returns the default base URL for this provider type.

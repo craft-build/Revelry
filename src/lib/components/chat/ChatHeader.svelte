@@ -71,6 +71,7 @@
 				name={app.active_character.name}
 				src={app.active_character.avatar_path}
 				size="md"
+				enlargeable
 			/>
 			<div class="min-w-0">
 				<h2 class="truncate font-display text-lg font-semibold leading-tight tracking-tight">

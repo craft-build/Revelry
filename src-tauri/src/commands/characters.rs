@@ -21,10 +21,10 @@ pub async fn get_characters(db: State<'_, DbWorker>) -> Result<Vec<CharacterCard
 pub async fn save_character(
     db: State<'_, DbWorker>,
     character: CharacterCardV2,
-) -> Result<CharacterCardV2, String> {
+) -> Result<Box<CharacterCardV2>, String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::SaveCharacter {
-        character,
+        character: Box::new(character),
         reply: reply_tx,
     })
     .map_err(|e| e.to_string())?;

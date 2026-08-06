@@ -1,7 +1,6 @@
 use crate::db::models::{row_to_lorebook, row_to_lorebook_entry};
 use crate::domain::lorebook::{Lorebook, LorebookEntry};
 use anyhow::Result;
-use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 // ── Lorebook CRUD ──────────────────────────────────────────────────────────
@@ -12,7 +11,7 @@ pub fn load_lorebooks(conn: &Connection) -> Result<Vec<Lorebook>> {
         "SELECT id, name, description, created_at, updated_at
          FROM lorebooks ORDER BY updated_at DESC",
     )?;
-    let lorebooks = stmt.query_map([], |row| row_to_lorebook(row))?;
+    let lorebooks = stmt.query_map([], row_to_lorebook)?;
     let mut result = Vec::new();
     for lorebook in lorebooks {
         result.push(lorebook?);
@@ -26,7 +25,7 @@ pub fn load_lorebook(conn: &Connection, id: &str) -> Result<Option<Lorebook>> {
         "SELECT id, name, description, created_at, updated_at
          FROM lorebooks WHERE id = ?1",
     )?;
-    let mut lorebooks = stmt.query_map(params![id], |row| row_to_lorebook(row))?;
+    let mut lorebooks = stmt.query_map(params![id], row_to_lorebook)?;
     match lorebooks.next() {
         Some(lb) => Ok(Some(lb?)),
         None => Ok(None),
@@ -80,7 +79,7 @@ pub fn load_lorebook_entries(conn: &Connection, lorebook_id: &str) -> Result<Vec
          activation_state, token_budget, sort_order, enabled, extensions, created_at, updated_at
          FROM lorebook_entries WHERE lorebook_id = ?1 ORDER BY sort_order ASC, created_at ASC",
     )?;
-    let entries = stmt.query_map(params![lorebook_id], |row| row_to_lorebook_entry(row))?;
+    let entries = stmt.query_map(params![lorebook_id], row_to_lorebook_entry)?;
     let mut result = Vec::new();
     for entry in entries {
         result.push(entry?);
@@ -199,7 +198,7 @@ pub fn load_lorebooks_for_character(
          ORDER BY cl.sort_order ASC",
     )?;
     let lorebooks = stmt
-        .query_map(params![character_id], |row| row_to_lorebook(row))?
+        .query_map(params![character_id], row_to_lorebook)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(lorebooks)
 }
@@ -248,7 +247,7 @@ pub fn load_lorebooks_for_conversation(
          ORDER BY cl.sort_order ASC",
     )?;
     let lorebooks = stmt
-        .query_map(params![conversation_id], |row| row_to_lorebook(row))?
+        .query_map(params![conversation_id], row_to_lorebook)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(lorebooks)
 }
@@ -285,7 +284,7 @@ pub fn load_entries_for_lorebooks(
 
     let mut stmt = conn.prepare(&sql)?;
     let entries = stmt
-        .query_map(params.as_slice(), |row| row_to_lorebook_entry(row))?
+        .query_map(params.as_slice(), row_to_lorebook_entry)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(entries)
 }
@@ -343,7 +342,7 @@ mod tests {
 
         lorebook.name = "Updated".to_string();
         lorebook.description = "Updated description".to_string();
-        lorebook.updated_at = Timestamp::now();
+        lorebook.updated_at = jiff::Timestamp::now();
         update_lorebook(&conn, &lorebook).expect("Update should succeed");
 
         let loaded = load_lorebook(&conn, &lorebook.id)
@@ -394,7 +393,7 @@ mod tests {
 
         entry.content = "Updated content".to_string();
         entry.keys = vec!["new_key".to_string()];
-        entry.updated_at = Timestamp::now();
+        entry.updated_at = jiff::Timestamp::now();
         update_lorebook_entry(&conn, &entry).expect("Update entry should succeed");
 
         let loaded =

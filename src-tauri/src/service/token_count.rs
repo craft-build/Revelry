@@ -45,7 +45,6 @@ impl TokenCountService {
     /// 3. If provider.default_params.context_length is Some(n) and n > 0, return n
     /// 4. Look up active model name in built-in defaults table
     /// 5. Fall back to DEFAULT_CONTEXT_WINDOW
-    /// Per D-02.
     pub fn resolve_context_window_size(
         &self,
         provider: &ProviderConfig,
@@ -127,7 +126,7 @@ fn count_with_guard(guard: &std::sync::MutexGuard<'_, Option<CoreBPE>>, text: &s
             if char_count == 0 {
                 0
             } else {
-                (char_count + 3) / 4 // ceiling division
+                char_count.div_ceil(4) // ceiling division
             }
         }
     }

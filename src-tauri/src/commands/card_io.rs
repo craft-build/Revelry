@@ -112,7 +112,7 @@ pub async fn export_card(
     let db = app.state::<crate::db::DbWorker>();
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(crate::db::DbCommand::LoadCharacters { reply: reply_tx })
-        .map_err(|e| AppError::DbWorkerUnavailable(e))?;
+        .map_err(AppError::DbWorkerUnavailable)?;
     let characters = reply_rx
         .await
         .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?

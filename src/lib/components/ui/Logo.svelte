@@ -12,6 +12,6 @@
 <img
 	src="/logo-squircle.png"
 	{alt}
-	class={cn('size-5 shrink-0', className)}
+	class={cn('size-8 shrink-0', className)}
 	draggable="false"
 />

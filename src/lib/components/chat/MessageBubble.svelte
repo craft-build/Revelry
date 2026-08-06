@@ -144,6 +144,7 @@
 				name={isUser ? (persona?.name ?? 'You') : (character?.name ?? '?')}
 				src={isUser ? persona?.avatar_path : character?.avatar_path}
 				size="sm"
+				enlargeable
 			/>
 		</div>
 	{/if}

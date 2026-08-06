@@ -365,7 +365,7 @@ pub fn configure_connection(conn: &rusqlite::Connection) -> Result<(), rusqlite_
     conn.pragma_update(None, "journal_mode", "WAL")
         .map_err(|e| rusqlite_migration::Error::RusqliteError {
             query: "PRAGMA journal_mode=WAL".into(),
-            err: e.into(),
+            err: e,
         })?;
     // synchronous=NORMAL (the recommended companion to WAL) avoids an fsync
     // per commit. A process crash/close never loses committed WAL data; only a
@@ -380,12 +380,12 @@ pub fn configure_connection(conn: &rusqlite::Connection) -> Result<(), rusqlite_
     conn.pragma_update(None, "busy_timeout", 5000)
         .map_err(|e| rusqlite_migration::Error::RusqliteError {
             query: "PRAGMA busy_timeout=5000".into(),
-            err: e.into(),
+            err: e,
         })?;
     conn.pragma_update(None, "foreign_keys", "ON")
         .map_err(|e| rusqlite_migration::Error::RusqliteError {
             query: "PRAGMA foreign_keys=ON".into(),
-            err: e.into(),
+            err: e,
         })?;
     Ok(())
 }

@@ -124,8 +124,8 @@ pub fn export_to_png(character: &CharacterCardV2, avatar_bytes: Option<&[u8]>) -
         encoder.set_color(info.color_type);
         encoder.set_depth(info.bit_depth);
         encoder.add_text_chunk("chara".to_string(), encoded)?;
-        if info.trns.is_some() {
-            encoder.set_trns(info.trns.as_ref().unwrap().as_ref());
+        if let Some(info) = info.trns.as_ref() {
+            encoder.set_trns(info.as_ref());
         }
 
         let mut writer = encoder.write_header()?;
@@ -170,13 +170,13 @@ fn normalize_card_fields(card: &mut CharacterCardV2) {
     // Extract W++ attribute blocks: [Name's Key= "val1", "val2"]
     // Pattern: starts with '[', contains '=', ends with ']'
     let wpp_re = regex::Regex::new(r"(?s)\[[\w]+'s\s+(\w+)=\s*([^\]]*)\]").unwrap();
+    let quoted_re = regex::Regex::new(r#""([^"]*)""#).unwrap();
     for cap in wpp_re.captures_iter(desc) {
         let key = cap.get(1).unwrap().as_str().to_lowercase();
         let values_raw = cap.get(2).unwrap().as_str();
         let full_match = cap.get(0).unwrap().as_str();
 
         // Extract quoted values
-        let quoted_re = regex::Regex::new(r#""([^"]*)""#).unwrap();
         let values: Vec<&str> = quoted_re
             .captures_iter(values_raw)
             .map(|c| c.get(1).unwrap().as_str())

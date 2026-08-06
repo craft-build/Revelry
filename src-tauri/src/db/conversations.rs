@@ -60,7 +60,7 @@ pub fn load_conversations(conn: &Connection) -> Result<Vec<Conversation>> {
          override_max_tokens, title, last_message_preview, created_at, updated_at
          FROM conversations ORDER BY updated_at DESC",
     )?;
-    let conversations = stmt.query_map([], |row| row_to_conversation(row))?;
+    let conversations = stmt.query_map([], row_to_conversation)?;
     let mut result = Vec::new();
     for conv in conversations {
         result.push(conv?);
@@ -125,9 +125,7 @@ pub fn load_messages(
                                ORDER BY sort_order ASC";
 
                     let mut stmt = conn.prepare_cached(sql)?;
-                    for msg in
-                        stmt.query_map(params![conversation_id, bid], |row| row_to_message(row))?
-                    {
+                    for msg in stmt.query_map(params![conversation_id, bid], row_to_message)? {
                         result.push(msg?);
                     }
                 }
@@ -138,7 +136,7 @@ pub fn load_messages(
                 "SELECT id, conversation_id, role, content, sort_order, timestamp, branch_id
                  FROM messages WHERE conversation_id = ?1 AND branch_id IS NULL ORDER BY sort_order ASC",
             )?;
-            for msg in stmt.query_map(params![conversation_id], |row| row_to_message(row))? {
+            for msg in stmt.query_map(params![conversation_id], row_to_message)? {
                 result.push(msg?);
             }
         }
@@ -210,7 +208,7 @@ pub fn search_conversations(conn: &Connection, query: &str) -> Result<Vec<Conver
          WHERE title LIKE ?1 ESCAPE '\\' OR last_message_preview LIKE ?1 ESCAPE '\\'
          ORDER BY updated_at DESC",
     )?;
-    let conversations = stmt.query_map(params![pattern], |row| row_to_conversation(row))?;
+    let conversations = stmt.query_map(params![pattern], row_to_conversation)?;
     let mut result = Vec::new();
     for conv in conversations {
         result.push(conv?);
@@ -308,7 +306,7 @@ pub fn load_branches_for_message(
          FROM message_branches WHERE parent_message_id = ?1 ORDER BY created_at ASC",
     )?;
     let mut result = Vec::new();
-    for b in stmt.query_map(params![parent_message_id], |row| row_to_message_branch(row))? {
+    for b in stmt.query_map(params![parent_message_id], row_to_message_branch)? {
         result.push(b?);
     }
     Ok(result)
@@ -324,7 +322,7 @@ pub fn load_all_branches_for_conversation(
          FROM message_branches WHERE conversation_id = ?1 ORDER BY created_at ASC",
     )?;
     let mut result = Vec::new();
-    for b in stmt.query_map(params![conversation_id], |row| row_to_message_branch(row))? {
+    for b in stmt.query_map(params![conversation_id], row_to_message_branch)? {
         result.push(b?);
     }
     Ok(result)

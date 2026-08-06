@@ -111,9 +111,16 @@ pub struct GeneratedCharacterData {
     content = "data"
 )]
 pub enum GenerateCharacterChunk {
-    Token { content: String },
-    Complete { character: GeneratedCharacterData },
-    Error { error: String, error_type: String },
+    Token {
+        content: String,
+    },
+    Complete {
+        character: Box<GeneratedCharacterData>,
+    },
+    Error {
+        error: String,
+        error_type: String,
+    },
 }
 
 /// Returns true if the given provider supports the named additional parameter.
@@ -257,6 +264,7 @@ impl AiService {
     /// Stream an AI chat response via a Tauri Channel.
     /// Spawns a tokio task that processes the stream and sends StreamChunk events.
     /// The CancellationToken allows the caller to stop the stream mid-generation.
+    #[allow(clippy::too_many_arguments)]
     pub fn stream_chat(
         provider: &ProviderConfig,
         system_prompt: &str,
@@ -319,6 +327,7 @@ impl AiService {
     }
 
     /// Dispatches to the correct rig provider client and runs the stream.
+    #[allow(clippy::too_many_arguments)]
     async fn run_stream(
         provider_type: &ProviderType,
         base_url: Option<&str>,
@@ -353,7 +362,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -375,7 +384,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -399,7 +408,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -421,7 +430,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -443,7 +452,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -465,7 +474,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -487,7 +496,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -509,7 +518,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -531,7 +540,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -553,7 +562,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -575,7 +584,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -597,7 +606,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -622,7 +631,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -644,7 +653,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -669,7 +678,7 @@ impl AiService {
                     channel,
                     message_id,
                     cancel,
-                    budget.clone(),
+                    budget,
                     regex_scripts.clone(),
                     lorebook_details.clone(),
                     persistence.clone()
@@ -891,7 +900,7 @@ impl AiService {
                 enabled: true,
             })
             .collect();
-        entries.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        entries.sort_by_key(|a| a.name.to_lowercase());
         entries.dedup_by(|a, b| a.name == b.name);
         entries
     }
@@ -900,6 +909,7 @@ impl AiService {
     /// Uses rig-core 0.37 API: StreamAssistantItem(Text) for tokens,
     /// FinalResponse for completion.
     /// Supports cancellation via CancellationToken with tokio::select!.
+    #[allow(clippy::too_many_arguments)]
     async fn stream_with_agent<M>(
         agent: &Agent<M>,
         prompt: Message,
@@ -1086,6 +1096,7 @@ impl AiService {
 
     /// Dispatches to the correct rig provider client and runs the generation stream.
     /// On completion, parses the accumulated JSON into GeneratedCharacterData.
+    #[allow(clippy::too_many_arguments)]
     async fn run_generate_stream(
         provider_type: &ProviderType,
         base_url: Option<&str>,
@@ -1366,6 +1377,7 @@ impl AiService {
     }
 
     /// Build a rig agent, stream the response, and parse it as GeneratedCharacterData.
+    #[allow(clippy::too_many_arguments)]
     async fn build_and_stream_generation<C>(
         client: C,
         model_name: &str,
@@ -1430,7 +1442,7 @@ impl AiService {
                             match parsed {
                                 Ok(character) => {
                                     let _ = channel_clone.send(GenerateCharacterChunk::Complete {
-                                        character,
+                                        character: Box::new(character),
                                     });
                                 }
                                 Err(parse_err) => {

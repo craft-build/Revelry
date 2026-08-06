@@ -42,7 +42,7 @@ pub fn load_providers(conn: &Connection) -> Result<Vec<ProviderConfig>> {
          context_window_size, default_params, enabled, created_at, updated_at
          FROM providers ORDER BY updated_at DESC",
     )?;
-    let providers = stmt.query_map([], |row| row_to_provider(row))?;
+    let providers = stmt.query_map([], row_to_provider)?;
     let mut result = Vec::new();
     for provider in providers {
         result.push(provider?);
@@ -57,7 +57,7 @@ pub fn load_provider(conn: &Connection, id: &str) -> Result<Option<ProviderConfi
          context_window_size, default_params, enabled, created_at, updated_at
          FROM providers WHERE id = ?1",
     )?;
-    match stmt.query_row(params![id], |row| row_to_provider(row)) {
+    match stmt.query_row(params![id], row_to_provider) {
         Ok(provider) => Ok(Some(provider)),
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
         Err(e) => Err(e.into()),

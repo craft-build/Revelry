@@ -19,7 +19,7 @@
 >
 	<!-- Top: avatar + name -->
 	<div class="flex items-start gap-3">
-		<Avatar name={character.name} src={character.avatar_path} size="lg" />
+		<Avatar name={character.name} src={character.avatar_path} size="lg" enlargeable />
 		<div class="min-w-0 flex-1 pt-1">
 			<h3 class="truncate font-display text-lg font-semibold leading-tight tracking-tight">
 				{character.name}

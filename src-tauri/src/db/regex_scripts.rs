@@ -1,7 +1,6 @@
 use crate::db::models::row_to_regex_script;
 use crate::domain::regex_script::RegexScript;
 use anyhow::Result;
-use jiff::Timestamp;
 use rusqlite::{params, Connection};
 
 /// Loads all regex scripts for a given character, ordered by sort_order ascending.
@@ -12,7 +11,7 @@ pub fn load_regex_scripts(conn: &Connection, character_id: &str) -> Result<Vec<R
          FROM regex_scripts WHERE character_id = ?1 ORDER BY sort_order ASC",
     )?;
     let scripts = stmt
-        .query_map(params![character_id], |row| row_to_regex_script(row))?
+        .query_map(params![character_id], row_to_regex_script)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(scripts)
 }
@@ -143,7 +142,7 @@ mod tests {
 
         script.name = "Updated".to_string();
         script.find_pattern = "new_pattern".to_string();
-        script.updated_at = Timestamp::now();
+        script.updated_at = jiff::Timestamp::now();
         update_regex_script(&conn, &script).expect("Update should succeed");
 
         let loaded = load_regex_scripts(&conn, &character.id).expect("Load should succeed");

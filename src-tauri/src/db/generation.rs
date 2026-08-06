@@ -44,7 +44,7 @@ pub fn load_presets(conn: &Connection) -> Result<Vec<GenerationPreset>> {
          frequency_penalty, presence_penalty, stop_sequences, created_at, updated_at
          FROM generation_presets ORDER BY name",
     )?;
-    let presets = stmt.query_map([], |row| row_to_generation_preset(row))?;
+    let presets = stmt.query_map([], row_to_generation_preset)?;
     let mut result = Vec::new();
     for preset in presets {
         result.push(preset?);

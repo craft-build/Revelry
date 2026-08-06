@@ -65,45 +65,43 @@ impl RegexScript {
             .and_then(|v| v.as_array())
             .map(|arr| {
                 arr.iter()
-                    .filter_map(|entry| {
-                        Some(Self {
-                            id: entry
-                                .get("id")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or(&Uuid::new_v4().to_string())
-                                .to_string(),
-                            character_id: character_id.to_string(),
-                            name: entry
-                                .get("scriptName")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unnamed")
-                                .to_string(),
-                            find_pattern: entry
-                                .get("findRegex")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string(),
-                            replace_pattern: entry
-                                .get("replaceString")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string(),
-                            flags: entry
-                                .get("flags")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("gi")
-                                .to_string(),
-                            sort_order: entry
-                                .get("sort_order")
-                                .and_then(|v| v.as_i64())
-                                .unwrap_or(0) as i32,
-                            enabled: entry
-                                .get("enabled")
-                                .and_then(|v| v.as_bool())
-                                .unwrap_or(true),
-                            created_at: Timestamp::now(),
-                            updated_at: Timestamp::now(),
-                        })
+                    .map(|entry| Self {
+                        id: entry
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or(&Uuid::new_v4().to_string())
+                            .to_string(),
+                        character_id: character_id.to_string(),
+                        name: entry
+                            .get("scriptName")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Unnamed")
+                            .to_string(),
+                        find_pattern: entry
+                            .get("findRegex")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string(),
+                        replace_pattern: entry
+                            .get("replaceString")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string(),
+                        flags: entry
+                            .get("flags")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("gi")
+                            .to_string(),
+                        sort_order: entry
+                            .get("sort_order")
+                            .and_then(|v| v.as_i64())
+                            .unwrap_or(0) as i32,
+                        enabled: entry
+                            .get("enabled")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(true),
+                        created_at: Timestamp::now(),
+                        updated_at: Timestamp::now(),
                     })
                     .collect()
             })

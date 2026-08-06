@@ -46,8 +46,8 @@ pub enum DbCommand {
         reply: oneshot::Sender<anyhow::Result<Vec<CharacterCardV2>>>,
     },
     SaveCharacter {
-        character: CharacterCardV2,
-        reply: oneshot::Sender<anyhow::Result<CharacterCardV2>>,
+        character: Box<CharacterCardV2>,
+        reply: oneshot::Sender<anyhow::Result<Box<CharacterCardV2>>>,
     },
     DeleteCharacter {
         id: String,
@@ -834,7 +834,7 @@ mod tests {
         let character =
             crate::domain::character::CharacterCardV2::new("Integration Test".to_string());
         let saved = send_and_recv(&worker, |reply| DbCommand::SaveCharacter {
-            character: character.clone(),
+            character: Box::new(character.clone()),
             reply,
         })
         .expect("SaveCharacter should succeed");
