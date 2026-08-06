@@ -32,7 +32,7 @@
 
 	<!-- App identity -->
 	<div class="flex items-center gap-2 px-1">
-		<Logo />
+		<Logo alt="" />
 		<span class="font-display text-sm font-semibold tracking-wide">Revelry</span>
 	</div>
 

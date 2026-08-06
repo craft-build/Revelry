@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Sparkles, ArrowRight } from '@lucide/svelte';
+	import { ArrowRight } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { app } from '$lib/stores/app.svelte';
 	import { Avatar } from '$lib/components/ui';
+	import Logo from '$lib/components/ui/Logo.svelte';
 
 	// Surface most recently updated characters as quick starts
 	let suggested = $derived(
@@ -24,11 +25,7 @@
 				class="absolute inset-0 -z-10 size-20 -translate-x-2 -translate-y-2 rounded-full bg-(--color-accent)/10 blur-2xl"
 				aria-hidden="true"
 			></div>
-			<div
-				class="grid size-16 place-items-center rounded-(--radius-xl) bg-gradient-to-br from-(--color-accent) to-(--color-accent-muted) text-(--color-accent-fg)"
-			>
-				<Sparkles class="size-7" />
-			</div>
+			<Logo class="size-16" />
 		</div>
 
 		<div class="space-y-3">
