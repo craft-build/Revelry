@@ -1,7 +1,7 @@
 use jiff::Timestamp;
 use std::sync::Mutex;
-use tauri::ipc::Channel;
 use tauri::State;
+use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
 
 use crate::ai::{AiService, BudgetInfo, GenerationParams, MessagePersistence, StreamChunk};
@@ -641,7 +641,8 @@ pub async fn start_chat(
         *token_guard = Some(cancel_token.clone());
     }
 
-    let provider_config = ctx.provider.clone();
+    let mut provider_config = ctx.provider.clone();
+    provider_config.model_name = ctx.active_model_name.clone();
     let api_key = ctx.api_key.clone();
     tokio::spawn(async move {
         AiService::stream_chat(
@@ -829,7 +830,8 @@ pub async fn regenerate(
         *token_guard = Some(cancel_token.clone());
     }
 
-    let provider_config = ctx.provider.clone();
+    let mut provider_config = ctx.provider.clone();
+    provider_config.model_name = ctx.active_model_name.clone();
     let api_key = ctx.api_key.clone();
     tokio::spawn(async move {
         AiService::stream_chat(
@@ -979,7 +981,8 @@ pub async fn edit_and_resend(
         *token_guard = Some(cancel_token.clone());
     }
 
-    let provider_config = ctx.provider.clone();
+    let mut provider_config = ctx.provider.clone();
+    provider_config.model_name = ctx.active_model_name.clone();
     let api_key = ctx.api_key.clone();
     tokio::spawn(async move {
         AiService::stream_chat(
