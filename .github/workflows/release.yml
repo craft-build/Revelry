@@ -51,33 +51,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - name: Setup macOS code signing (optional)
-        if: matrix.platform == 'macos-latest' && env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
-          security create-keychain -p secret build.keychain
-          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k secret build.keychain
-          # Make the temporary keychain available to codesign during bundling.
-          security list-keychains -d user -s build.keychain $(security list-keychains -d user | tr -d '"')
-
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing / notarization — only enabled when a signing
-          # certificate (.p12) is configured. When APPLE_CERTIFICATE is absent,
-          # all APPLE_* vars resolve to empty and Tauri builds an unsigned app
-          # instead of failing on a missing identity.
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_SIGNING_IDENTITY || '' }}
-          APPLE_ID: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_ID || '' }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_PASSWORD || '' }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_TEAM_ID || '' }}
         with:
           tagName: ${{ github.event.release.tag_name || github.ref_name }}
           releaseName: ${{ github.event.release.name }}
