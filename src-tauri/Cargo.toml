@@ -1,6 +1,6 @@
 [package]
 name = "revelry"
-version = "0.2.0"
+version = "0.2.1"
 description = "AI roleplay desktop application"
 license = "MIT"
 authors = ["Jarrett Tierney <akarifur@pm.me>"]

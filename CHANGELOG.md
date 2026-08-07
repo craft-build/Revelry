@@ -5,6 +5,24 @@ All notable changes to **Revelry** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1]
+
+### Changed
+
+- Split the backend AI module (previously a single large file) into focused
+  submodules for chat, character generation, provider client building, and
+  utilities. No behavior change.
+
+### Fixed
+
+- Chat now sends the conversation's selected model to the LLM instead of the
+  provider's default model. Previously the per-conversation model override was
+  ignored at the streaming boundary, so the wrong model was used on every send,
+  regenerate, and edit-and-resend (most visible on Ollama via `ollama ps`).
+- macOS release build no longer fails on a missing signing identity. Code
+  signing env/secrets were removed from the release workflow; the app now
+  builds as an ad-hoc/unsigned bundle.
+
 ## [0.2.0]
 
 ### Added
