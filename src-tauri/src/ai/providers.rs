@@ -1,5 +1,4 @@
-use rig::agent::Agent;
-use rig::client::{AgentClientExt, CompletionClient};
+use rig::agent::{Agent, AgentBuilder};
 
 use super::GenerationParams;
 
@@ -7,34 +6,23 @@ use super::GenerationParams;
 pub(crate) fn build_openai_client(
     api_key: &str,
     base_url: Option<&str>,
-) -> Result<rig::providers::openai::Client, String> {
-    if let Some(url) = base_url {
-        rig::providers::openai::Client::builder()
-            .api_key(api_key)
-            .base_url(url)
-            .build()
-            .map_err(|e| e.to_string())
-    } else {
-        rig::providers::openai::Client::builder()
-            .api_key(api_key)
-            .build()
-            .map_err(|e| e.to_string())
-    }
+) -> rig::providers::openai::OpenAI {
+    let config = rig::providers::openai::OpenAIConfig::new(api_key);
+    let config = match base_url {
+        Some(url) => config.with_base_url(url),
+        None => config,
+    };
+    config.client()
 }
 
 /// Shared rig agent builder: preamble + temperature/max_tokens/additional_params.
-pub(crate) fn build_agent<C>(
-    client: &C,
-    model_name: &str,
+pub(crate) fn build_agent(
+    model: impl Into<rig::DynModel<rig::operation::Completion>>,
     system_prompt: &str,
     params: &GenerationParams,
     additional: &serde_json::Map<String, serde_json::Value>,
-) -> Agent
-where
-    C: AgentClientExt,
-    <C as CompletionClient>::CompletionModel: 'static,
-{
-    let mut builder = client.agent(model_name).preamble(system_prompt);
+) -> Agent {
+    let mut builder = AgentBuilder::new(model).preamble(system_prompt);
     if let Some(temp) = params.temperature {
         builder = builder.temperature(temp);
     }
@@ -48,120 +36,90 @@ where
 }
 
 /// Dispatches to the correct rig native provider client and runs `$body`
-/// with the constructed client bound to `$client`. Defined once, shared by
+/// with the completion model bound to `$model`. Defined once, shared by
 /// chat streaming and character generation. Only one match arm runs, so the
 /// body may move captured values directly (no clones needed).
 macro_rules! with_native_client {
-    ($provider:expr, $base_url:expr, $api_key:expr, $client:ident, $body:block) => {
+    ($provider:expr, $base_url:expr, $api_key:expr, $model_name:expr, $model:ident, $body:block) => {
         match $provider {
             ProviderType::OpenAI => {
-                let $client = $crate::ai::providers::build_openai_client($api_key, $base_url)?;
+                let client = $crate::ai::providers::build_openai_client($api_key, $base_url);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Anthropic => {
-                let $client = rig::providers::anthropic::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::anthropic::Anthropic::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Ollama => {
                 let url = $base_url.unwrap_or("http://localhost:11434");
-                let $client = rig::providers::ollama::Client::builder()
-                    .api_key(String::new())
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::ollama::OllamaConfig::new()
+                    .with_base_url(url)
+                    .client();
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Gemini => {
-                let $client = rig::providers::gemini::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::gemini::Gemini::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Cohere => {
-                let $client = rig::providers::cohere::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::cohere::Cohere::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Mistral => {
-                let $client = rig::providers::mistral::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::mistral::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Groq => {
-                let $client = rig::providers::groq::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::groq::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::DeepSeek => {
-                let $client = rig::providers::deepseek::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::deepseek::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::OpenRouter => {
-                let $client = rig::providers::openrouter::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::openrouter::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Xai => {
-                let $client = rig::providers::xai::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::xai::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Perplexity => {
-                let $client = rig::providers::perplexity::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::perplexity::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::Together => {
-                let $client = rig::providers::together::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::together::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::AzureOpenAI => {
                 let url = $base_url.ok_or("Base URL required for Azure OpenAI")?;
-                let $client = rig::providers::openai::Client::builder()
-                    .api_key($api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?
-                    .completions_api();
+                let client = $crate::ai::providers::build_openai_client($api_key, Some(url));
+                let $model = client.chat($model_name);
                 $body
             }
             ProviderType::HuggingFace => {
-                let $client = rig::providers::huggingface::Client::builder()
-                    .api_key($api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::huggingface::new($api_key);
+                let $model = client.completion($model_name);
                 $body
             }
             ProviderType::CustomOpenAICompatible => {
                 let url = $base_url.ok_or("Base URL required for custom provider")?;
-                let $client = rig::providers::openai::Client::builder()
-                    .api_key($api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?
-                    .completions_api();
+                let client = $crate::ai::providers::build_openai_client($api_key, Some(url));
+                let $model = client.chat($model_name);
                 $body
             }
         }

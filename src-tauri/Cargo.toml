@@ -33,7 +33,7 @@ tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros"] }
 tracing = "0.1"
 keyring = "4.1"
 keyring-core = "1.0"
-rig = "0.42"
+rig = "0.44"
 futures = "0.3"
 tokio-util = { version = "0.7", features = ["rt"] }
 tiktoken-rs = "0.12"

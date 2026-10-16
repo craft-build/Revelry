@@ -3,7 +3,7 @@ use crate::domain::provider::{ProviderConfig, ProviderType};
 use futures::StreamExt;
 use rig::agent::{Agent, MultiTurnStreamItem};
 use rig::completion::Message;
-use rig::streaming::{StreamedAssistantContent, StreamingChat};
+use rig::streaming::{Item, StreamEvent};
 use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
 
@@ -103,8 +103,8 @@ impl AiService {
 
         let prompt = Message::user(idea);
 
-        with_native_client!(provider_type, base_url, api_key, client, {
-            let agent = build_agent(&client, model_name, system_prompt, params, &additional);
+        with_native_client!(provider_type, base_url, api_key, model_name, model, {
+            let agent = build_agent(model, system_prompt, params, &additional);
             Self::build_and_stream_generation(&agent, prompt, channel, cancel).await
         })
     }
@@ -116,7 +116,7 @@ impl AiService {
         channel: &Channel<GenerateCharacterChunk>,
         cancel: &CancellationToken,
     ) -> Result<(), String> {
-        let mut stream = agent.stream_chat(prompt, Vec::<Message>::new()).await;
+        let mut stream = agent.prompt(prompt).history(Vec::<Message>::new()).stream();
 
         let channel_clone = channel.clone();
         let cancel_clone = cancel.clone();
@@ -134,13 +134,11 @@ impl AiService {
                 while let Some(item) = stream.next().await {
                     match item {
                         Ok(MultiTurnStreamItem::StreamAssistantItem(
-                            StreamedAssistantContent::Text(text),
+                            Item::Event(StreamEvent::Text { text, .. }),
                         )) => {
-                            accumulated.push_str(&text.text);
+                            accumulated.push_str(&text);
                             if channel_clone
-                                .send(GenerateCharacterChunk::Token {
-                                    content: text.text.clone(),
-                                })
+                                .send(GenerateCharacterChunk::Token { content: text })
                                 .is_err()
                             {
                                 break;

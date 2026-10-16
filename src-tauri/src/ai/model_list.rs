@@ -1,6 +1,5 @@
 use crate::domain::provider::{ProviderModelEntry, ProviderType};
 
-use rig::client::ModelListingClient;
 use rig::model::ModelList;
 
 use super::providers::build_openai_client;
@@ -18,51 +17,34 @@ impl AiService {
     ) -> Result<Vec<ProviderModelEntry>, String> {
         let list: ModelList = match provider_type {
             ProviderType::OpenAI => {
-                let client = build_openai_client(api_key, base_url)?;
+                let client = build_openai_client(api_key, base_url);
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Anthropic => {
-                let client = rig::providers::anthropic::Client::builder()
-                    .api_key(api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::anthropic::Anthropic::new(api_key);
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Ollama => {
                 let url = base_url.unwrap_or("http://localhost:11434");
-                let client = rig::providers::ollama::Client::builder()
-                    .api_key(String::new())
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::ollama::OllamaConfig::new()
+                    .with_base_url(url)
+                    .client();
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Gemini => {
-                let client = rig::providers::gemini::Client::builder()
-                    .api_key(api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::gemini::Gemini::new(api_key);
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Mistral => {
-                let client = rig::providers::mistral::Client::builder()
-                    .api_key(api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::mistral::new(api_key);
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::DeepSeek => {
-                let client = rig::providers::deepseek::Client::builder()
-                    .api_key(api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::deepseek::new(api_key);
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::OpenRouter => {
-                let client = rig::providers::openrouter::Client::builder()
-                    .api_key(api_key)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = rig::providers::openrouter::new(api_key);
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             // OpenAI-compatible fallback: these providers expose an
@@ -70,67 +52,39 @@ impl AiService {
             // natively list models for them.
             ProviderType::Groq => {
                 let url = base_url.unwrap_or("https://api.groq.com/openai/v1");
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Together => {
                 let url = base_url.unwrap_or("https://api.together.xyz/v1");
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Xai => {
                 let url = base_url.unwrap_or("https://api.x.ai/v1");
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Perplexity => {
                 let url = base_url.unwrap_or("https://api.perplexity.ai");
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::HuggingFace => {
                 let url = base_url.unwrap_or("https://api-inference.huggingface.co/v1");
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::Cohere => {
                 let url = base_url.unwrap_or("https://api.cohere.com/v1");
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::CustomOpenAICompatible => {
                 let url = base_url.ok_or(
                     "Base URL is required to detect models for a custom OpenAI-compatible provider.",
                 )?;
-                let client = rig::providers::openai::Client::builder()
-                    .api_key(api_key)
-                    .base_url(url)
-                    .build()
-                    .map_err(|e| e.to_string())?;
+                let client = build_openai_client(api_key, Some(url));
                 client.list_models().await.map_err(|e| e.to_string())?
             }
             ProviderType::AzureOpenAI => {
@@ -168,10 +122,10 @@ mod tests {
 
     #[test]
     fn test_model_list_to_entries_basic() {
-        use rig::model::{Model, ModelList};
+        use rig::model::{ModelInfo, ModelList};
         let list = ModelList::new(vec![
-            Model::from_id("gpt-4o-mini"),
-            Model::from_id("gpt-4o"),
+            ModelInfo::from_id("gpt-4o-mini"),
+            ModelInfo::from_id("gpt-4o"),
         ]);
         let entries = AiService::model_list_to_entries(list);
         assert_eq!(entries.len(), 2);
@@ -184,8 +138,8 @@ mod tests {
 
     #[test]
     fn test_model_list_to_entries_with_context_length() {
-        use rig::model::{Model, ModelList};
-        let mut model = Model::from_id("claude-3");
+        use rig::model::{ModelInfo, ModelList};
+        let mut model = ModelInfo::from_id("claude-3");
         model.context_length = Some(200000);
         let list = ModelList::new(vec![model]);
         let entries = AiService::model_list_to_entries(list);
@@ -195,11 +149,11 @@ mod tests {
 
     #[test]
     fn test_model_list_to_entries_dedup_and_case_insensitive_sort() {
-        use rig::model::{Model, ModelList};
+        use rig::model::{ModelInfo, ModelList};
         let list = ModelList::new(vec![
-            Model::from_id("zeta"),
-            Model::from_id("Alpha"),
-            Model::from_id("zeta"), // duplicate
+            ModelInfo::from_id("zeta"),
+            ModelInfo::from_id("Alpha"),
+            ModelInfo::from_id("zeta"), // duplicate
         ]);
         let entries = AiService::model_list_to_entries(list);
         // Deduped to 2 entries

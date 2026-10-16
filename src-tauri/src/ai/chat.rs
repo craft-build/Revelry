@@ -5,7 +5,7 @@ use crate::domain::regex_script::RegexScript;
 use futures::StreamExt;
 use rig::agent::{Agent, MultiTurnStreamItem};
 use rig::completion::Message;
-use rig::streaming::{StreamedAssistantContent, StreamingChat};
+use rig::streaming::{Item, StreamEvent};
 use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
 
@@ -101,8 +101,8 @@ impl AiService {
     ) -> Result<(), String> {
         let additional = Self::build_additional_params(provider_type, params);
 
-        with_native_client!(provider_type, base_url, api_key, client, {
-            let agent = build_agent(&client, model_name, system_prompt, params, &additional);
+        with_native_client!(provider_type, base_url, api_key, model_name, model, {
+            let agent = build_agent(model, system_prompt, params, &additional);
             Self::stream_with_agent(
                 &agent,
                 prompt,
@@ -137,7 +137,7 @@ impl AiService {
         lorebook_details: Vec<LorebookActivationDetail>,
         persistence: Option<MessagePersistence>,
     ) {
-        let mut stream = agent.stream_chat(prompt, history).await;
+        let mut stream = agent.prompt(prompt).history(history).stream();
 
         let msg_id = message_id.to_string();
         let channel_clone = channel.clone();
@@ -182,9 +182,9 @@ impl AiService {
                             return;
                         }
                         Some(Ok(MultiTurnStreamItem::StreamAssistantItem(
-                            StreamedAssistantContent::Text(text),
+                            Item::Event(StreamEvent::Text { text, .. }),
                         ))) => {
-                            accumulated.push_str(&text.text);
+                            accumulated.push_str(&text);
                             // Persist on every token (fire-and-forget) so a
                             // crash/close mid-stream leaves the latest partial
                             // in SQLite — the only loss window is the DbWorker's
@@ -193,16 +193,14 @@ impl AiService {
                                 p.flush(&accumulated);
                             }
                             if channel_clone
-                                .send(StreamChunk::Token {
-                                    content: text.text,
-                                })
+                                .send(StreamChunk::Token { content: text })
                                 .is_err()
                             {
                                 break;
                             }
                         }
                         Some(Ok(MultiTurnStreamItem::FinalResponse(res))) => {
-                            let raw_content = res.output.clone();
+                            let raw_content = res.output();
                             let transformed_content = if !regex_scripts.is_empty() {
                                 crate::service::regex::apply_regex_scripts(&raw_content, &regex_scripts)
                             } else {
@@ -221,12 +219,14 @@ impl AiService {
                             // The reported `tokens_used` is prompt budget +
                             // response tokens (total context consumed).
                             let usage = res.usage;
-                            let response_tokens = if usage.output_tokens > 0 {
-                                usage.output_tokens as usize
-                            } else {
-                                crate::service::token_count::TokenCountService::new()
-                                    .count_tokens(&final_content)
-                            };
+                            let response_tokens = usage
+                                .output_tokens
+                                .filter(|&n| n > 0)
+                                .map(|n| n as usize)
+                                .unwrap_or_else(|| {
+                                    crate::service::token_count::TokenCountService::new()
+                                        .count_tokens(&final_content)
+                                });
                             let _ = channel_clone.send(StreamChunk::Complete {
                                 message_id: msg_id,
                                 content: final_content,

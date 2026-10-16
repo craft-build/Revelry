@@ -41,7 +41,7 @@ The app is a single-page application (SSR disabled) built with SvelteKit 2 + Sve
 | Language       | Rust                           | Edition 2021                                                |
 | Database       | SQLite via rusqlite            | Bundled, migrations via rusqlite_migration                  |
 | Keyring        | keyring v4 + keyring-core v1   | OS-native credential store (Keychain/GNOME Keyring/CredMan) |
-| AI             | rig-core 0.37                  | Unified LLM client (OpenAI, Anthropic, Ollama, etc.)        |
+| AI             | rig 0.44                       | Unified LLM client (OpenAI, Anthropic, Ollama, etc.)        |
 | Async runtime  | tokio (multi-thread)           | All DB operations via async `DbWorker` actor                |
 | Tokenization   | tiktoken-rs 0.11               | Accurate token counting for prompt budgeting                |
 | Error handling | thiserror 2                    | Typed `AppError` enum, serialized to frontend               |
