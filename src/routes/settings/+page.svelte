@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Logo from '$lib/components/ui/Logo.svelte';
 	import type { Provider, GenerationPreset } from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
 	import { Button, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
@@ -61,8 +62,8 @@
 
 <div class="flex h-full">
 	<!-- Settings nav (AdwPreferencesWindow sidebar) -->
-	<aside class="w-56 shrink-0 border-r border-(--color-border) bg-(--color-surface) px-3 py-4">
-		<h2 class="mb-3 px-2 font-display text-base font-semibold tracking-tight">Preferences</h2>
+	<aside class="w-56 shrink-0 border-r border-(--color-border) bg-(--color-surface)/70 px-3 py-4 backdrop-blur-[20px]">
+		<h2 class="mb-3 px-2 font-display text-base font-semibold tracking-[-0.02em]">Preferences</h2>
 		<nav class="flex flex-col gap-0.5">
 			{#each sections as section (section.id)}
 				<button
@@ -85,7 +86,7 @@
 		<div class="mx-auto max-w-3xl">
 			{#if active === 'providers'}
 				<header class="mb-6">
-					<h1 class="font-display text-2xl font-semibold tracking-tight">AI Providers</h1>
+					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">AI Providers</h1>
 					<p class="mt-1 text-sm text-(--color-muted)">
 						Configure AI providers and API keys. Keys are stored in your OS keychain.
 					</p>
@@ -215,7 +216,7 @@
 				{/if}
 			{:else if active === 'generation'}
 				<header class="mb-6">
-					<h1 class="font-display text-2xl font-semibold tracking-tight">Generation</h1>
+					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">Generation</h1>
 					<p class="mt-1 text-sm text-(--color-muted)">
 						Default parameters and prompt presets. Presets can be assigned per-character or
 						per-conversation.
@@ -297,7 +298,7 @@
 				</div>
 			{:else if active === 'appearance'}
 				<header class="mb-6">
-					<h1 class="font-display text-2xl font-semibold tracking-tight">Appearance</h1>
+					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">Appearance</h1>
 					<p class="mt-1 text-sm text-(--color-muted)">
 						Theme, density, and reading comfort.
 					</p>
@@ -318,7 +319,7 @@
 				</div>
 			{:else if active === 'shortcuts'}
 				<header class="mb-6">
-					<h1 class="font-display text-2xl font-semibold tracking-tight">Keyboard shortcuts</h1>
+					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">Keyboard shortcuts</h1>
 				</header>
 				<div class="overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface)">
 					<table class="w-full text-sm">
@@ -338,7 +339,7 @@
 				</div>
 			{:else if active === 'data'}
 				<header class="mb-6">
-					<h1 class="font-display text-2xl font-semibold tracking-tight">Data</h1>
+					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">Data</h1>
 					<p class="mt-1 text-sm text-(--color-muted)">
 						Backup, restore, and export all of your data.
 					</p>
@@ -346,22 +347,28 @@
 				<p class="text-sm text-(--color-muted)">Coming soon — export, backup, and data management will be available when the backend supports these operations.</p>
 			{:else if active === 'about'}
 				<header class="mb-6">
-					<h1 class="font-display text-2xl font-semibold tracking-tight">About</h1>
+					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">About</h1>
 				</header>
-				<div class="rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-6">
-					<div class="flex items-center gap-3">
-						<div
-							class="grid size-12 place-items-center rounded-(--radius-lg)"
-							style="background: var(--gradient-brand)"
-						></div>
+				<div
+					class="relative overflow-hidden rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-6"
+				>
+					<!-- Tail-sweep hairline — the one brand moment on this page -->
+					<div
+						class="absolute inset-x-0 top-0 h-[3px]"
+						style="background: var(--gradient-brand)"
+						aria-hidden="true"
+					></div>
+					<div class="flex items-center gap-3.5">
+						<Logo class="size-14" alt="" />
 						<div>
-							<div class="font-display text-xl font-semibold tracking-tight">Revelry</div>
-							<div class="text-xs text-(--color-subtle)">v0.1.0 · UI scaffold</div>
+							<div class="font-display text-[22px] font-semibold tracking-[-0.02em]">Revelry</div>
+							<div class="font-mono text-xs text-(--color-subtle)">v{__APP_VERSION__}</div>
 						</div>
 					</div>
 					<p class="mt-4 text-sm text-(--color-muted)">
-						SvelteKit + Svelte 5 + Bits.ui front-end for the Revelry roleplay desktop
-						application. The backend is built in Rust on the rig framework.
+						A private, local-first roleplay app. Bring your own key for any of 15 providers —
+						keys stay in your OS keychain, and conversations, characters and lorebooks never
+						leave your machine.
 					</p>
 				</div>
 			{/if}

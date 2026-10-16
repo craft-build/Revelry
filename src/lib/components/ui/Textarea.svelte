@@ -29,7 +29,7 @@
 	bind:this={textarea_el}
 	bind:value
 	class={cn(
-		'flex min-h-[80px] w-full rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-3 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-subtle) transition-shadow duration-150 focus-visible:border-(--color-accent) focus-visible:outline-none focus-visible:shadow-(--shadow-glow-violet) disabled:cursor-not-allowed disabled:opacity-50',
+		'flex min-h-[80px] w-full rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) px-3 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-subtle) transition-shadow duration-150 focus-visible:border-(--color-accent) focus-visible:outline-none focus-visible:shadow-(--shadow-glow) disabled:cursor-not-allowed disabled:opacity-50',
 		autogrow && 'resize-none max-h-64 overflow-y-auto',
 		className
 	)}

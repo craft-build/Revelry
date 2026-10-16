@@ -10,7 +10,7 @@
 </script>
 
 <img
-	src="/logo-squircle.png"
+	src="/logo.png"
 	{alt}
 	class={cn('size-8 shrink-0', className)}
 	draggable="false"

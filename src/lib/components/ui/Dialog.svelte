@@ -24,12 +24,15 @@
 	}: Props = $props();
 
 	function handleOpenChange(value: boolean) {
-		open = value;
-		onopenchange?.(value);
+		if (onopenchange) {
+			onopenchange(value);
+		} else {
+			open = value;
+		}
 	}
 </script>
 
-<DialogPrimitive.Root bind:open onOpenChange={handleOpenChange}>
+<DialogPrimitive.Root {open} onOpenChange={handleOpenChange}>
 	<DialogPrimitive.Portal>
 		<DialogPrimitive.Overlay
 			class="fixed inset-0 z-50 bg-black/60 backdrop-blur-[20px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"

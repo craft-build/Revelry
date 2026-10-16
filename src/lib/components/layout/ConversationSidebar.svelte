@@ -5,7 +5,8 @@
 	import type { SearchResult } from '$lib/types';
 	import { Button, Input, Avatar, KebabMenu, KebabMenuItem } from '$lib/components/ui';
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
-	import { cn, formatRelativeTime } from '$lib/utils';
+	import { cn, conversationGroup, formatRelativeTime, type ConversationGroup } from '$lib/utils';
+	import type { Conversation } from '$lib/types';
 
 	let search = $state('');
 	let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -72,6 +73,19 @@
 		};
 	});
 
+	// Bucket the (already recency-sorted) list into Today / This week / Earlier
+	let grouped = $derived(
+		(() => {
+			const order: ConversationGroup[] = ['Today', 'This week', 'Earlier'];
+			const map = new Map<ConversationGroup, Conversation[]>();
+			for (const conv of filtered.conversations) {
+				const g = conversationGroup(conv.updated_at);
+				map.set(g, [...(map.get(g) ?? []), conv]);
+			}
+			return order.filter((g) => map.has(g)).map((g) => [g, map.get(g)!] as const);
+		})(),
+	);
+
 	function characterFor(id: string) {
 		return app.characters.find((c) => c.id === id);
 	}
@@ -117,7 +131,7 @@
 
 <aside
 	class={cn(
-		'flex h-full shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface) transition-[transform,margin,opacity] duration-200 ease-in-out',
+		'flex h-full shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface)/70 backdrop-blur-[20px] transition-[transform,margin,opacity] duration-200 ease-in-out',
 		app.sidebar_open ? 'w-72 translate-x-0' : 'w-72 -translate-x-full -ml-72 border-r-0 opacity-0 pointer-events-none'
 	)}
 >
@@ -142,7 +156,7 @@
 		{#if filtered.searchMode}
 			{#if app.is_searching}
 				<div class="flex h-full items-center justify-center">
-					<p class="text-xs text-(--color-muted)">Searching...</p>
+					<p class="text-xs text-(--color-muted)">Searching…</p>
 				</div>
 			{:else if filtered.results.length === 0 && filtered.titleConversations.length === 0}
 				<div class="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
@@ -171,7 +185,9 @@
 								}}
 								class={cn(
 									'group flex w-full gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors',
-									active ? 'bg-(--color-surface-elevated)' : 'hover:bg-(--color-surface-hover)'
+									active
+										? 'bg-(--color-surface-elevated) ring-1 ring-(--color-border) ring-inset'
+										: 'hover:bg-(--color-surface-hover)'
 								)}
 							>
 								<Avatar
@@ -207,7 +223,9 @@
 								href={`/chat/${conv.id}`}
 								class={cn(
 									'group flex gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors',
-									active ? 'bg-(--color-surface-elevated)' : 'hover:bg-(--color-surface-hover)'
+									active
+										? 'bg-(--color-surface-elevated) ring-1 ring-(--color-border) ring-inset'
+										: 'hover:bg-(--color-surface-hover)'
 								)}
 							>
 								<Avatar
@@ -240,8 +258,13 @@
 				<p class="text-xs text-(--color-muted)">No conversations yet.</p>
 			</div>
 		{:else}
+			{#each grouped as [group, convs] (group)}
+			<div class="mt-2 first:mt-0">
+			<div class="px-2 py-1 text-[10px] font-medium tracking-wider text-(--color-subtle) uppercase">
+				{group}
+			</div>
 			<ul class="flex flex-col gap-0.5">
-				{#each filtered.conversations as conv (conv.id)}
+				{#each convs as conv (conv.id)}
 					{@const char = characterFor(conv.character_id)}
 					{@const active = conv.id === app.active_conversation_id}
 					<li class="group/conv relative">
@@ -269,13 +292,16 @@
 								href={`/chat/${conv.id}`}
 								class={cn(
 									'group flex gap-2.5 rounded-(--radius-md) px-2 py-2 text-left transition-colors',
-									active ? 'bg-(--color-surface-elevated)' : 'hover:bg-(--color-surface-hover)'
+									active
+										? 'bg-(--color-surface-elevated) ring-1 ring-(--color-border) ring-inset'
+										: 'hover:bg-(--color-surface-hover)'
 								)}
 							>
 								<Avatar
 									name={char?.name ?? '?'}
 									src={char?.avatar_path}
 									size="sm"
+									ring={active}
 									class="mt-0.5"
 								/>
 								<div class="min-w-0 flex-1">
@@ -288,7 +314,9 @@
 										>
 											{conv.title}
 										</span>
-										<span class="shrink-0 text-[10px] text-(--color-subtle)">
+										<span
+											class="shrink-0 text-[10px] text-(--color-subtle) transition-opacity group-hover/conv:opacity-0"
+										>
 											{formatRelativeTime(conv.updated_at)}
 										</span>
 									</div>
@@ -306,6 +334,7 @@
 										Rename
 									</KebabMenuItem>
 									<KebabMenuItem
+										destructive
 										onclick={() => {
 											deleting_id = conv.id;
 											deleting_name = conv.title;
@@ -321,6 +350,8 @@
 					</li>
 				{/each}
 			</ul>
+			</div>
+			{/each}
 		{/if}
 	</div>
 	<DeleteConfirmationDialog

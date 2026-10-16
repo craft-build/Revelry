@@ -15,7 +15,7 @@
 
 <header
 	data-tauri-drag-region
-	class="drag-region relative flex h-12 shrink-0 items-center gap-2 border-b border-(--color-border) bg-(--color-surface) py-0 pr-3 pl-[6rem]"
+	class="drag-region relative z-10 flex h-12 shrink-0 items-center gap-2 border-b border-(--color-border) bg-(--color-surface)/80 py-0 pr-3 pl-[6rem] backdrop-blur-[20px]"
 >
 	<!-- Sidebar toggle -->
 	<div class="no-drag">
@@ -33,24 +33,27 @@
 
 	<!-- App identity -->
 	<div class="flex items-center gap-2 px-1">
-		<Logo alt="" />
-		<span class="font-display text-sm font-semibold tracking-wide">Revelry</span>
+		<Logo alt="" class="size-[26px]" />
+		<span class="font-display text-[15px] font-semibold tracking-[0.01em]">Revelry</span>
 	</div>
 
-	<!-- View switcher — centered pill segment, per the design system's TopNav -->
-	<nav class="no-drag absolute left-1/2 flex -translate-x-1/2 items-center gap-1">
+	<!-- View switcher — centered segmented tabs track -->
+	<nav
+		class="no-drag absolute left-1/2 inline-flex -translate-x-1/2 items-center gap-0.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) p-[3px]"
+	>
 		{#each views as view (view.href)}
 			{@const active = view.match(page.url.pathname)}
 			<a
 				href={view.href}
+				aria-current={active ? 'page' : undefined}
 				class={cn(
-					'inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) px-4 text-sm font-medium transition-colors',
+					'inline-flex h-[30px] items-center gap-2 rounded-[11px] px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150',
 					active
-						? 'bg-(--color-surface-elevated) text-(--color-foreground)'
-						: 'text-(--color-subtle) hover:text-(--color-foreground)'
+						? 'bg-(--color-surface-elevated) text-(--color-foreground) shadow-sm ring-1 ring-(--color-border) ring-inset'
+						: 'text-(--color-muted) hover:text-(--color-foreground)'
 				)}
 			>
-				<view.icon class="size-3.5" />
+				<view.icon class="size-4" />
 				{view.label}
 			</a>
 		{/each}

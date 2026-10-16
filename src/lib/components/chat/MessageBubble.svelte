@@ -160,14 +160,14 @@
 			{:else}
 				<span
 					class={cn(
-						'font-display text-sm font-semibold tracking-tight',
+						'font-display text-sm font-semibold tracking-[-0.02em]',
 						isUser ? 'text-(--color-foreground)/80' : 'text-(--color-foreground)'
 					)}
 				>
 					{isUser ? (persona?.name ?? 'You') : (character?.name ?? 'Character')}
 				</span>
 				{#if !isUser && message.metadata?.model}
-					<span class="text-[10px] uppercase tracking-wider text-(--color-subtle)">
+					<span class="font-mono text-[10px] tracking-wider text-(--color-subtle) uppercase">
 						{message.metadata.model}
 					</span>
 				{/if}
@@ -197,7 +197,7 @@
 		{#if isError}
 			{@const errorInfo = getErrorDisplay(message.metadata?.error_type as string, message.content)}
 			<div
-				class="rounded-(--radius-lg) border border-(--color-destructive)/20 bg-(--color-destructive)/10 px-4 py-3 text-[14px] leading-relaxed"
+				class="rounded-(--radius-lg) border border-(--color-destructive)/30 bg-(--color-destructive)/10 px-4 py-3 text-[14px] leading-relaxed"
 			>
 				<div class="flex items-start gap-2">
 					<AlertTriangle class="mt-0.5 size-4 shrink-0 text-(--color-destructive)" />
@@ -233,7 +233,7 @@
 		{:else if isEditing}
 			<!-- Edit mode: textarea replaces bubble content -->
 			<div
-				class="w-full rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-input) p-3"
+				class="w-full rounded-(--radius-lg) border border-(--color-accent) bg-(--color-surface-input) p-3 shadow-(--shadow-glow)"
 			>
 				<textarea
 					bind:this={editTextarea}
@@ -249,7 +249,7 @@
 						type="button"
 						onclick={handleSaveResend}
 						disabled={isSaving}
-						class="inline-flex items-center gap-1.5 rounded-(--radius-sm) bg-(--color-accent) px-3 py-1 text-xs font-medium text-(--color-accent-fg) hover:bg-(--color-accent)/90 disabled:opacity-50"
+						class="inline-flex h-8 items-center gap-1.5 rounded-(--radius-lg) bg-(--color-accent) px-3 text-xs font-semibold text-(--color-accent-fg) transition-[background-color,transform] duration-150 hover:bg-(--color-accent-hover) active:scale-[0.98] active:bg-(--color-accent-active) disabled:opacity-45"
 					>
 						{#if isSaving}
 							<Loader2 class="size-3 animate-spin" />
@@ -262,7 +262,7 @@
 						type="button"
 						onclick={handleCancelEdit}
 						disabled={isSaving}
-						class="inline-flex items-center gap-1.5 rounded-(--radius-sm) px-3 py-1 text-xs font-medium text-(--color-subtle) hover:text-(--color-foreground) disabled:opacity-50"
+						class="inline-flex h-8 items-center gap-1.5 rounded-(--radius-lg) px-3 text-xs font-semibold text-(--color-foreground) transition-colors duration-150 hover:bg-(--color-surface-hover) disabled:opacity-45"
 					>
 						Discard changes
 					</button>
@@ -271,10 +271,10 @@
 		{:else}
 			<div
 				class={cn(
-					'rounded-(--radius-lg) border px-4 py-3 text-[15px] leading-relaxed',
+					'rounded-(--radius-lg) border px-4 py-3 text-[15px] leading-[1.65] wrap-anywhere',
 					isUser
-						? 'border-transparent bg-(--color-bubble-user) text-(--color-accent-fg)'
-						: 'border-(--color-border) bg-(--color-bubble-character) text-(--color-foreground)',
+						? 'rounded-tr-[6px] border-transparent bg-(--color-bubble-user) text-(--color-accent-fg) shadow-[0_6px_20px_-8px_rgba(51,101,252,0.55)]'
+						: 'rounded-tl-[6px] border-(--color-border) bg-(--color-bubble-character) text-(--color-foreground)',
 					message.is_streaming && message.content && 'streaming-caret'
 				)}
 			>
@@ -292,11 +292,11 @@
 
 				<!-- Steering instruction block -->
 				{#if isUser && message.steering}
-					<div class="mt-2.5 flex gap-2 rounded-(--radius-md) border-l-2 border-(--color-accent-muted) bg-(--color-surface) px-3 py-2">
-						<Compass class="mt-0.5 size-3.5 shrink-0 text-(--color-muted)" />
-						<div class="flex flex-col gap-0.5 min-w-0">
-							<span class="text-[9px] font-semibold uppercase tracking-widest text-(--color-subtle)">Steering</span>
-							<span class="text-[13px] italic leading-relaxed text-(--color-muted)">{message.steering}</span>
+					<div class="mt-2.5 flex gap-2 rounded-(--radius-md) bg-black/22 px-3 py-2">
+						<Compass class="mt-0.5 size-3.5 shrink-0 opacity-80" />
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<span class="text-[9px] font-semibold tracking-widest uppercase opacity-70">Steering</span>
+							<span class="text-[13px] leading-relaxed italic opacity-85">{message.steering}</span>
 						</div>
 					</div>
 				{/if}

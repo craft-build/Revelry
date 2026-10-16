@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Avatar as AvatarPrimitive, Dialog as DialogPrimitive } from 'bits-ui';
 	import { X } from '@lucide/svelte';
-	import { cn, avatarInitials, resolveAvatarUrl } from '$lib/utils';
+	import { cn, avatarInitials, avatarTone, resolveAvatarUrl, type AvatarTone } from '$lib/utils';
 
 	interface Props {
 		src?: string;
@@ -16,6 +16,11 @@
 		 * (the avatar falls back to initials and stays non-interactive).
 		 */
 		enlargeable?: boolean;
+		/**
+		 * Fallback fill. Defaults to one of four tail tints hashed from the
+		 * name; 'brand' uses the full tail-sweep gradient.
+		 */
+		tone?: AvatarTone | 'brand';
 	}
 
 	let {
@@ -24,7 +29,8 @@
 		size = 'md',
 		class: className,
 		ring = false,
-		enlargeable = false
+		enlargeable = false,
+		tone
 	}: Props = $props();
 
 	// Track whether the image failed to load so we fall back to initials
@@ -41,6 +47,12 @@
 		void src;
 		img_failed = false;
 	});
+
+	let fill = $derived(
+		tone === 'brand'
+			? 'background: var(--gradient-brand)'
+			: `background: var(--gradient-avatar-${tone ?? avatarTone(name)})`
+	);
 
 	const sizeClasses = {
 		xs: 'size-6 text-[10px]',
@@ -82,7 +94,7 @@
 					sizeClasses[size],
 					ring && 'ring-2 ring-(--color-accent-vivid) ring-offset-2 ring-offset-(--color-background)'
 				)}
-				style="background: var(--gradient-brand)"
+				style={fill}
 			>
 				{@render avatarInner()}
 			</AvatarPrimitive.Root>
@@ -124,7 +136,7 @@
 			ring && 'ring-2 ring-(--color-accent-vivid) ring-offset-2 ring-offset-(--color-background)',
 			className
 		)}
-		style="background: var(--gradient-brand)"
+		style={fill}
 	>
 		{@render avatarInner()}
 	</AvatarPrimitive.Root>

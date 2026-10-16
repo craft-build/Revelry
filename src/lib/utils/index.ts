@@ -63,6 +63,22 @@ export function formatRelativeTime(iso: string): string {
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+export type ConversationGroup = "Today" | "This week" | "Earlier";
+
+/**
+ * Bucket an ISO timestamp into the sidebar's date groups. Uses the same
+ * boundaries as `formatRelativeTime` so a row's label matches its group.
+ */
+export function conversationGroup(iso: string): ConversationGroup {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffDays = (now.getTime() - date.getTime()) / 86_400_000;
+
+  if (diffDays < 1 && date.getDate() === now.getDate()) return "Today";
+  if (diffDays < 7) return "This week";
+  return "Earlier";
+}
+
 /**
  * Client-side UI estimate using a 4-char-per-token heuristic.
  * Used only for the input context bar before a round-trip; accurate
@@ -82,6 +98,20 @@ export function avatarInitials(name: string): string {
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("")
     .slice(0, 2);
+}
+
+export type AvatarTone = "blue" | "purple" | "pink" | "ember";
+
+const AVATAR_TONES: AvatarTone[] = ["blue", "purple", "pink", "ember"];
+
+/**
+ * Pick one of the four tail tints for an avatar fallback, hashed from the
+ * name so the same character always gets the same colour.
+ */
+export function avatarTone(name: string): AvatarTone {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_TONES[h % AVATAR_TONES.length];
 }
 
 /**

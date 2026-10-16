@@ -71,7 +71,7 @@
 </script>
 
 <aside
-	class="flex w-72 shrink-0 flex-col border-l border-(--color-border) bg-(--color-surface-elevated)"
+	class="flex w-72 shrink-0 flex-col border-l border-(--color-border) bg-(--color-surface)"
 >
 	<!-- Header -->
 	<div class="flex items-center justify-between border-b border-(--color-border) px-4 py-3">

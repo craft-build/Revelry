@@ -1,7 +1,7 @@
 use jiff::Timestamp;
 use std::sync::Mutex;
-use tauri::State;
 use tauri::ipc::Channel;
+use tauri::State;
 use tokio_util::sync::CancellationToken;
 
 use crate::ai::{AiService, BudgetInfo, GenerationParams, MessagePersistence, StreamChunk};

@@ -9,7 +9,7 @@
 
 **Package name:** `revelry`
 **What it is:** AI roleplay desktop application — a Tauri v2 app with a SvelteKit frontend and a Rust backend communicating via Tauri IPC.
-**Design spec:** v2.0 (documented in `docs/`).
+**Design spec:** v2.0 (documented in `docs/`). **Visual design:** v2 "Night fox" (see [Styling System](#styling-system)). `docs/` still describes an older Geist/Fraunces + teal look; `src/app.css` is the source of truth for visuals.
 
 The app is a single-page application (SSR disabled) built with SvelteKit 2 + Svelte 5 runes for the UI, and Rust (Tauri v2) for the backend. The Rust backend handles all data persistence (SQLite), API key management (OS keyring), LLM API calls (via rig-core), and file I/O. The frontend communicates with the backend exclusively through typed `invoke()` calls and `Channel` streams.
 
@@ -25,7 +25,7 @@ The app is a single-page application (SSR disabled) built with SvelteKit 2 + Sve
 | --------------- | -------------------------- | ---------------------------------------------------------- |
 | Framework       | SvelteKit 2.x + Svelte 5   | Runes mode (`$state`, `$derived`, `$effect`, `$props`)     |
 | Language        | TypeScript                 | `strict: true` in `tsconfig.json`                          |
-| Styling         | Tailwind CSS v4            | Via `@tailwindcss/vite` plugin, OKLCH color tokens         |
+| Styling         | Tailwind CSS v4            | Via `@tailwindcss/vite` plugin, hex tokens in `@theme`     |
 | Components      | bits-ui 2.x                | Headless primitives (Svelte equivalent of Radix/shadcn)    |
 | Icons           | @lucide/svelte             | —                                                          |
 | Variants        | tailwind-variants (`tv()`) | For component variant definitions (e.g., `buttonVariants`) |
@@ -54,7 +54,7 @@ The app is a single-page application (SSR disabled) built with SvelteKit 2 + Sve
 ### Frontend
 
 ```sh
-bun dev          # Start dev server (port 5173) — runs without Tauri backend (uses dev mocks)
+bun dev          # Start Vite dev server (port 1420) — without Tauri most data calls fail; see Dev-mode operation
 bun run build    # Production build
 bun run preview  # Preview production build
 bun run check    # Type-check with svelte-check
@@ -90,7 +90,7 @@ The frontend communicates with the Rust backend through **Tauri IPC**:
 
 **API layer:** `src/lib/data/api.ts` — typed wrappers around all `invoke()` calls. The frontend never calls `invoke()` directly outside this file. Every Tauri command has a corresponding exported async function here.
 
-**Dev-mode fallback:** When `__TAURI_INTERNALS__` is not present in `window` (i.e., running `bun dev` without Tauri), `api.ts` detects this and falls back to mock implementations so the UI can be developed independently. Functions that have mock fallbacks use the `IS_DEV` guard at the top of the function.
+**Dev-mode fallback:** When `__TAURI_INTERNALS__` is not present in `window` (i.e., running `bun dev` without Tauri), `api.ts` sets `IS_DEV`. Functions that have mock fallbacks check it at the top of the function. Currently only `generateCharacter` has a mock — everything else calls `invoke()` and fails, so use `bun tauri dev` for real UI work.
 
 ### Central state — `AppState`
 
@@ -141,18 +141,25 @@ src-tauri/src/
 │   ├── lorebook.rs         # Lorebook, LorebookEntry, LorebookActivationDetail
 │   └── regex_script.rs     # RegexScript
 ├── ai/                     # AI service layer — LLM interaction
-│   └── mod.rs              # AiService (stream_chat, stream_generate_character),
-│                            # StreamChunk, GenerateCharacterChunk, GenerationParams
+│   ├── mod.rs              # AiService facade + re-exports
+│   ├── chat.rs             # stream_chat
+│   ├── generate.rs         # stream_generate_character
+│   ├── providers.rs        # rig-core client construction per ProviderType
+│   ├── model_list.rs       # Remote model listing / detection
+│   ├── types.rs            # StreamChunk, GenerateCharacterChunk, GenerationParams
+│   └── util.rs             # Shared helpers
 ├── service/                # Business logic services
 │   ├── prompt.rs           # PromptEngine — assembles system prompts with persona/lorebook
 │   ├── template.rs         # Persona template compression (tiered)
 │   ├── token_count.rs      # TokenCountService — tiktoken-rs + context window resolution
 │   ├── regex.rs            # apply_regex_scripts — post-processing
 │   ├── lorebook.rs         # Lorebook keyword matching
+│   ├── lorebook_io.rs      # Lorebook import/export
 │   └── card_io.rs          # Character card import/export logic
 ├── db/                     # Database layer (async actor pattern)
 │   ├── mod.rs              # DbWorker — tokio mpsc actor; DbCommand enum
-│   └── migrations/         # SQLite schema migrations
+│   ├── migrations.rs       # SQLite schema migrations
+│   └── <domain>.rs         # Per-domain queries (characters, conversations, lorebook, …)
 └── secrets/
     └── mod.rs              # KeyringStore — OS keychain for API keys
 ```
@@ -185,7 +192,7 @@ When adding a new Tauri command that returns structured data:
 
 ### Dev-mode operation
 
-When running `bun dev` (without Tauri), the frontend detects the absence of `__TAURI_INTERNALS__` in `window` and falls back to mock implementations in `api.ts`. This allows UI development without the Rust backend. Mock data is in `src/lib/data/mock.ts`.
+When running `bun dev` (without Tauri), the frontend detects the absence of `__TAURI_INTERNALS__` in `window`. Mock implementations live in `src/lib/data/mock.ts`, but today only character generation is mocked — `app.hydrate()` calls real commands, so the app shows the "Unable to load data" screen without the backend. Use `bun tauri dev` to see real screens.
 
 **When a feature has both a real Tauri invoke and a mock fallback**, the mock is gated by `IS_DEV`:
 
@@ -285,28 +292,32 @@ Every component that accepts a `class` prop must merge it through `cn()`:
 
 ```
 src/
-├── app.css                          # Tailwind v4 @theme tokens + base styles + custom utilities
-├── app.html                         # HTML shell (Geist, Fraunces, Geist Mono from Google Fonts)
-├── app.d.ts                         # App type augmentations
+├── app.css                          # v2 palette, Tailwind v4 @theme tokens, @font-face, base styles, utilities, markdown prose
+├── app.html                         # HTML shell + pre-paint theme script (adds html.light / html.dark)
+├── app.d.ts                         # App type augmentations (incl. __APP_VERSION__)
 ├── lib/
 │   ├── components/
 │   │   ├── ui/                      # Bits.ui-styled primitives
-│   │   │   ├── Avatar.svelte
+│   │   │   ├── Avatar.svelte        # Image or hashed tail-tint fallback (tone prop)
+│   │   │   ├── AvatarUpload.svelte
 │   │   │   ├── Button.svelte        # (module script: buttonVariants export)
 │   │   │   ├── Dialog.svelte
-│   │   │   ├── Input.svelte
-│   │   │   ├── Select.svelte
+│   │   │   ├── Input.svelte / Select.svelte / Textarea.svelte
+│   │   │   ├── KebabMenu.svelte (+ KebabMenuItem, KebabMenuSeparator)
+│   │   │   ├── Logo.svelte          # static/logo.png — the fox app icon
+│   │   │   ├── StepperHeader.svelte
 │   │   │   ├── Tag.svelte
-│   │   │   ├── Textarea.svelte
+│   │   │   ├── ToastContainer.svelte
 │   │   │   ├── Tooltip.svelte
 │   │   │   └── index.ts             # Barrel exports for all UI primitives
 │   │   ├── layout/                  # AppHeader, ConversationSidebar
-│   │   ├── chat/                    # ChatHeader, MessageBubble, MessageInput, PersonaSwitcher
+│   │   ├── chat/                    # ChatHeader, MessageBubble, MessageInput (floating composer w/ persona + model chips),
+│   │   │                            # PersonaSwitcher, ProviderModelSelector, Branch*, Lorebook panels, GenerationPanel, MarkdownRenderer
 │   │   ├── characters/              # CharacterCard, CharacterEditorDialog, CharacterGeneratorDialog
 │   │   ├── personas/                # PersonaCard, PersonaEditorDialog
 │   │   ├── lorebooks/               # LorebookCard, LorebookEditor
-│   │   ├── providers/               # ProviderEditorDialog
-│   │   └── settings/                # Settings sections
+│   │   ├── providers/               # ProviderEditorDialog, ModelEntryRow, KeyringUnavailableBanner
+│   │   └── settings/                # ThemeToggle, CodeThemeSelector, PresetEditorDialog
 │   ├── stores/
 │   │   └── app.svelte.ts            # AppState — single root state class
 │   ├── types/
@@ -314,8 +325,10 @@ src/
 │   ├── data/
 │   │   ├── api.ts                   # Typed Tauri invoke wrappers + dev-mode mocks
 │   │   └── mock.ts                  # Mock data for development
+│   ├── shiki.svelte.ts              # Shiki highlighter (code blocks in messages)
 │   └── utils/
-│       └── index.ts                 # cn(), formatRelativeTime(), estimateTokens(), avatarInitials()
+│       └── index.ts                 # cn(), formatRelativeTime(), conversationGroup(), estimateTokens(),
+│                                    # avatarInitials(), avatarTone(), resolveAvatarUrl(), parseSteering()
 └── routes/
     ├── +layout.svelte               # App shell + state hydration + F9 sidebar toggle listener
     ├── +layout.ts                   # SSR off (ssr=false, prerender=false)
@@ -337,52 +350,78 @@ See the "Backend architecture" section above for the full directory tree and mod
 
 ## Styling System
 
-### Tailwind v4 theme tokens
+The visual language is **v2 "Night fox"**, defined by the `revelry-design` skill (tokens, UI kit, guidelines). Mood: a fox at night — a near-black blue field, one cool blue light, warm embers at the edge. Every brand colour comes from the mascot icon (`static/logo.png`). If a design question isn't answered here, check the skill before inventing something.
 
-Defined in `src/app.css` inside an `@theme { }` block. All tokens use **OKLCH** color space.
+### Tokens (`src/app.css`)
 
-| Token group  | Examples                                                                                                              |
-| ------------ | --------------------------------------------------------------------------------------------------------------------- |
-| Surfaces     | `--color-background`, `--color-surface`, `--color-surface-elevated`, `--color-surface-hover`, `--color-surface-input` |
-| Foreground   | `--color-foreground`, `--color-muted`, `--color-subtle`                                                               |
-| Borders      | `--color-border`, `--color-border-strong`                                                                             |
-| Accent       | `--color-accent`, `--color-accent-fg`, `--color-accent-muted`                                                         |
-| Semantic     | `--color-destructive`, `--color-warning`, `--color-success`                                                           |
-| Chat bubbles | `--color-bubble-user`, `--color-bubble-character`                                                                     |
-| Typography   | `--font-sans` (Geist), `--font-serif` (Fraunces), `--font-mono` (Geist Mono)                                          |
-| Radii        | `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`                                                            |
+- **Raw palette** lives in a plain `:root` block: `--night-950…600`, `--blue-200…800`, `--purple-*`, `--pink-*`, `--ember-*`, `--mint-*`, `--coral-*`, plus the gradients (`--gradient-brand`, `--gradient-avatar-{blue,purple,pink,ember}`). These are in `:root` rather than `@theme` so Tailwind always emits them, even when they're only referenced from inline styles or template strings.
+- **Semantic tokens** live in `@theme` and are what components use. Colours are hex/rgba (not OKLCH).
+
+| Token group  | Tokens (dark values)                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Surfaces     | `--color-background` #07080d → `--color-surface` #10121c → `--color-surface-elevated` #161928 → `--color-surface-hover` #1e2235; `--color-surface-input` #0b0d15 (inset) |
+| Foreground   | `--color-foreground`, `--color-muted`, `--color-subtle`                                                                                                                  |
+| Borders      | `--color-border` (white 8%), `--color-border-strong` (white 20%)                                                                                                         |
+| Accent       | `--color-accent` fox blue #3365fc (+ `-hover`, `-active`, `-fg`, `-muted`); `--color-accent-vivid` #8fa8ff when accent is text/icon on dark                              |
+| Tail accents | `--color-accent-secondary` purple, `--color-accent-tertiary` pink, `--color-accent-warm` ember — brand moments only                                                      |
+| Semantic     | `--color-destructive` coral, `--color-warning` ember, `--color-success` mint                                                                                             |
+| Chat bubbles | `--color-bubble-user` (solid accent), `--color-bubble-character` (elevated)                                                                                              |
+| Typography   | `--font-sans` Public Sans, `--font-serif` Space Grotesk (display), `--font-mono` JetBrains Mono                                                                          |
+| Radii        | `--radius-sm` 8, `--radius-md` 14, `--radius-lg` 20, `--radius-xl` 28                                                                                                    |
+| Shadows      | `--shadow-sm/md/lg` (override Tailwind's), `--shadow-glow` (blue focus glow), `--shadow-glow-ember`; `--shadow-glow-violet` is a legacy alias                            |
 
 ### Using theme tokens in Tailwind classes
-
-Tailwind v4 syntax for referencing CSS custom properties in utility classes:
 
 ```
 bg-(--color-surface)       → background: var(--color-surface)
 text-(--color-muted)       → color: var(--color-muted)
 border-(--color-border)    → border-color: var(--color-border)
 rounded-(--radius-md)      → border-radius: var(--radius-md)
+shadow-(--shadow-glow)     → box-shadow: var(--shadow-glow)
 ```
 
 ### Custom utility classes (defined in `@layer utilities`)
 
-| Class              | Purpose                                                                              |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| `.font-display`    | Fraunces serif for character names; applies OpenType features `ss01`, `ss02`, `liga` |
-| `.surface-grain`   | Subtle radial-gradient texture overlay (atmospheric, not noise)                      |
-| `.streaming-caret` | Animated `▍` caret on streaming AI responses                                         |
-| `.drag-region`     | `-webkit-app-region: drag` for Tauri window dragging                                 |
-| `.no-drag`         | `-webkit-app-region: no-drag` to exclude elements from drag region                   |
+| Class                  | Purpose                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `.font-display`        | Space Grotesk for names, titles, initials; OpenType `ss01`, `ss02`, `liga`                  |
+| `.surface-grain`       | "Night glow" — blue radial top-left, purple top-right, ember bottom-right (on the app root) |
+| `.text-gradient-brand` | Tail-sweep gradient text (used once: "life." on Home)                                       |
+| `.animate-pop-in`      | Popover entrance (from -4px / 98%)                                                          |
+| `.streaming-caret`     | Blinking blue `▍` caret on streaming AI responses                                           |
+| `.thinking-dots`       | Three pulsing dots (blue / purple / pink) for an empty streaming bubble                     |
+| `.drag-region`         | `-webkit-app-region: drag` for Tauri window dragging                                        |
+| `.no-drag`             | `-webkit-app-region: no-drag` to exclude elements from drag region                          |
+
+`.prose-markdown` (in `@layer components`) styles rendered messages. Its colours come from `--md-*` variables that `MarkdownRenderer` sets inline from the selected code theme (Settings → Appearance), so don't hardcode colours or opacity in the prose rules — that breaks the code-theme feature.
+
+### Visual rules
+
+- **One accent.** Fox blue is the only interactive colour: fills, user bubbles, focus. Tail colours (purple, pink, ember) are for brand moments, avatar tints and the streaming indicator. Coral (destructive) stays distinct from tail pink.
+- **Gradient** (`--gradient-brand`) is for brand moments only: the Home headline word, 2–3px hairlines on brand cards (About, the generator stream), and `tone="brand"` avatars. **Never** a button or card fill.
+- **Avatars** without an image get one of four 2-stop tints hashed from the name (`avatarTone()`), so the same name always gets the same colour.
+- **Borders over shadows** for panel separation. Cards: surface + 1px border + `radius-lg` + 16px padding; on hover, strong border + elevated bg + `shadow-md`. Dialogs, popovers, menus, toasts and the composer use `shadow-lg`.
+- **Translucency:** the app header (80%) and sidebars (70%) use `bg-(--color-surface)/NN` + `backdrop-blur-[20px]` so the night glow reads through. Overlays are black/60 + 20px blur. Popovers/menus/tooltips: `border-strong`, elevated bg, 20px blur.
+- **Focus:** blue border + `shadow-(--shadow-glow)`.
+- **Radii:** sm for menu rows/tooltips, md for inputs/tags/chips/tab tracks, lg for buttons/cards/bubbles/banners, xl for dialogs and the composer. Message bubbles have a 6px "speech" corner toward the speaker, and user bubbles carry a faint blue under-glow.
+- **Tabs** (header nav, Library) are a segmented track: `surface-input` + border + 3px padding; the active tab is elevated + `shadow-sm` + inset border ring.
+- **Motion:** 150ms colour/opacity, 200ms sidebar + toasts, press = `active:scale-[0.98]`. No bounces.
+- **Type:** Space Grotesk 600 with tight tracking (-0.02 to -0.03em) for names and titles. Public Sans 14px UI, chat 15px / 1.65. JetBrains Mono for model IDs, params, token counts, regex, keywords, kbd.
+- **Icons:** Lucide only (`@lucide/svelte`), 16px default, 14 in small buttons and menus, 12 in message actions. No emoji.
+- **Copy:** sentence case, the user is "you", the app never says "I"/"we", real ellipsis "…", middot "·" separators.
+
+### Layout
+
+48px app header (logo + centred Chat / Library / Settings tabs), 288px collapsible conversation sidebar grouped Today / This week / Earlier (F9), 60px chat header, centred 80ch chat column, a **floating composer** (persona + model chips, mini context meter, send) with the hint line beneath, and a 288px right-hand Generation panel. The body never scrolls.
 
 ### Fonts
 
-- **Geist** — sans-serif body font (loaded from Google Fonts in `app.html`)
-- **Fraunces** — serif display font for character names (`.font-display`)
-- **Geist Mono** — monospace for code/tokens
+Self-hosted woff2 in `static/fonts/`, declared with `@font-face` at the top of `app.css`: **Space Grotesk** (display), **Public Sans** (body), **JetBrains Mono** (mono). No Google Fonts.
 
 ### Theme
 
-- **Dark by default** (`<html class="dark">` in `app.html`).
-- Light theme is implemented (theme state persisted in app settings).
+- Dark is the default. A pre-paint script in `app.html` reads `localStorage["revelry-theme"]` (`light` / `dark` / `system`) and adds `html.light` or `html.dark`. `+layout.svelte` follows OS changes when set to `system`.
+- Light theme overrides live in `html.light { … }` in `app.css`, using darker steps of the same fox hues. Check new components in both themes.
 
 ---
 
@@ -461,9 +500,9 @@ All frontend types are in `src/lib/types/index.ts`. All backend domain types are
 | `Conversation`           | `types/index.ts` | `domain/conversation.rs` | Conversation record linked to character and optional persona     |
 | `Provider`               | `types/index.ts` | `domain/provider.rs`     | LLM provider configuration (type, base URL, model, gen params)   |
 | `GenerationPreset`       | `types/index.ts` | `domain/generation.rs`   | Saved generation parameter preset                                |
-| `GeneratedCharacterData` | `types/index.ts` | `ai/mod.rs`              | Partial character data from AI generation (creative fields only) |
-| `GenerateCharacterChunk` | `types/index.ts` | `ai/mod.rs`              | Streaming chunk for character generation (token/complete/error)  |
-| `StreamChunk`            | `types/index.ts` | `ai/mod.rs`              | Streaming chunk for chat (token/complete/error)                  |
+| `GeneratedCharacterData` | `types/index.ts` | `ai/types.rs`            | Partial character data from AI generation (creative fields only) |
+| `GenerateCharacterChunk` | `types/index.ts` | `ai/types.rs`            | Streaming chunk for character generation (token/complete/error)  |
+| `StreamChunk`            | `types/index.ts` | `ai/types.rs`            | Streaming chunk for chat (token/complete/error)                  |
 
 ### Union/enum types
 
@@ -495,8 +534,8 @@ All frontend types are in `src/lib/types/index.ts`. All backend domain types are
 
 - App shell with sidebar and conversation list
 - Active conversation with AI streaming, auto-scroll, token counting
-- Message input with auto-grow textarea, token estimate, and context bar
-- Persona switcher in chat header
+- Floating composer with auto-grow textarea, persona + provider/model chips, and mini context meter
+- Persona switcher and model selector in the composer
 - Character editor (create/edit/import) with avatar upload, lorebook assignment, regex scripts
 - Persona editor (create/edit) with avatar upload
 - Lorebook editor (create/edit) with entry management and keyword testing
@@ -515,10 +554,12 @@ All frontend types are in `src/lib/types/index.ts`. All backend domain types are
 - Search/filter in character library
 - Character generation (AI-powered) with provider selection and streaming preview
 
+- Markdown rendering (marked + DOMPurify) with Shiki code highlighting and selectable code theme
+- Light / dark / system theme
+
 ### 🚧 Stubbed (placeholder / not yet functional)
 
-- **Markdown rendering** — naive asterisk-to-italic only; no full parser
-- **Light theme** — stubbed in CSS; dark-only in practice
+- **Data settings** (export, backup, restore) — "Coming soon" placeholder in Settings
 - **Vault mode** — not implemented
 
 ---
@@ -535,9 +576,9 @@ All frontend types are in `src/lib/types/index.ts`. All backend domain types are
 
 5. **Tailwind v4 CSS variable syntax.** When referencing theme tokens in utility classes, use the `-(--token)` syntax: `bg-(--color-surface)`, not `bg-surface`. The old `theme()` function and arbitrary value `bg-[var(--color-surface)]` both work but the `-(--token)` shorthand is the project convention.
 
-6. **OKLCH colors.** All custom colors are defined in OKLCH. When adding new tokens, use OKLCH for consistency. Convert from hex/HSL using a tool if needed.
+6. **Colours come from the palette.** Don't hardcode hex values in components. Use the semantic tokens; reach for the raw palette (`--blue-400` etc.) only where the design calls for a specific tail colour. New colours should be added as tokens in `app.css` (hex, matching the existing ones) with a light-theme override. Variables referenced only from inline styles or template strings must live in `:root`, not `@theme`, or Tailwind may drop them.
 
-7. **Dark theme only (for now).** The HTML root has `class="dark"`. Light mode is stubbed. When it's implemented, check that new components work in both themes.
+7. **Both themes.** Dark is the default, but light (`html.light`) is live. Check new components in both.
 
 8. **Body scroll is disabled.** `body { overflow: hidden }` in `app.css` — this is intentional for the desktop app feel. Scroll happens inside component containers, not on the page body.
 
@@ -555,7 +596,7 @@ All frontend types are in `src/lib/types/index.ts`. All backend domain types are
 
 15. **Tauri command naming.** Rust command functions use snake_case (e.g., `generate_character`). Tauri v2 auto-converts args to camelCase for the frontend. The invoke command name is the snake_case function name.
 
-16. **Streaming chunk types must match exactly.** When adding a new streaming command, the Rust `#[serde(tag = "event", content = "data")]` enum must produce JSON that matches the TypeScript discriminated union exactly. Both use `camelCase` field names. Test with the serde unit test pattern (see `ai/mod.rs` tests).
+16. **Streaming chunk types must match exactly.** When adding a new streaming command, the Rust `#[serde(tag = "event", content = "data")]` enum must produce JSON that matches the TypeScript discriminated union exactly. Both use `camelCase` field names. Test with the serde unit test pattern (see the tests in `ai/`).
 
 17. **DbWorker is async.** Never call `rusqlite` directly from a Tauri command. Send `DbCommand` variants through the `db.send()` channel and await the oneshot reply. See any command file for the pattern.
 

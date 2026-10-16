@@ -305,32 +305,32 @@
 				<!-- Tab strip + search row -->
 				<div class="mb-6 flex items-center justify-between gap-4">
 					<Tabs.List
-						class="inline-flex h-10 items-center gap-1 rounded-(--radius-md) bg-(--color-surface-elevated) p-1"
+						class="inline-flex items-center gap-0.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) p-[3px]"
 					>
 						<Tabs.Trigger
 							value="characters"
-							class="inline-flex h-8 items-center gap-2 rounded-(--radius-sm) px-4 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm"
+							class="inline-flex h-[30px] items-center gap-2 rounded-[11px] px-3.5 text-[13px] font-medium whitespace-nowrap text-(--color-muted) transition-colors duration-150 hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface-elevated) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-(--color-border) data-[state=active]:ring-inset"
 						>
 							Characters
-							<span class="text-[11px] text-(--color-subtle)">
+							<span class="font-mono text-[11px] text-(--color-subtle)">
 								{app.characters.length}
 							</span>
 						</Tabs.Trigger>
 						<Tabs.Trigger
 							value="personas"
-							class="inline-flex h-8 items-center gap-2 rounded-(--radius-sm) px-4 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm"
+							class="inline-flex h-[30px] items-center gap-2 rounded-[11px] px-3.5 text-[13px] font-medium whitespace-nowrap text-(--color-muted) transition-colors duration-150 hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface-elevated) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-(--color-border) data-[state=active]:ring-inset"
 						>
 							My personas
-							<span class="text-[11px] text-(--color-subtle)">
+							<span class="font-mono text-[11px] text-(--color-subtle)">
 								{app.personas.length}
 							</span>
 						</Tabs.Trigger>
 						<Tabs.Trigger
 							value="lorebooks"
-							class="inline-flex h-8 items-center gap-2 rounded-(--radius-sm) px-4 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm"
+							class="inline-flex h-[30px] items-center gap-2 rounded-[11px] px-3.5 text-[13px] font-medium whitespace-nowrap text-(--color-muted) transition-colors duration-150 hover:text-(--color-foreground) data-[state=active]:bg-(--color-surface-elevated) data-[state=active]:text-(--color-foreground) data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-(--color-border) data-[state=active]:ring-inset"
 						>
 							Lorebooks
-							<span class="text-[11px] text-(--color-subtle)">
+							<span class="font-mono text-[11px] text-(--color-subtle)">
 								{app.lorebooks.length}
 							</span>
 						</Tabs.Trigger>

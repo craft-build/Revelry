@@ -15,7 +15,7 @@
 
 <Popover.Root bind:open>
 	<Popover.Trigger
-		class="inline-flex h-8 items-center gap-2 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-elevated) pl-1 pr-3 text-xs font-medium hover:bg-(--color-surface-hover)"
+		class="inline-flex h-8 items-center gap-2 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface) pr-2.5 pl-1 text-xs font-medium transition-colors duration-150 hover:bg-(--color-surface-hover)"
 	>
 		<Avatar
 			name={app.active_persona?.name ?? 'No persona'}
@@ -28,10 +28,10 @@
 	</Popover.Trigger>
 
 	<Popover.Content
-		side="bottom"
-		align="end"
-		sideOffset={6}
-		class="z-50 w-72 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-elevated) p-1.5 shadow-xl"
+		side="top"
+		align="start"
+		sideOffset={8}
+		class="animate-pop-in z-50 w-72 rounded-(--radius-lg) border border-(--color-border-strong) bg-(--color-surface-elevated) p-1.5 shadow-lg backdrop-blur-[20px]"
 	>
 		<div class="px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-(--color-subtle)">
 			Active persona

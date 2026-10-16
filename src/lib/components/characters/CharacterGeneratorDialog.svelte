@@ -154,7 +154,7 @@
 							side="bottom"
 							align="start"
 							sideOffset={6}
-							class="z-50 w-72 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-elevated) p-1.5 shadow-xl"
+							class="animate-pop-in z-50 w-72 rounded-(--radius-lg) border border-(--color-border-strong) bg-(--color-surface-elevated) p-1.5 shadow-lg backdrop-blur-[20px]"
 						>
 							<div
 								class="px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-(--color-subtle)"
@@ -226,7 +226,15 @@
 			</Button>
 
 			{#if phase === 'generating'}
-				<div class="rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-elevated) p-3">
+				<div
+					class="relative overflow-hidden rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) p-3"
+				>
+					<!-- Tail-sweep hairline marks the live generation stream -->
+					<div
+						class="absolute inset-x-0 top-0 h-0.5"
+						style="background: var(--gradient-brand)"
+						aria-hidden="true"
+					></div>
 					<pre class="whitespace-pre-wrap text-xs font-mono text-(--color-muted) streaming-caret">{app.generated_character_preview}</pre>
 				</div>
 				<Button variant="secondary" size="sm" onclick={() => { app.clearGeneration(); }}>

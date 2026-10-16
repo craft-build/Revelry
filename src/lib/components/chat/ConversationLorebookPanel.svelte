@@ -39,10 +39,10 @@
 		<button
 			type="button"
 			class={cn(
-				'inline-flex items-center gap-1.5 rounded-(--radius-md) px-2 py-1 text-xs transition-colors',
+				'inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) border px-2.5 text-xs font-medium transition-colors duration-150',
 				app.conversation_lorebooks.length > 0
-					? 'bg-(--color-accent)/10 text-(--color-accent-vivid) border border-(--color-accent)/30'
-					: 'text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
+					? 'border-(--color-accent)/35 bg-(--color-accent)/12 text-(--color-accent-vivid)'
+					: 'border-transparent text-(--color-muted) hover:text-(--color-foreground)',
 			)}
 			aria-label="Conversation lorebooks"
 		>
@@ -56,7 +56,7 @@
 
 	<Popover.Portal>
 		<Popover.Content
-			class="w-80 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-elevated) p-1.5 shadow-xl z-50"
+			class="animate-pop-in z-50 w-80 rounded-(--radius-lg) border border-(--color-border-strong) bg-(--color-surface-elevated) p-1.5 shadow-lg backdrop-blur-[20px]"
 			sideOffset={6}
 			align="end"
 		>

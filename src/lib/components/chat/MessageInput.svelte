@@ -1,7 +1,10 @@
 <script lang="ts">
-	import { Send, Square } from '@lucide/svelte';
+	import { ArrowUp, Square } from '@lucide/svelte';
 	import { app } from '$lib/stores/app.svelte';
+	import { Tooltip } from '$lib/components/ui';
 	import LorebookDetailPanel from './LorebookDetailPanel.svelte';
+	import PersonaSwitcher from './PersonaSwitcher.svelte';
+	import ProviderModelSelector from './ProviderModelSelector.svelte';
 
 	interface Props {
 		onsend?: (text: string) => void;
@@ -19,7 +22,7 @@
 		contextLimit > 0 ? Math.min(100, (usedContext / contextLimit) * 100) : 0,
 	);
 
-	/** Returns the semantic color token for the progress bar fill based on utilization. */
+	/** Returns the semantic color token for the meter fill based on utilization. */
 	let barColor = $derived.by(() => {
 		if (contextPct > 95) return 'bg-(--color-destructive)';
 		if (contextPct >= 80) return 'bg-(--color-warning)';
@@ -55,32 +58,18 @@
 	}
 </script>
 
-<div class="border-t border-(--color-border) bg-(--color-surface) px-6 py-4">
+<!-- Floating composer: an xl-radius elevated card carrying persona + model
+     chips and a mini context meter, with the hint line beneath. -->
+<div class="px-6 pb-[18px]">
 	<!-- AdwClamp equivalent: max width on wide screens -->
 	<div class="mx-auto max-w-[80ch]">
-		<!-- Context bar -->
-		<div class="mb-2 flex items-center justify-between gap-3 px-1 text-[10px] uppercase tracking-wider text-(--color-subtle)">
-			<div class="flex items-center gap-2">
-				<span>{usedContext.toLocaleString()} / {contextLimit.toLocaleString()} tok</span>
-				<div class="h-1 w-32 overflow-hidden rounded-full bg-(--color-surface-elevated)">
-					<div
-						class="h-full {barColor} transition-[width,background-color] duration-300"
-						style:width="{contextPct}%"
-					></div>
-				</div>
-			</div>
-			<div class="flex items-center gap-2">
-				<span>Enter to send · Shift+Enter for newline</span>
-				<span class="text-(--color-subtle)/60">· <code class="text-[10px]">/steer</code> to instruct</span>
-			</div>
+		<!-- Lorebook detail panel (expandable) -->
+		<div class="px-1.5 pb-2">
+			<LorebookDetailPanel />
 		</div>
 
-		<!-- Lorebook detail panel (expandable) -->
-		<LorebookDetailPanel />
-
-		<!-- Input frame -->
 		<div
-			class="flex items-end gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-input) p-2 focus-within:border-(--color-accent)"
+			class="rounded-(--radius-xl) border border-(--color-border-strong) bg-(--color-surface-elevated) shadow-lg transition-[box-shadow,border-color] duration-150 focus-within:border-(--color-accent)/60 focus-within:shadow-[var(--shadow-lg),var(--shadow-glow)]"
 		>
 			<textarea
 				bind:this={textarea}
@@ -90,29 +79,56 @@
 				placeholder={`Message ${app.active_character?.name ?? 'character'}…`}
 				rows="1"
 				disabled={app.is_generating}
-				class="block flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-relaxed text-(--color-foreground) placeholder:text-(--color-subtle) focus:outline-none disabled:opacity-50"
+				class="block w-full resize-none bg-transparent px-4 pt-3.5 pb-1.5 text-[15px] leading-[1.6] text-(--color-foreground) placeholder:text-(--color-subtle) focus:outline-none disabled:opacity-50"
 			></textarea>
 
-			{#if app.is_generating}
-				<button
-					type="button"
-					onclick={() => oncancel?.()}
-					class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-destructive) text-white hover:bg-(--color-destructive)/90"
-					aria-label="Stop generation"
+			<div class="flex items-center gap-1.5 pt-1.5 pr-2 pb-2 pl-2.5">
+				<PersonaSwitcher />
+				<ProviderModelSelector />
+
+				<div class="flex-1"></div>
+
+				<!-- Mini context meter -->
+				<Tooltip
+					text={`${usedContext.toLocaleString()} / ${contextLimit.toLocaleString()} tokens in context`}
 				>
-					<Square class="size-3.5" fill="currentColor" />
-				</button>
-			{:else}
-				<button
-					type="button"
-					onclick={handleSubmit}
-					disabled={!text.trim()}
-					class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-accent) text-(--color-accent-fg) hover:bg-(--color-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
-					aria-label="Send"
-				>
-					<Send class="size-3.5" />
-				</button>
-			{/if}
+					<span class="flex items-center gap-2 px-1.5 font-mono text-[10px] text-(--color-subtle)">
+						<span>{(usedContext / 1000).toFixed(1)}k</span>
+						<span class="block h-1 w-14 overflow-hidden rounded-full bg-(--color-surface-input)">
+							<span
+								class="block h-full {barColor} transition-[width,background-color] duration-300"
+								style:width="{Math.max(contextPct, 2)}%"
+							></span>
+						</span>
+					</span>
+				</Tooltip>
+
+				{#if app.is_generating}
+					<button
+						type="button"
+						onclick={() => oncancel?.()}
+						class="inline-flex size-[34px] shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-destructive) text-white transition-colors hover:bg-(--color-destructive)/90"
+						aria-label="Stop generation"
+					>
+						<Square class="size-3.5" fill="currentColor" />
+					</button>
+				{:else}
+					<button
+						type="button"
+						onclick={handleSubmit}
+						disabled={!text.trim()}
+						class="inline-flex size-[34px] shrink-0 items-center justify-center rounded-(--radius-md) bg-(--color-accent) text-(--color-accent-fg) transition-[background-color,transform] duration-150 hover:bg-(--color-accent-hover) active:scale-[0.98] active:bg-(--color-accent-active) disabled:cursor-not-allowed disabled:opacity-45"
+						aria-label="Send"
+					>
+						<ArrowUp class="size-4" />
+					</button>
+				{/if}
+			</div>
+		</div>
+
+		<div class="mt-2 text-center text-[10px] tracking-wider text-(--color-subtle) uppercase">
+			Enter to send · Shift+Enter for newline ·
+			<code class="font-mono text-[10px] normal-case">/steer</code> to instruct
 		</div>
 	</div>
 </div>

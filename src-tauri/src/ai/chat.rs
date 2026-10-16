@@ -4,7 +4,7 @@ use crate::domain::regex_script::RegexScript;
 
 use futures::StreamExt;
 use rig::agent::{Agent, MultiTurnStreamItem};
-use rig::completion::{CompletionModel, GetTokenUsage, Message};
+use rig::completion::Message;
 use rig::streaming::{StreamedAssistantContent, StreamingChat};
 use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
@@ -125,8 +125,8 @@ impl AiService {
     /// StreamAssistantItem(Text) tokens and a FinalResponse; cancels via
     /// CancellationToken with tokio::select!.
     #[allow(clippy::too_many_arguments)]
-    async fn stream_with_agent<M>(
-        agent: &Agent<M>,
+    async fn stream_with_agent(
+        agent: &Agent,
         prompt: Message,
         history: Vec<Message>,
         channel: &Channel<StreamChunk>,
@@ -136,10 +136,7 @@ impl AiService {
         regex_scripts: Vec<RegexScript>,
         lorebook_details: Vec<LorebookActivationDetail>,
         persistence: Option<MessagePersistence>,
-    ) where
-        M: CompletionModel + 'static,
-        M::StreamingResponse: GetTokenUsage,
-    {
+    ) {
         let mut stream = agent.stream_chat(prompt, history).await;
 
         let msg_id = message_id.to_string();

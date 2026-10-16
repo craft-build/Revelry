@@ -66,7 +66,7 @@
 	</Popover.Trigger>
 	<Popover.Portal>
 		<Popover.Content
-			class="w-72 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-elevated) p-1 shadow-xl z-50"
+			class="animate-pop-in z-50 w-72 rounded-(--radius-lg) border border-(--color-border-strong) bg-(--color-surface-elevated) p-1.5 shadow-lg backdrop-blur-[20px]"
 			sideOffset={4}
 			align="start"
 		>

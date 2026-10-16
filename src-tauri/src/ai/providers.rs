@@ -29,7 +29,7 @@ pub(crate) fn build_agent<C>(
     system_prompt: &str,
     params: &GenerationParams,
     additional: &serde_json::Map<String, serde_json::Value>,
-) -> Agent<C::CompletionModel>
+) -> Agent
 where
     C: AgentClientExt,
     <C as CompletionClient>::CompletionModel: 'static,

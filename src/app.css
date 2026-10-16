@@ -1,18 +1,15 @@
 @import "tailwindcss";
 
 /*
- * Revelry — design tokens
+ * Revelry — design tokens, v2 "Night fox"
  *
- * Sourced from the "Revelry" design system (claude.ai/design project
- * 80702a92-6c38-4f3a-a3a6-1482d1598a3c), derived from the brand mark:
- *  - Dark-navy-first, violet primary / purple secondary / green tertiary
- *  - Space Grotesk (display) + Public Sans (body) + JetBrains Mono (stat/
- *    token readouts), self-hosted below — see static/fonts/
- *  - Generous rounded radii, soft dark shadows, a violet focus/active glow
- *  - Dark default (most desktop creative tools are). The light variant below
- *    is extrapolated from the same hue families — the design system itself
- *    only specifies dark, so this preserves the app's existing theme-toggle
- *    feature rather than introducing new design.
+ * Sourced from the Revelry design system (revelry-design skill):
+ *  - Near-black blue field, one cool fox-blue light, warm tail embers at
+ *    the edge. Palette sampled from the mascot app icon.
+ *  - Space Grotesk (display) + Public Sans (body) + JetBrains Mono (model
+ *    IDs, params, token readouts), self-hosted below — see static/fonts/
+ *  - Generous rounded radii, soft dark shadows, a blue focus/active glow
+ *  - Dark default; light theme is secondary.
  */
 
 /* Space Grotesk — display */
@@ -112,49 +109,117 @@
   src: url("/fonts/jetbrains-mono-600.woff2") format("woff2");
 }
 
+/*
+ * Raw palette — v2 "Night fox". Every hue is sampled from the mascot app
+ * icon (static/logo.png): a blue fox on a near-black field, tails sweeping
+ * purple → pink → ember. Components use the semantic tokens in @theme, not
+ * these directly (except the streaming dots and avatar tints).
+ */
+:root {
+  /* Night neutrals (cool blue-black) */
+  --night-950: #07080d;
+  --night-900: #0b0d15;
+  --night-850: #10121c;
+  --night-800: #161928;
+  --night-700: #1e2235;
+  --night-600: #2a2f47;
+
+  /* Fox blue — primary */
+  --blue-200: #c3d1ff;
+  --blue-300: #8fa8ff;
+  --blue-400: #5c82ff;
+  --blue-500: #3365fc;
+  --blue-600: #2149d9;
+  --blue-700: #1a35a0;
+  --blue-800: #13246b;
+
+  /* Tail purple */
+  --purple-300: #d98aff;
+  --purple-400: #ca5cff;
+  --purple-500: #bd2fff;
+  --purple-600: #9a1fe0;
+  --purple-700: #6c16a0;
+
+  /* Tail pink */
+  --pink-300: #ffb0ff;
+  --pink-400: #ff8cff;
+  --pink-500: #ff75ff;
+  --pink-600: #e04fd8;
+  --pink-700: #9c2f97;
+
+  /* Tail ember (orange) */
+  --ember-300: #ffb066;
+  --ember-400: #ff9333;
+  --ember-500: #fb7800;
+  --ember-600: #d15f00;
+  --ember-700: #8a3f00;
+
+  /* Support */
+  --mint-400: #4fd6a2;
+  --mint-500: #2fbf8a;
+  --mint-600: #1e8f66;
+  --coral-400: #ff7a80;
+  --coral-500: #f2545b;
+  --coral-600: #c43a41;
+
+  /* Gradients — the tail sweep. Brand moments ("life." on Home, hairlines on
+     brand cards) and avatar fallbacks only. Never a button or card fill. */
+  --gradient-brand: linear-gradient(
+    120deg,
+    #3365fc 0%,
+    #bd2fff 42%,
+    #ff75ff 72%,
+    #fb7800 100%
+  );
+  --gradient-avatar-blue: linear-gradient(135deg, #2149d9 0%, #5c82ff 100%);
+  --gradient-avatar-purple: linear-gradient(135deg, #6c16a0 0%, #bd2fff 100%);
+  --gradient-avatar-pink: linear-gradient(135deg, #9c2f97 0%, #ff75ff 100%);
+  --gradient-avatar-ember: linear-gradient(135deg, #8a3f00 0%, #fb7800 100%);
+}
+
 @theme {
-  /* Surfaces — ink navy family */
-  --color-background: #00121f; /* ink-950 */
-  --color-surface: #0c2c47; /* DS surface-1 */
-  --color-surface-elevated: #123a5c; /* DS surface-2 */
-  --color-surface-hover: #184871; /* one step past surface-2, for hover on either surface */
-  --color-surface-input: #001830; /* DS surface-inset */
+  /* Surfaces — night ladder */
+  --color-background: #07080d; /* night-950 */
+  --color-surface: #10121c; /* night-850 */
+  --color-surface-elevated: #161928; /* night-800 */
+  --color-surface-hover: #1e2235; /* night-700 */
+  --color-surface-input: #0b0d15; /* night-900 — inset */
 
   /* Foreground */
-  --color-foreground: #f4f0fb;
-  --color-muted: #aab8cc;
-  --color-subtle: #6f83a0;
+  --color-foreground: #f3f1fa;
+  --color-muted: #a6abc4;
+  --color-subtle: #6c728e;
 
   /* Borders — translucent white, reads correctly over any surface */
   --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.26);
+  --color-border-strong: rgba(255, 255, 255, 0.2);
 
-  /* Accent — violet primary */
-  --color-accent: #4d26bb; /* violet-500 */
-  --color-accent-hover: #6b45d6; /* violet-400 */
-  --color-accent-active: #381898; /* violet-600 */
+  /* Accent — fox blue. The one interactive accent. */
+  --color-accent: #3365fc; /* blue-500 */
+  --color-accent-hover: #5c82ff; /* blue-400 */
+  --color-accent-active: #2149d9; /* blue-600 */
   --color-accent-fg: #ffffff;
-  --color-accent-muted: #2b1668; /* violet-700 — subtle washes/borders */
-  --color-accent-vivid: #8f6fe4; /* violet-300 — accent used as icon/text/ring color directly on a dark surface, where --color-accent itself (tuned for use as a filled background) is too low-contrast */
+  --color-accent-muted: #1a35a0; /* blue-700 — subtle washes/selection */
+  --color-accent-vivid: #8fa8ff; /* blue-300 — accent as text/icon on dark */
 
-  /* Accent — secondary (purple) / tertiary (green) / warm (peach) */
-  --color-accent-secondary: #9040a0; /* purple-500 */
-  --color-accent-secondary-hover: #ac5fba; /* purple-400 */
-  --color-accent-tertiary: #008060; /* green-500 */
-  --color-accent-tertiary-hover: #2ba179; /* green-400 */
-  --color-accent-warm: #f2a583; /* peach-400 */
-  --color-focus-ring: #8f6fe4; /* violet-300 */
+  /* Tail accents — brand moments, avatar tints, streaming indicator */
+  --color-accent-secondary: #bd2fff; /* purple-500 */
+  --color-accent-secondary-hover: #ca5cff; /* purple-400 */
+  --color-accent-tertiary: #ff75ff; /* pink-500 */
+  --color-accent-tertiary-hover: #ff8cff; /* pink-400 */
+  --color-accent-warm: #fb7800; /* ember-500 */
+  --color-accent-warm-hover: #ff9333; /* ember-400 */
+  --color-focus-ring: #8fa8ff; /* blue-300 */
 
-  /* Semantic */
-  --color-destructive: #d4497a; /* rose-500 */
-  --color-warning: #e88f68; /* peach-500 */
-  --color-success: #008060; /* green-500 */
+  /* Semantic — coral kept distinct from tail pink */
+  --color-destructive: #f2545b; /* coral-500 */
+  --color-warning: #ff9333; /* ember-400 */
+  --color-success: #2fbf8a; /* mint-500 */
 
-  /* Chat bubble specific — user bubble is solid accent (needs
-     --color-accent-fg text, not --color-foreground); character bubble
-     sits on the base surface */
+  /* Chat bubbles — user bubble is solid accent (needs --color-accent-fg
+     text); character bubble sits one step up the ladder with a border */
   --color-bubble-user: var(--color-accent);
-  --color-bubble-character: var(--color-surface);
+  --color-bubble-character: var(--color-surface-elevated);
 
   /* Typography */
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
@@ -173,62 +238,60 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --shadow-glow-violet:
-    0 0 0 1px rgba(124, 90, 220, 0.45), 0 0 28px rgba(124, 90, 220, 0.28);
+  --shadow-glow:
+    0 0 0 1px rgba(92, 130, 255, 0.5), 0 0 28px rgba(51, 101, 252, 0.3);
+  --shadow-glow-ember:
+    0 0 0 1px rgba(255, 147, 51, 0.45), 0 0 28px rgba(251, 120, 0, 0.25);
+  --shadow-glow-violet: var(--shadow-glow); /* legacy alias */
   --blur-panel: 20px;
-
-  /* Gradient — reserved for hero/brand moments (Avatar fallback, "About"), never buttons/cards */
-  --gradient-brand: linear-gradient(135deg, #381898 0%, #9040a0 100%);
 }
 
 /*
  * Light theme overrides
- * Activated by setting class="light" on <html>.
- * Extrapolated from the same violet/purple/green hue families the dark
- * theme uses — the design system itself is dark-only, so this exists to
- * preserve the app's existing Light/Dark/System toggle, not to introduce
- * new design.
+ * Activated by setting class="light" on <html>. Secondary to dark — darker
+ * steps of the same fox hues so accents keep contrast on white.
  */
 html.light {
   /* Surfaces */
-  --color-background: #f5f8fb;
+  --color-background: #f6f6fb;
   --color-surface: #ffffff;
-  --color-surface-elevated: #eaf0f6;
-  --color-surface-hover: #dfe8f0;
-  --color-surface-input: #eef3f8;
+  --color-surface-elevated: #eef0f7;
+  --color-surface-hover: #e4e7f2;
+  --color-surface-input: #f0f2f8;
 
   /* Foreground */
-  --color-foreground: #0a1f33;
-  --color-muted: #4a5f78;
-  --color-subtle: #7488a0;
+  --color-foreground: #10121c;
+  --color-muted: #4d5370;
+  --color-subtle: #7a8099;
 
   /* Borders */
-  --color-border: #d7e2ec;
-  --color-border-strong: #b9c9da;
+  --color-border: #dde0ec;
+  --color-border-strong: #c3c8da;
 
-  /* Accent — darker steps read better on light surfaces */
-  --color-accent: #381898; /* violet-600 */
-  --color-accent-hover: #2b1668; /* violet-700 */
-  --color-accent-active: #20114f; /* violet-800 */
+  /* Accent */
+  --color-accent: #2149d9; /* blue-600 */
+  --color-accent-hover: #1a35a0; /* blue-700 */
+  --color-accent-active: #13246b; /* blue-800 */
   --color-accent-fg: #ffffff;
-  --color-accent-muted: #b8a3ee; /* violet-200 */
-  --color-accent-vivid: #4d26bb; /* violet-500 — dark enough for good contrast as icon/text/ring color on light surfaces */
+  --color-accent-muted: #c3d1ff; /* blue-200 */
+  --color-accent-vivid: #2149d9; /* blue-600 */
 
-  --color-accent-secondary: #762c86; /* purple-600 */
-  --color-accent-secondary-hover: #5a2269; /* purple-700 */
-  --color-accent-tertiary: #016245; /* green-600 */
-  --color-accent-tertiary-hover: #014632; /* green-700 */
-  --color-accent-warm: #e88f68; /* peach-500 */
-  --color-focus-ring: #4d26bb; /* violet-500 */
+  --color-accent-secondary: #9a1fe0;
+  --color-accent-secondary-hover: #6c16a0;
+  --color-accent-tertiary: #e04fd8;
+  --color-accent-tertiary-hover: #9c2f97;
+  --color-accent-warm: #d15f00;
+  --color-accent-warm-hover: #8a3f00;
+  --color-focus-ring: #2149d9;
 
   /* Semantic */
-  --color-destructive: #a83258; /* rose-600 */
-  --color-warning: #b96a3f;
-  --color-success: #016245; /* green-600 */
+  --color-destructive: #c43a41;
+  --color-warning: #d15f00;
+  --color-success: #1e8f66;
 
   /* Chat bubble specific */
   --color-bubble-user: var(--color-accent);
-  --color-bubble-character: var(--color-surface);
+  --color-bubble-character: #ffffff;
 }
 
 /*
@@ -297,7 +360,8 @@ html.light {
     font-optical-sizing: auto;
   }
 
-  /* Subtle textured surface — atmosphere without noise */
+  /* Night glow — the icon's lighting: blue key light top-left, a purple
+     wash top-right, ember embers bottom-right. Atmosphere, not texture. */
   .surface-grain {
     position: relative;
   }
@@ -308,32 +372,48 @@ html.light {
     pointer-events: none;
     background-image:
       radial-gradient(
-        circle at 20% 30%,
-        rgba(77, 38, 187, 0.05),
-        transparent 50%
+        ellipse 60% 50% at 12% 0%,
+        rgba(51, 101, 252, 0.1),
+        transparent 70%
       ),
       radial-gradient(
-        circle at 80% 70%,
-        rgba(144, 64, 160, 0.04),
-        transparent 50%
+        ellipse 50% 45% at 100% 100%,
+        rgba(251, 120, 0, 0.07),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 40% 40% at 85% 20%,
+        rgba(189, 47, 255, 0.05),
+        transparent 70%
       );
-    opacity: 0.6;
   }
 
-  /* Light-mode surface grain — softer, cooler */
+  /* Light mode — same glow, much quieter */
   html.light .surface-grain::before {
-    opacity: 0.3;
-    background-image:
-      radial-gradient(
-        circle at 20% 30%,
-        rgba(56, 24, 152, 0.025),
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 80% 70%,
-        rgba(118, 44, 134, 0.02),
-        transparent 50%
-      );
+    opacity: 0.4;
+  }
+
+  /* Tail-sweep text — reserved for brand moments ("life." on Home) */
+  .text-gradient-brand {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Popover / composer entrance — drops in from -4px at 98% */
+  .animate-pop-in {
+    animation: rv-pop-in 150ms ease-out;
+  }
+  @keyframes rv-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   /* Typewriter caret for streaming AI responses */
@@ -370,11 +450,17 @@ html.light {
       background-color: var(--color-muted);
       animation: thinking-pulse 1.4s ease-in-out infinite;
     }
+    /* Three tail colours: blue → purple → pink */
+    & span:nth-child(1) {
+      background-color: var(--blue-400);
+    }
     & span:nth-child(2) {
       animation-delay: 0.2s;
+      background-color: var(--purple-400);
     }
     & span:nth-child(3) {
       animation-delay: 0.4s;
+      background-color: var(--pink-400);
     }
   }
 

@@ -22,6 +22,14 @@
 
 	let enabled_providers = $derived(app.providers.filter((p) => p.enabled));
 
+	// "Switch provider" on an error bubble asks the selector to open itself
+	$effect(() => {
+		if (app.focus_provider_selector && app.active_conversation) {
+			open = true;
+			app.focus_provider_selector = false;
+		}
+	});
+
 	function pick(providerId: string, modelName: string) {
 		app.updateConversationProvider(providerId, modelName);
 		open = false;
@@ -30,7 +38,7 @@
 
 <Popover.Root bind:open>
 	<Popover.Trigger
-		class="inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-elevated) px-2.5 text-xs font-medium hover:bg-(--color-surface-hover) disabled:cursor-not-allowed disabled:opacity-50"
+		class="inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface) px-2.5 text-xs font-medium transition-colors duration-150 hover:bg-(--color-surface-hover) disabled:cursor-not-allowed disabled:opacity-50"
 		disabled={!app.active_conversation}
 	>
 		<Sparkles class="size-3 text-(--color-accent-vivid)" />
@@ -38,10 +46,10 @@
 	</Popover.Trigger>
 
 	<Popover.Content
-		side="bottom"
-		align="end"
-		sideOffset={6}
-		class="z-50 w-72 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-elevated) p-1.5 shadow-xl"
+		side="top"
+		align="start"
+		sideOffset={8}
+		class="animate-pop-in z-50 w-72 rounded-(--radius-lg) border border-(--color-border-strong) bg-(--color-surface-elevated) p-1.5 shadow-lg backdrop-blur-[20px]"
 	>
 		<div
 			class="px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-(--color-subtle)"

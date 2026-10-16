@@ -5,21 +5,9 @@
 	import { Popover } from 'bits-ui';
 	import { Check, Trash2 } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
-	import PersonaSwitcher from './PersonaSwitcher.svelte';
-	import ProviderModelSelector from './ProviderModelSelector.svelte';
 	import ConversationLorebookPanel from './ConversationLorebookPanel.svelte';
 
-	let providerTrigger: HTMLButtonElement | undefined = $state();
 	let branchPopoverOpen = $state(false);
-
-	// When focus_provider_selector is set (from error bubble "Switch provider" link),
-	// focus the provider/model selector trigger and reset the flag.
-	$effect(() => {
-		if (app.focus_provider_selector && providerTrigger) {
-			providerTrigger.click();
-			app.focus_provider_selector = false;
-		}
-	});
 
 	let hasBranches = $derived(app.branches.length > 0);
 
@@ -62,7 +50,7 @@
 </script>
 
 <header
-	class="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-(--color-border) bg-(--color-surface) px-4"
+	class="flex h-[60px] shrink-0 items-center justify-between gap-3 border-b border-(--color-border) px-5"
 >
 	<!-- Active character -->
 	<div class="flex min-w-0 items-center gap-3">
@@ -74,7 +62,7 @@
 				enlargeable
 			/>
 			<div class="min-w-0">
-				<h2 class="truncate font-display text-lg font-semibold leading-tight tracking-tight">
+				<h2 class="truncate font-display text-lg leading-[1.2] font-semibold tracking-[-0.02em]">
 					{app.active_character.name}
 				</h2>
 				<p class="truncate text-[11px] text-(--color-muted)">
@@ -84,16 +72,9 @@
 		{/if}
 	</div>
 
-	<!-- Right cluster: persona, model, actions -->
-	<div class="flex items-center gap-2">
-		<PersonaSwitcher />
-
-		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
-
-		<ProviderModelSelector />
-
-		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
-
+	<!-- Right cluster: lorebooks, branches, generation settings.
+	     Persona + model live on the composer. -->
+	<div class="flex items-center gap-1.5">
 		<ConversationLorebookPanel />
 
 		<!-- Branch switcher — only shown when branches exist -->
@@ -105,10 +86,10 @@
 					<button
 						type="button"
 						class={cn(
-							'inline-flex items-center gap-1.5 rounded-(--radius-md) px-2 py-1 text-xs transition-colors',
+							'inline-flex h-8 items-center gap-1.5 rounded-(--radius-md) border px-2.5 text-xs font-medium transition-colors duration-150',
 							app.active_branch_id
-								? 'bg-(--color-accent)/10 text-(--color-accent-vivid) border border-(--color-accent)/30'
-								: 'text-(--color-muted) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
+								? 'border-(--color-accent)/35 bg-(--color-accent)/12 text-(--color-accent-vivid)'
+								: 'border-transparent text-(--color-muted) hover:text-(--color-foreground)',
 						)}
 						aria-label="Switch branch"
 					>
@@ -122,7 +103,7 @@
 				</Popover.Trigger>
 				<Popover.Portal>
 					<Popover.Content
-						class="w-72 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface-elevated) p-1 shadow-xl z-50"
+						class="animate-pop-in z-50 w-72 rounded-(--radius-lg) border border-(--color-border-strong) bg-(--color-surface-elevated) p-1.5 shadow-lg backdrop-blur-[20px]"
 						sideOffset={4}
 						align="end"
 					>

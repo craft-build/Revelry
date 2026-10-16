@@ -2,7 +2,7 @@ use crate::domain::provider::{ProviderConfig, ProviderType};
 
 use futures::StreamExt;
 use rig::agent::{Agent, MultiTurnStreamItem};
-use rig::completion::{CompletionModel, GetTokenUsage, Message};
+use rig::completion::Message;
 use rig::streaming::{StreamedAssistantContent, StreamingChat};
 use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
@@ -110,16 +110,12 @@ impl AiService {
     }
 
     /// Stream a response from the built agent and parse it as GeneratedCharacterData.
-    async fn build_and_stream_generation<M>(
-        agent: &Agent<M>,
+    async fn build_and_stream_generation(
+        agent: &Agent,
         prompt: Message,
         channel: &Channel<GenerateCharacterChunk>,
         cancel: &CancellationToken,
-    ) -> Result<(), String>
-    where
-        M: CompletionModel + 'static,
-        M::StreamingResponse: GetTokenUsage,
-    {
+    ) -> Result<(), String> {
         let mut stream = agent.stream_chat(prompt, Vec::<Message>::new()).await;
 
         let channel_clone = channel.clone();

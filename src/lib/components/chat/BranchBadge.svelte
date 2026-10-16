@@ -40,7 +40,7 @@
 	class={cn(
 		'inline-flex items-center gap-0.5 rounded-(--radius-sm)',
 		'border border-(--color-accent)/30 bg-(--color-accent)/10',
-		'text-(--color-accent-vivid) transition-colors',
+		'text-(--color-accent-vivid) transition-colors duration-150',
 		className,
 	)}
 >
@@ -54,7 +54,7 @@
 	</button>
 	<button
 		type="button"
-		class="text-[10px] font-medium px-1 py-0.5 hover:bg-(--color-accent)/20 transition-colors cursor-pointer"
+		class="px-1 py-0.5 font-mono text-[10px] font-medium hover:bg-(--color-accent)/20 transition-colors cursor-pointer"
 		aria-label="View branches ({activeIndex} of {totalBranches})"
 		{onclick}
 	>

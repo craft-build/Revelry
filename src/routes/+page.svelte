@@ -20,17 +20,19 @@
 <div class="flex flex-1 items-center justify-center px-8">
 	<div class="flex w-full max-w-2xl flex-col items-center gap-8 text-center">
 		<!-- Brand mark -->
-		<div class="relative">
+		<div class="relative size-24">
+			<!-- Night glow behind the mark: blue key light + ember rim -->
 			<div
-				class="absolute inset-0 -z-10 size-20 -translate-x-2 -translate-y-2 rounded-full bg-(--color-accent)/10 blur-2xl"
+				class="absolute -inset-6 rounded-full blur-[24px]"
+				style="background: radial-gradient(circle at 35% 35%, rgba(51, 101, 252, 0.45), transparent 60%), radial-gradient(circle at 70% 75%, rgba(251, 120, 0, 0.35), transparent 60%)"
 				aria-hidden="true"
 			></div>
-			<Logo class="size-16" />
+			<Logo class="relative size-24" />
 		</div>
 
 		<div class="space-y-3">
-			<h1 class="font-display text-4xl font-semibold tracking-tight">
-				Bring a character to life.
+			<h1 class="font-display text-[40px] leading-[1.1] font-semibold tracking-[-0.03em]">
+				Bring a character to <span class="text-gradient-brand">life.</span>
 			</h1>
 			<p class="text-base text-(--color-muted)">
 				Pick a character to begin a conversation, or import a CharacterCardV2 from your library.
@@ -38,7 +40,7 @@
 		</div>
 
 		<!-- Suggested characters -->
-		<div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
+		<div class="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-3">
 			{#each suggested as char (char.id)}
 			<button
 				type="button"
@@ -46,20 +48,20 @@
 					const conv = await app.startConversation(char.id);
 					goto('/chat/' + conv.id);
 				}}
-				class="group flex flex-col gap-2 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-left transition-all hover:-translate-y-0.5 hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated)"
+				class="group flex flex-col gap-2.5 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-left transition-all duration-150 hover:-translate-y-0.5 hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated) hover:shadow-md"
 			>
 					<Avatar name={char.name} src={char.avatar_path} size="md" />
 					<div class="space-y-1">
 						<h3
-							class="truncate font-display text-base font-semibold leading-tight tracking-tight"
+							class="truncate font-display text-base leading-tight font-semibold tracking-[-0.02em]"
 						>
 							{char.name}
 						</h3>
-						<p class="line-clamp-2 text-xs text-(--color-muted)">
+						<p class="line-clamp-2 text-xs leading-normal text-(--color-muted)">
 							{char.description}
 						</p>
 					</div>
-					<div class="mt-auto flex items-center gap-1 pt-1 text-[11px] font-medium text-(--color-accent-vivid)">
+					<div class="mt-auto flex items-center gap-1 pt-1 text-[11px] font-semibold text-(--color-accent-vivid)">
 						<span>Begin</span>
 						<ArrowRight
 							class="size-3 transition-transform group-hover:translate-x-0.5"
