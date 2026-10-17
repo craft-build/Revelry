@@ -440,7 +440,7 @@
 					default_params: hasParams ? defaultParams : undefined,
 					updated_at: new Date().toISOString()
 				};
-				await app.updateProvider(updated, form_api_key || undefined);
+				await app.updateProvider(updated, form_api_key.trim() || undefined);
 			} else {
 				await app.createProvider({
 					name: form_name.trim(),
@@ -450,7 +450,7 @@
 					models: form_models,
 					default_params: hasParams ? defaultParams : undefined,
 					enabled: true,
-					api_key: form_api_key || undefined
+					api_key: form_api_key.trim() || undefined
 				});
 			}
 			open = false;

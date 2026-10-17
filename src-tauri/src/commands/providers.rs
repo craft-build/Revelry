@@ -6,8 +6,8 @@ use crate::db::{DbCommand, DbWorker};
 use crate::domain::provider::{ProviderConfig, ProviderModelEntry, ProviderType};
 
 /// Provider configuration with key status.
-/// Returned by get_providers so the frontend knows if a key is set
-/// without ever receiving the actual key value (security invariant).
+/// Returned by get_providers and save_provider so the frontend knows if a
+/// key is set without ever receiving the actual key value (security invariant).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ProviderWithKeyStatus {
     #[serde(flatten)]
@@ -48,17 +48,33 @@ pub async fn get_providers(db: State<'_, DbWorker>) -> Result<Vec<ProviderWithKe
 pub async fn save_provider(
     db: State<'_, DbWorker>,
     provider: ProviderConfig,
-) -> Result<ProviderConfig, String> {
+) -> Result<ProviderWithKeyStatus, String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::SaveProvider {
         provider,
         reply: reply_tx,
     })
     .map_err(|e| e.to_string())?;
-    reply_rx
+    let saved = reply_rx
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Re-check the keyring so the frontend keeps an accurate key status.
+    // Updates that don't touch the key must not report it as gone — the key
+    // itself never travels through ProviderConfig, so its status has to be
+    // derived here, exactly like in get_providers.
+    let pid = saved.id.clone();
+    let has_key = tokio::task::spawn_blocking(move || {
+        crate::secrets::KeyringStore::load_key(&pid).is_ok()
+    })
+    .await
+    .unwrap_or(false);
+
+    Ok(ProviderWithKeyStatus {
+        provider: saved,
+        has_api_key: has_key,
+    })
 }
 
 #[tauri::command]
