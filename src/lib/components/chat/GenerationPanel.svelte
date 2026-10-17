@@ -74,7 +74,7 @@
 	class="flex w-72 shrink-0 flex-col border-l border-(--color-border) bg-(--color-surface)"
 >
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-(--color-border) px-4 py-3">
+	<div class="flex h-[60px] shrink-0 items-center justify-between border-b border-(--color-border) px-4">
 		<h3 class="text-sm font-semibold">Generation Settings</h3>
 		<button
 			type="button"
