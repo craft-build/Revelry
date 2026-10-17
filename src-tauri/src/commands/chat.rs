@@ -528,19 +528,38 @@ async fn build_external_memories(
     conversation: &crate::domain::conversation::Conversation,
     query: &[f32],
 ) -> Result<Vec<crate::service::prompt::ExternalMemory>, String> {
-    use crate::ai::embeddings::{CROSS_MEMORY_SETTING_KEY, EXTERNAL_MEMORY_LIMIT};
+    use crate::ai::embeddings::{
+        memory_disabled_key, memory_forgotten_key, read_app_setting, CROSS_MEMORY_SETTING_KEY,
+        EXTERNAL_MEMORY_LIMIT,
+    };
     use crate::service::vector::{content_hash, cosine_similarity};
 
-    // Toggle check (default off).
-    let enabled = db_call(sender, |reply| DbCommand::LoadAppSetting {
-        key: CROSS_MEMORY_SETTING_KEY.to_string(),
-        reply,
-    })
-    .await
-    .map_err(|e| e.to_string())?;
+    // Per-conversation "start fresh" opt-out.
+    if read_app_setting(sender, &memory_disabled_key(&conversation.id))
+        .await
+        .ok()
+        .flatten()
+        .as_deref()
+        == Some("true")
+    {
+        return Ok(Vec::new());
+    }
+
+    // Global toggle (default off).
+    let enabled = read_app_setting(sender, CROSS_MEMORY_SETTING_KEY)
+        .await
+        .map_err(|e| e.to_string())?;
     if enabled.as_deref() != Some("true") {
         return Ok(Vec::new());
     }
+
+    // Per-character memory cutoff: echoes must postdate the forgotten-at
+    // timestamp (absent = nothing forgotten).
+    let forgotten_at: Option<jiff::Timestamp> =
+        match read_app_setting(sender, &memory_forgotten_key(&conversation.character_id)).await {
+            Ok(Some(raw)) => raw.parse::<jiff::Timestamp>().ok(),
+            _ => None,
+        };
 
     // Sibling conversations with the same character.
     let conversations = db_call(sender, |reply| DbCommand::LoadConversations { reply })
@@ -599,6 +618,11 @@ async fn build_external_memories(
         };
         if message.content.trim().is_empty() || message.role == MessageRole::System {
             continue;
+        }
+        if let Some(cutoff) = forgotten_at {
+            if message.timestamp < cutoff {
+                continue; // Forgotten — predates the character's cutoff.
+            }
         }
         if &content_hash(&message.content) != hash {
             continue; // Stale vector.

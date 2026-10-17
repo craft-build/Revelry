@@ -151,10 +151,36 @@
 
 	async function startChat(id: string) {
 		try {
-			const conv = await app.startConversation(id);
-			await goto('/chat/' + conv.id);
+			const conv = await app.beginConversation(id);
+			if (conv) {
+				await goto('/chat/' + conv.id);
+			}
+			// null → the cross-memory prompt took over; it completes navigation.
 		} catch (err) {
 			console.error('Failed to start conversation:', err);
+		}
+	}
+
+	let forget_confirm_open = $state(false);
+	let forget_target = $state<string | null>(null);
+	let forget_name = $state('');
+
+	function openForgetDialog(id: string) {
+		const char = app.characters.find((c) => c.id === id);
+		if (!char) return;
+		forget_target = id;
+		forget_name = char.name;
+		forget_confirm_open = true;
+	}
+
+	async function handleForgetMemories() {
+		if (!forget_target) return;
+		try {
+			await app.setCharacterMemoryForgotten(forget_target, true);
+			forget_confirm_open = false;
+			forget_target = null;
+		} catch (err) {
+			console.error('Failed to forget memories:', err);
 		}
 	}
 
@@ -374,7 +400,7 @@
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
 							{#each app.filtered_characters as character (character.id)}
-								<CharacterCard {character} onchat={startChat} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} />
+								<CharacterCard {character} onchat={startChat} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} onforget={openForgetDialog} />
 							{/each}
 						</div>
 					{/if}
@@ -487,4 +513,14 @@
 	confirm_label={deleting_entity_type === 'persona' ? 'Delete persona' : deleting_entity_type === 'lorebook' ? 'Delete lorebook' : 'Delete character'}
 	onconfirm={handleDelete}
 	loading={is_deleting}
+/>
+
+<!-- Forget cross-chat memories confirmation dialog -->
+<DeleteConfirmationDialog
+	bind:open={forget_confirm_open}
+	title={`Forget ${forget_name}'s cross-chat memories?`}
+	description={`${forget_name} will no longer recall anything from your conversations together before this moment. Your chats and characters are untouched — only the character's recall of past moments is cleared. New memories still accumulate.`}
+	confirm_label="Forget memories"
+	onconfirm={handleForgetMemories}
+	loading={false}
 />

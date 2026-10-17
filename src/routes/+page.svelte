@@ -45,8 +45,8 @@
 			<button
 				type="button"
 				onclick={async () => {
-					const conv = await app.startConversation(char.id);
-					goto('/chat/' + conv.id);
+					const conv = await app.beginConversation(char.id);
+					if (conv) goto('/chat/' + conv.id);
 				}}
 				class="group flex flex-col gap-2.5 rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface) p-4 text-left transition-all duration-150 hover:-translate-y-0.5 hover:border-(--color-border-strong) hover:bg-(--color-surface-elevated) hover:shadow-md"
 			>

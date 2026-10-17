@@ -524,6 +524,28 @@ export async function rebuildEmbeddingIndex(): Promise<void> {
   return invoke<void>("rebuild_embedding_index");
 }
 
+/** Excludes (or re-includes) one conversation from cross-conversation memory. */
+export async function setConversationMemoryEnabled(
+  conversationId: string,
+  enabled: boolean,
+): Promise<void> {
+  return invoke<void>("set_conversation_memory_enabled", {
+    conversationId,
+    enabled,
+  });
+}
+
+/** Sets/clears a character's cross-conversation memory cutoff. */
+export async function setCharacterMemoryForgotten(
+  characterId: string,
+  forgotten: boolean,
+): Promise<void> {
+  return invoke<void>("set_character_memory_forgotten", {
+    characterId,
+    forgotten,
+  });
+}
+
 export async function testSemanticActivation(
   lorebookId: string,
   text: string,

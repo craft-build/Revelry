@@ -187,3 +187,39 @@ pub async fn rebuild_embedding_index(
     embeddings::spawn_rebuild_index(runtime.inner().clone(), db.sender());
     Ok(())
 }
+
+/// Excludes (or re-includes) one conversation from cross-conversation
+/// memory injection — the durable form of "start fresh".
+#[tauri::command]
+pub async fn set_conversation_memory_enabled(
+    db: State<'_, DbWorker>,
+    conversation_id: String,
+    enabled: bool,
+) -> Result<(), String> {
+    let key = embeddings::memory_disabled_key(&conversation_id);
+    if enabled {
+        // Absent = enabled; storing "false" keeps it simple and explicit.
+        embeddings::write_app_setting(&db.sender(), &key, "false").await
+    } else {
+        embeddings::write_app_setting(&db.sender(), &key, "true").await
+    }
+}
+
+/// Sets or clears a character's cross-conversation memory cutoff.
+/// `forgotten: Some(true)` records "now" — the character recalls nothing
+/// from before this moment; `Some(false)`/`None` restores full recall.
+#[tauri::command]
+pub async fn set_character_memory_forgotten(
+    db: State<'_, DbWorker>,
+    character_id: String,
+    forgotten: Option<bool>,
+) -> Result<(), String> {
+    let key = embeddings::memory_forgotten_key(&character_id);
+    match forgotten.unwrap_or(false) {
+        true => {
+            let now = jiff::Timestamp::now().to_string();
+            embeddings::write_app_setting(&db.sender(), &key, &now).await
+        }
+        false => embeddings::write_app_setting(&db.sender(), &key, "").await,
+    }
+}

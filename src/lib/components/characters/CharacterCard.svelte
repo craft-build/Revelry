@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { CharacterCard } from '$lib/types';
+	import { app } from '$lib/stores/app.svelte';
 	import { Avatar, Tag, KebabMenu, KebabMenuItem, KebabMenuSeparator } from '$lib/components/ui';
-	import { MessageSquare, Pencil, Trash2, Download } from '@lucide/svelte';
+	import { MessageSquare, Pencil, Trash2, Download, Eraser } from '@lucide/svelte';
 
 	interface Props {
 		character: CharacterCard;
@@ -9,9 +10,14 @@
 		onedit?: (id: string) => void;
 		ondelete?: (id: string) => void;
 		onexport?: (id: string) => void;
+		onforget?: (id: string) => void;
 	}
 
-	let { character, onchat, onedit, ondelete, onexport }: Props = $props();
+	let { character, onchat, onedit, ondelete, onexport, onforget }: Props = $props();
+
+	let memory_relevant = $derived(
+		app.embeddings_enabled && app.cross_conversation_memory
+	);
 </script>
 
 <article
@@ -63,6 +69,12 @@
 				<Download class="size-3.5" />
 				Export
 			</KebabMenuItem>
+			{#if memory_relevant && onforget}
+				<KebabMenuItem onclick={() => onforget(character.id)}>
+					<Eraser class="size-3.5" />
+					Forget their cross-chat memories
+				</KebabMenuItem>
+			{/if}
 			<KebabMenuSeparator />
 			<KebabMenuItem destructive onclick={() => ondelete?.(character.id)}>
 				<Trash2 class="size-3.5" />

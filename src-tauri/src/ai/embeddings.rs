@@ -23,6 +23,46 @@ pub const EMBEDDING_CONFIG_KEY: &str = "embedding_config";
 /// ("true"/"false", default off).
 pub const CROSS_MEMORY_SETTING_KEY: &str = "memory_cross_conversation";
 
+/// app_settings key marking a conversation as excluded from cross-
+/// conversation memory ("true" = start fresh; absent = enabled).
+pub fn memory_disabled_key(conversation_id: &str) -> String {
+    format!("memory_disabled:{conversation_id}")
+}
+
+/// app_settings key holding a per-character memory cutoff timestamp
+/// (RFC 3339; absent = nothing forgotten). Echo candidates must postdate it.
+pub fn memory_forgotten_key(character_id: &str) -> String {
+    format!("memory_forgotten:{character_id}")
+}
+
+/// Reads one app setting as a plain string (None when unset).
+pub async fn read_app_setting(
+    db: &std::sync::mpsc::Sender<DbCommand>,
+    key: &str,
+) -> Result<Option<String>, String> {
+    db_call(db, |reply| DbCommand::LoadAppSetting {
+        key: key.to_string(),
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// Writes one app setting.
+pub async fn write_app_setting(
+    db: &std::sync::mpsc::Sender<DbCommand>,
+    key: &str,
+    value: &str,
+) -> Result<(), String> {
+    db_call(db, |reply| DbCommand::SaveAppSetting {
+        key: key.to_string(),
+        value: value.to_string(),
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
 /// Maximum cross-conversation echoes recalled per prompt.
 pub const EXTERNAL_MEMORY_LIMIT: usize = 5;
 

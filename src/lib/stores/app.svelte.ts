@@ -27,6 +27,8 @@ import {
   getCharacters as apiGetCharacters,
   getEmbeddingConfig as apiGetEmbeddingConfig,
   setEmbeddingConfig as apiSetEmbeddingConfig,
+  setConversationMemoryEnabled as apiSetConversationMemoryEnabled,
+  setCharacterMemoryForgotten as apiSetCharacterMemoryForgotten,
   getEmbeddingStatus as apiGetEmbeddingStatus,
   testEmbedding as apiTestEmbedding,
   rebuildEmbeddingIndex as apiRebuildEmbeddingIndex,
@@ -163,6 +165,13 @@ class AppState {
   embedding_status = $state<EmbeddingStatus | null>(null);
   /** Cross-conversation character memory toggle (off by default). */
   cross_conversation_memory = $state<boolean>(false);
+  /** Pending new-chat memory prompt: character the user is about to chat
+   *  with plus how many other conversations exist with them. Non-null while
+   *  the MemoryPromptDialog is open. */
+  memory_prompt = $state<{
+    character: CharacterCard;
+    other_count: number;
+  } | null>(null);
 
   // ── Character generation state ──────────────────────────────────────────
   is_generating_character = $state<boolean>(false);
@@ -839,6 +848,50 @@ class AppState {
     const conversation = await apiStartConversation(characterId);
     this.conversations = [conversation, ...this.conversations];
     return conversation;
+  }
+
+  /** Starts a new chat, showing the cross-conversation memory prompt when
+   *  it's relevant (memory enabled + the character has history). Returns the
+   *  created conversation, or null when the prompt took over — the dialog's
+   *  choice path completes the navigation instead. */
+  async beginConversation(characterId: string): Promise<Conversation | null> {
+    const character = this.characters.find((c) => c.id === characterId);
+    const other_count = this.conversations.filter(
+      (c) => c.character_id === characterId,
+    ).length;
+
+    if (
+      character &&
+      this.embeddings_enabled &&
+      this.cross_conversation_memory &&
+      other_count > 0
+    ) {
+      this.memory_prompt = { character, other_count };
+      return null;
+    }
+    return this.startConversation(characterId);
+  }
+
+  /** Applies the "start fresh" choice to an already-created conversation. */
+  async setConversationMemoryEnabled(
+    conversationId: string,
+    enabled: boolean,
+  ): Promise<void> {
+    await apiSetConversationMemoryEnabled(conversationId, enabled);
+  }
+
+  /** Marks (or unmarks) a character's cross-conversation memories as
+   *  forgotten. Forgotten = nothing before now is ever recalled again;
+   *  vectors are untouched. */
+  async setCharacterMemoryForgotten(
+    characterId: string,
+    forgotten: boolean,
+  ): Promise<void> {
+    await apiSetCharacterMemoryForgotten(characterId, forgotten);
+  }
+
+  dismissMemoryPrompt(): void {
+    this.memory_prompt = null;
   }
 
   async deleteConversation(id: string): Promise<void> {

@@ -4,6 +4,7 @@
 	import { app } from '$lib/stores/app.svelte';
 	import AppHeader from '$lib/components/layout/AppHeader.svelte';
 	import ConversationSidebar from '$lib/components/layout/ConversationSidebar.svelte';
+	import MemoryPromptDialog from '$lib/components/chat/MemoryPromptDialog.svelte';
 	import { ToastContainer } from '$lib/components/ui';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -145,5 +146,6 @@
 			</main>
 		</div>
 		<ToastContainer />
+		<MemoryPromptDialog />
 	{/if}
 </div>
