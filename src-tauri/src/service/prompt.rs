@@ -21,6 +21,16 @@ const RECALL_MAX_MESSAGES: usize = 8;
 /// Per-recalled-message snippet token cap.
 const RECALL_SNIPPET_TOKENS: usize = 96;
 
+/// A recalled snippet from a *different* conversation with the same
+/// character (cross-conversation memory). Pre-ranked and hash-verified by
+/// the builder; the prompt layer only budget-caps and formats them.
+#[derive(Clone, Debug)]
+pub struct ExternalMemory {
+    pub similarity: f32,
+    pub is_user: bool,
+    pub content: String,
+}
+
 /// Inputs for the memory layer: the conversation's rolling summary plus the
 /// vectors needed to recall out-of-window messages semantically. Everything
 /// is optional-by-emptiness — a missing query vector or empty vector map
@@ -34,6 +44,10 @@ pub struct MemoryInput {
     pub query_vector: Option<Vec<f32>>,
     /// message_id → (content_hash, vector), current embedding model only.
     pub message_vectors: HashMap<String, (String, Vec<f32>)>,
+    /// Semantically similar moments from other conversations with the same
+    /// character, newest-context builder-verified (empty when the
+    /// cross-conversation toggle is off or embeddings are unavailable).
+    pub external_memories: Vec<ExternalMemory>,
 }
 
 impl MemoryInput {
@@ -47,6 +61,7 @@ impl MemoryInput {
 pub struct MemoryResult {
     pub summary_injected: bool,
     pub recalled: Vec<RecalledMemory>,
+    pub external_count: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -126,7 +141,10 @@ impl PromptEngine {
         // Memory only matters once history outgrows the window.
         if assembled.truncated_messages > 0 {
             if let Some(mem) = memory {
-                if !mem.summary.is_empty() || mem.has_recall_inputs() {
+                if !mem.summary.is_empty()
+                    || mem.has_recall_inputs()
+                    || !mem.external_memories.is_empty()
+                {
                     assembled = Self::assemble_inner(
                         character,
                         persona,
@@ -243,6 +261,8 @@ impl PromptEngine {
         // pulled back in as attributed snippets. Stale vectors (content
         // edited since embedding) are skipped.
         let mut recalled_memories: Vec<RecalledMemory> = Vec::new();
+        let mut recall_tokens_used = 0usize;
+        let mut external_selected: Vec<&ExternalMemory> = Vec::new();
         if let Some(mem) = memory {
             if let Some(query) = &mem.query_vector {
                 if !truncated_history.dropped.is_empty() {
@@ -262,7 +282,6 @@ impl PromptEngine {
                     candidates
                         .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-                    let mut recall_tokens_used = 0usize;
                     for (similarity, message) in candidates.into_iter().take(RECALL_MAX_MESSAGES) {
                         if recalled_memories.len() >= RECALL_MAX_MESSAGES {
                             break;
@@ -283,14 +302,36 @@ impl PromptEngine {
                             snippet: message.content.chars().take(60).collect(),
                         });
                     }
-                    tokens_used += recall_tokens_used;
+                }
+            }
+
+            // Cross-conversation echoes: builder-ranked moments from other
+            // conversations with this character, sharing the leftover budget.
+            if !mem.external_memories.is_empty() {
+                for external in &mem.external_memories {
+                    if recall_tokens_used >= recall_budget {
+                        break;
+                    }
+                    let snippet = truncate_to_token_budget(
+                        &external.content,
+                        RECALL_SNIPPET_TOKENS,
+                        token_service,
+                    );
+                    let snippet_tokens = token_service.count_tokens(&snippet);
+                    if recall_tokens_used + snippet_tokens > recall_budget {
+                        break;
+                    }
+                    recall_tokens_used += snippet_tokens;
+                    external_selected.push(external);
                 }
             }
         }
+        tokens_used += recall_tokens_used;
         let summary_injected = summary_block.is_some();
         let memory_result = MemoryResult {
             summary_injected,
             recalled: recalled_memories.clone(),
+            external_count: external_selected.len(),
         };
 
         // Build chat history from truncated messages, then inject lorebook entries
@@ -364,6 +405,28 @@ impl PromptEngine {
                     lines.join("\n")
                 ));
             }
+        }
+        if !external_selected.is_empty() {
+            let lines: Vec<String> = external_selected
+                .iter()
+                .map(|external| {
+                    let speaker = if external.is_user {
+                        "{{user}}"
+                    } else {
+                        "{{char}}"
+                    };
+                    let snippet = truncate_to_token_budget(
+                        &external.content,
+                        RECALL_SNIPPET_TOKENS,
+                        token_service,
+                    );
+                    format!("- {speaker}: {snippet}")
+                })
+                .collect();
+            preamble_parts.push(format!(
+                "[Echoes from previous conversations with {{{{char}}}}]\n{}",
+                lines.join("\n")
+            ));
         }
         if !persona_block.is_empty() {
             preamble_parts.push(persona_block);
@@ -1001,6 +1064,7 @@ mod tests {
             summary_upto: 0,
             query_vector: None,
             message_vectors: HashMap::new(),
+            external_memories: Vec::new(),
         }
     }
 
@@ -1116,6 +1180,7 @@ mod tests {
             summary_upto: 0,
             query_vector: Some(query),
             message_vectors,
+            external_memories: Vec::new(),
         };
 
         let token_svc = token_service();
@@ -1178,6 +1243,7 @@ mod tests {
             summary_upto: 0,
             query_vector: Some(vec![1.0, 0.0]),
             message_vectors,
+            external_memories: Vec::new(),
         };
 
         let token_svc = token_service();
@@ -1197,6 +1263,109 @@ mod tests {
         assert!(
             prompt.memory.recalled.is_empty(),
             "stale vectors must be skipped"
+        );
+    }
+
+    #[test]
+    fn test_external_memories_injected_as_echoes() {
+        let character = make_test_character();
+        let filler: Vec<DomainMessage> = (0..60)
+            .map(|i| {
+                make_test_message(
+                    if i % 2 == 0 {
+                        MessageRole::User
+                    } else {
+                        MessageRole::Assistant
+                    },
+                    &format!("Padding message {i} consuming tokens to force truncation"),
+                )
+            })
+            .collect();
+        // One in-conversation candidate plus one echo from another conversation.
+        let mut dropped_hit =
+            make_test_message(MessageRole::Assistant, "The dragon crown gleamed.");
+        dropped_hit.id = "msg-in-conv".to_string();
+        let mut messages = vec![dropped_hit];
+        messages.extend(filler);
+
+        let mut message_vectors = HashMap::new();
+        message_vectors.insert(
+            "msg-in-conv".to_string(),
+            (content_hash("The dragon crown gleamed."), vec![1.0, 0.0]),
+        );
+        let memory = MemoryInput {
+            summary: String::new(),
+            summary_upto: 0,
+            query_vector: Some(vec![1.0, 0.0]),
+            message_vectors,
+            external_memories: vec![ExternalMemory {
+                similarity: 0.82,
+                is_user: true,
+                content: "In an older story, we forged an alliance with the dragon.".to_string(),
+            }],
+        };
+
+        let token_svc = token_service();
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &HashMap::new(),
+            &token_svc,
+            700,
+            None,
+            Some(&memory),
+        );
+
+        assert!(prompt.truncated_messages > 0);
+        assert_eq!(prompt.memory.external_count, 1, "echo injected");
+        assert!(
+            prompt
+                .preamble
+                .contains("Echoes from previous conversations"),
+            "echo block header present"
+        );
+        assert!(
+            prompt
+                .preamble
+                .contains("forged an alliance with the dragon"),
+            "echo content present"
+        );
+    }
+
+    #[test]
+    fn test_external_memories_skipped_without_truncation() {
+        let character = make_test_character();
+        let messages = vec![make_test_message(MessageRole::User, "Hello!")];
+        let memory = MemoryInput {
+            summary: String::new(),
+            summary_upto: 0,
+            query_vector: None,
+            message_vectors: HashMap::new(),
+            external_memories: vec![ExternalMemory {
+                similarity: 0.9,
+                is_user: false,
+                content: "Old echo.".to_string(),
+            }],
+        };
+
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &HashMap::new(),
+            &token_service(),
+            8192,
+            None,
+            Some(&memory),
+        );
+
+        assert_eq!(prompt.truncated_messages, 0);
+        assert_eq!(
+            prompt.memory.external_count, 0,
+            "no memory without truncation"
         );
     }
 }

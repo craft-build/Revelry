@@ -46,6 +46,7 @@ pub struct BudgetInfo {
 pub struct MemoryInfo {
     pub summary_included: bool,
     pub recalled_count: usize,
+    pub external_count: usize,
 }
 
 /// A chunk of data from a streaming AI response.

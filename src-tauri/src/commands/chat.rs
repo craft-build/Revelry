@@ -456,7 +456,9 @@ async fn build_semantic_context(
 
 /// Builds the memory-layer input: rolling summary from the conversation row,
 /// message vectors for recall, and a recall query vector from the latest
-/// user message. Everything degrades to summary-only when embeddings are off.
+/// user message. When the cross-conversation toggle is on, also ranks
+/// semantically similar moments from other conversations with the same
+/// character. Everything degrades to summary-only when embeddings are off.
 async fn build_memory_input(
     runtime: &EmbeddingRuntime,
     sender: &std::sync::mpsc::Sender<DbCommand>,
@@ -468,6 +470,7 @@ async fn build_memory_input(
         summary_upto: conversation.summary_upto,
         query_vector: None,
         message_vectors: std::collections::HashMap::new(),
+        external_memories: Vec::new(),
     };
 
     let loaded = match runtime.resolve(sender).await {
@@ -506,7 +509,107 @@ async fn build_memory_input(
         }
     }
 
+    // Cross-conversation echoes (off by default; every failure is silent).
+    if let Some(query) = memory.query_vector.clone() {
+        if let Ok(echoes) = build_external_memories(sender, &loaded, conversation, &query).await {
+            memory.external_memories = echoes;
+        }
+    }
+
     memory
+}
+
+/// Ranks messages from *other* conversations with the same character by
+/// similarity to the recall query. Returns verified, top-K echoes; empty
+/// unless the `memory_cross_conversation` setting is "true".
+async fn build_external_memories(
+    sender: &std::sync::mpsc::Sender<DbCommand>,
+    loaded: &crate::ai::embeddings::LoadedEmbedder,
+    conversation: &crate::domain::conversation::Conversation,
+    query: &[f32],
+) -> Result<Vec<crate::service::prompt::ExternalMemory>, String> {
+    use crate::ai::embeddings::{CROSS_MEMORY_SETTING_KEY, EXTERNAL_MEMORY_LIMIT};
+    use crate::service::vector::{content_hash, cosine_similarity};
+
+    // Toggle check (default off).
+    let enabled = db_call(sender, |reply| DbCommand::LoadAppSetting {
+        key: CROSS_MEMORY_SETTING_KEY.to_string(),
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    if enabled.as_deref() != Some("true") {
+        return Ok(Vec::new());
+    }
+
+    // Sibling conversations with the same character.
+    let conversations = db_call(sender, |reply| DbCommand::LoadConversations { reply })
+        .await
+        .map_err(|e| e.to_string())?;
+    let namespaces: Vec<String> = conversations
+        .iter()
+        .filter(|c| c.character_id == conversation.character_id && c.id != conversation.id)
+        .map(|c| format!("messages:{}", c.id))
+        .collect();
+    if namespaces.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let vectors = db_call(sender, |reply| DbCommand::LoadEmbeddingsForNamespaces {
+        namespaces,
+        model_key: Some(loaded.model_key.clone()),
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut scored: Vec<(f32, String, String)> = vectors
+        .into_values()
+        .flatten()
+        .map(|record| {
+            (
+                cosine_similarity(query, &record.vector),
+                record.ref_id,
+                record.content_hash,
+            )
+        })
+        .collect();
+    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(EXTERNAL_MEMORY_LIMIT * 2);
+
+    let ids: Vec<String> = scored.iter().map(|(_, id, _)| id.clone()).collect();
+    let messages = db_call(sender, |reply| DbCommand::LoadMessagesWithConversation {
+        ids,
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut echoes = Vec::new();
+    for (similarity, message_id, hash) in &scored {
+        if echoes.len() >= EXTERNAL_MEMORY_LIMIT {
+            break;
+        }
+        let Some((message, _, _)) = messages
+            .iter()
+            .find(|(m, _, _)| &m.id == message_id)
+            .cloned()
+        else {
+            continue; // Deleted since embedding.
+        };
+        if message.content.trim().is_empty() || message.role == MessageRole::System {
+            continue;
+        }
+        if &content_hash(&message.content) != hash {
+            continue; // Stale vector.
+        }
+        echoes.push(crate::service::prompt::ExternalMemory {
+            similarity: *similarity,
+            is_user: message.role == MessageRole::User,
+            content: message.content,
+        });
+    }
+    Ok(echoes)
 }
 
 /// Builds the hook that runs after a chat stream finishes: embeds the final
@@ -689,6 +792,7 @@ fn assemble_prompt(
         .then_some(MemoryInfo {
             summary_included: assembled.memory.summary_injected,
             recalled_count: assembled.memory.recalled.len(),
+            external_count: assembled.memory.external_count,
         });
 
     let lorebook_details = assembled.lorebook_details;

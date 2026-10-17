@@ -55,6 +55,9 @@
 				{#if memoryInfo.recalledCount > 0}
 					{memoryInfo.summaryIncluded ? '·' : ''} {memoryInfo.recalledCount} recalled
 				{/if}
+				{#if memoryInfo.externalCount > 0}
+					· {memoryInfo.externalCount} echo{memoryInfo.externalCount === 1 ? '' : 'es'}
+				{/if}
 			</span>
 		</div>
 	{/if}

@@ -19,6 +19,13 @@ use crate::service::vector::content_hash;
 /// app_settings key holding the serialized `EmbeddingConfig`.
 pub const EMBEDDING_CONFIG_KEY: &str = "embedding_config";
 
+/// app_settings key for the cross-conversation character-memory toggle
+/// ("true"/"false", default off).
+pub const CROSS_MEMORY_SETTING_KEY: &str = "memory_cross_conversation";
+
+/// Maximum cross-conversation echoes recalled per prompt.
+pub const EXTERNAL_MEMORY_LIMIT: usize = 5;
+
 /// Max characters of text fed to an embedder (rough cap on cost/latency).
 pub const MAX_EMBED_TEXT_CHARS: usize = 8000;
 

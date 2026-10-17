@@ -161,6 +161,8 @@ class AppState {
   // ── Embedding state (semantic retrieval) ────────────────────────────────
   embedding_config = $state<EmbeddingConfig>({ source: "none" });
   embedding_status = $state<EmbeddingStatus | null>(null);
+  /** Cross-conversation character memory toggle (off by default). */
+  cross_conversation_memory = $state<boolean>(false);
 
   // ── Character generation state ──────────────────────────────────────────
   is_generating_character = $state<boolean>(false);
@@ -409,6 +411,11 @@ class AppState {
       }
       // Non-critical: best-effort status refresh after hydration.
       this.refreshEmbeddingStatus();
+      apiGetAppSetting("memory_cross_conversation")
+        .then((value) => {
+          this.cross_conversation_memory = value === "true";
+        })
+        .catch(() => {});
 
       // If any critical data failed, set error state
       const criticalFailures = results
@@ -607,6 +614,19 @@ class AppState {
   async rebuildEmbeddingIndexAction(): Promise<void> {
     await apiRebuildEmbeddingIndex();
     await this.refreshEmbeddingStatus();
+  }
+
+  /** Toggles cross-conversation character memory (persisted app setting). */
+  async toggleCrossConversationMemory(): Promise<void> {
+    this.cross_conversation_memory = !this.cross_conversation_memory;
+    try {
+      await apiSetAppSetting(
+        "memory_cross_conversation",
+        this.cross_conversation_memory ? "true" : "false",
+      );
+    } catch (err) {
+      console.error("Cross-conversation memory persist failed:", err);
+    }
   }
 
   get embeddings_enabled(): boolean {

@@ -334,6 +334,32 @@
 			<p class="mt-1 text-xs text-(--color-subtle)">
 				Messages and lorebook entries are embedded automatically as you chat and edit.
 			</p>
+
+			<div class="mt-4 flex items-start justify-between gap-3 border-t border-(--color-border) pt-3">
+				<div>
+					<p class="text-sm font-medium text-(--color-foreground)">Cross-conversation memory</p>
+					<p class="mt-0.5 text-xs text-(--color-subtle)">
+						Let characters recall moments from your other conversations with them, matched by
+						meaning. Injected only when this conversation's history outgrows its context window.
+					</p>
+				</div>
+				<button
+					type="button"
+					role="switch"
+					aria-checked={app.cross_conversation_memory}
+					aria-label="Cross-conversation memory"
+					onclick={() => app.toggleCrossConversationMemory()}
+					class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors {app.cross_conversation_memory
+						? 'bg-(--color-accent)'
+						: 'bg-(--color-surface-hover)'}"
+				>
+					<span
+						class="pointer-events-none inline-block size-4 rounded-full bg-white shadow ring-0 transition-transform {app.cross_conversation_memory
+							? 'translate-x-4'
+							: 'translate-x-0'}"
+					></span>
+				</button>
+			</div>
 		{:else}
 			<p class="mt-3 text-sm text-(--color-muted)">
 				<span class="inline-flex items-center gap-1.5"

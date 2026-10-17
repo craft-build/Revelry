@@ -183,6 +183,7 @@ export type StreamChunk =
 export interface MemoryInfo {
   summaryIncluded: boolean;
   recalledCount: number;
+  externalCount: number;
 }
 
 /** Context budget info returned from backend after each generation. */
