@@ -2,13 +2,14 @@
 type: Reference
 description: Module map, frontend↔backend data flow, cross-cutting concerns (DbWorker, cancellation, keyring, errors), and subsystem boundaries.
 tags:
-- architecture
-- data-flow
-- dbworker
-- tauri-ipc
-- subsystems
+  - architecture
+  - data-flow
+  - dbworker
+  - tauri-ipc
+  - subsystems
 timestamp: 2026-07-12T18:26:11Z
 ---
+
 # Architecture
 
 Revelry is a layered desktop app. A **SvelteKit 2 + Svelte 5** frontend talks to a **Rust (Tauri v2)** backend exclusively through typed IPC — the frontend never accesses the database, filesystem, or LLM APIs directly. The design mirrors the Elm/Relm4 AppModel pattern: one source of truth on the frontend, a 4-layer backend (commands → service → domain → db).

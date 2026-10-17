@@ -1,15 +1,16 @@
 ---
 type: Decision
-description: 'Conventions, patterns, and rationale: Svelte 5 runes, AppState singleton, Tauri IPC, DbWorker, keyring, OKLCH styling, error handling, testing.'
+description: "Conventions, patterns, and rationale: Svelte 5 runes, AppState singleton, Tauri IPC, DbWorker, keyring, OKLCH styling, error handling, testing."
 tags:
-- conventions
-- decisions
-- svelte-runes
-- tauri-ipc
-- oklch
-- error-handling
+  - conventions
+  - decisions
+  - svelte-runes
+  - tauri-ipc
+  - oklch
+  - error-handling
 timestamp: 2026-07-12T18:26:11Z
 ---
+
 # Design Decisions
 
 Conventions and rationale for Revelry, primarily codified in `AGENTS.md` at the project root.
@@ -23,14 +24,14 @@ All frontend state lives in one Svelte 5 rune-based class instance (`app`) in `s
 
 ## Svelte 5 Runes Are Mandatory
 
-| Do | Don't |
-|---|---|
-| `$state()` for reactive state | `writable()` / `readable()` from `svelte/store` |
-| `$derived` / `get` for computed | `derived()` from `svelte/store` |
-| `$effect()` for side effects | `$:` reactive statements |
-| `$props()` for component props | `export let` (legacy) |
-| `children?: Snippet` + `{@render children?.()}` | `<slot />` (legacy) |
-| `.svelte.ts` files (support runes) | plain `.ts` files (do not) |
+| Do                                              | Don't                                           |
+| ----------------------------------------------- | ----------------------------------------------- |
+| `$state()` for reactive state                   | `writable()` / `readable()` from `svelte/store` |
+| `$derived` / `get` for computed                 | `derived()` from `svelte/store`                 |
+| `$effect()` for side effects                    | `$:` reactive statements                        |
+| `$props()` for component props                  | `export let` (legacy)                           |
+| `children?: Snippet` + `{@render children?.()}` | `<slot />` (legacy)                             |
+| `.svelte.ts` files (support runes)              | plain `.ts` files (do not)                      |
 
 ## Component & Variant Conventions
 

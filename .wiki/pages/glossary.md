@@ -2,12 +2,13 @@
 type: Note
 description: Domain terms, project jargon, and acronyms used across Revelry's Rust and TypeScript codebase.
 tags:
-- glossary
-- domain-terms
-- jargon
-- acronyms
+  - glossary
+  - domain-terms
+  - jargon
+  - acronyms
 timestamp: 2026-07-12T18:26:11Z
 ---
+
 # Glossary
 
 Domain terms and project-specific jargon for Revelry. Each entry notes where the term is defined.
