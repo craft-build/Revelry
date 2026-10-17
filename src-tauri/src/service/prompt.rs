@@ -209,10 +209,19 @@ fn select_persona_tier(
     String::new()
 }
 
+/// Formatting rules appended to every sticky prompt. Actions and thoughts in
+/// `*asterisks*` render as muted italic narration in the chat view
+/// (`.prose-markdown em`), so dialogue stays visually distinct.
+const FORMATTING_INSTRUCTIONS: &str = "Formatting:\n\
+- Wrap actions, descriptions, and inner thoughts in single asterisks, e.g. *She glances toward the door.*\n\
+- Write spoken dialogue as plain text without asterisks.\n\
+- Keep narration and dialogue as separate segments; never put spoken lines inside asterisks.";
+
 /// Builds the sticky system prompt (never truncated): system_prompt + character fields
 /// but NOT post_history_instructions (those go after history in D-04 priority order).
 /// Includes `mes_example` as an example-dialogue block placed after the
 /// scenario/description context, mirroring how character cards define voice/tone.
+/// Always ends with the formatting section.
 fn build_sticky_prompt(character: &CharacterCardV2) -> String {
     let mut parts = Vec::new();
 
@@ -233,10 +242,11 @@ fn build_sticky_prompt(character: &CharacterCardV2) -> String {
     }
 
     if parts.is_empty() {
-        format!("You are {}. Respond in character.", character.name)
-    } else {
-        parts.join("\n\n")
+        parts.push(format!("You are {}. Respond in character.", character.name));
     }
+    parts.push(FORMATTING_INSTRUCTIONS.to_string());
+
+    parts.join("\n\n")
 }
 
 /// Result of history truncation.
@@ -479,6 +489,35 @@ mod tests {
             prompt.preamble.contains("Scenario:"),
             "Scenario should always be included"
         );
+    }
+
+    #[test]
+    fn test_formatting_instructions_included() {
+        let messages = vec![make_test_message(MessageRole::User, "Hello!")];
+        let token_svc = token_service();
+
+        let mut empty_character = make_test_character();
+        empty_character.system_prompt.clear();
+        empty_character.personality.clear();
+        empty_character.scenario.clear();
+        empty_character.description.clear();
+        empty_character.mes_example.clear();
+
+        for character in [make_test_character(), empty_character] {
+            let prompt = PromptEngine::assemble_with_budget(
+                &character,
+                None,
+                &messages,
+                &[],
+                &std::collections::HashMap::new(),
+                &token_svc,
+                8192,
+            );
+            assert!(
+                prompt.preamble.contains("Formatting:"),
+                "Formatting section should always be included"
+            );
+        }
     }
 
     #[test]
