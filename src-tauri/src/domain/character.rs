@@ -247,6 +247,10 @@ impl CharacterCardV2 {
                 position,
                 depth,
                 activation_state,
+                // Embedded character books use keyword activation (their
+                // entries have no vectors in the embedding index).
+                activation_mode: Default::default(),
+                semantic_threshold: 0.6,
                 token_budget,
                 sort_order,
                 enabled,

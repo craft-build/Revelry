@@ -36,6 +36,16 @@ pub struct BudgetInfo {
     pub tokens_used: usize,
     pub tokens_limit: usize,
     pub truncated_count: usize,
+    /// Memory-layer outcome for this prompt (summary / recall).
+    pub memory: Option<MemoryInfo>,
+}
+
+/// Memory-layer outcome surfaced on the Complete chunk.
+#[derive(Clone, Copy, Debug, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryInfo {
+    pub summary_included: bool,
+    pub recalled_count: usize,
 }
 
 /// A chunk of data from a streaming AI response.
@@ -61,6 +71,8 @@ pub enum StreamChunk {
         cancelled: bool,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         lorebook_details: Vec<LorebookActivationDetail>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        memory: Option<MemoryInfo>,
     },
     Error {
         error: String,
@@ -161,6 +173,7 @@ mod tests {
             truncated_count: 2,
             lorebook_details: Vec::new(),
             cancelled: false,
+            memory: None,
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
         let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");
@@ -190,6 +203,7 @@ mod tests {
             truncated_count: 0,
             lorebook_details: Vec::new(),
             cancelled: true,
+            memory: None,
         };
         let json = serde_json::to_string(&chunk).expect("serialize failed");
         let parsed: serde_json::Value = serde_json::from_str(&json).expect("deserialize failed");

@@ -14,10 +14,16 @@ use super::util::classify_error;
 use super::AiService;
 use super::{BudgetInfo, GenerationParams, MessagePersistence, StreamChunk};
 
+/// Callback invoked once after a chat stream finishes (success, error, or
+/// cancellation). Used by the command layer for post-stream maintenance
+/// (message embedding, summary regeneration) without touching stream internals.
+pub type PostStreamHook = Box<dyn FnOnce() + Send + Sync>;
+
 impl AiService {
     /// Stream an AI chat response via a Tauri Channel.
     /// Spawns a tokio task that processes the stream and sends StreamChunk events.
     /// The CancellationToken allows the caller to stop the stream mid-generation.
+    /// `on_complete` (optional) runs after the stream task finishes.
     #[allow(clippy::too_many_arguments)]
     pub fn stream_chat(
         provider: &ProviderConfig,
@@ -32,6 +38,7 @@ impl AiService {
         regex_scripts: Vec<RegexScript>,
         lorebook_details: Vec<LorebookActivationDetail>,
         persistence: Option<MessagePersistence>,
+        on_complete: Option<PostStreamHook>,
     ) {
         let provider_type = provider.provider_type.clone();
         let base_url = provider.base_url.clone();
@@ -43,7 +50,7 @@ impl AiService {
         let (prompt, history) = Self::split_last_prompt(chat_history);
 
         tokio::spawn(async move {
-            if let Err(e) = Self::run_stream(
+            let result = Self::run_stream(
                 &provider_type,
                 base_url.as_deref(),
                 &model_name,
@@ -60,12 +67,18 @@ impl AiService {
                 lorebook_details,
                 persistence,
             )
-            .await
-            {
+            .await;
+
+            if let Err(e) = result {
                 let _ = channel.send(StreamChunk::Error {
                     error: e.clone(),
                     error_type: classify_error(&e),
                 });
+            }
+
+            // Post-stream maintenance (embedding, summary) — never fatal.
+            if let Some(hook) = on_complete {
+                hook();
             }
         });
     }
@@ -160,6 +173,7 @@ impl AiService {
                         truncated_count: budget.truncated_count,
                         lorebook_details: Vec::new(),
                         cancelled: true,
+                        memory: budget.memory,
                     });
                     return;
                 }
@@ -178,6 +192,7 @@ impl AiService {
                                 truncated_count: budget.truncated_count,
                                 lorebook_details,
                                 cancelled: false,
+                                memory: budget.memory,
                             });
                             return;
                         }
@@ -236,6 +251,7 @@ impl AiService {
                                 truncated_count: budget.truncated_count,
                                 lorebook_details,
                                 cancelled: false,
+                                memory: budget.memory,
                             });
                             return;
                         }

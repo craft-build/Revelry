@@ -1,7 +1,9 @@
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, MessageRole};
 use crate::domain::generation::GenerationPreset;
-use crate::domain::lorebook::{Lorebook, LorebookActivation, LorebookEntry, LorebookPosition};
+use crate::domain::lorebook::{
+    Lorebook, LorebookActivation, LorebookActivationMode, LorebookEntry, LorebookPosition,
+};
 use crate::domain::persona::Persona;
 use crate::domain::provider::{GenerationParams, ProviderConfig, ProviderModelEntry, ProviderType};
 use crate::domain::regex_script::RegexScript;
@@ -127,6 +129,8 @@ pub fn row_to_conversation(row: &Row) -> rusqlite::Result<Conversation> {
         override_max_tokens: row.get("override_max_tokens")?,
         title: row.get("title")?,
         last_message_preview: row.get("last_message_preview")?,
+        summary: row.get("summary")?,
+        summary_upto: row.get("summary_upto")?,
         created_at,
         updated_at,
     })
@@ -318,6 +322,18 @@ pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
         }
     };
 
+    let activation_mode_str: String = row.get("activation_mode")?;
+    let activation_mode = match LorebookActivationMode::from_str(&activation_mode_str) {
+        Ok(m) => m,
+        Err(e) => {
+            return Err(rusqlite::Error::FromSqlConversionFailure(
+                0,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+            ));
+        }
+    };
+
     let extensions_str: String = row.get("extensions")?;
     let extensions: serde_json::Value = serde_json::from_str(&extensions_str).map_err(|e| {
         rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
@@ -332,6 +348,8 @@ pub fn row_to_lorebook_entry(row: &Row) -> rusqlite::Result<LorebookEntry> {
         position,
         depth: row.get("depth")?,
         activation_state,
+        activation_mode,
+        semantic_threshold: row.get("semantic_threshold")?,
         token_budget: row.get::<_, Option<i64>>("token_budget")?,
         sort_order: row.get("sort_order")?,
         enabled: row.get::<_, i32>("enabled")? != 0,

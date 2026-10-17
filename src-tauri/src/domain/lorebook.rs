@@ -72,6 +72,45 @@ impl FromStr for LorebookActivation {
     }
 }
 
+/// How a lorebook entry decides to activate.
+/// - `Keyword`: classic SillyTavern keyword matching (default).
+/// - `Semantic`: cosine similarity of the entry's embedding against the recent
+///   chat window ≥ threshold. Falls back to keyword matching when embeddings
+///   are unavailable (not configured or the entry has no vector yet), so an
+///   entry never silently goes dead.
+/// - `Hybrid`: keyword match OR semantic hit.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LorebookActivationMode {
+    #[default]
+    Keyword,
+    Semantic,
+    Hybrid,
+}
+
+impl fmt::Display for LorebookActivationMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LorebookActivationMode::Keyword => write!(f, "keyword"),
+            LorebookActivationMode::Semantic => write!(f, "semantic"),
+            LorebookActivationMode::Hybrid => write!(f, "hybrid"),
+        }
+    }
+}
+
+impl FromStr for LorebookActivationMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "keyword" => Ok(LorebookActivationMode::Keyword),
+            "semantic" => Ok(LorebookActivationMode::Semantic),
+            "hybrid" => Ok(LorebookActivationMode::Hybrid),
+            _ => Err(format!("Invalid LorebookActivationMode: {}", s)),
+        }
+    }
+}
+
 /// A standalone lorebook (world info) that can be shared across characters.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Lorebook {
@@ -115,6 +154,12 @@ pub struct LorebookEntry {
     pub depth: i32,
     #[serde(default)]
     pub activation_state: LorebookActivation,
+    #[serde(default = "default_activation_mode")]
+    pub activation_mode: LorebookActivationMode,
+    /// Cosine similarity an entry must reach to activate semantically.
+    /// Only meaningful for `semantic`/`hybrid` activation modes.
+    #[serde(default = "default_semantic_threshold")]
+    pub semantic_threshold: f32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token_budget: Option<i64>,
     #[serde(default = "default_sort_order")]
@@ -139,6 +184,14 @@ fn default_enabled() -> bool {
     true
 }
 
+fn default_activation_mode() -> LorebookActivationMode {
+    LorebookActivationMode::Keyword
+}
+
+fn default_semantic_threshold() -> f32 {
+    0.6
+}
+
 impl LorebookEntry {
     /// Creates a new lorebook entry with a generated UUID v4 id, current timestamps,
     /// and all other fields at their defaults.
@@ -153,6 +206,8 @@ impl LorebookEntry {
             position: LorebookPosition::AfterChar,
             depth: 4,
             activation_state: LorebookActivation::Always,
+            activation_mode: LorebookActivationMode::Keyword,
+            semantic_threshold: 0.6,
             token_budget: None,
             sort_order: 0,
             enabled: true,
@@ -173,6 +228,12 @@ pub struct LorebookActivationDetail {
     pub token_cost: usize,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub matched_keys: Option<Vec<String>>,
+    /// "keyword" | "semantic" | "always" — how the entry activated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub activation_reason: Option<String>,
+    /// Cosine similarity when activated (or gated) semantically.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub similarity: Option<f32>,
 }
 
 #[cfg(test)]
@@ -202,6 +263,8 @@ mod tests {
         assert_eq!(entry.position, LorebookPosition::AfterChar);
         assert_eq!(entry.depth, 4);
         assert_eq!(entry.activation_state, LorebookActivation::Always);
+        assert_eq!(entry.activation_mode, LorebookActivationMode::Keyword);
+        assert_eq!(entry.semantic_threshold, 0.6);
         assert!(entry.token_budget.is_none());
         assert_eq!(entry.sort_order, 0);
         assert!(entry.enabled);
@@ -272,6 +335,8 @@ mod tests {
         entry.position = LorebookPosition::AtDepth;
         entry.depth = 2;
         entry.activation_state = LorebookActivation::CharacterOnly;
+        entry.activation_mode = LorebookActivationMode::Hybrid;
+        entry.semantic_threshold = 0.75;
         entry.token_budget = Some(100);
         entry.sort_order = 2;
         entry.enabled = false;

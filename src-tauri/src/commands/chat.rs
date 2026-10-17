@@ -4,13 +4,23 @@ use tauri::ipc::Channel;
 use tauri::State;
 use tokio_util::sync::CancellationToken;
 
-use crate::ai::{AiService, BudgetInfo, GenerationParams, MessagePersistence, StreamChunk};
+use crate::ai::embeddings::{
+    db_call, embed_source, spawn_embed_message, EmbeddingRuntime, EMBED_TIMEOUT_SECS,
+};
+use crate::ai::summary::{
+    generate_summary, SUMMARY_MIN_TOTAL_MESSAGES, SUMMARY_TRIGGER_NEW_MESSAGES,
+};
+use crate::ai::{
+    AiService, BudgetInfo, GenerationParams, MemoryInfo, MessagePersistence, PostStreamHook,
+    StreamChunk,
+};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::conversation::{Message as DomainMessage, MessageBranch, MessageRole};
 use crate::domain::lorebook::LorebookActivationDetail;
 use crate::domain::regex_script::RegexScript;
 use crate::error::AppError;
-use crate::service::prompt::PromptEngine;
+use crate::service::lorebook::{build_scan_texts, SemanticContext};
+use crate::service::prompt::{MemoryInput, PromptEngine};
 use crate::service::token_count::TokenCountService;
 
 /// Managed state holding the cancellation token for the currently active stream.
@@ -41,6 +51,11 @@ struct ChatContext {
     generation_preset: Option<crate::domain::generation::GenerationPreset>,
     /// Per-conversation max output token override.
     override_max_tokens: Option<i64>,
+    /// Precomputed semantic lorebook inputs (None = embeddings unavailable).
+    semantic: Option<SemanticContext>,
+    /// Memory-layer inputs (rolling summary + recall vectors). Summary may
+    /// be empty; vectors empty when embeddings are off.
+    memory: MemoryInput,
 }
 
 /// Resolves generation parameters from provider defaults → preset → per-conversation override.
@@ -98,8 +113,10 @@ fn resolve_target_response_length(
 
 /// Loads all context needed for prompt assembly and streaming.
 /// Returns Ok(Some(ChatContext)) on success, or sends an error StreamChunk and returns Ok(None).
+#[allow(clippy::too_many_arguments)]
 async fn load_chat_context(
     db: &State<'_, DbWorker>,
+    runtime: &EmbeddingRuntime,
     channel: &Channel<StreamChunk>,
     conversation_id: &str,
     branch_id: Option<String>,
@@ -259,7 +276,7 @@ async fn load_chat_context(
         if !all_lorebook_ids.is_empty() {
             let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
             db.send(DbCommand::LoadLorebookEntriesForLorebooks {
-                lorebook_ids: all_lorebook_ids,
+                lorebook_ids: all_lorebook_ids.clone(),
                 reply: reply_tx,
             })
             .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
@@ -332,6 +349,22 @@ async fn load_chat_context(
         None => None,
     };
 
+    // 12. Semantic lorebook context (Phase 11). Built from junction-table
+    // lorebooks only (embedded character books have no vectors); every step
+    // fails open to None.
+    let semantic = build_semantic_context(
+        runtime,
+        &db.sender(),
+        character.as_ref(),
+        &messages,
+        &lorebook_entries,
+        &all_lorebook_ids,
+    )
+    .await;
+
+    // 13. Memory-layer inputs (summary + recall vectors).
+    let memory = build_memory_input(runtime, &db.sender(), &conversation, &messages).await;
+
     Ok(Some(ChatContext {
         character,
         persona,
@@ -348,7 +381,249 @@ async fn load_chat_context(
         regex_scripts,
         generation_preset,
         override_max_tokens: conversation.override_max_tokens,
+        semantic,
+        memory,
     }))
+}
+
+/// Builds the semantic lorebook activation context: entry vectors from the
+/// junction lorebooks' namespaces plus one query vector for the scan window.
+/// Returns None (embeddings unavailable) on any failure — activation then
+/// falls back to keyword matching everywhere.
+async fn build_semantic_context(
+    runtime: &EmbeddingRuntime,
+    sender: &std::sync::mpsc::Sender<DbCommand>,
+    character: Option<&crate::domain::character::CharacterCardV2>,
+    messages: &[DomainMessage],
+    entries: &[crate::domain::lorebook::LorebookEntry],
+    lorebook_ids: &[String],
+) -> Option<SemanticContext> {
+    use crate::domain::lorebook::LorebookActivationMode;
+
+    let character = character?;
+    if lorebook_ids.is_empty() {
+        return None;
+    }
+    // Nothing to do unless some enabled entry opts into semantics.
+    if !entries
+        .iter()
+        .any(|e| e.enabled && e.activation_mode != LorebookActivationMode::Keyword)
+    {
+        return None;
+    }
+
+    let loaded = runtime.resolve(sender).await.ok()?;
+
+    let namespaces: Vec<String> = lorebook_ids
+        .iter()
+        .map(|id| format!("lorebook:{id}"))
+        .collect();
+    let vectors_by_ns = db_call(sender, |reply| DbCommand::LoadEmbeddingsForNamespaces {
+        namespaces,
+        model_key: Some(loaded.model_key.clone()),
+        reply,
+    })
+    .await
+    .ok()?;
+    let mut vectors = std::collections::HashMap::new();
+    for records in vectors_by_ns.into_values() {
+        for record in records {
+            vectors.insert(record.ref_id, record.vector);
+        }
+    }
+
+    // One query per turn: the combined scan window (role-filtered queries
+    // are a future refinement; the runtime falls back to the shared query).
+    let scan = build_scan_texts(messages, character.lorebook_scan_depth);
+    if scan.all.trim().is_empty() {
+        return None;
+    }
+    let query_all = tokio::time::timeout(
+        std::time::Duration::from_secs(EMBED_TIMEOUT_SECS),
+        runtime.embed_query(sender, &scan.all),
+    )
+    .await
+    .ok()?
+    .ok()?;
+
+    Some(SemanticContext {
+        query_all,
+        query_character_only: None,
+        query_user_only: None,
+        vectors,
+    })
+}
+
+/// Builds the memory-layer input: rolling summary from the conversation row,
+/// message vectors for recall, and a recall query vector from the latest
+/// user message. Everything degrades to summary-only when embeddings are off.
+async fn build_memory_input(
+    runtime: &EmbeddingRuntime,
+    sender: &std::sync::mpsc::Sender<DbCommand>,
+    conversation: &crate::domain::conversation::Conversation,
+    messages: &[DomainMessage],
+) -> MemoryInput {
+    let mut memory = MemoryInput {
+        summary: conversation.summary.clone(),
+        summary_upto: conversation.summary_upto,
+        query_vector: None,
+        message_vectors: std::collections::HashMap::new(),
+    };
+
+    let loaded = match runtime.resolve(sender).await {
+        Ok(loaded) => loaded,
+        Err(_) => return memory, // Embeddings off — summary only.
+    };
+
+    let namespace = format!("messages:{}", conversation.id);
+    if let Ok(records) = db_call(sender, |reply| DbCommand::LoadEmbeddings {
+        namespace,
+        model_key: Some(loaded.model_key.clone()),
+        reply,
+    })
+    .await
+    {
+        memory.message_vectors = records
+            .into_iter()
+            .map(|r| (r.ref_id, (r.content_hash, r.vector)))
+            .collect();
+    }
+
+    if !memory.message_vectors.is_empty() {
+        if let Some(last_user) = messages
+            .iter()
+            .rev()
+            .find(|m| m.role == MessageRole::User && !m.content.trim().is_empty())
+        {
+            if let Ok(vector) = tokio::time::timeout(
+                std::time::Duration::from_secs(EMBED_TIMEOUT_SECS),
+                runtime.embed_query(sender, &last_user.content),
+            )
+            .await
+            {
+                memory.query_vector = vector.ok();
+            }
+        }
+    }
+
+    memory
+}
+
+/// Builds the hook that runs after a chat stream finishes: embeds the final
+/// assistant message (write-reconciliation) and, when enough new messages
+/// have accumulated, regenerates the rolling story summary in the background
+/// using the conversation's own chat provider. Never fatal.
+#[allow(clippy::too_many_arguments)]
+fn make_post_stream_hook(
+    db: &State<'_, DbWorker>,
+    runtime: &EmbeddingRuntime,
+    conversation_id: String,
+    branch_id: Option<String>,
+    assistant_message_id: String,
+    provider: crate::domain::provider::ProviderConfig,
+    active_model_name: String,
+    api_key: String,
+) -> PostStreamHook {
+    let sender = db.sender();
+    let runtime = runtime.clone();
+
+    Box::new(move || {
+        tokio::spawn(async move {
+            // Reload the branch view — the final content is persisted there.
+            let messages: Vec<DomainMessage> =
+                match db_call(&sender, |reply| DbCommand::LoadMessages {
+                    conversation_id: conversation_id.clone(),
+                    branch_id: branch_id.clone(),
+                    reply,
+                })
+                .await
+                {
+                    Ok(messages) => messages,
+                    Err(e) => {
+                        tracing::warn!("post-stream context load failed: {e}");
+                        return;
+                    }
+                };
+
+            // 1. Embed the final assistant message (skip if empty/cancelled
+            //    with nothing streamed — embed_source handles empty itself).
+            if let Some(assistant) = messages.iter().find(|m| m.id == assistant_message_id) {
+                if !assistant.content.trim().is_empty() {
+                    let namespace = format!("messages:{conversation_id}");
+                    if let Err(e) = embed_source(
+                        &runtime,
+                        &sender,
+                        &namespace,
+                        &assistant.id,
+                        &assistant.content,
+                    )
+                    .await
+                    {
+                        tracing::debug!("assistant message embed skipped: {e}");
+                    }
+                }
+            }
+
+            // 2. Summary maintenance — only for conversations long enough to
+            //    truncate soon, and only when a batch of new messages exists.
+            if messages.len() < SUMMARY_MIN_TOTAL_MESSAGES {
+                return;
+            }
+            let (previous_summary, summary_upto) =
+                match db_call(&sender, |reply| DbCommand::LoadConversations { reply }).await {
+                    Ok(conversations) => conversations
+                        .into_iter()
+                        .find(|c| c.id == conversation_id)
+                        .map(|c| (c.summary, c.summary_upto))
+                        .unwrap_or_default(),
+                    Err(_) => return,
+                };
+
+            let pending: Vec<DomainMessage> = messages
+                .iter()
+                .filter(|m| (m.sort_order as i64) > summary_upto)
+                .cloned()
+                .collect();
+            if pending.len() < SUMMARY_TRIGGER_NEW_MESSAGES {
+                return;
+            }
+
+            match generate_summary(
+                &provider,
+                &active_model_name,
+                &api_key,
+                (!previous_summary.is_empty()).then_some(previous_summary.as_str()),
+                &pending,
+            )
+            .await
+            {
+                Ok(summary) => {
+                    let upto = pending
+                        .last()
+                        .map(|m| m.sort_order as i64)
+                        .unwrap_or(summary_upto);
+                    if let Err(e) = db_call(&sender, |reply| DbCommand::UpdateConversationSummary {
+                        conversation_id: conversation_id.clone(),
+                        summary: summary.clone(),
+                        summary_upto: upto,
+                        reply,
+                    })
+                    .await
+                    {
+                        tracing::warn!("summary persist failed: {e}");
+                    } else {
+                        tracing::debug!(
+                            "story summary refreshed ({} messages covered)",
+                            pending.len()
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::debug!("summary generation skipped: {e}");
+                }
+            }
+        });
+    })
 }
 
 /// Assembles a prompt using PromptEngine with budget awareness.
@@ -378,6 +653,8 @@ fn assemble_prompt(
             &ctx.lorebook_name_map,
             &token_svc,
             context_window,
+            ctx.semantic.as_ref(),
+            Some(&ctx.memory),
         ),
         None => {
             // No character — use minimal fallback prompt
@@ -403,9 +680,16 @@ fn assemble_prompt(
                 tokens_used,
                 truncated_messages: 0,
                 lorebook_details: Vec::new(),
+                memory: Default::default(),
             }
         }
     };
+
+    let memory = (assembled.memory.summary_injected || !assembled.memory.recalled.is_empty())
+        .then_some(MemoryInfo {
+            summary_included: assembled.memory.summary_injected,
+            recalled_count: assembled.memory.recalled.len(),
+        });
 
     let lorebook_details = assembled.lorebook_details;
 
@@ -413,6 +697,7 @@ fn assemble_prompt(
         tokens_used: assembled.tokens_used,
         tokens_limit: context_window as usize,
         truncated_count: assembled.truncated_messages,
+        memory,
     };
 
     let mut preamble = assembled.preamble;
@@ -490,6 +775,7 @@ async fn save_assistant_placeholder(
 #[tauri::command]
 pub async fn start_chat(
     db: State<'_, DbWorker>,
+    runtime: State<'_, EmbeddingRuntime>,
     cancel_state: State<'_, CancelState>,
     channel: Channel<StreamChunk>,
     conversation_id: String,
@@ -535,6 +821,15 @@ pub async fn start_chat(
                 .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
                 .map_err(|e| AppError::Database(e.to_string()))?;
         }
+
+        // Write-reconcile the user message's vector (no-op without embeddings).
+        spawn_embed_message(
+            (*runtime).clone(),
+            db.sender(),
+            conversation_id.clone(),
+            message_id.clone(),
+            content.clone(),
+        );
 
         // Save steering system message if present
         if let Some(steer) = raw_steer.as_deref() {
@@ -598,7 +893,9 @@ pub async fn start_chat(
     }
 
     // 3. Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id.clone()).await? {
+    let ctx = match load_chat_context(&db, &runtime, &channel, &conversation_id, branch_id.clone())
+        .await?
+    {
         Some(c) => c,
         None => return Ok(()), // Error already sent via channel
     };
@@ -644,6 +941,16 @@ pub async fn start_chat(
     let mut provider_config = ctx.provider.clone();
     provider_config.model_name = ctx.active_model_name.clone();
     let api_key = ctx.api_key.clone();
+    let on_complete = make_post_stream_hook(
+        &db,
+        &runtime,
+        conversation_id.clone(),
+        branch_id.clone(),
+        ai_message_id.clone(),
+        provider_config.clone(),
+        ctx.active_model_name.clone(),
+        api_key.clone(),
+    );
     tokio::spawn(async move {
         AiService::stream_chat(
             &provider_config,
@@ -658,6 +965,7 @@ pub async fn start_chat(
             regex_scripts,
             lorebook_details,
             Some(persistence),
+            Some(on_complete),
         );
     });
 
@@ -681,6 +989,7 @@ pub async fn stop_generation(cancel_state: State<'_, CancelState>) -> Result<(),
 #[tauri::command]
 pub async fn regenerate(
     db: State<'_, DbWorker>,
+    runtime: State<'_, EmbeddingRuntime>,
     cancel_state: State<'_, CancelState>,
     channel: Channel<StreamChunk>,
     conversation_id: String,
@@ -771,8 +1080,14 @@ pub async fn regenerate(
     };
 
     // Load context for the effective branch
-    let ctx = match load_chat_context(&db, &channel, &conversation_id, effective_branch_id.clone())
-        .await?
+    let ctx = match load_chat_context(
+        &db,
+        &runtime,
+        &channel,
+        &conversation_id,
+        effective_branch_id.clone(),
+    )
+    .await?
     {
         Some(c) => c,
         None => return Ok(effective_branch_id),
@@ -833,6 +1148,16 @@ pub async fn regenerate(
     let mut provider_config = ctx.provider.clone();
     provider_config.model_name = ctx.active_model_name.clone();
     let api_key = ctx.api_key.clone();
+    let on_complete = make_post_stream_hook(
+        &db,
+        &runtime,
+        conversation_id.clone(),
+        effective_branch_id.clone(),
+        ai_message_id.clone(),
+        provider_config.clone(),
+        ctx.active_model_name.clone(),
+        api_key.clone(),
+    );
     tokio::spawn(async move {
         AiService::stream_chat(
             &provider_config,
@@ -847,6 +1172,7 @@ pub async fn regenerate(
             regex_scripts,
             lorebook_details,
             Some(persistence),
+            Some(on_complete),
         );
     });
 
@@ -857,6 +1183,7 @@ pub async fn regenerate(
 #[tauri::command]
 pub async fn edit_and_resend(
     db: State<'_, DbWorker>,
+    runtime: State<'_, EmbeddingRuntime>,
     cancel_state: State<'_, CancelState>,
     channel: Channel<StreamChunk>,
     message_id: String,
@@ -896,8 +1223,8 @@ pub async fn edit_and_resend(
     {
         let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
         db.send(DbCommand::UpdateMessageContent {
-            id: message_id,
-            content: new_content,
+            id: message_id.clone(),
+            content: new_content.clone(),
             reply: reply_tx,
         })
         .map_err(|e| AppError::DbWorkerUnavailable(e.to_string()))?;
@@ -906,6 +1233,15 @@ pub async fn edit_and_resend(
             .map_err(|e| AppError::DbWorkerUnavailable(format!("DB worker dropped: {}", e)))?
             .map_err(|e| AppError::Database(e.to_string()))?;
     }
+
+    // Re-embed the edited message (content_hash check skips no-change edits).
+    spawn_embed_message(
+        (*runtime).clone(),
+        db.sender(),
+        conversation_id.clone(),
+        message_id.clone(),
+        new_content.clone(),
+    );
 
     // 3. Delete all subsequent messages
     {
@@ -924,7 +1260,9 @@ pub async fn edit_and_resend(
     }
 
     // 4. Load context
-    let ctx = match load_chat_context(&db, &channel, &conversation_id, branch_id.clone()).await? {
+    let ctx = match load_chat_context(&db, &runtime, &channel, &conversation_id, branch_id.clone())
+        .await?
+    {
         Some(c) => c,
         None => return Ok(()),
     };
@@ -984,6 +1322,16 @@ pub async fn edit_and_resend(
     let mut provider_config = ctx.provider.clone();
     provider_config.model_name = ctx.active_model_name.clone();
     let api_key = ctx.api_key.clone();
+    let on_complete = make_post_stream_hook(
+        &db,
+        &runtime,
+        conversation_id.clone(),
+        branch_id.clone(),
+        ai_message_id.clone(),
+        provider_config.clone(),
+        ctx.active_model_name.clone(),
+        api_key.clone(),
+    );
     tokio::spawn(async move {
         AiService::stream_chat(
             &provider_config,
@@ -998,6 +1346,7 @@ pub async fn edit_and_resend(
             regex_scripts,
             lorebook_details,
             Some(persistence),
+            Some(on_complete),
         );
     });
 

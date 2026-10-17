@@ -1,5 +1,6 @@
 use tauri::State;
 
+use crate::ai::embeddings::{spawn_delete_embedding, spawn_embed_lorebook_entry, EmbeddingRuntime};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::lorebook::{Lorebook, LorebookEntry};
 
@@ -35,6 +36,20 @@ pub async fn save_lorebook(
 
 #[tauri::command]
 pub async fn delete_lorebook(db: State<'_, DbWorker>, id: String) -> Result<(), String> {
+    // Drop the lorebook's derived vectors along with its entries.
+    {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::DeleteEmbeddingsByNamespace {
+            namespace: format!("lorebook:{id}"),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?;
+    }
+
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::DeleteLorebook {
         id,
@@ -69,6 +84,7 @@ pub async fn get_lorebook_entries(
 #[tauri::command]
 pub async fn save_lorebook_entry(
     db: State<'_, DbWorker>,
+    runtime: State<'_, EmbeddingRuntime>,
     entry: LorebookEntry,
 ) -> Result<LorebookEntry, String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
@@ -77,14 +93,20 @@ pub async fn save_lorebook_entry(
         reply: reply_tx,
     })
     .map_err(|e| e.to_string())?;
-    reply_rx
+    let saved = reply_rx
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Write-reconcile the entry's vector (skips when content is unchanged).
+    spawn_embed_lorebook_entry((*runtime).clone(), db.sender(), saved.clone());
+
+    Ok(saved)
 }
 
 #[tauri::command]
 pub async fn delete_lorebook_entry(db: State<'_, DbWorker>, id: String) -> Result<(), String> {
+    spawn_delete_embedding(db.sender(), id.clone());
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::DeleteLorebookEntry {
         id,

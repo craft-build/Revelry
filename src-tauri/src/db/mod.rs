@@ -1,6 +1,7 @@
 pub mod app_settings;
 pub mod characters;
 pub mod conversations;
+pub mod embeddings;
 pub mod generation;
 pub mod lorebook;
 pub mod migrations;
@@ -9,6 +10,7 @@ pub mod personas;
 pub mod providers;
 pub mod regex_scripts;
 
+use crate::db::embeddings::EmbeddingRow;
 use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Conversation, Message, MessageBranch, SearchResult};
 use crate::domain::generation::GenerationPreset;
@@ -283,6 +285,54 @@ pub enum DbCommand {
     SaveAppSetting {
         key: String,
         value: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+
+    // Embedding index operations
+    UpsertEmbedding {
+        row: Box<EmbeddingRow>,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    DeleteEmbeddingByRef {
+        ref_id: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    DeleteEmbeddingsByNamespace {
+        namespace: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    DeleteEmbeddingsByModel {
+        model_key: String,
+        reply: oneshot::Sender<anyhow::Result<()>>,
+    },
+    LoadEmbeddings {
+        namespace: String,
+        model_key: Option<String>,
+        reply: oneshot::Sender<anyhow::Result<Vec<crate::db::embeddings::EmbeddingRecord>>>,
+    },
+    GetEmbedding {
+        namespace: String,
+        ref_id: String,
+        reply: oneshot::Sender<anyhow::Result<Option<crate::db::embeddings::EmbeddingRecord>>>,
+    },
+    LoadEmbeddingsForNamespaces {
+        namespaces: Vec<String>,
+        model_key: Option<String>,
+        reply: oneshot::Sender<
+            anyhow::Result<
+                std::collections::HashMap<String, Vec<crate::db::embeddings::EmbeddingRecord>>,
+            >,
+        >,
+    },
+    CountEmbeddings {
+        reply: oneshot::Sender<anyhow::Result<Vec<(String, String, i64)>>>,
+    },
+
+    // Conversation summary (memory layer)
+    UpdateConversationSummary {
+        conversation_id: String,
+        summary: String,
+        summary_upto: i64,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
 }
@@ -745,6 +795,72 @@ impl DbWorker {
             }
             DbCommand::SaveAppSetting { key, value, reply } => {
                 let result = app_settings::save_app_setting(conn, &key, &value);
+                let _ = reply.send(result);
+            }
+
+            // Embedding index operations
+            DbCommand::UpsertEmbedding { row, reply } => {
+                let result = embeddings::upsert_embedding(conn, &row);
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteEmbeddingByRef { ref_id, reply } => {
+                let result = embeddings::delete_embedding_by_ref(conn, &ref_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteEmbeddingsByNamespace { namespace, reply } => {
+                let result = embeddings::delete_embeddings_by_namespace(conn, &namespace);
+                let _ = reply.send(result);
+            }
+            DbCommand::DeleteEmbeddingsByModel { model_key, reply } => {
+                let result = embeddings::delete_embeddings_by_model(conn, &model_key);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadEmbeddings {
+                namespace,
+                model_key,
+                reply,
+            } => {
+                let result = embeddings::load_embeddings(conn, &namespace, model_key.as_deref());
+                let _ = reply.send(result);
+            }
+            DbCommand::GetEmbedding {
+                namespace,
+                ref_id,
+                reply,
+            } => {
+                let result = embeddings::get_embedding(conn, &namespace, &ref_id);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadEmbeddingsForNamespaces {
+                namespaces,
+                model_key,
+                reply,
+            } => {
+                let result = embeddings::load_embeddings_for_namespaces(
+                    conn,
+                    &namespaces,
+                    model_key.as_deref(),
+                );
+                let _ = reply.send(result);
+            }
+            DbCommand::CountEmbeddings { reply } => {
+                let result = embeddings::count_embeddings(conn);
+                let _ = reply.send(result);
+            }
+
+            // Conversation summary (memory layer)
+            DbCommand::UpdateConversationSummary {
+                conversation_id,
+                summary,
+                summary_upto,
+                reply,
+            } => {
+                let result = conversations::update_conversation_summary(
+                    conn,
+                    &conversation_id,
+                    &summary,
+                    summary_upto,
+                );
                 let _ = reply.send(result);
             }
         }

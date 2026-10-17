@@ -1,16 +1,19 @@
-//! AI service: streaming chat, character generation, and model listing.
+//! AI service: streaming chat, character generation, embeddings, model listing.
 
 mod chat;
+pub(crate) mod embeddings;
 mod generate;
 mod model_list;
 mod providers;
+pub(crate) mod summary;
 mod types;
 mod util;
 
 use crate::domain::provider::ProviderConfig;
 
+pub use chat::PostStreamHook;
 pub use types::{
-    BudgetInfo, GenerateCharacterChunk, GeneratedCharacterData, GenerationParams,
+    BudgetInfo, GenerateCharacterChunk, GeneratedCharacterData, GenerationParams, MemoryInfo,
     MessagePersistence, StreamChunk,
 };
 

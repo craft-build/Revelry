@@ -4,6 +4,7 @@ pub mod card_io;
 pub mod characters;
 pub mod chat;
 pub mod conversations;
+pub mod embeddings;
 pub mod generate;
 pub mod keywords;
 pub mod lorebooks;

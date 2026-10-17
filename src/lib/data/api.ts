@@ -20,10 +20,14 @@ import type {
   Lorebook,
   LorebookEntry,
   KeywordTestResult,
+  SemanticTestResult,
   RegexScript,
   RegexTestResult,
   StreamChunk,
   GenerateCharacterChunk,
+  EmbeddingConfig,
+  EmbeddingStatus,
+  EmbeddingTestResult,
 } from "$lib/types";
 import { mockGenerateCharacter } from "$lib/data/mock";
 
@@ -489,6 +493,42 @@ export async function getAppSetting(key: string): Promise<string | null> {
 
 export async function setAppSetting(key: string, value: string): Promise<void> {
   return invoke<void>("set_app_setting", { key, value });
+}
+
+// ── Embeddings & semantic retrieval ───────────────────────────────────────────
+
+export async function getEmbeddingConfig(): Promise<EmbeddingConfig> {
+  return invoke<EmbeddingConfig>("get_embedding_config");
+}
+
+export async function setEmbeddingConfig(
+  config: EmbeddingConfig,
+): Promise<void> {
+  return invoke<void>("set_embedding_config", { config });
+}
+
+export async function getEmbeddingStatus(): Promise<EmbeddingStatus> {
+  return invoke<EmbeddingStatus>("get_embedding_status");
+}
+
+export async function testEmbedding(
+  text?: string,
+): Promise<EmbeddingTestResult> {
+  return invoke<EmbeddingTestResult>("test_embedding", { text: text ?? null });
+}
+
+export async function rebuildEmbeddingIndex(): Promise<void> {
+  return invoke<void>("rebuild_embedding_index");
+}
+
+export async function testSemanticActivation(
+  lorebookId: string,
+  text: string,
+): Promise<SemanticTestResult[]> {
+  return invoke<SemanticTestResult[]>("test_semantic_activation", {
+    lorebookId,
+    text,
+  });
 }
 
 // ── Character generation ──────────────────────────────────────────────────────

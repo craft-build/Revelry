@@ -25,6 +25,13 @@ pub struct Conversation {
     pub title: String,
     /// Truncated preview of the last message for list display.
     pub last_message_preview: String,
+    /// Rolling story summary maintained in the background and injected into
+    /// the prompt once history starts truncating (memory layer, D-04.5).
+    #[serde(default)]
+    pub summary: String,
+    /// Highest message sort_order covered by `summary` (0 = nothing covered).
+    #[serde(default)]
+    pub summary_upto: i64,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -44,6 +51,8 @@ impl Conversation {
             override_max_tokens: None,
             title: String::new(),
             last_message_preview: String::new(),
+            summary: String::new(),
+            summary_upto: 0,
             created_at: now,
             updated_at: now,
         }

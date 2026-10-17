@@ -356,6 +356,44 @@ pub fn get_migrations() -> Migrations<'static> {
             ALTER TABLE conversations DROP COLUMN override_max_tokens;
             "
         ),
+
+        // Phase 11: embeddings + semantic lorebook activation + story memory
+        M::up(
+            "
+            -- Derived vector index for semantic retrieval (lorebook entries,
+            -- message memory recall). Rebuildable: rows are keyed by model_key
+            -- and can always be recomputed from source content.
+            CREATE TABLE embeddings (
+                namespace    TEXT NOT NULL,
+                ref_id       TEXT NOT NULL,
+                model_key    TEXT NOT NULL,
+                dims         INTEGER NOT NULL,
+                vector       BLOB NOT NULL,
+                content_hash TEXT NOT NULL,
+                updated_at   TEXT NOT NULL,
+                PRIMARY KEY (namespace, ref_id)
+            );
+            CREATE INDEX idx_embeddings_model ON embeddings(model_key);
+
+            -- Semantic activation mode for lorebook entries
+            ALTER TABLE lorebook_entries ADD COLUMN activation_mode TEXT NOT NULL DEFAULT 'keyword';
+            ALTER TABLE lorebook_entries ADD COLUMN semantic_threshold REAL NOT NULL DEFAULT 0.6;
+
+            -- Rolling story summary (memory layer)
+            ALTER TABLE conversations ADD COLUMN summary TEXT NOT NULL DEFAULT '';
+            ALTER TABLE conversations ADD COLUMN summary_upto INTEGER NOT NULL DEFAULT 0;
+            "
+        )
+        .down(
+            "
+            ALTER TABLE conversations DROP COLUMN summary_upto;
+            ALTER TABLE conversations DROP COLUMN summary;
+            ALTER TABLE lorebook_entries DROP COLUMN semantic_threshold;
+            ALTER TABLE lorebook_entries DROP COLUMN activation_mode;
+            DROP INDEX IF EXISTS idx_embeddings_model;
+            DROP TABLE IF EXISTS embeddings;
+            "
+        ),
     ])
 }
 
@@ -1013,5 +1051,91 @@ mod tests {
                 col
             );
         }
+    }
+
+    // ── Phase 11 migration tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_embeddings_table_exists() {
+        let conn = setup_test_db();
+        let result: i64 = conn
+            .query_row(
+                "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='embeddings')",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query sqlite_master");
+        assert_eq!(
+            result, 1,
+            "embeddings table should exist after Phase 11 migration"
+        );
+    }
+
+    #[test]
+    fn test_embeddings_columns() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM embeddings")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let expected = vec![
+            "namespace",
+            "ref_id",
+            "model_key",
+            "dims",
+            "vector",
+            "content_hash",
+            "updated_at",
+        ];
+        for col in &expected {
+            assert!(
+                columns.iter().any(|c| c == col),
+                "embeddings should have '{}' column",
+                col
+            );
+        }
+    }
+
+    #[test]
+    fn test_lorebook_entries_semantic_columns() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM lorebook_entries")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "activation_mode"),
+            "lorebook_entries should have 'activation_mode' after Phase 11"
+        );
+        assert!(
+            columns.iter().any(|c| c == "semantic_threshold"),
+            "lorebook_entries should have 'semantic_threshold' after Phase 11"
+        );
+    }
+
+    #[test]
+    fn test_conversations_summary_columns() {
+        let conn = setup_test_db();
+        let columns: Vec<String> = conn
+            .prepare("SELECT * FROM conversations")
+            .expect("Failed to prepare")
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            columns.iter().any(|c| c == "summary"),
+            "conversations should have 'summary' after Phase 11"
+        );
+        assert!(
+            columns.iter().any(|c| c == "summary_upto"),
+            "conversations should have 'summary_upto' after Phase 11"
+        );
     }
 }

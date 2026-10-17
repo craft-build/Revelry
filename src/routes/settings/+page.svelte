@@ -8,6 +8,7 @@
 	import { DeleteConfirmationDialog } from '$lib/components/characters';
 	import ThemeToggle from '$lib/components/settings/ThemeToggle.svelte';
 	import CodeThemeSelector from '$lib/components/settings/CodeThemeSelector.svelte';
+	import EmbeddingSettings from '$lib/components/settings/EmbeddingSettings.svelte';
 	import {
 		Cpu,
 		SlidersHorizontal,
@@ -18,13 +19,15 @@
 		Plus,
 		Check,
 		X,
-		Trash2
+		Trash2,
+		Brain
 	} from '@lucide/svelte';
 	import { page } from '$app/state';
 
 	const sections = [
 		{ id: 'providers', label: 'AI Providers', icon: Cpu },
 		{ id: 'generation', label: 'Generation', icon: SlidersHorizontal },
+		{ id: 'memory', label: 'Memory & embeddings', icon: Brain },
 		{ id: 'appearance', label: 'Appearance', icon: Palette },
 		{ id: 'shortcuts', label: 'Shortcuts', icon: KeyRound },
 		{ id: 'data', label: 'Data', icon: Database },
@@ -296,7 +299,15 @@
 						Add preset
 					</button>
 				</div>
-			{:else if active === 'appearance'}
+			{:else if active === 'memory'}
+			<header class="mb-6">
+				<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">Memory &amp; embeddings</h1>
+				<p class="mt-1 text-sm text-(--color-muted)">
+					Semantic lorebook activation, story memory, and the embedding index that powers them.
+				</p>
+			</header>
+			<EmbeddingSettings />
+		{:else if active === 'appearance'}
 				<header class="mb-6">
 					<h1 class="font-display text-[26px] font-semibold tracking-[-0.03em]">Appearance</h1>
 					<p class="mt-1 text-sm text-(--color-muted)">

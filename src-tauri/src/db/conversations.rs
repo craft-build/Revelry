@@ -57,7 +57,7 @@ pub fn start_conversation(conn: &Connection, character_id: &str) -> Result<Conve
 pub fn load_conversations(conn: &Connection) -> Result<Vec<Conversation>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, character_id, provider_id, model_name, creator_persona_id, generation_preset_id,
-         override_max_tokens, title, last_message_preview, created_at, updated_at
+         override_max_tokens, title, last_message_preview, summary, summary_upto, created_at, updated_at
          FROM conversations ORDER BY updated_at DESC",
     )?;
     let conversations = stmt.query_map([], row_to_conversation)?;
@@ -203,7 +203,7 @@ pub fn search_conversations(conn: &Connection, query: &str) -> Result<Vec<Conver
     let pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
     let mut stmt = conn.prepare_cached(
         "SELECT id, character_id, provider_id, model_name, creator_persona_id, generation_preset_id,
-         override_max_tokens, title, last_message_preview, created_at, updated_at
+         override_max_tokens, title, last_message_preview, summary, summary_upto, created_at, updated_at
          FROM conversations
          WHERE title LIKE ?1 ESCAPE '\\' OR last_message_preview LIKE ?1 ESCAPE '\\'
          ORDER BY updated_at DESC",
@@ -277,6 +277,20 @@ pub fn rename_conversation(conn: &Connection, id: &str, title: &str) -> Result<(
     let now = Timestamp::now();
     conn.prepare_cached("UPDATE conversations SET title = ?1, updated_at = ?2 WHERE id = ?3")?
         .execute(params![title, now.to_string(), id])?;
+    Ok(())
+}
+
+/// Persists the rolling story summary and the highest sort_order it covers.
+/// `updated_at` is intentionally not bumped — a background summary refresh is
+/// not a user-visible conversation change and should not reorder the sidebar.
+pub fn update_conversation_summary(
+    conn: &Connection,
+    id: &str,
+    summary: &str,
+    summary_upto: i64,
+) -> Result<()> {
+    conn.prepare_cached("UPDATE conversations SET summary = ?1, summary_upto = ?2 WHERE id = ?3")?
+        .execute(params![summary, summary_upto, id])?;
     Ok(())
 }
 

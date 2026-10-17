@@ -1,6 +1,11 @@
 use crate::domain::conversation::{Message, MessageRole};
-use crate::domain::lorebook::{LorebookActivation, LorebookEntry, LorebookPosition};
+use crate::domain::lorebook::{
+    LorebookActivation, LorebookActivationMode, LorebookEntry, LorebookPosition,
+};
 use crate::service::token_count::TokenCountService;
+use crate::service::vector::cosine_similarity;
+
+use std::collections::HashMap;
 
 /// A lorebook entry that has been activated and is ready for injection into the prompt.
 #[derive(Clone, Debug)]
@@ -12,9 +17,85 @@ pub struct ActivatedEntry {
     /// The depth-from-bottom where this entry should be injected.
     /// 0 = after last message, 1 = one message from end, etc.
     pub effective_depth: i32,
+    /// "always" | "keyword" | "semantic" — how the entry activated.
+    pub activation_reason: Option<String>,
+    /// Cosine similarity when semantic activation was evaluated.
+    pub similarity: Option<f32>,
 }
 
-/// Activates lorebook entries based on keyword matching against recent messages.
+/// Role-filtered texts of the lorebook scan window, shared by the runtime
+/// activator and the semantic context builder so both scan identical input.
+pub struct ScanTexts {
+    pub all: String,
+    pub character_only: String,
+    pub user_only: String,
+}
+
+/// Builds the scan texts from the last `scan_depth` messages (matching the
+/// runtime scan scope), lowercased, role-filtered per activation type.
+pub fn build_scan_texts(recent_messages: &[Message], scan_depth: i32) -> ScanTexts {
+    let scan_count = scan_depth.max(0) as usize;
+    let scan_messages: Vec<&Message> = recent_messages.iter().rev().take(scan_count).collect();
+
+    let all = scan_messages
+        .iter()
+        .map(|m| m.content.to_lowercase())
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    let character_only = scan_messages
+        .iter()
+        .filter(|m| m.role == MessageRole::Assistant)
+        .map(|m| m.content.to_lowercase())
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    let user_only = scan_messages
+        .iter()
+        .filter(|m| m.role == MessageRole::User)
+        .map(|m| m.content.to_lowercase())
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    ScanTexts {
+        all,
+        character_only,
+        user_only,
+    }
+}
+
+/// Precomputed semantic inputs for one prompt assembly: query vectors for the
+/// scan window (per activation role) and the indexed entry vectors. Built by
+/// the caller (async DB + embedding calls); `None` everywhere means
+/// "embeddings unavailable" and every entry fails open to keyword matching.
+pub struct SemanticContext {
+    pub query_all: Vec<f32>,
+    pub query_character_only: Option<Vec<f32>>,
+    pub query_user_only: Option<Vec<f32>>,
+    /// Lorebook entry id → vector (current embedding model only).
+    pub vectors: HashMap<String, Vec<f32>>,
+}
+
+impl SemanticContext {
+    fn query_for(&self, state: LorebookActivation) -> Option<&[f32]> {
+        match state {
+            // Role-filtered queries refine the shared window query when the
+            // builder provided them; otherwise fall back to it.
+            LorebookActivation::Always => Some(&self.query_all),
+            LorebookActivation::CharacterOnly => self
+                .query_character_only
+                .as_deref()
+                .or(Some(self.query_all.as_slice())),
+            LorebookActivation::UserOnly => self
+                .query_user_only
+                .as_deref()
+                .or(Some(self.query_all.as_slice())),
+        }
+    }
+}
+
+/// Activates lorebook entries based on keyword and/or semantic matching
+/// against recent messages.
 ///
 /// Per the design spec:
 /// - OR keyword matching: entry activates if ANY key or secondary_key appears in recent messages
@@ -23,8 +104,12 @@ pub struct ActivatedEntry {
 /// - Token budget enforcement: per-entry soft token budgets truncate content from the end
 /// - Entries without explicit budgets share the remaining lorebook allocation
 /// - LorebookActivation role filtering: CharacterOnly scans only assistant messages, UserOnly scans only user messages
+/// - Activation modes (Phase 11): `keyword` (classic), `semantic` (cosine ≥
+///   threshold, keyword fallback when embeddings are unavailable or the entry
+///   has no vector), `hybrid` (keyword OR semantic)
 ///
-/// Returns activated entries sorted by sort_order, each with their effective depth.
+/// Returns activated entries sorted by sort_order, each with their effective
+/// depth and how it activated.
 pub fn activate_lorebook_entries(
     all_entries: &[LorebookEntry],
     recent_messages: &[Message],
@@ -32,56 +117,42 @@ pub fn activate_lorebook_entries(
     max_recursive_depth: i32,
     lorebook_token_budget: i64,
     token_service: &TokenCountService,
+    semantic: Option<&SemanticContext>,
 ) -> Vec<ActivatedEntry> {
     // Step 1: Filter to enabled entries only
     let enabled_entries: Vec<&LorebookEntry> = all_entries.iter().filter(|e| e.enabled).collect();
 
     // Step 2: Take the last `scan_depth` messages as scan scope
-    let scan_count = scan_depth.max(0) as usize;
-    let scan_messages: Vec<&Message> = recent_messages.iter().rev().take(scan_count).collect();
+    let scan_texts = build_scan_texts(recent_messages, scan_depth);
+    let scan_text_all = &scan_texts.all;
+    let scan_text_character_only = &scan_texts.character_only;
+    let scan_text_user_only = &scan_texts.user_only;
 
-    // Build separate scan texts per activation type
-    let scan_text_all: String = scan_messages
-        .iter()
-        .map(|m| m.content.to_lowercase())
-        .collect::<Vec<_>>()
-        .join(" ");
-
-    let scan_text_character_only: String = scan_messages
-        .iter()
-        .filter(|m| m.role == MessageRole::Assistant)
-        .map(|m| m.content.to_lowercase())
-        .collect::<Vec<_>>()
-        .join(" ");
-
-    let scan_text_user_only: String = scan_messages
-        .iter()
-        .filter(|m| m.role == MessageRole::User)
-        .map(|m| m.content.to_lowercase())
-        .collect::<Vec<_>>()
-        .join(" ");
-
-    // Step 3: Initial keyword scan — entries activate when their primary keys
-    // match the appropriate scan text (per activation_state role filtering).
+    // Step 3: Initial scan — entries activate when their primary keys match the
+    // appropriate scan text (per activation_state role filtering), or when a
+    // semantic hit clears the entry's threshold.
     // `Always` entries are injected unconditionally (SillyTavern "constant"),
     // regardless of keyword hits. Secondary keys gate activation when present.
     let mut activated_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut activated_entries: Vec<LorebookEntry> = Vec::new();
+    let mut activated_meta: HashMap<String, (Option<String>, Option<f32>)> = HashMap::new();
 
     for entry in &enabled_entries {
-        let matches = if entry.activation_state == LorebookActivation::Always {
-            true
+        let (matched, reason, similarity) = if entry.activation_state == LorebookActivation::Always
+        {
+            (true, Some("always".to_string()), None)
         } else {
             let scan_text = match entry.activation_state {
-                LorebookActivation::Always => &scan_text_all,
-                LorebookActivation::CharacterOnly => &scan_text_character_only,
-                LorebookActivation::UserOnly => &scan_text_user_only,
+                LorebookActivation::Always => scan_text_all,
+                LorebookActivation::CharacterOnly => scan_text_character_only,
+                LorebookActivation::UserOnly => scan_text_user_only,
             };
-            keyword_matches(&entry.keys, &entry.secondary_keys, scan_text)
+            evaluate_entry_activation(entry, scan_text, semantic)
         };
 
-        if matches {
+        if matched {
             activated_ids.insert(entry.id.clone());
+            activated_meta.insert(entry.id.clone(), (reason, similarity));
             activated_entries.push((*entry).clone());
         }
     }
@@ -125,6 +196,10 @@ pub fn activate_lorebook_entries(
     let mut result = Vec::new();
 
     for entry in &activated_entries {
+        let (reason, similarity) = activated_meta
+            .get(&entry.id)
+            .cloned()
+            .unwrap_or((None, None));
         let content_tokens = token_service.count_tokens(&entry.content) as i64;
 
         if let Some(budget) = entry.token_budget {
@@ -137,6 +212,8 @@ pub fn activate_lorebook_entries(
                     entry: entry.clone(),
                     injected_content: truncated,
                     effective_depth: entry.depth,
+                    activation_reason: reason,
+                    similarity,
                 });
             } else {
                 // Under budget — remaining tokens freed for others
@@ -145,6 +222,8 @@ pub fn activate_lorebook_entries(
                     entry: entry.clone(),
                     injected_content: entry.content.clone(),
                     effective_depth: entry.depth,
+                    activation_reason: reason,
+                    similarity,
                 });
             }
         } else {
@@ -159,6 +238,8 @@ pub fn activate_lorebook_entries(
                     entry: entry.clone(),
                     injected_content: entry.content.clone(),
                     effective_depth: entry.depth,
+                    activation_reason: reason,
+                    similarity,
                 });
             } else {
                 // Truncate to fit remaining budget
@@ -172,12 +253,98 @@ pub fn activate_lorebook_entries(
                     entry: entry.clone(),
                     injected_content: truncated,
                     effective_depth: entry.depth,
+                    activation_reason: reason,
+                    similarity,
                 });
             }
         }
     }
 
     result
+}
+
+/// Evaluates one keyword-gated entry against its scan text, honoring the
+/// entry's activation mode. Returns (activated, reason, similarity).
+///
+/// - Keyword: classic `keyword_matches`.
+/// - Semantic: cosine(entry vector, role query) ≥ threshold. Falls back to
+///   keyword matching when embeddings are unavailable (no context, no query
+///   for the role, or the entry has no indexed vector) so an entry never
+///   silently goes dead.
+/// - Hybrid: keyword OR semantic.
+fn evaluate_entry_activation(
+    entry: &LorebookEntry,
+    scan_text: &str,
+    semantic: Option<&SemanticContext>,
+) -> (bool, Option<String>, Option<f32>) {
+    let keyword_hit = keyword_matches(&entry.keys, &entry.secondary_keys, scan_text);
+
+    let semantic_hit = |ctx: &SemanticContext| -> Option<f32> {
+        let query = ctx.query_for(entry.activation_state)?;
+        let vector = ctx.vectors.get(&entry.id)?;
+        if !entry.secondary_keys.is_empty()
+            && !secondary_keys_present(&entry.secondary_keys, scan_text)
+        {
+            return None; // Secondary keys gate semantic activation too.
+        }
+        let similarity = cosine_similarity(vector, query);
+        (similarity >= entry.semantic_threshold).then_some(similarity)
+    };
+
+    match entry.activation_mode {
+        LorebookActivationMode::Keyword => (
+            keyword_hit,
+            keyword_hit.then(|| "keyword".to_string()),
+            None,
+        ),
+        LorebookActivationMode::Semantic => {
+            if let Some(ctx) = semantic {
+                if let Some(similarity) = semantic_hit(ctx) {
+                    return (true, Some("semantic".to_string()), Some(similarity));
+                }
+                if ctx.vectors.contains_key(&entry.id) {
+                    // Indexed and evaluated below threshold — the semantic
+                    // verdict is final; keyword does not override it.
+                    (false, None, None)
+                } else {
+                    // Not indexed yet — fail open to keyword matching.
+                    (
+                        keyword_hit,
+                        keyword_hit.then(|| "keyword".to_string()),
+                        None,
+                    )
+                }
+            } else {
+                // No embeddings at all — fail open to keyword semantics.
+                (
+                    keyword_hit,
+                    keyword_hit.then(|| "keyword".to_string()),
+                    None,
+                )
+            }
+        }
+        LorebookActivationMode::Hybrid => {
+            if keyword_hit {
+                return (true, Some("keyword".to_string()), None);
+            }
+            if let Some(ctx) = semantic {
+                if let Some(similarity) = semantic_hit(ctx) {
+                    return (true, Some("semantic".to_string()), Some(similarity));
+                }
+            }
+            (false, None, None)
+        }
+    }
+}
+
+/// Secondary keys present as a standalone gate (any key appears in text).
+/// Used by the semantic path; the keyword path folds this into
+/// `keyword_matches`.
+fn secondary_keys_present(secondary_keys: &[String], text: &str) -> bool {
+    let text_lower = text.to_lowercase();
+    secondary_keys
+        .iter()
+        .any(|sk| !sk.trim().is_empty() && text_lower.contains(&sk.to_lowercase()))
 }
 
 /// Injects activated lorebook entries into the prompt.
@@ -302,7 +469,7 @@ pub fn keyword_matches(keys: &[String], secondary_keys: &[String], text: &str) -
 
 /// Truncates text to fit within a token budget by removing characters from the end.
 /// Uses binary search to find the longest prefix that fits within budget.
-fn truncate_to_token_budget(
+pub(crate) fn truncate_to_token_budget(
     content: &str,
     budget: usize,
     token_service: &TokenCountService,
@@ -392,7 +559,7 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "I saw a dragon!")];
 
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
 
         assert_eq!(
             activated.len(),
@@ -414,7 +581,7 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::Assistant, "I saw a cat!")];
 
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
 
         assert!(
             activated.is_empty(),
@@ -433,7 +600,7 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "The fire is warm.")];
 
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
 
         assert_eq!(
             activated.len(),
@@ -459,7 +626,7 @@ mod tests {
         let messages = vec![make_test_message(MessageRole::User, "A keyword appeared!")];
 
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
 
         assert!(
             activated.is_empty(),
@@ -480,8 +647,15 @@ mod tests {
         ];
 
         // scan_depth=1: only the most recent message is scanned, no "dragon"
-        let activated =
-            activate_lorebook_entries(&[entry.clone()], &messages, 1, 2, 10000, &token_service());
+        let activated = activate_lorebook_entries(
+            &[entry.clone()],
+            &messages,
+            1,
+            2,
+            10000,
+            &token_service(),
+            None,
+        );
         assert!(
             activated.is_empty(),
             "With scan_depth=1, keyword in 3rd-from-last message should not activate"
@@ -490,7 +664,7 @@ mod tests {
         // scan_depth=3: "dragon" is in scope, but CharacterOnly scans only
         // assistant messages (none contain "dragon"), so it stays inactive.
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 3, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 3, 2, 10000, &token_service(), None);
         assert!(
             activated.is_empty(),
             "CharacterOnly scans assistant messages; none contain the keyword"
@@ -539,6 +713,7 @@ mod tests {
             2,
             10000,
             &token_service(),
+            None,
         );
 
         assert_eq!(
@@ -592,6 +767,7 @@ mod tests {
             0,
             10000,
             &token_service(),
+            None,
         );
         assert_eq!(
             activated.len(),
@@ -619,7 +795,7 @@ mod tests {
 
         let original_content_len = entry.content.len();
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
 
         assert_eq!(activated.len(), 1, "Entry should activate even with budget");
         assert!(
@@ -657,8 +833,15 @@ mod tests {
 
         let messages = vec![make_test_message(MessageRole::User, "keyword_a keyword_b")];
 
-        let activated =
-            activate_lorebook_entries(&[entry_a, entry_b], &messages, 2, 2, 10, &token_service());
+        let activated = activate_lorebook_entries(
+            &[entry_a, entry_b],
+            &messages,
+            2,
+            2,
+            10,
+            &token_service(),
+            None,
+        );
 
         assert!(!activated.is_empty(), "At least one entry should activate");
     }
@@ -697,6 +880,7 @@ mod tests {
             2,
             10000,
             &token_service(),
+            None,
         );
 
         assert_eq!(activated.len(), 2);
@@ -732,7 +916,7 @@ mod tests {
         )];
 
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
 
         assert_eq!(
             activated.len(),
@@ -777,6 +961,7 @@ mod tests {
             2,
             10000,
             &token_service(),
+            None,
         );
 
         // Should be sorted by sort_order: A (1) then B (2)
@@ -808,6 +993,7 @@ mod tests {
             2,
             10000,
             &token_service(),
+            None,
         );
         assert!(
             activated.is_empty(),
@@ -816,8 +1002,15 @@ mod tests {
 
         // Assistant message — should activate CharacterOnly entry
         let assistant_messages = vec![make_test_message(MessageRole::Assistant, "I cast magic!")];
-        let activated =
-            activate_lorebook_entries(&[entry], &assistant_messages, 2, 2, 10000, &token_service());
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &assistant_messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            None,
+        );
         assert_eq!(
             activated.len(),
             1,
@@ -849,6 +1042,7 @@ mod tests {
             2,
             10000,
             &token_service(),
+            None,
         );
         assert!(
             activated.is_empty(),
@@ -857,8 +1051,15 @@ mod tests {
 
         // User message — should activate UserOnly entry
         let user_messages = vec![make_test_message(MessageRole::User, "I use magic!")];
-        let activated =
-            activate_lorebook_entries(&[entry], &user_messages, 2, 2, 10000, &token_service());
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &user_messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            None,
+        );
         assert_eq!(
             activated.len(),
             1,
@@ -890,6 +1091,7 @@ mod tests {
             2,
             10000,
             &token_service(),
+            None,
         );
         assert_eq!(
             activated.len(),
@@ -899,8 +1101,15 @@ mod tests {
 
         // Assistant message
         let assistant_messages = vec![make_test_message(MessageRole::Assistant, "I cast magic!")];
-        let activated =
-            activate_lorebook_entries(&[entry], &assistant_messages, 2, 2, 10000, &token_service());
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &assistant_messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            None,
+        );
         assert_eq!(
             activated.len(),
             1,
@@ -916,6 +1125,8 @@ mod tests {
             entry,
             injected_content: "Lore content here".to_string(),
             effective_depth: 4,
+            activation_reason: None,
+            similarity: None,
         };
         let mut messages: Vec<rig::completion::Message> = vec![];
 
@@ -940,6 +1151,8 @@ mod tests {
             entry,
             injected_content: "Lore content here".to_string(),
             effective_depth: 4,
+            activation_reason: None,
+            similarity: None,
         };
         let mut messages: Vec<rig::completion::Message> = vec![];
 
@@ -974,6 +1187,8 @@ mod tests {
             entry,
             injected_content: "Lore injection".to_string(),
             effective_depth: 1,
+            activation_reason: None,
+            similarity: None,
         };
         let mut messages = vec![
             rig::completion::Message::user("First"),
@@ -1084,7 +1299,7 @@ mod tests {
             "totally unrelated text",
         )];
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
         assert_eq!(
             activated.len(),
             1,
@@ -1113,10 +1328,302 @@ mod tests {
             "nothing relevant here",
         )];
         let activated =
-            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service());
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
         assert!(
             activated.is_empty(),
             "CharacterOnly must require a keyword hit"
         );
+    }
+
+    // ── Semantic activation tests (Phase 11) ──────────────────────────────
+
+    fn make_semantic_entry(
+        name: &str,
+        mode: LorebookActivationMode,
+        threshold: f32,
+        activation: LorebookActivation,
+    ) -> LorebookEntry {
+        let mut entry = LorebookEntry::new("lorebook-1".to_string());
+        entry.id = format!("entry-{name}");
+        entry.keys = vec![name.to_string()];
+        entry.content = format!("{name} lore content.");
+        entry.activation_mode = mode;
+        entry.semantic_threshold = threshold;
+        entry.activation_state = activation;
+        entry
+    }
+
+    fn semantic_ctx(query: Vec<f32>, vectors: Vec<(&str, Vec<f32>)>) -> SemanticContext {
+        SemanticContext {
+            query_all: query,
+            query_character_only: None,
+            query_user_only: None,
+            vectors: vectors
+                .into_iter()
+                .map(|(id, v)| (format!("entry-{id}"), v))
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn test_semantic_mode_activates_on_similarity() {
+        // Query and entry vector point the same way; keyword is absent.
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Semantic,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "A great wyrm circled overhead.",
+        )];
+        let ctx = semantic_ctx(vec![1.0, 0.0], vec![("dragon", vec![0.9, 0.1])]);
+
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            Some(&ctx),
+        );
+        assert_eq!(activated.len(), 1, "semantic hit above threshold activates");
+        assert_eq!(activated[0].activation_reason.as_deref(), Some("semantic"));
+        assert!(activated[0].similarity.unwrap() >= 0.6);
+    }
+
+    #[test]
+    fn test_semantic_mode_no_hit_below_threshold() {
+        // Orthogonal vectors → similarity ~0, below any sane threshold.
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Semantic,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+        let messages = vec![make_test_message(MessageRole::Assistant, "unrelated talk")];
+        let ctx = semantic_ctx(vec![1.0, 0.0], vec![("dragon", vec![0.0, 1.0])]);
+
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            Some(&ctx),
+        );
+        assert!(
+            activated.is_empty(),
+            "semantic-only entry must not activate below threshold without a keyword hit"
+        );
+    }
+
+    #[test]
+    fn test_semantic_mode_keyword_hit_does_not_activate_when_indexed() {
+        // Embeddings available + entry indexed + keyword present but vectors
+        // dissimilar → semantic mode stays inactive (it requires the
+        // semantic hit; keyword is only the fallback when unindexed).
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Semantic,
+            0.9,
+            LorebookActivation::CharacterOnly,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "the dragon appears",
+        )];
+        let ctx = semantic_ctx(vec![1.0, 0.0], vec![("dragon", vec![0.0, 1.0])]);
+
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            Some(&ctx),
+        );
+        assert!(
+            activated.is_empty(),
+            "semantic mode with indexed vector must require the semantic hit"
+        );
+    }
+
+    #[test]
+    fn test_semantic_mode_falls_back_to_keyword_when_not_indexed() {
+        // Entry has a keyword hit but no vector — fail open to keyword.
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Semantic,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "the dragon appears",
+        )];
+        let ctx = semantic_ctx(vec![1.0, 0.0], vec![]);
+
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            Some(&ctx),
+        );
+        assert_eq!(
+            activated.len(),
+            1,
+            "unindexed semantic entry falls back to keyword"
+        );
+        assert_eq!(activated[0].activation_reason.as_deref(), Some("keyword"));
+    }
+
+    #[test]
+    fn test_semantic_mode_no_embeddings_fails_open() {
+        // No semantic context at all — keyword semantics apply unchanged.
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Semantic,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "the dragon appears",
+        )];
+
+        let activated =
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
+        assert_eq!(activated.len(), 1, "embeddings off → keyword fallback");
+    }
+
+    #[test]
+    fn test_hybrid_mode_keyword_or_semantic() {
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Hybrid,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+
+        // No keyword, semantic hit → activates semantically.
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "A great wyrm circled overhead.",
+        )];
+        let ctx = semantic_ctx(vec![1.0, 0.0], vec![("dragon", vec![0.9, 0.1])]);
+        let activated = activate_lorebook_entries(
+            &[entry.clone()],
+            &messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            Some(&ctx),
+        );
+        assert_eq!(activated.len(), 1);
+        assert_eq!(activated[0].activation_reason.as_deref(), Some("semantic"));
+
+        // Keyword hit, no semantic context → activates on keyword.
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "the dragon appears",
+        )];
+        let activated =
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
+        assert_eq!(activated.len(), 1);
+        assert_eq!(activated[0].activation_reason.as_deref(), Some("keyword"));
+    }
+
+    #[test]
+    fn test_semantic_secondary_keys_gate() {
+        // Semantic hit but secondary keys absent → gated off.
+        let mut entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Hybrid,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+        entry.secondary_keys = vec!["wings".to_string()];
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "A great wyrm circled overhead.",
+        )];
+        let ctx = semantic_ctx(vec![1.0, 0.0], vec![("dragon", vec![0.9, 0.1])]);
+
+        let activated = activate_lorebook_entries(
+            &[entry],
+            &messages,
+            2,
+            2,
+            10000,
+            &token_service(),
+            Some(&ctx),
+        );
+        assert!(
+            activated.is_empty(),
+            "secondary keys gate semantic hits too"
+        );
+    }
+
+    #[test]
+    fn test_always_reason_reported() {
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Keyword,
+            0.6,
+            LorebookActivation::Always,
+        );
+        let messages = vec![make_test_message(MessageRole::User, "anything")];
+
+        let activated =
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
+        assert_eq!(activated.len(), 1);
+        assert_eq!(activated[0].activation_reason.as_deref(), Some("always"));
+    }
+
+    #[test]
+    fn test_keyword_reason_reported() {
+        let entry = make_semantic_entry(
+            "dragon",
+            LorebookActivationMode::Keyword,
+            0.6,
+            LorebookActivation::CharacterOnly,
+        );
+        let messages = vec![make_test_message(
+            MessageRole::Assistant,
+            "the dragon appears",
+        )];
+
+        let activated =
+            activate_lorebook_entries(&[entry], &messages, 2, 2, 10000, &token_service(), None);
+        assert_eq!(activated.len(), 1);
+        assert_eq!(activated[0].activation_reason.as_deref(), Some("keyword"));
+    }
+
+    #[test]
+    fn test_build_scan_texts_role_filtering() {
+        let messages = vec![
+            make_test_message(MessageRole::User, "Hello THERE"),
+            make_test_message(MessageRole::Assistant, "Well MET"),
+        ];
+        let texts = build_scan_texts(&messages, 2);
+        assert!(texts.all.contains("hello there"));
+        assert!(texts.all.contains("well met"));
+        assert!(texts.character_only.contains("well met"));
+        assert!(!texts.character_only.contains("hello there"));
+        assert!(texts.user_only.contains("hello there"));
+        assert!(!texts.user_only.contains("well met"));
+
+        let shallow = build_scan_texts(&messages, 1);
+        assert!(shallow.all.contains("well met"));
+        assert!(!shallow.all.contains("hello there"));
     }
 }

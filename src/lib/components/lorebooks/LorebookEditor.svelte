@@ -1,12 +1,21 @@
 <script lang="ts">
-	import type { Lorebook, LorebookEntry, LorebookPosition, LorebookActivation, KeywordTestResult } from '$lib/types';
+	import type {
+		Lorebook,
+		LorebookEntry,
+		LorebookPosition,
+		LorebookActivation,
+		LorebookActivationMode,
+		KeywordTestResult,
+		SemanticTestResult
+	} from '$lib/types';
 	import { app } from '$lib/stores/app.svelte';
 	import { cn } from '$lib/utils';
 	import {
 		getLorebookEntries as apiGetLorebookEntries,
 		saveLorebookEntry as apiSaveLorebookEntry,
 		deleteLorebookEntry as apiDeleteLorebookEntry,
-		testLorebookKeywords as apiTestLorebookKeywords
+		testLorebookKeywords as apiTestLorebookKeywords,
+		testSemanticActivation as apiTestSemanticActivation
 	} from '$lib/data/api';
 	import {
 		Dialog,
@@ -61,6 +70,8 @@
 	let entry_position = $state<LorebookPosition>('before_char');
 	let entry_depth_str = $state('4');
 	let entry_activation = $state<LorebookActivation>('always');
+	let entry_activation_mode = $state<LorebookActivationMode>('keyword');
+	let entry_semantic_threshold = $state(0.6);
 	let entry_enabled = $state(true);
 	let entry_sort_order = $state(0);
 	let entry_token_budget = $state<number | null>(null);
@@ -74,6 +85,10 @@
 	let test_loading = $state(false);
 	let test_results = $state<KeywordTestResult[]>([]);
 	let test_error = $state('');
+	// 'keyword' | 'semantic' — semantic requires embeddings to be configured
+	let test_kind = $state<'keyword' | 'semantic'>('keyword');
+	let semantic_loading = $state(false);
+	let semantic_results = $state<SemanticTestResult[]>([]);
 
 	// ── Derived ────────────────────────────────────────────────────────────
 	let selected_entry = $derived(entries.find((e) => e.id === selected_entry_id) ?? null);
@@ -103,9 +118,12 @@
 			entry_position = 'before_char';
 			entry_depth_str = '4';
 			entry_activation = 'always';
+			entry_activation_mode = 'keyword';
+			entry_semantic_threshold = 0.6;
 			entry_keys_error = '';
 			entry_content_error = '';
 			test_results = [];
+			semantic_results = [];
 			test_error = '';
 			test_sample_text = '';
 			test_panel_open = false;
@@ -145,6 +163,8 @@
 			entry_position = entry.position;
 			entry_depth_str = String(entry.depth);
 			entry_activation = entry.activation_state;
+			entry_activation_mode = entry.activation_mode ?? 'keyword';
+			entry_semantic_threshold = entry.semantic_threshold ?? 0.6;
 			entry_enabled = entry.enabled;
 			entry_sort_order = entry.sort_order;
 			entry_token_budget = entry.token_budget ?? null;
@@ -207,12 +227,14 @@
 	async function handleSaveEntry() {
 		if (is_saving_entry) return;
 
-		// Validate
+		// Validate — keywords are only mandatory for pure keyword matching.
 		const keys = entry_keys
 			.split(',')
 			.map((k) => k.trim())
 			.filter((k) => k.length > 0);
-		if (keys.length === 0) {
+		const needs_keys =
+			entry_activation_mode === 'keyword' && entry_activation !== 'always';
+		if (keys.length === 0 && needs_keys) {
 			entry_keys_error = 'At least one keyword is required.';
 			return;
 		}
@@ -254,6 +276,8 @@
 				position: entry_position,
 				depth: parseInt(entry_depth_str, 10) || 4,
 				activation_state: entry_activation,
+				activation_mode: entry_activation_mode,
+				semantic_threshold: entry_semantic_threshold,
 				sort_order: entry_sort_order,
 				enabled: entry_enabled,
 				token_budget: entry_token_budget,
@@ -303,6 +327,8 @@
 			position: 'before_char',
 			depth: 4,
 			activation_state: 'always',
+			activation_mode: 'keyword',
+			semantic_threshold: 0.6,
 			sort_order: 0,
 			enabled: true,
 			created_at: new Date().toISOString(),
@@ -346,6 +372,8 @@
 		entry_position = 'before_char';
 		entry_depth_str = '4';
 		entry_activation = 'always';
+		entry_activation_mode = 'keyword';
+		entry_semantic_threshold = 0.6;
 		entry_enabled = true;
 		entry_sort_order = 0;
 		entry_token_budget = null;
@@ -355,6 +383,10 @@
 
 	// ── Keyword testing ──────────────────────────────────────────────────
 	async function handleRunTest() {
+		if (test_kind === 'semantic') {
+			await handleRunSemanticTest();
+			return;
+		}
 		if (is_saving || test_loading) return;
 		if (entries.length === 0) {
 			test_error = 'No entries to test.';
@@ -391,6 +423,39 @@
 		} finally {
 			test_loading = false;
 		}
+	}
+
+	// ── Semantic testing ─────────────────────────────────────────────────
+	async function handleRunSemanticTest() {
+		if (semantic_loading) return;
+		if (!lorebook) {
+			test_error = 'Save the lorebook first — the semantic test reads saved entries.';
+			return;
+		}
+		if (!test_sample_text.trim()) {
+			test_error = 'Enter sample text to test against.';
+			return;
+		}
+		test_error = '';
+		semantic_loading = true;
+		semantic_results = [];
+
+		try {
+			semantic_results = await apiTestSemanticActivation(
+				lorebook.id,
+				test_sample_text.trim()
+			);
+		} catch (err) {
+			test_error =
+				err instanceof Error ? err.message : 'Semantic test failed.';
+		} finally {
+			semantic_loading = false;
+		}
+	}
+
+	function format_similarity(value: number | null | undefined): string {
+		if (value == null) return '—';
+		return value.toFixed(2);
 	}
 
 	// ── Helpers ──────────────────────────────────────────────────────────
@@ -641,6 +706,44 @@
 						</Select>
 					</div>
 
+					<!-- Matching mode -->
+					<div class="space-y-1">
+						<label for="entry-activation-mode" class="text-sm font-medium text-(--color-foreground)">Matching</label>
+						<Select
+							id="entry-activation-mode"
+							bind:value={entry_activation_mode}
+							disabled={is_saving_entry || !app.embeddings_enabled}
+						>
+							<option value="keyword">Keywords</option>
+							<option value="semantic">Semantic (embeddings)</option>
+							<option value="hybrid">Hybrid (either)</option>
+						</Select>
+						{#if !app.embeddings_enabled}
+							<p class="text-xs text-(--color-subtle)">
+								Enable embeddings in Settings → Memory &amp; embeddings to use semantic matching.
+							</p>
+						{:else if entry_activation_mode !== 'keyword'}
+							<div class="flex items-center gap-2 pt-1">
+								<input
+									id="entry-semantic-threshold"
+									type="range"
+									min="0.3"
+									max="0.9"
+									step="0.05"
+									bind:value={entry_semantic_threshold}
+									disabled={is_saving_entry}
+									class="h-1.5 flex-1 cursor-pointer accent-(--color-accent)"
+								/>
+								<span class="w-9 text-right font-mono text-xs text-(--color-muted)">
+									{entry_semantic_threshold.toFixed(2)}
+								</span>
+							</div>
+							<p class="text-xs text-(--color-subtle)">
+								Similarity threshold — the entry activates when the recent chat is at least this close.
+							</p>
+						{/if}
+					</div>
+
 					<!-- Save entry button -->
 					<Button
 						variant="primary"
@@ -683,6 +786,47 @@
 
 			{#if test_panel_open}
 				<div class="mt-3 space-y-3">
+					<!-- Test kind toggle (keywords / semantic) -->
+					<div class="flex items-center justify-between gap-2">
+						<div
+							class="inline-flex items-center gap-1 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-input) p-0.5"
+							role="tablist"
+							aria-label="Test kind"
+						>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={test_kind === 'keyword'}
+								onclick={() => (test_kind = 'keyword')}
+								class="rounded-(--radius-sm) px-2.5 py-1 text-xs font-medium transition-colors {test_kind ===
+								'keyword'
+									? 'bg-(--color-surface-elevated) text-(--color-foreground) shadow-(--shadow-sm) ring-1 ring-(--color-border) ring-inset'
+									: 'text-(--color-muted) hover:text-(--color-foreground)'}"
+							>
+								Keywords
+							</button>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={test_kind === 'semantic'}
+								onclick={() => (test_kind = 'semantic')}
+								disabled={!app.embeddings_enabled}
+								title={app.embeddings_enabled ? '' : 'Enable embeddings in Settings first'}
+								class="rounded-(--radius-sm) px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 {test_kind ===
+								'semantic'
+									? 'bg-(--color-surface-elevated) text-(--color-foreground) shadow-(--shadow-sm) ring-1 ring-(--color-border) ring-inset'
+									: 'text-(--color-muted) hover:text-(--color-foreground)'}"
+							>
+								Semantic
+							</button>
+						</div>
+						<span class="text-[11px] text-(--color-subtle)">
+							{test_kind === 'semantic'
+								? 'Similarity of each entry against the sample text.'
+								: 'Which keywords match the sample text.'}
+						</span>
+					</div>
+
 					<div class="space-y-1">
 						<label for="test-sample-text" class="text-sm font-medium text-(--color-foreground)">Sample text</label>
 						<Textarea
@@ -690,7 +834,7 @@
 							bind:value={test_sample_text}
 							placeholder="Paste or type sample chat text to test which entries would activate…"
 							rows={3}
-							disabled={test_loading}
+							disabled={test_loading || semantic_loading}
 						/>
 					</div>
 
@@ -702,13 +846,13 @@
 						variant="secondary"
 						size="sm"
 						onclick={handleRunTest}
-						disabled={test_loading || entries.length === 0}
+						disabled={test_loading || semantic_loading || entries.length === 0}
 					>
 						<Play class="size-3.5" />
-						{test_loading ? 'Running…' : 'Run test'}
+						{test_loading || semantic_loading ? 'Running…' : 'Run test'}
 					</Button>
 
-					{#if test_results.length > 0}
+					{#if test_kind === 'keyword' && test_results.length > 0}
 						<div class="space-y-2 rounded-(--radius-md) border border-(--color-border) p-3">
 							<h4 class="text-xs font-semibold uppercase tracking-wider text-(--color-subtle)">Results</h4>
 							{#each entries as entry (entry.id)}
@@ -737,6 +881,45 @@
 											{:else}
 												<p class="text-xs text-(--color-subtle)">No matches</p>
 											{/if}
+										</div>
+									</div>
+								{/if}
+							{/each}
+						</div>
+					{:else if test_kind === 'semantic' && semantic_results.length > 0}
+						<div class="space-y-2 rounded-(--radius-md) border border-(--color-border) p-3">
+							<h4 class="text-xs font-semibold uppercase tracking-wider text-(--color-subtle)">Similarity</h4>
+							{#each semantic_results as result (result.entryId)}
+								{@const entry = entries.find((e) => e.id === result.entryId)}
+								{#if entry}
+									<div
+										class="flex items-center gap-2 rounded-(--radius-sm) px-2 py-1.5 {result.activated ? 'bg-(--color-accent)/5' : 'bg-(--color-surface-elevated) opacity-50'}"
+									>
+										{#if result.activated}
+											<Check class="size-3.5 shrink-0 text-(--color-accent-vivid)" />
+										{:else}
+											<XIcon class="size-3.5 shrink-0 text-(--color-subtle)" />
+										{/if}
+										<div class="min-w-0 flex-1">
+											<p class="truncate text-sm font-medium text-(--color-foreground)">
+												{entry.keys.length > 0 ? truncate(entry.keys.join(', '), 32) : truncate(entry.content, 32)}
+											</p>
+											<div class="mt-1 flex items-center gap-2">
+												<div class="h-1 flex-1 overflow-hidden rounded-full bg-(--color-surface-input)">
+													<div
+														class="h-full rounded-full bg-(--color-accent)"
+														style="width: {Math.max(0, Math.min(1, result.similarity ?? 0)) * 100}%"
+													></div>
+												</div>
+												<span class="w-24 shrink-0 text-right font-mono text-[10px] text-(--color-muted)">
+													{format_similarity(result.similarity)} / {result.threshold.toFixed(2)}
+												</span>
+												{#if result.reason}
+													<span class="shrink-0 rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent-vivid)">
+														{result.reason}
+													</span>
+												{/if}
+											</div>
 										</div>
 									</div>
 								{/if}

@@ -15,6 +15,9 @@ import type {
   ContextBudget,
   GenerateCharacterChunk,
   GeneratedCharacterData,
+  EmbeddingConfig,
+  EmbeddingStatus,
+  EmbeddingTestResult,
 } from "$lib/types";
 import { Channel } from "@tauri-apps/api/core";
 
@@ -22,6 +25,11 @@ const VALID_STOP_REASONS = ["end", "cancelled", "length", "error"] as const;
 type StopReason = (typeof VALID_STOP_REASONS)[number];
 import {
   getCharacters as apiGetCharacters,
+  getEmbeddingConfig as apiGetEmbeddingConfig,
+  setEmbeddingConfig as apiSetEmbeddingConfig,
+  getEmbeddingStatus as apiGetEmbeddingStatus,
+  testEmbedding as apiTestEmbedding,
+  rebuildEmbeddingIndex as apiRebuildEmbeddingIndex,
   saveCharacter as apiSaveCharacter,
   deleteCharacter as apiDeleteCharacter,
   getPersonas as apiGetPersonas,
@@ -146,6 +154,10 @@ class AppState {
 
   // ── Generation panel state ────────────────────────────────────────────────
   generation_panel_open = $state<boolean>(false);
+
+  // ── Embedding state (semantic retrieval) ────────────────────────────────
+  embedding_config = $state<EmbeddingConfig>({ source: "none" });
+  embedding_status = $state<EmbeddingStatus | null>(null);
 
   // ── Character generation state ──────────────────────────────────────────
   is_generating_character = $state<boolean>(false);
@@ -333,6 +345,9 @@ class AppState {
         apiGetConversations(),
         apiGetPresets(),
         apiGetProviders(),
+        apiGetEmbeddingConfig().catch(
+          () => ({ source: "none" }) as EmbeddingConfig,
+        ),
       ]);
 
       const [
@@ -342,6 +357,7 @@ class AppState {
         conversations,
         presets,
         providers,
+        embeddingConfig,
       ] = results;
 
       if (characters.status === "fulfilled") {
@@ -379,6 +395,17 @@ class AppState {
       } else {
         console.error("Failed to load providers:", providers.reason);
       }
+
+      if (embeddingConfig.status === "fulfilled") {
+        this.embedding_config = embeddingConfig.value;
+      } else {
+        console.error(
+          "Failed to load embedding config:",
+          embeddingConfig.reason,
+        );
+      }
+      // Non-critical: best-effort status refresh after hydration.
+      this.refreshEmbeddingStatus();
 
       // If any critical data failed, set error state
       const criticalFailures = results
@@ -550,6 +577,37 @@ class AppState {
     } catch (err) {
       console.error("Theme persist failed:", err);
     }
+  }
+
+  // ── Embeddings (semantic retrieval) ──────────────────────────────────────
+
+  /** Saves the embedding config and refreshes status (a rebuild starts in
+   *  the background when the model key changes). */
+  async saveEmbeddingConfig(config: EmbeddingConfig): Promise<void> {
+    await apiSetEmbeddingConfig(config);
+    this.embedding_config = config;
+    await this.refreshEmbeddingStatus();
+  }
+
+  async refreshEmbeddingStatus(): Promise<void> {
+    try {
+      this.embedding_status = await apiGetEmbeddingStatus();
+    } catch {
+      this.embedding_status = null;
+    }
+  }
+
+  async testEmbeddingConnection(text?: string): Promise<EmbeddingTestResult> {
+    return apiTestEmbedding(text);
+  }
+
+  async rebuildEmbeddingIndexAction(): Promise<void> {
+    await apiRebuildEmbeddingIndex();
+    await this.refreshEmbeddingStatus();
+  }
+
+  get embeddings_enabled(): boolean {
+    return this.embedding_config.source !== "none";
   }
 
   async setCodeThemeDark(theme: string) {
@@ -1387,6 +1445,8 @@ class AppState {
             tokensUsed: chunk.data.tokensUsed,
             tokensLimit: chunk.data.tokensLimit,
             truncatedCount: chunk.data.truncatedCount,
+            lorebookDetails: chunk.data.lorebookDetails,
+            memory: chunk.data.memory ?? undefined,
           });
           // Update lorebook details from complete event
           if (chunk.data.lorebookDetails) {

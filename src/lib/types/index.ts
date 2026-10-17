@@ -42,6 +42,8 @@ export interface CharacterCard {
 
 export type LorebookPosition = "before_char" | "after_char" | "at_depth";
 export type LorebookActivation = "always" | "character_only" | "user_only";
+/** How an entry decides to activate (Phase 11). */
+export type LorebookActivationMode = "keyword" | "semantic" | "hybrid";
 
 export interface Lorebook {
   id: string;
@@ -60,6 +62,10 @@ export interface LorebookEntry {
   position: LorebookPosition;
   depth: number;
   activation_state: LorebookActivation;
+  /** Activation mode — keyword (default), semantic, or hybrid. */
+  activation_mode?: LorebookActivationMode;
+  /** Cosine threshold for semantic/hybrid activation (default 0.6). */
+  semantic_threshold?: number;
   /** Per-entry soft token limit (nullable). */
   token_budget?: number | null;
   /** Display/activation ordering. */
@@ -76,12 +82,27 @@ export interface KeywordTestResult {
   matched_keys: string[];
 }
 
+/** Per-entry semantic activation preview from test_semantic_activation. */
+export interface SemanticTestResult {
+  entryId: string;
+  keys: string[];
+  activationMode: string;
+  similarity?: number | null;
+  threshold: number;
+  activated: boolean;
+  reason?: string | null;
+}
+
 export interface LorebookActivationDetail {
   lorebook_name: string;
   entry_name: string;
   content_snippet: string;
   token_cost: number;
   matched_keys?: string[];
+  /** "keyword" | "semantic" | "always" — how the entry activated. */
+  activation_reason?: string | null;
+  /** Cosine similarity when evaluated semantically. */
+  similarity?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -152,9 +173,17 @@ export type StreamChunk =
         truncatedCount: number;
         lorebookDetails?: LorebookActivationDetail[];
         cancelled?: boolean;
+        /** Memory-layer outcome for this prompt. */
+        memory?: MemoryInfo;
       };
     }
   | { event: "error"; data: { error: string; errorType: string } };
+
+/** Memory-layer outcome on the Complete chunk (summary + recall). */
+export interface MemoryInfo {
+  summaryIncluded: boolean;
+  recalledCount: number;
+}
 
 /** Context budget info returned from backend after each generation. */
 export interface ContextBudget {
@@ -162,6 +191,7 @@ export interface ContextBudget {
   tokensLimit: number;
   truncatedCount: number;
   lorebookDetails?: LorebookActivationDetail[];
+  memory?: MemoryInfo;
 }
 
 export interface Conversation {
@@ -180,6 +210,10 @@ export interface Conversation {
   title: string;
   /** Truncated preview of the last message for list display. */
   last_message_preview: string;
+  /** Rolling story summary (memory layer). Empty until generated. */
+  summary?: string;
+  /** Highest message sort_order covered by the summary. */
+  summary_upto?: number;
   created_at: string;
   updated_at: string;
 }
@@ -295,6 +329,52 @@ export interface RegexTestResult {
   output: string;
   match_count: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Character generation
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Embeddings & semantic retrieval
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Embedding source selection. Mirrors Rust EmbeddingConfig (serde-tagged). */
+export type EmbeddingConfig =
+  | { source: "none" }
+  | { source: "remote"; providerId: string; model: string }
+  | { source: "local"; model: string };
+
+export interface EmbeddingNamespaceCount {
+  namespace: string;
+  count: number;
+}
+
+export interface EmbeddingStatus {
+  configured: boolean;
+  source: "none" | "remote" | "local";
+  modelKey: string;
+  counts: EmbeddingNamespaceCount[];
+  staleCount: number;
+}
+
+export interface EmbeddingTestResult {
+  dims: number;
+  latencyMs: number;
+}
+
+/** Local fastembed model choice surfaced in Settings. */
+export interface LocalEmbeddingModel {
+  key: string;
+  label: string;
+}
+
+export const LOCAL_EMBEDDING_MODELS: LocalEmbeddingModel[] = [
+  {
+    key: "nomic-embed-text-v1.5",
+    label: "Nomic embed v1.5 · 768 dims · ~100 MB",
+  },
+  { key: "bge-small-en-v1.5", label: "BGE small EN v1.5 · 384 dims · ~35 MB" },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Character generation

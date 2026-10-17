@@ -2,8 +2,59 @@ use crate::domain::character::CharacterCardV2;
 use crate::domain::conversation::{Message, MessageRole};
 use crate::domain::lorebook::{LorebookActivationDetail, LorebookEntry};
 use crate::domain::persona::Persona;
+use crate::service::lorebook::truncate_to_token_budget;
+use crate::service::lorebook::SemanticContext;
 use crate::service::template::{self, PersonaCompressionTier};
 use crate::service::token_count::TokenCountService;
+use crate::service::vector::{content_hash, cosine_similarity};
+
+use std::collections::HashMap;
+
+/// Fraction of the context window reserved for the rolling story summary
+/// (memory layer). Only spent once history actually starts truncating.
+const SUMMARY_BUDGET_FRACTION: f64 = 0.10;
+/// Fraction of the context window reserved for semantic recall of
+/// out-of-window messages.
+const RECALL_BUDGET_FRACTION: f64 = 0.12;
+/// Maximum number of out-of-window messages recalled per prompt.
+const RECALL_MAX_MESSAGES: usize = 8;
+/// Per-recalled-message snippet token cap.
+const RECALL_SNIPPET_TOKENS: usize = 96;
+
+/// Inputs for the memory layer: the conversation's rolling summary plus the
+/// vectors needed to recall out-of-window messages semantically. Everything
+/// is optional-by-emptiness — a missing query vector or empty vector map
+/// degrades to summary-only memory.
+pub struct MemoryInput {
+    /// Rolling conversation summary (empty = none maintained yet).
+    pub summary: String,
+    /// Highest message sort_order covered by the summary.
+    pub summary_upto: i64,
+    /// Query vector (embedding of the latest user message) for recall.
+    pub query_vector: Option<Vec<f32>>,
+    /// message_id → (content_hash, vector), current embedding model only.
+    pub message_vectors: HashMap<String, (String, Vec<f32>)>,
+}
+
+impl MemoryInput {
+    fn has_recall_inputs(&self) -> bool {
+        self.query_vector.is_some() && !self.message_vectors.is_empty()
+    }
+}
+
+/// What the memory layer actually injected, for status display.
+#[derive(Clone, Debug, Default)]
+pub struct MemoryResult {
+    pub summary_injected: bool,
+    pub recalled: Vec<RecalledMemory>,
+}
+
+#[derive(Clone, Debug)]
+pub struct RecalledMemory {
+    pub message_id: String,
+    pub similarity: f32,
+    pub snippet: String,
+}
 
 /// An assembled prompt ready to send to the AI provider.
 /// Contains the system prompt (preamble) and chat history as rig messages.
@@ -17,25 +68,38 @@ pub struct AssembledPrompt {
     pub truncated_messages: usize,
     /// Details of activated lorebook entries for the Complete chunk payload.
     pub lorebook_details: Vec<LorebookActivationDetail>,
+    /// What the memory layer injected (Phase 11).
+    pub memory: MemoryResult,
 }
 
 /// Engine for assembling prompts from character and conversation data.
 pub struct PromptEngine;
 
 impl PromptEngine {
-    /// Budget-aware prompt assembly per D-04, D-05, D-06, D-07.
+    /// Budget-aware prompt assembly per D-04, D-05, D-06, D-07, with the
+    /// Phase 11 memory layer (D-04.5).
     ///
     /// Priority layer order (D-04):
     /// 1. Sticky layer: system prompt + character card fields (never truncated)
     /// 2. Lorebook layer: activated entries injected at their depth positions
-    /// 3. Persona layer: compressed when budget is tight (D-06)
-    /// 4. History layer: oldest messages truncated first (D-05)
-    /// 5. Post-history instructions: placed after history, dropped if no room
+    /// 3. Memory layer: rolling summary + semantically recalled out-of-window
+    ///    messages (only engaged once history truncates; see below)
+    /// 4. Persona layer: compressed when budget is tight (D-06)
+    /// 5. History layer: oldest messages truncated first (D-05)
+    /// 6. Post-history instructions: placed after history, dropped if no room
+    ///
+    /// The memory layer runs as a second pass: the prompt is first assembled
+    /// without memory; if (and only if) history actually truncated and memory
+    /// inputs exist, it is re-assembled with memory budgets reserved up front.
+    /// This keeps memory free of window waste on conversations that still fit.
     ///
     /// `lorebook_name_map` resolves lorebook ids → display names for the
     /// activation details (junction lorebooks + the embedded character book).
+    /// `semantic` carries precomputed query/entry vectors (None = embeddings
+    /// unavailable; every entry fails open to keyword matching).
     ///
     /// Returns an AssembledPrompt with context utilization tracking.
+    #[allow(clippy::too_many_arguments)]
     pub fn assemble_with_budget(
         character: &CharacterCardV2,
         persona: Option<&Persona>,
@@ -44,6 +108,54 @@ impl PromptEngine {
         lorebook_name_map: &std::collections::HashMap<String, String>,
         token_service: &TokenCountService,
         context_window: i64,
+        semantic: Option<&SemanticContext>,
+        memory: Option<&MemoryInput>,
+    ) -> AssembledPrompt {
+        let mut assembled = Self::assemble_inner(
+            character,
+            persona,
+            messages,
+            lorebook_entries,
+            lorebook_name_map,
+            token_service,
+            context_window,
+            semantic,
+            None,
+        );
+
+        // Memory only matters once history outgrows the window.
+        if assembled.truncated_messages > 0 {
+            if let Some(mem) = memory {
+                if !mem.summary.is_empty() || mem.has_recall_inputs() {
+                    assembled = Self::assemble_inner(
+                        character,
+                        persona,
+                        messages,
+                        lorebook_entries,
+                        lorebook_name_map,
+                        token_service,
+                        context_window,
+                        semantic,
+                        Some(mem),
+                    );
+                }
+            }
+        }
+
+        assembled
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn assemble_inner(
+        character: &CharacterCardV2,
+        persona: Option<&Persona>,
+        messages: &[Message],
+        lorebook_entries: &[LorebookEntry],
+        lorebook_name_map: &std::collections::HashMap<String, String>,
+        token_service: &TokenCountService,
+        context_window: i64,
+        semantic: Option<&SemanticContext>,
+        memory: Option<&MemoryInput>,
     ) -> AssembledPrompt {
         let budget = context_window.max(1) as usize;
         let mut tokens_used = 0usize;
@@ -67,6 +179,7 @@ impl PromptEngine {
             max_recursive_depth,
             lorebook_token_budget,
             token_service,
+            semantic,
         );
 
         // Count lorebook tokens
@@ -76,7 +189,23 @@ impl PromptEngine {
             .sum();
         tokens_used += lorebook_tokens;
 
-        // ── Layer 3: Persona layer (compressed when budget is tight, per D-06) ──
+        // ── Layer 3: Memory layer — summary half (recall reserves below) ──
+        // Budgets are reserved before history truncation so the memory layer
+        // never steals tokens from the window retroactively; unused reserved
+        // recall budget is simply left unspent.
+        let summary_budget = (budget as f64 * SUMMARY_BUDGET_FRACTION) as usize;
+        let mut summary_block: Option<String> = None;
+        if let Some(mem) = memory {
+            if !mem.summary.is_empty() {
+                let capped = truncate_to_token_budget(&mem.summary, summary_budget, token_service);
+                if !capped.is_empty() {
+                    tokens_used += token_service.count_tokens(&capped);
+                    summary_block = Some(capped);
+                }
+            }
+        }
+
+        // ── Layer 4: Persona layer (compressed when budget is tight, per D-06) ──
         let persona_block = if let Some(p) = persona {
             let remaining = budget.saturating_sub(tokens_used);
             let persona_block = select_persona_tier(p, remaining, token_service);
@@ -87,19 +216,82 @@ impl PromptEngine {
             String::new()
         };
 
-        // ── Layer 4: History layer (oldest truncated first, per D-05) ──
+        // ── Layer 5: History layer (oldest truncated first, per D-05) ──
         // Truncate BEFORE injecting depth-based lorebook entries.
         // This prevents depth-injected system messages at old positions from
         // being silently removed by budget truncation. Depth offsets are
         // relative to the truncated history length (matching SillyTavern/gtk_ref).
         let history_messages: Vec<Message> = messages.to_vec();
 
-        let remaining_for_history = budget.saturating_sub(tokens_used);
+        // Reserve the recall budget up front when recall inputs exist; the
+        // actual snippets are selected from the dropped messages after
+        // truncation below.
+        let recall_budget = if memory.map(|m| m.has_recall_inputs()).unwrap_or(false) {
+            (budget as f64 * RECALL_BUDGET_FRACTION) as usize
+        } else {
+            0
+        };
+        let remaining_for_history = budget.saturating_sub(tokens_used + recall_budget);
 
         // Count history tokens and truncate oldest messages if needed
         let truncated_history =
             truncate_history_oldest_first(&history_messages, remaining_for_history, token_service);
         let truncated_messages = truncated_history.truncated_count;
+
+        // ── Layer 3b: Memory layer — semantic recall half ──
+        // Out-of-window messages whose vectors are close to the query get
+        // pulled back in as attributed snippets. Stale vectors (content
+        // edited since embedding) are skipped.
+        let mut recalled_memories: Vec<RecalledMemory> = Vec::new();
+        if let Some(mem) = memory {
+            if let Some(query) = &mem.query_vector {
+                if !truncated_history.dropped.is_empty() {
+                    let mut candidates: Vec<(f32, &Message)> = truncated_history
+                        .dropped
+                        .iter()
+                        .filter(|m| !m.content.is_empty())
+                        .filter_map(|m| {
+                            let (hash, vector) = mem.message_vectors.get(&m.id)?;
+                            if hash != &content_hash(&m.content) {
+                                return None; // Stale vector — skip.
+                            }
+                            let similarity = cosine_similarity(query, vector);
+                            Some((similarity, m))
+                        })
+                        .collect();
+                    candidates
+                        .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+
+                    let mut recall_tokens_used = 0usize;
+                    for (similarity, message) in candidates.into_iter().take(RECALL_MAX_MESSAGES) {
+                        if recalled_memories.len() >= RECALL_MAX_MESSAGES {
+                            break;
+                        }
+                        let snippet = truncate_to_token_budget(
+                            &message.content,
+                            RECALL_SNIPPET_TOKENS,
+                            token_service,
+                        );
+                        let snippet_tokens = token_service.count_tokens(&snippet);
+                        if recall_tokens_used + snippet_tokens > recall_budget {
+                            break; // Budget exhausted.
+                        }
+                        recall_tokens_used += snippet_tokens;
+                        recalled_memories.push(RecalledMemory {
+                            message_id: message.id.clone(),
+                            similarity,
+                            snippet: message.content.chars().take(60).collect(),
+                        });
+                    }
+                    tokens_used += recall_tokens_used;
+                }
+            }
+        }
+        let summary_injected = summary_block.is_some();
+        let memory_result = MemoryResult {
+            summary_injected,
+            recalled: recalled_memories.clone(),
+        };
 
         // Build chat history from truncated messages, then inject lorebook entries
         let mut chat_history =
@@ -114,7 +306,7 @@ impl PromptEngine {
             &mut chat_history,
         );
 
-        // ── Layer 5: Post-history instructions (placed after history, dropped if no room) ──
+        // ── Layer 6: Post-history instructions (placed after history, dropped if no room) ──
         let post_history = if !character.post_history_instructions.is_empty() {
             let post_history_text =
                 format!("Instructions: {}", character.post_history_instructions);
@@ -130,13 +322,48 @@ impl PromptEngine {
         };
 
         // ── Build final preamble ──
-        // Lorebook BeforeChar entries go before sticky prompt, AfterChar goes after
+        // Lorebook BeforeChar entries go before sticky prompt, AfterChar goes
+        // after; memory sits between lorebook and persona.
         let mut preamble_parts = Vec::new();
         if !preamble_before.is_empty() {
             preamble_parts.push(preamble_before);
         }
         if !preamble_after.is_empty() {
             preamble_parts.push(preamble_after);
+        }
+        if let Some(summary) = summary_block {
+            preamble_parts.push(format!("[Summary of the story so far]\n{summary}"));
+        }
+        if !recalled_memories.is_empty() {
+            let lines: Vec<String> = recalled_memories
+                .iter()
+                .filter_map(|r| {
+                    // Recover the dropped message for its role and full snippet.
+                    truncated_history
+                        .dropped
+                        .iter()
+                        .find(|m| m.id == r.message_id)
+                        .and_then(|m| {
+                            let speaker = match m.role {
+                                MessageRole::User => "{{user}}",
+                                MessageRole::Assistant => "{{char}}",
+                                MessageRole::System => return None,
+                            };
+                            let snippet = truncate_to_token_budget(
+                                &m.content,
+                                RECALL_SNIPPET_TOKENS,
+                                token_service,
+                            );
+                            Some(format!("- {speaker}: {snippet}"))
+                        })
+                })
+                .collect();
+            if !lines.is_empty() {
+                preamble_parts.push(format!(
+                    "[Moments from earlier that may be relevant]\n{}",
+                    lines.join("\n")
+                ));
+            }
         }
         if !persona_block.is_empty() {
             preamble_parts.push(persona_block);
@@ -170,6 +397,8 @@ impl PromptEngine {
                         .cloned()
                         .collect(),
                 ),
+                activation_reason: e.activation_reason.clone(),
+                similarity: e.similarity,
             })
             .collect();
 
@@ -179,6 +408,7 @@ impl PromptEngine {
             tokens_used,
             truncated_messages,
             lorebook_details,
+            memory: memory_result,
         }
     }
 }
@@ -252,6 +482,8 @@ fn build_sticky_prompt(character: &CharacterCardV2) -> String {
 /// Result of history truncation.
 struct TruncatedHistory {
     messages: Vec<Message>,
+    /// Messages excluded by the budget, oldest-first (memory recall input).
+    dropped: Vec<Message>,
     tokens_used: usize,
     truncated_count: usize,
 }
@@ -266,6 +498,7 @@ fn truncate_history_oldest_first(
     if messages.is_empty() {
         return TruncatedHistory {
             messages: Vec::new(),
+            dropped: Vec::new(),
             tokens_used: 0,
             truncated_count: 0,
         };
@@ -290,8 +523,18 @@ fn truncate_history_oldest_first(
     let truncated_count = messages.len() - included.len();
     included.reverse(); // Restore chronological order
 
+    // Dropped = messages not included, in original (oldest-first) order.
+    let included_ids: std::collections::HashSet<&str> =
+        included.iter().map(|m| m.id.as_str()).collect();
+    let dropped: Vec<Message> = messages
+        .iter()
+        .filter(|m| !included_ids.contains(m.id.as_str()))
+        .cloned()
+        .collect();
+
     TruncatedHistory {
         messages: included,
+        dropped,
         tokens_used,
         truncated_count,
     }
@@ -453,6 +696,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             context_window,
+            None,
+            None,
         );
 
         assert!(
@@ -475,6 +720,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             8192,
+            None,
+            None,
         );
 
         assert!(
@@ -512,6 +759,8 @@ mod tests {
                 &std::collections::HashMap::new(),
                 &token_svc,
                 8192,
+                None,
+                None,
             );
             assert!(
                 prompt.preamble.contains("Formatting:"),
@@ -538,6 +787,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             8192,
+            None,
+            None,
         );
 
         assert!(prompt.preamble.contains("Name: Alice"));
@@ -577,6 +828,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             500, // Small budget — should truncate
+            None,
+            None,
         );
 
         assert!(
@@ -619,6 +872,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             300,
+            None,
+            None,
         );
 
         // truncated_messages should be tracked
@@ -643,6 +898,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             8192,
+            None,
+            None,
         );
 
         // Post-history instructions should appear in the preamble
@@ -667,6 +924,8 @@ mod tests {
             &std::collections::HashMap::new(),
             &token_svc,
             8192,
+            None,
+            None,
         );
 
         assert!(
@@ -706,6 +965,8 @@ mod tests {
             &lorebook_names,
             &token_svc,
             8192,
+            None,
+            None,
         );
 
         assert_eq!(
@@ -729,6 +990,213 @@ mod tests {
         assert_eq!(
             prompt.lorebook_details[0].lorebook_name, "World Lore",
             "lorebook_name should resolve from the name map"
+        );
+    }
+
+    // ── Memory layer tests (Phase 11) ─────────────────────────────────────
+
+    fn memory_with_summary(summary: &str) -> MemoryInput {
+        MemoryInput {
+            summary: summary.to_string(),
+            summary_upto: 0,
+            query_vector: None,
+            message_vectors: HashMap::new(),
+        }
+    }
+
+    #[test]
+    fn test_summary_not_injected_without_truncation() {
+        // Short conversation fits the window — memory must stay out even when
+        // a summary exists (no waste, no duplication of visible history).
+        let character = make_test_character();
+        let messages = vec![make_test_message(MessageRole::User, "Hello!")];
+        let token_svc = token_service();
+        let memory = memory_with_summary("Once upon a time, a dragon attacked.");
+
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &HashMap::new(),
+            &token_svc,
+            8192,
+            None,
+            Some(&memory),
+        );
+
+        assert_eq!(prompt.truncated_messages, 0);
+        assert!(!prompt.memory.summary_injected);
+        assert!(
+            !prompt.preamble.contains("Story so far"),
+            "summary must not inject when nothing truncated"
+        );
+    }
+
+    #[test]
+    fn test_summary_injected_once_history_truncates() {
+        let character = make_test_character();
+        let messages: Vec<DomainMessage> = (0..60)
+            .map(|i| {
+                make_test_message(
+                    if i % 2 == 0 {
+                        MessageRole::User
+                    } else {
+                        MessageRole::Assistant
+                    },
+                    &format!("Message number {i} with plenty of words to consume tokens quickly"),
+                )
+            })
+            .collect();
+        let token_svc = token_service();
+        let memory = memory_with_summary("The hero met the dragon and they became allies.");
+
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &HashMap::new(),
+            &token_svc,
+            600, // Tiny window — forces truncation
+            None,
+            Some(&memory),
+        );
+
+        assert!(prompt.truncated_messages > 0, "history should truncate");
+        assert!(
+            prompt.memory.summary_injected,
+            "summary should inject once history truncates"
+        );
+        assert!(prompt.preamble.contains("Summary of the story so far"));
+        assert!(
+            prompt.preamble.contains("dragon and they became allies"),
+            "summary content should appear in the preamble"
+        );
+    }
+
+    #[test]
+    fn test_semantic_recall_pulls_relevant_dropped_messages() {
+        let character = make_test_character();
+        // Message 0 is relevant to the query vector; message 1 is not.
+        let mut relevant = make_test_message(MessageRole::User, "We discovered the dragon crown.");
+        relevant.id = "msg-relevant".to_string();
+        let mut irrelevant = make_test_message(MessageRole::Assistant, "The weather is mild.");
+        irrelevant.id = "msg-irrelevant".to_string();
+        let filler: Vec<DomainMessage> = (0..60)
+            .map(|i| {
+                make_test_message(
+                    if i % 2 == 0 {
+                        MessageRole::User
+                    } else {
+                        MessageRole::Assistant
+                    },
+                    &format!("Padding message {i} consuming tokens to force truncation"),
+                )
+            })
+            .collect();
+        let mut messages = vec![relevant, irrelevant];
+        messages.extend(filler);
+
+        let query = vec![1.0, 0.0];
+        let mut message_vectors = HashMap::new();
+        message_vectors.insert(
+            "msg-relevant".to_string(),
+            (
+                content_hash("We discovered the dragon crown."),
+                vec![0.9, 0.1],
+            ),
+        );
+        message_vectors.insert(
+            "msg-irrelevant".to_string(),
+            (content_hash("The weather is mild."), vec![0.0, 1.0]),
+        );
+        let memory = MemoryInput {
+            summary: String::new(),
+            summary_upto: 0,
+            query_vector: Some(query),
+            message_vectors,
+        };
+
+        let token_svc = token_service();
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &HashMap::new(),
+            &token_svc,
+            700,
+            None,
+            Some(&memory),
+        );
+
+        assert!(prompt.truncated_messages > 0);
+        assert!(!prompt.memory.recalled.is_empty(), "recall should fire");
+        assert_eq!(
+            prompt.memory.recalled[0].message_id, "msg-relevant",
+            "the most similar dropped message is recalled first"
+        );
+        assert!(
+            prompt.preamble.contains("dragon crown"),
+            "recalled snippet content should appear in the preamble"
+        );
+        assert!(
+            prompt.preamble.contains("Moments from earlier"),
+            "recall block header should be present"
+        );
+    }
+
+    #[test]
+    fn test_recall_skips_stale_vectors() {
+        let character = make_test_character();
+        let mut edited = make_test_message(MessageRole::User, "Edited content.");
+        edited.id = "msg-edited".to_string();
+        let filler: Vec<DomainMessage> = (0..60)
+            .map(|i| {
+                make_test_message(
+                    if i % 2 == 0 {
+                        MessageRole::User
+                    } else {
+                        MessageRole::Assistant
+                    },
+                    &format!("Padding message {i} consuming tokens to force truncation"),
+                )
+            })
+            .collect();
+        let mut messages = vec![edited];
+        messages.extend(filler);
+
+        // Vector exists but its content_hash belongs to the OLD content.
+        let mut message_vectors = HashMap::new();
+        message_vectors.insert(
+            "msg-edited".to_string(),
+            (content_hash("Old content before the edit."), vec![1.0, 0.0]),
+        );
+        let memory = MemoryInput {
+            summary: String::new(),
+            summary_upto: 0,
+            query_vector: Some(vec![1.0, 0.0]),
+            message_vectors,
+        };
+
+        let token_svc = token_service();
+        let prompt = PromptEngine::assemble_with_budget(
+            &character,
+            None,
+            &messages,
+            &[],
+            &HashMap::new(),
+            &token_svc,
+            700,
+            None,
+            Some(&memory),
+        );
+
+        assert!(prompt.truncated_messages > 0);
+        assert!(
+            prompt.memory.recalled.is_empty(),
+            "stale vectors must be skipped"
         );
     }
 }

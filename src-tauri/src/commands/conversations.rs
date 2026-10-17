@@ -1,5 +1,6 @@
 use tauri::State;
 
+use crate::ai::embeddings::{spawn_delete_embedding, spawn_embed_message, EmbeddingRuntime};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::{Conversation, Message, MessageBranch, SearchResult};
 
@@ -33,6 +34,20 @@ pub async fn start_conversation(
 
 #[tauri::command]
 pub async fn delete_conversation(db: State<'_, DbWorker>, id: String) -> Result<(), String> {
+    // Drop the conversation's derived message vectors along with its messages.
+    {
+        let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
+        db.send(DbCommand::DeleteEmbeddingsByNamespace {
+            namespace: format!("messages:{id}"),
+            reply: reply_tx,
+        })
+        .map_err(|e| e.to_string())?;
+        reply_rx
+            .await
+            .map_err(|e| format!("DB worker dropped: {}", e))?
+            .map_err(|e| e.to_string())?;
+    }
+
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::DeleteConversation {
         id,
@@ -101,21 +116,36 @@ pub async fn get_messages(
 }
 
 #[tauri::command]
-pub async fn save_message(db: State<'_, DbWorker>, message: Message) -> Result<(), String> {
+pub async fn save_message(
+    db: State<'_, DbWorker>,
+    runtime: State<'_, EmbeddingRuntime>,
+    message: Message,
+) -> Result<(), String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::SaveMessage {
-        message,
+        message: message.clone(),
         reply: reply_tx,
     })
     .map_err(|e| e.to_string())?;
     reply_rx
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Write-reconcile the message vector (skips when content is unchanged).
+    spawn_embed_message(
+        (*runtime).clone(),
+        db.sender(),
+        message.conversation_id,
+        message.id,
+        message.content,
+    );
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn delete_message(db: State<'_, DbWorker>, id: String) -> Result<(), String> {
+    spawn_delete_embedding(db.sender(), id.clone());
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::DeleteMessage {
         id,

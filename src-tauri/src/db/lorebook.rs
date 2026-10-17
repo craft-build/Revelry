@@ -76,7 +76,8 @@ pub fn delete_lorebook(conn: &Connection, id: &str) -> Result<()> {
 pub fn load_lorebook_entries(conn: &Connection, lorebook_id: &str) -> Result<Vec<LorebookEntry>> {
     let mut stmt = conn.prepare_cached(
         "SELECT id, lorebook_id, keys, secondary_keys, content, position, depth,
-         activation_state, token_budget, sort_order, enabled, extensions, created_at, updated_at
+         activation_state, activation_mode, semantic_threshold, token_budget, sort_order,
+         enabled, extensions, created_at, updated_at
          FROM lorebook_entries WHERE lorebook_id = ?1 ORDER BY sort_order ASC, created_at ASC",
     )?;
     let entries = stmt.query_map(params![lorebook_id], row_to_lorebook_entry)?;
@@ -95,9 +96,9 @@ pub fn insert_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
 
     conn.prepare_cached(
         "INSERT INTO lorebook_entries (id, lorebook_id, keys, secondary_keys, content,
-         position, depth, activation_state, token_budget, sort_order, enabled, extensions,
-         created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+         position, depth, activation_state, activation_mode, semantic_threshold, token_budget,
+         sort_order, enabled, extensions, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
     )?
     .execute(params![
         entry.id,
@@ -108,6 +109,8 @@ pub fn insert_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
         entry.position.to_string(),
         entry.depth,
         entry.activation_state.to_string(),
+        entry.activation_mode.to_string(),
+        entry.semantic_threshold,
         entry.token_budget,
         entry.sort_order,
         entry.enabled as i32,
@@ -126,9 +129,10 @@ pub fn update_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
 
     conn.prepare_cached(
         "UPDATE lorebook_entries SET keys = ?1, secondary_keys = ?2, content = ?3,
-         position = ?4, depth = ?5, activation_state = ?6, token_budget = ?7,
-         sort_order = ?8, enabled = ?9, extensions = ?10,
-         updated_at = ?11 WHERE id = ?12",
+         position = ?4, depth = ?5, activation_state = ?6, activation_mode = ?7,
+         semantic_threshold = ?8, token_budget = ?9,
+         sort_order = ?10, enabled = ?11, extensions = ?12,
+         updated_at = ?13 WHERE id = ?14",
     )?
     .execute(params![
         keys_str,
@@ -137,6 +141,8 @@ pub fn update_lorebook_entry(conn: &Connection, entry: &LorebookEntry) -> Result
         entry.position.to_string(),
         entry.depth,
         entry.activation_state.to_string(),
+        entry.activation_mode.to_string(),
+        entry.semantic_threshold,
         entry.token_budget,
         entry.sort_order,
         entry.enabled as i32,
@@ -272,7 +278,8 @@ pub fn load_entries_for_lorebooks(
         .collect();
     let sql = format!(
         "SELECT id, lorebook_id, keys, secondary_keys, content, position, depth,
-         activation_state, token_budget, sort_order, enabled, extensions, created_at, updated_at
+         activation_state, activation_mode, semantic_threshold, token_budget, sort_order,
+         enabled, extensions, created_at, updated_at
          FROM lorebook_entries WHERE lorebook_id IN ({}) ORDER BY sort_order ASC, created_at ASC",
         placeholders.join(", ")
     );
