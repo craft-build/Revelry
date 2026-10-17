@@ -91,6 +91,11 @@ import {
   setAppSetting as apiSetAppSetting,
 } from "$lib/data/api";
 import { parseSteering } from "$lib/utils";
+import {
+  loadShikiTheme,
+  getThemeColors,
+  type ThemeColors,
+} from "$lib/shiki.svelte";
 import { open, save } from "@tauri-apps/plugin-dialog";
 
 /** Default context window fallback when no model/provider limit is available. */
@@ -139,6 +144,11 @@ class AppState {
   // ── Code theme state ──────────────────────────────────────────────────────
   code_theme_dark = $state<string>("vitesse-dark");
   code_theme_light = $state<string>("vitesse-light");
+  /** Resolved colors of the active code theme. Drives chat bubble
+   *  backgrounds and markdown prose colors so both always share the
+   *  theme's palette (and its designed contrast). Null until resolved —
+   *  consumers fall back to app tokens. */
+  code_theme_colors = $state<ThemeColors | null>(null);
 
   // ── Branch state ───────────────────────────────────────────────────────
   active_branch_id = $state<string | null>(null);
@@ -481,6 +491,8 @@ class AppState {
       }
       // Sync <html> class with resolved theme
       document.documentElement.className = this.resolved_theme;
+      // Resolve the active code theme's palette for bubbles + markdown
+      void this.refreshCodeThemeColors();
     } catch (err) {
       this.init_error =
         err instanceof Error
@@ -611,6 +623,7 @@ class AppState {
     this.theme = theme;
     localStorage.setItem("revelry-theme", theme);
     document.documentElement.className = this.resolved_theme;
+    void this.refreshCodeThemeColors();
     // Async backend persist — non-blocking, localStorage is the primary store
     try {
       await apiSetAppSetting("theme", theme);
@@ -666,6 +679,7 @@ class AppState {
   async setCodeThemeDark(theme: string) {
     this.code_theme_dark = theme;
     localStorage.setItem("revelry-code-theme-dark", theme);
+    void this.refreshCodeThemeColors();
     try {
       await apiSetAppSetting("code_theme_dark", theme);
     } catch (err) {
@@ -676,10 +690,28 @@ class AppState {
   async setCodeThemeLight(theme: string) {
     this.code_theme_light = theme;
     localStorage.setItem("revelry-code-theme-light", theme);
+    void this.refreshCodeThemeColors();
     try {
       await apiSetAppSetting("code_theme_light", theme);
     } catch (err) {
       console.error("Code theme light persist failed:", err);
+    }
+  }
+
+  /** Resolves the active code theme's colors (loading the Shiki theme on
+   *  demand). Non-fatal on failure — bubble/prose styling keeps falling back
+   *  to app tokens. */
+  async refreshCodeThemeColors(): Promise<void> {
+    const themeId = this.code_theme;
+    try {
+      await loadShikiTheme(themeId);
+      const colors = await getThemeColors(themeId);
+      // Discard stale resolutions if the theme changed while loading
+      if (this.code_theme === themeId) {
+        this.code_theme_colors = colors;
+      }
+    } catch (err) {
+      console.warn("Failed to resolve code theme colors:", err);
     }
   }
 

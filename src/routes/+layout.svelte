@@ -51,6 +51,8 @@
 		const onMediaChange = () => {
 			if (app.theme === 'system') {
 				document.documentElement.className = app.resolved_theme;
+				// Active code theme follows the resolved theme — re-resolve its palette
+				void app.refreshCodeThemeColors();
 			}
 		};
 		mediaQuery.addEventListener('change', onMediaChange);

@@ -216,8 +216,11 @@
   --color-warning: #ff9333; /* ember-400 */
   --color-success: #2fbf8a; /* mint-500 */
 
-  /* Chat bubbles — user bubble is solid accent (needs --color-accent-fg
-     text); character bubble sits one step up the ladder with a border */
+  /* Chat bubbles — fallbacks until the active code theme's palette resolves
+     (AppState.code_theme_colors); bubbles then paint with the theme's bg/fg
+     so markdown prose always matches. User bubble is solid accent (needs
+     --color-accent-fg text); character bubble sits one step up the ladder
+     with a border */
   --color-bubble-user: var(--color-accent);
   --color-bubble-character: var(--color-surface-elevated);
 
@@ -290,7 +293,7 @@ html.light {
   --color-warning: #d15f00;
   --color-success: #1e8f66;
 
-  /* Chat bubble specific */
+  /* Chat bubble specific (fallbacks — code theme palette overrides) */
   --color-bubble-user: var(--color-accent);
   --color-bubble-character: #ffffff;
 }

@@ -2,7 +2,7 @@
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 	import { onMount } from 'svelte';
-	import { getShikiHighlighter, loadShikiTheme, getThemeColors, type ThemeColors } from '$lib/shiki.svelte';
+	import { getShikiHighlighter, loadShikiTheme } from '$lib/shiki.svelte';
 	import { app } from '$lib/stores/app.svelte';
 
 	interface Props {
@@ -15,7 +15,9 @@
 	let highlighter = $state<Awaited<ReturnType<typeof getShikiHighlighter>> | null>(null);
 	let containerEl: HTMLDivElement | undefined = $state();
 	let themeVersion = $state(0);
-	let themeColors: ThemeColors | null = $state(null);
+	// Shared palette from AppState — same source that drives bubble
+	// backgrounds, so prose always matches the surface it sits on.
+	let themeColors = $derived(app.code_theme_colors);
 
 	// Preload highlighter with common languages
 	onMount(async () => {
@@ -45,13 +47,6 @@
 				.catch((err) => {
 					console.warn('Failed to load Shiki theme:', shikiTheme, err);
 				});
-		}
-
-		// Resolve theme colors for prose styling
-		if (themeReady) {
-			getThemeColors(shikiTheme).then((c) => {
-				themeColors = c;
-			});
 		}
 
 		const renderer = new marked.Renderer();

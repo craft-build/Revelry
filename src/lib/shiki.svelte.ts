@@ -58,6 +58,37 @@ export interface ThemeColors {
   surface: string;
 }
 
+/** Parse a hex color (#rgb/#rgba/#rrggbb/#rrggbbaa) to [r, g, b, a]. */
+function parseHex(hex: string): [number, number, number, number] | null {
+  const m = /^#([\da-f]{3,8})$/i.exec(hex.trim());
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3 || h.length === 4) {
+    h = [...h].map((c) => c + c).join("");
+  }
+  if (h.length !== 6 && h.length !== 8) return null;
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+    h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1,
+  ];
+}
+
+/** Linear mix of two hex colors (`t` = weight of `b`). Falls back to `a`. */
+function mixHex(a: string, b: string, t: number): string {
+  const ca = parseHex(a);
+  const cb = parseHex(b);
+  if (!ca || !cb) return a;
+  const mix = (x: number, y: number) => Math.round(x + (y - x) * t);
+  return (
+    "#" +
+    [mix(ca[0], cb[0]), mix(ca[1], cb[1]), mix(ca[2], cb[2])]
+      .map((v) => v.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
 /** Extract usable colors from a loaded Shiki theme for markdown styling. */
 export async function getThemeColors(themeId: string): Promise<ThemeColors> {
   const hl = await getShikiHighlighter();
@@ -87,13 +118,27 @@ export async function getThemeColors(themeId: string): Promise<ThemeColors> {
   // which are intentionally dim in most code themes.
   const muted = variableColor !== theme.fg ? variableColor : keywordColor;
 
+  // Some themes declare a (semi-)transparent background, which would make
+  // bubbles invisible — substitute the app's neutral surface for those.
+  let bg = theme.bg;
+  const parsedBg = parseHex(bg);
+  if (parsedBg && parsedBg[3] < 0.5) {
+    bg =
+      (theme as { type?: "dark" | "light" }).type === "light"
+        ? "#ffffff"
+        : "#161928";
+  }
+
   return {
     fg: theme.fg,
-    bg: theme.bg,
+    bg,
     muted,
     accent: stringColor,
     border: keywordColor,
-    surface: theme.bg,
+    // Lift the theme bg slightly toward its foreground so inline code chips,
+    // fenced blocks and table headers stay visible now that bubble
+    // backgrounds use the theme bg itself.
+    surface: mixHex(bg, theme.fg, 0.07),
   };
 }
 

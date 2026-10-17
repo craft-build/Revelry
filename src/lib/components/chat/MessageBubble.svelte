@@ -27,6 +27,19 @@
 	let isLength = $derived(message.metadata?.stop_reason === 'length');
 	let showStopReasonBadge = $derived(isCancelled || isLength);
 
+	// Bubble surface follows the active code theme so markdown prose colors
+	// always render with the contrast the theme was designed for. The user
+	// bubble keeps a subtle accent tint for identity; empty string falls back
+	// to the app token classes until the theme palette resolves.
+	let bubbleStyle = $derived.by(() => {
+		const colors = app.code_theme_colors;
+		if (!colors) return '';
+		if (isUser) {
+			return `background-color: color-mix(in srgb, ${colors.bg} 88%, var(--color-accent)); color: ${colors.fg};`;
+		}
+		return `background-color: ${colors.bg}; color: ${colors.fg};`;
+	});
+
 	// Edit mode state
 	let isEditing = $state<boolean>(false);
 	let editContent = $state<string>('');
@@ -277,6 +290,7 @@
 						: 'rounded-tl-[6px] border-(--color-border) bg-(--color-bubble-character) text-(--color-foreground)',
 					message.is_streaming && message.content && 'streaming-caret'
 				)}
+				style={bubbleStyle}
 			>
 				{#if message.is_streaming}
 					{#if !message.content}
