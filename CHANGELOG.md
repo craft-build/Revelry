@@ -5,6 +5,53 @@ All notable changes to **Revelry** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0]
+
+### Added
+
+- Opt-in embeddings: remote provider sources or local fastembed models,
+  semantic lorebook activation with per-entry thresholds, rolling story
+  summaries with semantic recall of out-of-window messages, and a
+  Settings page with connection test and background index rebuilds.
+- Hybrid conversation search — FTS5 plus an optional semantic toggle in
+  the sidebar.
+- Cross-conversation character memory (off by default): characters
+  recall moments from other conversations with them, with controls to
+  forget/restore a character's cross-chat memories, exclude a single
+  chat via "start fresh", toggle memory mid-chat from the chat header,
+  and a "Carry over memories?" prompt when starting a new chat.
+
+### Changed
+
+- UI migrated to design v2 "Night fox" — palette rebuilt from the fox
+  app icon (night surfaces, fox-blue accent, tail accents), translucent
+  header/sidebar, floating composer with persona + model chips and a
+  mini context meter, and name-hashed avatar tints.
+- Chat bubble backgrounds now derive from the selected code theme so
+  markdown prose colors always render with the theme's designed
+  contrast (user bubbles keep a subtle accent tint).
+- Upgraded rig 0.42 to 0.44, porting the AI layer to the rewritten
+  client/streaming API. IPC wire formats unchanged.
+- Regenerated all app icons from the squircle logo; system prompt now
+  includes formatting instructions.
+
+### Fixed
+
+- OpenAI providers stream through Chat Completions again — rig 0.44's
+  completion path silently switched them to the Responses API, which
+  rejected the penalty params presets always set and broke chat-only
+  proxies and non-Responses models.
+- Cross-conversation echoes now inject on a new conversation's first
+  turn, reserve recall budget, and appear in the MemoryInfo badge;
+  semantic activation previews gate by secondary keys and no longer
+  panic on keyless entries.
+- Editing a provider no longer clears its API key status — saved
+  providers re-report keyring state, so chat kept working after an
+  edit-save without waiting for a restart.
+- Forgotten-memory indicators update reactively (plain Maps held in
+  $state were never deeply proxied), and the generation panel extends
+  to the full chat height.
+
 ## [0.2.1]
 
 ### Changed
