@@ -184,6 +184,14 @@
 		}
 	}
 
+	async function handleRestoreMemories(id: string) {
+		try {
+			await app.setCharacterMemoryForgotten(id, false);
+		} catch (err) {
+			console.error('Failed to restore memories:', err);
+		}
+	}
+
 	function openEditEditor(id: string) {
 		const char = app.characters.find((c) => c.id === id);
 		if (char) {
@@ -400,7 +408,7 @@
 							class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 						>
 							{#each app.filtered_characters as character (character.id)}
-								<CharacterCard {character} onchat={startChat} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} onforget={openForgetDialog} />
+								<CharacterCard {character} onchat={startChat} onedit={openEditEditor} ondelete={openDeleteDialog} onexport={handleExport} onforget={openForgetDialog} onrestore={handleRestoreMemories} />
 							{/each}
 						</div>
 					{/if}

@@ -11,13 +11,16 @@
 		ondelete?: (id: string) => void;
 		onexport?: (id: string) => void;
 		onforget?: (id: string) => void;
+		onrestore?: (id: string) => void;
 	}
 
-	let { character, onchat, onedit, ondelete, onexport, onforget }: Props = $props();
+	let { character, onchat, onedit, ondelete, onexport, onforget, onrestore }: Props =
+		$props();
 
 	let memory_relevant = $derived(
 		app.embeddings_enabled && app.cross_conversation_memory
 	);
+	let memories_forgotten = $derived(app.forgotten_memories.has(character.id));
 </script>
 
 <article
@@ -40,6 +43,17 @@
 	<p class="line-clamp-3 text-sm leading-relaxed text-(--color-muted)">
 		{character.description}
 	</p>
+
+	<!-- Forgotten-memory indicator -->
+	{#if memories_forgotten}
+		<p
+			class="inline-flex w-fit items-center gap-1.5 rounded-(--radius-sm) bg-(--color-surface-input) px-2 py-1 text-[11px] text-(--color-subtle)"
+			title="Their cross-conversation memories were forgotten — nothing before that moment is recalled"
+		>
+			<Eraser class="size-3" />
+			cross-chat memories forgotten
+		</p>
+	{/if}
 
 	<!-- Tags -->
 	{#if character.tags && character.tags.length > 0}
@@ -69,11 +83,18 @@
 				<Download class="size-3.5" />
 				Export
 			</KebabMenuItem>
-			{#if memory_relevant && onforget}
-				<KebabMenuItem onclick={() => onforget(character.id)}>
-					<Eraser class="size-3.5" />
-					Forget their cross-chat memories
-				</KebabMenuItem>
+			{#if memory_relevant && (onforget || onrestore)}
+				{#if memories_forgotten}
+					<KebabMenuItem onclick={() => onrestore?.(character.id)}>
+						<Eraser class="size-3.5" />
+						Restore forgotten memories
+					</KebabMenuItem>
+				{:else if onforget}
+					<KebabMenuItem onclick={() => onforget(character.id)}>
+						<Eraser class="size-3.5" />
+						Forget their cross-chat memories
+					</KebabMenuItem>
+				{/if}
 			{/if}
 			<KebabMenuSeparator />
 			<KebabMenuItem destructive onclick={() => ondelete?.(character.id)}>

@@ -119,6 +119,8 @@ pub fn run() {
             commands::embeddings::rebuild_embedding_index,
             commands::embeddings::set_conversation_memory_enabled,
             commands::embeddings::set_character_memory_forgotten,
+            commands::embeddings::get_conversation_memory_enabled,
+            commands::embeddings::list_character_memory_forgotten,
             commands::keywords::test_semantic_activation,
             commands::generate::generate_character,
             commands::generate::stop_character_generation,

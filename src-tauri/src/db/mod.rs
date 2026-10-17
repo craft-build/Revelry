@@ -287,6 +287,10 @@ pub enum DbCommand {
         value: String,
         reply: oneshot::Sender<anyhow::Result<()>>,
     },
+    LoadAppSettingsByPrefix {
+        prefix: String,
+        reply: oneshot::Sender<anyhow::Result<Vec<(String, String)>>>,
+    },
 
     // Embedding index operations
     UpsertEmbedding {
@@ -805,6 +809,10 @@ impl DbWorker {
             }
             DbCommand::SaveAppSetting { key, value, reply } => {
                 let result = app_settings::save_app_setting(conn, &key, &value);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadAppSettingsByPrefix { prefix, reply } => {
+                let result = app_settings::load_app_settings_by_prefix(conn, &prefix);
                 let _ = reply.send(result);
             }
 

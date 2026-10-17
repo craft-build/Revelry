@@ -546,6 +546,26 @@ export async function setCharacterMemoryForgotten(
   });
 }
 
+/** One conversation's cross-conversation memory participation. */
+export async function getConversationMemoryEnabled(
+  conversationId: string,
+): Promise<boolean> {
+  return invoke<boolean>("get_conversation_memory_enabled", { conversationId });
+}
+
+/** A character with an active cross-conversation memory cutoff. */
+export interface CharacterMemoryForgotten {
+  characterId: string;
+  forgottenAt: string;
+}
+
+/** Every character with an active memory cutoff. */
+export async function listCharacterMemoryForgotten(): Promise<
+  CharacterMemoryForgotten[]
+> {
+  return invoke<CharacterMemoryForgotten[]>("list_character_memory_forgotten");
+}
+
 export async function testSemanticActivation(
   lorebookId: string,
   text: string,

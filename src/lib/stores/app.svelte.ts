@@ -29,6 +29,8 @@ import {
   setEmbeddingConfig as apiSetEmbeddingConfig,
   setConversationMemoryEnabled as apiSetConversationMemoryEnabled,
   setCharacterMemoryForgotten as apiSetCharacterMemoryForgotten,
+  getConversationMemoryEnabled as apiGetConversationMemoryEnabled,
+  listCharacterMemoryForgotten as apiListCharacterMemoryForgotten,
   getEmbeddingStatus as apiGetEmbeddingStatus,
   testEmbedding as apiTestEmbedding,
   rebuildEmbeddingIndex as apiRebuildEmbeddingIndex,
@@ -172,6 +174,12 @@ class AppState {
     character: CharacterCard;
     other_count: number;
   } | null>(null);
+  /** character_id → cutoff timestamp for characters whose cross-chat
+   *  memories were forgotten (Library indicator + restore affordance). */
+  forgotten_memories = $state<Map<string, string>>(new Map());
+  /** Cross-conversation memory participation for the active conversation
+   *  (null = unknown/not loaded yet). */
+  active_memory_enabled = $state<boolean | null>(null);
 
   // ── Character generation state ──────────────────────────────────────────
   is_generating_character = $state<boolean>(false);
@@ -425,6 +433,7 @@ class AppState {
           this.cross_conversation_memory = value === "true";
         })
         .catch(() => {});
+      this.loadForgottenMemories();
 
       // If any critical data failed, set error state
       const criticalFailures = results
@@ -486,6 +495,15 @@ class AppState {
     // Load branches for this conversation
     this.loadBranchesForConversation(id);
     this.loadConversationLorebooks(id);
+    // Cross-conversation memory participation (best-effort, off-context safe).
+    this.active_memory_enabled = null;
+    apiGetConversationMemoryEnabled(id)
+      .then((enabled) => {
+        if (this.active_conversation_id === id) {
+          this.active_memory_enabled = enabled;
+        }
+      })
+      .catch(() => {});
     // Load character lorebooks and regex scripts when opening conversation
     if (this.active_character) {
       this.loadCharacterLorebooks(this.active_character.id);
@@ -888,6 +906,39 @@ class AppState {
     forgotten: boolean,
   ): Promise<void> {
     await apiSetCharacterMemoryForgotten(characterId, forgotten);
+    if (forgotten) {
+      this.forgotten_memories.set(characterId, new Date().toISOString());
+    } else {
+      this.forgotten_memories.delete(characterId);
+    }
+  }
+
+  /** Toggles cross-conversation memory for the active conversation. */
+  async toggleActiveConversationMemory(): Promise<void> {
+    const id = this.active_conversation_id;
+    if (!id) return;
+    const next = !(this.active_memory_enabled ?? true);
+    this.active_memory_enabled = next;
+    try {
+      await apiSetConversationMemoryEnabled(id, next);
+    } catch (err) {
+      this.active_memory_enabled = !next; // Revert on failure.
+      console.error("Failed to toggle conversation memory:", err);
+    }
+  }
+
+  /** Loads the per-character forgotten-memory cutoffs (Library indicators). */
+  async loadForgottenMemories(): Promise<void> {
+    try {
+      const list = await apiListCharacterMemoryForgotten();
+      const map = new Map<string, string>();
+      for (const item of list) {
+        map.set(item.characterId, item.forgottenAt);
+      }
+      this.forgotten_memories = map;
+    } catch {
+      this.forgotten_memories = new Map();
+    }
   }
 
   dismissMemoryPrompt(): void {

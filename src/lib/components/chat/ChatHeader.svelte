@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { app } from '$lib/stores/app.svelte';
 	import { Avatar, Tooltip } from '$lib/components/ui';
-	import { GitBranch, SlidersHorizontal } from '@lucide/svelte';
+	import { GitBranch, SlidersHorizontal, Brain, BrainCircuit } from '@lucide/svelte';
 	import { Popover } from 'bits-ui';
 	import { Check, Trash2 } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
@@ -10,6 +10,17 @@
 	let branchPopoverOpen = $state(false);
 
 	let hasBranches = $derived(app.branches.length > 0);
+
+	/** Cross-conversation memory toggle visibility: memory features on and a
+	 *  conversation is open with a character the user has other chats with. */
+	let memory_toggle_visible = $derived(
+		app.embeddings_enabled &&
+			app.cross_conversation_memory &&
+			app.active_conversation !== null &&
+			app.conversations.filter((c) => c.character_id === app.active_conversation?.character_id)
+				.length > 0
+	);
+	let memory_enabled = $derived(app.active_memory_enabled ?? true);
 
 	let deletingBranchId = $state<string | null>(null);
 
@@ -191,6 +202,36 @@
 					</Popover.Content>
 				</Popover.Portal>
 			</Popover.Root>
+		{/if}
+
+		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>
+
+		<!-- Cross-conversation memory toggle -->
+		{#if memory_toggle_visible}
+			<Tooltip
+				text={memory_enabled
+					? 'Cross-conversation memory on — this chat receives recalled moments'
+					: 'Cross-conversation memory off for this chat'}
+			>
+				<button
+					type="button"
+					onclick={() => app.toggleActiveConversationMemory()}
+					class={cn(
+						'inline-flex size-8 items-center justify-center rounded-(--radius-md) transition-colors',
+						memory_enabled
+							? 'bg-(--color-accent)/10 text-(--color-accent-vivid)'
+							: 'text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)',
+					)}
+					aria-pressed={memory_enabled}
+					aria-label="Toggle cross-conversation memory"
+				>
+					{#if memory_enabled}
+						<BrainCircuit class="size-4" />
+					{:else}
+						<Brain class="size-4" />
+					{/if}
+				</button>
+			</Tooltip>
 		{/if}
 
 		<div class="h-5 w-px bg-(--color-border)" aria-hidden="true"></div>

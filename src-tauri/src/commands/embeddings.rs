@@ -1,7 +1,7 @@
 use tauri::State;
 use tokio::sync::oneshot;
 
-use crate::ai::embeddings::{self, EmbeddingRuntime, EMBEDDING_CONFIG_KEY};
+use crate::ai::embeddings::{self, db_call, EmbeddingRuntime, EMBEDDING_CONFIG_KEY};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::embedding::{
     EmbeddingConfig, EmbeddingNamespaceCount, EmbeddingStatus, EmbeddingTestResult,
@@ -222,4 +222,55 @@ pub async fn set_character_memory_forgotten(
         }
         false => embeddings::write_app_setting(&db.sender(), &key, "").await,
     }
+}
+
+/// Returns one conversation's cross-conversation memory participation
+/// (true unless explicitly disabled by "start fresh").
+#[tauri::command]
+pub async fn get_conversation_memory_enabled(
+    db: State<'_, DbWorker>,
+    conversation_id: String,
+) -> Result<bool, String> {
+    let key = embeddings::memory_disabled_key(&conversation_id);
+    let value = embeddings::read_app_setting(&db.sender(), &key).await?;
+    Ok(value.as_deref() != Some("true"))
+}
+
+/// A character with an active cross-conversation memory cutoff.
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CharacterMemoryForgotten {
+    pub character_id: String,
+    /// RFC 3339 timestamp — nothing before it is recalled.
+    pub forgotten_at: String,
+}
+
+/// Lists every character with an active memory cutoff (Library badges).
+#[tauri::command]
+pub async fn list_character_memory_forgotten(
+    db: State<'_, DbWorker>,
+) -> Result<Vec<CharacterMemoryForgotten>, String> {
+    let prefix = embeddings::memory_forgotten_key("");
+    let prefix = &prefix[..prefix.len() - 1]; // trailing ':' only
+    let rows = db_call(&db.sender(), |reply| DbCommand::LoadAppSettingsByPrefix {
+        prefix: prefix.to_string(),
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let key_len = prefix.len() + 1;
+    Ok(rows
+        .into_iter()
+        .filter_map(|(key, value)| {
+            let forgotten_at = value.trim().to_string();
+            if forgotten_at.is_empty() {
+                return None; // Cleared cutoff.
+            }
+            Some(CharacterMemoryForgotten {
+                character_id: key[key_len..].to_string(),
+                forgotten_at,
+            })
+        })
+        .collect())
 }
