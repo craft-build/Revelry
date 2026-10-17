@@ -138,25 +138,28 @@ impl PromptEngine {
             None,
         );
 
-        // Memory only matters once history outgrows the window.
-        if assembled.truncated_messages > 0 {
-            if let Some(mem) = memory {
-                if !mem.summary.is_empty()
+        // Memory summary/recall only matters once history outgrows the
+        // window — but cross-conversation echoes apply from the very first
+        // turn of a new conversation, before any local history exists to
+        // truncate. The final clause skips the re-assembly pass when the
+        // memory input has nothing to contribute at all.
+        if let Some(mem) = memory {
+            if (assembled.truncated_messages > 0 || !mem.external_memories.is_empty())
+                && (!mem.summary.is_empty()
                     || mem.has_recall_inputs()
-                    || !mem.external_memories.is_empty()
-                {
-                    assembled = Self::assemble_inner(
-                        character,
-                        persona,
-                        messages,
-                        lorebook_entries,
-                        lorebook_name_map,
-                        token_service,
-                        context_window,
-                        semantic,
-                        Some(mem),
-                    );
-                }
+                    || !mem.external_memories.is_empty())
+            {
+                assembled = Self::assemble_inner(
+                    character,
+                    persona,
+                    messages,
+                    lorebook_entries,
+                    lorebook_name_map,
+                    token_service,
+                    context_window,
+                    semantic,
+                    Some(mem),
+                );
             }
         }
 
@@ -241,10 +244,15 @@ impl PromptEngine {
         // relative to the truncated history length (matching SillyTavern/gtk_ref).
         let history_messages: Vec<Message> = messages.to_vec();
 
-        // Reserve the recall budget up front when recall inputs exist; the
-        // actual snippets are selected from the dropped messages after
+        // Reserve the recall budget up front when recall inputs exist;
+        // cross-conversation echoes share it, so they reserve it too even
+        // in a fresh conversation with no local vectors. The actual
+        // snippets are selected from the dropped messages after
         // truncation below.
-        let recall_budget = if memory.map(|m| m.has_recall_inputs()).unwrap_or(false) {
+        let recall_budget = if memory
+            .map(|m| m.has_recall_inputs() || !m.external_memories.is_empty())
+            .unwrap_or(false)
+        {
             (budget as f64 * RECALL_BUDGET_FRACTION) as usize
         } else {
             0
@@ -1335,7 +1343,10 @@ mod tests {
     }
 
     #[test]
-    fn test_external_memories_skipped_without_truncation() {
+    fn test_external_memories_injected_without_truncation() {
+        // A fresh conversation: no local history to truncate, no query
+        // vector, no summary — echoes from other conversations must still
+        // inject (the feature's primary scenario).
         let character = make_test_character();
         let messages = vec![make_test_message(MessageRole::User, "Hello!")];
         let memory = MemoryInput {
@@ -1364,8 +1375,12 @@ mod tests {
 
         assert_eq!(prompt.truncated_messages, 0);
         assert_eq!(
-            prompt.memory.external_count, 0,
-            "no memory without truncation"
+            prompt.memory.external_count, 1,
+            "echo injects even without truncation"
+        );
+        assert!(
+            prompt.preamble.contains("Old echo."),
+            "echo content present in preamble"
         );
     }
 }

@@ -1,4 +1,4 @@
-use crate::ai::embeddings::EmbeddingRuntime;
+use crate::ai::embeddings::{EmbeddingRuntime, EMBED_TIMEOUT_SECS};
 use crate::db::{DbCommand, DbWorker};
 use crate::domain::lorebook::LorebookActivationMode;
 use crate::service::lorebook;
@@ -67,10 +67,14 @@ pub async fn test_lorebook_keywords(
     }
 
     // Sanity check: keep this command consistent with the runtime helper.
+    // `always` entries activate unconditionally and may legitimately have
+    // no (non-blank) keys, so the assert does not apply to them.
     let runtime_matches = lorebook::keyword_matches(&keys, &secondary_keys, &text);
     let always = activation_state.as_deref() == Some("always");
-    let expected = if always { true } else { runtime_matches };
-    debug_assert_eq!(!matched_keys.is_empty(), expected);
+    if !always {
+        let expected = runtime_matches;
+        debug_assert_eq!(!matched_keys.is_empty(), expected);
+    }
 
     let entry_id = format!("test-{}", keys.join("-"));
 
@@ -118,10 +122,17 @@ pub async fn test_semantic_activation(
         .map_err(|e| format!("DB worker dropped: {e}"))?
         .map_err(|e| e.to_string())?;
 
-    // Embed the sample text as the "all roles" query.
+    // Embed the sample text as the "all roles" query. Time-boxed like the
+    // chat path so an unreachable remote embedder (or a first local-model
+    // download) can't hang the Lorebook editor's test UI forever.
     let sender = db.sender();
     let runtime = (*runtime).clone();
-    let query = runtime.embed_query(&sender, &text).await?;
+    let query = tokio::time::timeout(
+        std::time::Duration::from_secs(EMBED_TIMEOUT_SECS),
+        runtime.embed_query(&sender, &text),
+    )
+    .await
+    .map_err(|_| format!("Embedding timed out after {EMBED_TIMEOUT_SECS}s"))??;
 
     // Load entry vectors for the current model.
     let loaded = runtime.resolve(&sender).await?;
@@ -150,6 +161,10 @@ pub async fn test_semantic_activation(
         }
         let keyword_hit =
             lorebook::keyword_matches(&entry.keys, &entry.secondary_keys, &text_lower);
+        // Secondary keys gate semantic activation too (same as
+        // `evaluate_entry_activation` in the runtime), so the preview
+        // never reports activated where a chat turn would stay silent.
+        let secondary_ok = lorebook::secondary_keys_present(&entry.secondary_keys, &text);
 
         let (similarity, activated, reason) =
             if entry.activation_state == crate::domain::lorebook::LorebookActivation::Always {
@@ -165,7 +180,8 @@ pub async fn test_semantic_activation(
                         let sim = vector_map
                             .get(&entry.id)
                             .map(|v| cosine_similarity(v, &query));
-                        let semantic_hit = sim.is_some_and(|s| s >= entry.semantic_threshold);
+                        let semantic_hit =
+                            sim.is_some_and(|s| s >= entry.semantic_threshold) && secondary_ok;
                         match entry.activation_mode {
                             LorebookActivationMode::Hybrid => {
                                 let reason = if keyword_hit {

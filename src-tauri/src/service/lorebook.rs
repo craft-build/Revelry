@@ -340,7 +340,11 @@ fn evaluate_entry_activation(
 /// Secondary keys present as a standalone gate (any key appears in text).
 /// Used by the semantic path; the keyword path folds this into
 /// `keyword_matches`.
-fn secondary_keys_present(secondary_keys: &[String], text: &str) -> bool {
+/// True when at least one non-blank secondary key appears in the scan
+/// text. Secondary keys gate activation (semantic included) but never
+/// activate alone — shared by the runtime evaluator and the preview
+/// command so the two cannot drift.
+pub fn secondary_keys_present(secondary_keys: &[String], text: &str) -> bool {
     let text_lower = text.to_lowercase();
     secondary_keys
         .iter()

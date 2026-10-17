@@ -492,20 +492,21 @@ async fn build_memory_input(
             .collect();
     }
 
-    if !memory.message_vectors.is_empty() {
-        if let Some(last_user) = messages
-            .iter()
-            .rev()
-            .find(|m| m.role == MessageRole::User && !m.content.trim().is_empty())
+    // One recall query per turn, embedded even when this conversation has
+    // no indexed vectors yet — cross-conversation echoes need it on the
+    // very first turn of a new conversation.
+    if let Some(last_user) = messages
+        .iter()
+        .rev()
+        .find(|m| m.role == MessageRole::User && !m.content.trim().is_empty())
+    {
+        if let Ok(vector) = tokio::time::timeout(
+            std::time::Duration::from_secs(EMBED_TIMEOUT_SECS),
+            runtime.embed_query(sender, &last_user.content),
+        )
+        .await
         {
-            if let Ok(vector) = tokio::time::timeout(
-                std::time::Duration::from_secs(EMBED_TIMEOUT_SECS),
-                runtime.embed_query(sender, &last_user.content),
-            )
-            .await
-            {
-                memory.query_vector = vector.ok();
-            }
+            memory.query_vector = vector.ok();
         }
     }
 
@@ -812,7 +813,9 @@ fn assemble_prompt(
         }
     };
 
-    let memory = (assembled.memory.summary_injected || !assembled.memory.recalled.is_empty())
+    let memory = (assembled.memory.summary_injected
+        || !assembled.memory.recalled.is_empty()
+        || assembled.memory.external_count > 0)
         .then_some(MemoryInfo {
             summary_included: assembled.memory.summary_injected,
             recalled_count: assembled.memory.recalled.len(),

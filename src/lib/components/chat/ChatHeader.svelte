@@ -11,14 +11,17 @@
 
 	let hasBranches = $derived(app.branches.length > 0);
 
-	/** Cross-conversation memory toggle visibility: memory features on and a
-	 *  conversation is open with a character the user has other chats with. */
+	/** Cross-conversation memory toggle visibility: memory features on and
+	 *  the open conversation's character has other chats to recall from. */
 	let memory_toggle_visible = $derived(
 		app.embeddings_enabled &&
 			app.cross_conversation_memory &&
-			app.active_conversation !== null &&
-			app.conversations.filter((c) => c.character_id === app.active_conversation?.character_id)
-				.length > 0
+			app.active_conversation !== undefined &&
+			app.conversations.some(
+				(c) =>
+					c.character_id === app.active_conversation?.character_id &&
+					c.id !== app.active_conversation_id,
+			),
 	);
 	let memory_enabled = $derived(app.active_memory_enabled ?? true);
 

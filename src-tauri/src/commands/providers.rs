@@ -65,11 +65,10 @@ pub async fn save_provider(
     // itself never travels through ProviderConfig, so its status has to be
     // derived here, exactly like in get_providers.
     let pid = saved.id.clone();
-    let has_key = tokio::task::spawn_blocking(move || {
-        crate::secrets::KeyringStore::load_key(&pid).is_ok()
-    })
-    .await
-    .unwrap_or(false);
+    let has_key =
+        tokio::task::spawn_blocking(move || crate::secrets::KeyringStore::load_key(&pid).is_ok())
+            .await
+            .unwrap_or(false);
 
     Ok(ProviderWithKeyStatus {
         provider: saved,

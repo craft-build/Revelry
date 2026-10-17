@@ -24,7 +24,7 @@
 			<!-- Night glow behind the mark: blue key light + ember rim -->
 			<div
 				class="absolute -inset-6 rounded-full blur-[24px]"
-				style="background: radial-gradient(circle at 35% 35%, rgba(51, 101, 252, 0.45), transparent 60%), radial-gradient(circle at 70% 75%, rgba(251, 120, 0, 0.35), transparent 60%)"
+				style="background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--blue-500) 45%, transparent), transparent 60%), radial-gradient(circle at 70% 75%, color-mix(in srgb, var(--ember-500) 35%, transparent), transparent 60%)"
 				aria-hidden="true"
 			></div>
 			<Logo class="relative size-24" />

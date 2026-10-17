@@ -74,9 +74,6 @@
 							<span class="text-sm text-(--color-foreground) truncate">
 								{detail.entry_name || 'Untitled entry'}
 							</span>
-							<span class="text-sm text-(--color-foreground) truncate">
-								{detail.entry_name || 'Untitled entry'}
-							</span>
 							{#if detail.activation_reason === 'semantic'}
 								<span
 									class="shrink-0 rounded-(--radius-sm) bg-(--color-accent)/15 px-1.5 py-0.5 text-[10px] font-medium text-(--color-accent-vivid)"

@@ -273,7 +273,7 @@
 				class={cn(
 					'rounded-(--radius-lg) border px-4 py-3 text-[15px] leading-[1.65] wrap-anywhere',
 					isUser
-						? 'rounded-tr-[6px] border-transparent bg-(--color-bubble-user) text-(--color-accent-fg) shadow-[0_6px_20px_-8px_rgba(51,101,252,0.55)]'
+						? 'rounded-tr-[6px] border-transparent bg-(--color-bubble-user) text-(--color-accent-fg) shadow-(--shadow-bubble-user)'
 						: 'rounded-tl-[6px] border-(--color-border) bg-(--color-bubble-character) text-(--color-foreground)',
 					message.is_streaming && message.content && 'streaming-caret'
 				)}

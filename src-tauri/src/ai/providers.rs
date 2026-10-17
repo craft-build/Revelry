@@ -44,7 +44,11 @@ macro_rules! with_native_client {
         match $provider {
             ProviderType::OpenAI => {
                 let client = $crate::ai::providers::build_openai_client($api_key, $base_url);
-                let $model = client.completion($model_name);
+                // Chat Completions, not the Responses API: rig 0.44's
+                // `completion()` routes OpenAI to /v1/responses, which
+                // rejects the penalty/stop params presets set and excludes
+                // non-Responses models and chat-only proxies.
+                let $model = client.chat($model_name);
                 $body
             }
             ProviderType::Anthropic => {

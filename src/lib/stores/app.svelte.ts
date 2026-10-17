@@ -20,6 +20,7 @@ import type {
   EmbeddingTestResult,
 } from "$lib/types";
 import { Channel } from "@tauri-apps/api/core";
+import { SvelteMap } from "svelte/reactivity";
 
 const VALID_STOP_REASONS = ["end", "cancelled", "length", "error"] as const;
 type StopReason = (typeof VALID_STOP_REASONS)[number];
@@ -175,8 +176,10 @@ class AppState {
     other_count: number;
   } | null>(null);
   /** character_id → cutoff timestamp for characters whose cross-chat
-   *  memories were forgotten (Library indicator + restore affordance). */
-  forgotten_memories = $state<Map<string, string>>(new Map());
+   *  memories were forgotten (Library indicator + restore affordance).
+   *  SvelteMap so in-place mutations stay reactive (plain Maps held in
+   *  $state are not deeply proxied). */
+  forgotten_memories = $state<SvelteMap<string, string>>(new SvelteMap());
   /** Cross-conversation memory participation for the active conversation
    *  (null = unknown/not loaded yet). */
   active_memory_enabled = $state<boolean | null>(null);
@@ -931,13 +934,13 @@ class AppState {
   async loadForgottenMemories(): Promise<void> {
     try {
       const list = await apiListCharacterMemoryForgotten();
-      const map = new Map<string, string>();
+      const map = new SvelteMap<string, string>();
       for (const item of list) {
         map.set(item.characterId, item.forgottenAt);
       }
       this.forgotten_memories = map;
     } catch {
-      this.forgotten_memories = new Map();
+      this.forgotten_memories = new SvelteMap();
     }
   }
 
