@@ -192,6 +192,38 @@ pub fn load_embeddings_for_namespaces(
     Ok(result)
 }
 
+/// Loads embedding records across every namespace with the given prefix
+/// (e.g. `messages:` for cross-conversation semantic search), restricted to
+/// the current model. Returns (namespace, record) pairs.
+pub fn load_embeddings_by_prefix(
+    conn: &Connection,
+    prefix: &str,
+    model_key: &str,
+) -> Result<Vec<(String, EmbeddingRecord)>> {
+    let mut stmt = conn.prepare_cached(
+        "SELECT namespace, ref_id, model_key, content_hash, vector FROM embeddings
+         WHERE namespace LIKE ?1 AND model_key = ?2",
+    )?;
+    let rows = stmt.query_map(params![format!("{prefix}%"), model_key], |row| {
+        let namespace: String = row.get("namespace")?;
+        let vector_bytes: Vec<u8> = row.get("vector")?;
+        Ok((
+            namespace,
+            EmbeddingRecord {
+                ref_id: row.get("ref_id")?,
+                model_key: row.get("model_key")?,
+                content_hash: row.get("content_hash")?,
+                vector: decode_vector(&vector_bytes),
+            },
+        ))
+    })?;
+    let mut result = Vec::new();
+    for row in rows {
+        result.push(row?);
+    }
+    Ok(result)
+}
+
 /// Counts rows grouped by (model_key, namespace) for status display.
 pub fn count_embeddings(conn: &Connection) -> Result<Vec<(String, String, i64)>> {
     let mut stmt = conn.prepare_cached(
@@ -333,5 +365,22 @@ mod tests {
         assert_eq!(counts.len(), 2);
         assert!(counts.contains(&("m".to_string(), "ns-1".to_string(), 2)));
         assert!(counts.contains(&("other".to_string(), "ns-2".to_string(), 1)));
+    }
+
+    #[test]
+    fn test_load_embeddings_by_prefix() {
+        let conn = setup_test_db();
+        upsert_embedding(&conn, &sample_row("messages:conv-1", "m1", "m", &[1.0])).expect("upsert");
+        upsert_embedding(&conn, &sample_row("messages:conv-2", "m2", "m", &[1.0])).expect("upsert");
+        upsert_embedding(&conn, &sample_row("lorebook:lb-1", "e1", "m", &[1.0])).expect("upsert");
+        upsert_embedding(&conn, &sample_row("messages:conv-1", "m3", "stale", &[1.0]))
+            .expect("upsert");
+
+        let rows = load_embeddings_by_prefix(&conn, "messages:", "m").expect("prefix load");
+        assert_eq!(rows.len(), 2, "only current-model message rows");
+        assert!(rows.iter().all(|(ns, _)| ns.starts_with("messages:")));
+
+        let none = load_embeddings_by_prefix(&conn, "nothing:", "m").expect("prefix load");
+        assert!(none.is_empty());
     }
 }

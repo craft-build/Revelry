@@ -324,6 +324,16 @@ pub enum DbCommand {
             >,
         >,
     },
+    LoadEmbeddingsByPrefix {
+        prefix: String,
+        model_key: String,
+        reply:
+            oneshot::Sender<anyhow::Result<Vec<(String, crate::db::embeddings::EmbeddingRecord)>>>,
+    },
+    LoadMessagesWithConversation {
+        ids: Vec<String>,
+        reply: oneshot::Sender<anyhow::Result<Vec<(Message, String, String)>>>,
+    },
     CountEmbeddings {
         reply: oneshot::Sender<anyhow::Result<Vec<(String, String, i64)>>>,
     },
@@ -841,6 +851,18 @@ impl DbWorker {
                     &namespaces,
                     model_key.as_deref(),
                 );
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadEmbeddingsByPrefix {
+                prefix,
+                model_key,
+                reply,
+            } => {
+                let result = embeddings::load_embeddings_by_prefix(conn, &prefix, &model_key);
+                let _ = reply.send(result);
+            }
+            DbCommand::LoadMessagesWithConversation { ids, reply } => {
+                let result = conversations::load_messages_with_conversation(conn, &ids);
                 let _ = reply.send(result);
             }
             DbCommand::CountEmbeddings { reply } => {

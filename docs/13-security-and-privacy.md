@@ -18,3 +18,12 @@ Revelry does not implement content filtering or moderation. The application is d
 ## 13.4 Input Sanitization
 
 Imported character cards and conversation data undergo sanitization to prevent common attack vectors. JSON parsing uses strict schema validation through serde to reject malformed or oversized payloads. PNG card extraction validates tEXt chunk sizes and rejects cards exceeding reasonable limits. Regex scripts are validated for ReDoS patterns before being applied. The frontend uses DOMPurify to sanitize HTML in markdown-rendered AI responses, preventing XSS from untrusted model output. Tauri's content security policy provides an additional layer of protection for the webview.
+
+## 13.5 Embeddings and Semantic Features
+
+Semantic features (semantic/hybrid lorebook activation, story-memory recall, semantic search) are powered by an optional embedding source configured in Settings. Embeddings are **off by default**; every feature degrades to its non-semantic path (keyword activation, summary-only memory, FTS5 search) when they are disabled or the source fails at runtime. Two source kinds are supported:
+
+- **Provider (remote):** message and lore text is sent to the selected provider's embedding endpoint to compute vectors. The provider's API key stays in the OS keychain; only the resulting vectors are stored locally in SQLite (in the derived, rebuildable `embeddings` table). Users should choose a provider they trust with conversation content, exactly as they already do for chat completions.
+- **Local model (fastembed):** vectors are computed on-device by an ONNX model downloaded on first use. Nothing leaves the machine.
+
+The vector index is derived state — it can be deleted or rebuilt at any time without touching canonical data, and rows are keyed by embedding model so switching sources never mixes incompatible vector spaces.

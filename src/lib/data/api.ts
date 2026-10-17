@@ -410,8 +410,11 @@ export async function searchConversations(
   return invoke<Conversation[]>("search_conversations", { query });
 }
 
-export async function searchMessages(query: string): Promise<SearchResult[]> {
-  return invoke<SearchResult[]>("search_messages", { query });
+export async function searchMessages(
+  query: string,
+  semantic = false,
+): Promise<SearchResult[]> {
+  return invoke<SearchResult[]>("search_messages", { query, semantic });
 }
 
 // ── Regex scripts ──────────────────────────────────────────────────────────────

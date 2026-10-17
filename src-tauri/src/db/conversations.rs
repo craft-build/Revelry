@@ -449,6 +449,72 @@ pub fn search_messages(conn: &Connection, query: &str) -> Result<Vec<SearchResul
     Ok(result)
 }
 
+/// Loads messages by id (cross-conversation semantic search follow-up),
+/// joined with their conversation title and character id for SearchResult
+/// construction. Order follows the input ids.
+pub fn load_messages_with_conversation(
+    conn: &Connection,
+    ids: &[String],
+) -> Result<Vec<(Message, String, String)>> {
+    if ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let placeholders: Vec<String> = ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT m.id, m.conversation_id, m.role, m.content, m.sort_order, m.timestamp, m.branch_id,
+                c.title as conversation_title, c.character_id
+         FROM messages m
+         JOIN conversations c ON c.id = m.conversation_id
+         WHERE m.id IN ({})",
+        placeholders.join(", ")
+    );
+
+    let params: Vec<&dyn rusqlite::types::ToSql> = ids
+        .iter()
+        .map(|id| id as &dyn rusqlite::types::ToSql)
+        .collect();
+
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params.as_slice(), |row| {
+        Ok((
+            row_to_message(row)?,
+            row.get("conversation_title")?,
+            row.get("character_id")?,
+        ))
+    })?;
+    let mut result = Vec::new();
+    for row in rows {
+        result.push(row?);
+    }
+    Ok(result)
+}
+
+/// Merges FTS5 search results with semantic-search results: FTS (and title)
+/// hits keep their order and per-conversation dedupe; semantic hits only add
+/// conversations the lexical pass missed. Semantic `rank` carries the cosine
+/// similarity (higher = better, unlike FTS's negative BM25 — the field is
+/// ordering-neutral here because position in the list is what orders).
+pub fn merge_semantic_results(
+    lexical: Vec<SearchResult>,
+    semantic: Vec<SearchResult>,
+) -> Vec<SearchResult> {
+    let mut seen_conv_ids: std::collections::HashSet<String> =
+        lexical.iter().map(|r| r.conversation_id.clone()).collect();
+
+    let mut result = lexical;
+    for hit in semantic {
+        if seen_conv_ids.insert(hit.conversation_id.clone()) {
+            result.push(hit);
+        }
+    }
+    result
+}
+
 /// Branch-aware delete of messages after a sort_order threshold.
 pub fn delete_messages_after_sort_order_branch(
     conn: &Connection,
@@ -1088,5 +1154,84 @@ mod tests {
             .as_ref()
             .unwrap()
             .contains("<mark>"));
+    }
+
+    // ── Semantic search merge (Phase 4) ─────────────────────────────────
+
+    fn make_result(conv: &str, match_type: &str, rank: f64) -> SearchResult {
+        SearchResult {
+            conversation_id: conv.to_string(),
+            conversation_title: format!("Chat {conv}"),
+            character_id: "char-1".to_string(),
+            match_type: match_type.to_string(),
+            message_snippet: None,
+            message_id: None,
+            branch_id: None,
+            rank,
+        }
+    }
+
+    #[test]
+    fn test_merge_semantic_results_fills_gaps() {
+        let lexical = vec![
+            make_result("conv-1", "message", -2.5),
+            make_result("conv-2", "title", 0.0),
+        ];
+        let semantic = vec![
+            make_result("conv-3", "semantic", 0.81),
+            make_result("conv-1", "semantic", 0.7), // already covered by FTS
+        ];
+
+        let merged = merge_semantic_results(lexical, semantic);
+        assert_eq!(
+            merged.len(),
+            3,
+            "semantic only adds uncovered conversations"
+        );
+        assert_eq!(merged[0].conversation_id, "conv-1", "FTS order preserved");
+        assert_eq!(merged[1].conversation_id, "conv-2");
+        assert_eq!(merged[2].conversation_id, "conv-3");
+        assert_eq!(merged[2].match_type, "semantic");
+    }
+
+    #[test]
+    fn test_merge_semantic_results_empty_lexical() {
+        let semantic = vec![make_result("conv-9", "semantic", 0.9)];
+        let merged = merge_semantic_results(Vec::new(), semantic);
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].conversation_id, "conv-9");
+    }
+
+    #[test]
+    fn test_merge_semantic_results_both_empty() {
+        assert!(merge_semantic_results(Vec::new(), Vec::new()).is_empty());
+    }
+
+    #[test]
+    fn test_load_messages_with_conversation() {
+        let conn = setup_test_db();
+        let character = CharacterCardV2::new("Search Join Test".to_string());
+        crate::db::characters::insert_character(&conn, &character).expect("insert character");
+
+        let conversation = start_conversation(&conn, &character.id).expect("start conversation");
+        let msg = Message::with_order(
+            conversation.id.clone(),
+            MessageRole::User,
+            "Find me semantically.".to_string(),
+            0,
+        );
+        save_message(&conn, &msg).expect("save message");
+
+        let rows = load_messages_with_conversation(&conn, &[msg.id.clone(), "missing".to_string()])
+            .expect("load by ids");
+        assert_eq!(rows.len(), 1, "missing ids are skipped");
+        assert_eq!(rows[0].0.id, msg.id);
+        assert_eq!(rows[0].0.content, "Find me semantically.");
+        assert_eq!(rows[0].1, conversation.title);
+        assert_eq!(rows[0].2, character.id);
+
+        assert!(load_messages_with_conversation(&conn, &[])
+            .expect("empty ids")
+            .is_empty());
     }
 }

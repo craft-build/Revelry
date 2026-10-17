@@ -139,6 +139,9 @@ class AppState {
   active_branch_id = $state<string | null>(null);
   branches = $state<MessageBranch[]>([]);
   search_results = $state<SearchResult[]>([]);
+  /** Semantic (embedding) message search toggle — only effective when
+   *  embeddings are configured (app.embeddings_enabled). */
+  search_semantic = $state(false);
   /** Conversations whose titles match the active search (alongside FTS message
    *  results). Populated by searchMessagesAction so the sidebar can surface
    *  title matches even when no message body matches. */
@@ -768,7 +771,9 @@ class AppState {
 
   /** Search across all conversations and messages via backend FTS5, and also
    *  fetch title-matched conversations via search_conversations so the sidebar
-   *  can surface conversations whose names match even without a message hit. */
+   *  can surface conversations whose names match even without a message hit.
+   *  When semantic search is toggled on (and embeddings are configured), the
+   *  message search additionally merges embedding-similarity hits. */
   async searchMessagesAction(query: string): Promise<void> {
     if (!query.trim()) {
       this.search_results = [];
@@ -778,7 +783,7 @@ class AppState {
     this.is_searching = true;
     try {
       const [messageResults, conversationResults] = await Promise.all([
-        apiSearchMessages(query.trim()),
+        apiSearchMessages(query.trim(), this.search_semantic),
         apiSearchConversations(query.trim()),
       ]);
       this.search_results = messageResults;
@@ -790,6 +795,11 @@ class AppState {
     } finally {
       this.is_searching = false;
     }
+  }
+
+  /** Toggle semantic (embedding) message search on/off. */
+  toggleSearchSemantic(): void {
+    this.search_semantic = !this.search_semantic;
   }
 
   /** Navigate to a search result's conversation and optionally switch branch. */

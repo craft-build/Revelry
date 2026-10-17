@@ -261,18 +261,124 @@ pub async fn delete_branch(db: State<'_, DbWorker>, branch_id: String) -> Result
 #[tauri::command]
 pub async fn search_messages(
     db: State<'_, DbWorker>,
+    runtime: State<'_, EmbeddingRuntime>,
     query: String,
+    semantic: Option<bool>,
 ) -> Result<Vec<SearchResult>, String> {
     let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
     db.send(DbCommand::SearchMessages {
-        query,
+        query: query.clone(),
         reply: reply_tx,
     })
     .map_err(|e| e.to_string())?;
-    reply_rx
+    let lexical = reply_rx
         .await
         .map_err(|e| format!("DB worker dropped: {}", e))?
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Semantic pass (Phase 4): embed the query, cosine over every indexed
+    // message, and merge in conversations the lexical pass missed. Every
+    // step fails open — errors degrade to plain FTS5 results.
+    if !semantic.unwrap_or(false) {
+        return Ok(lexical);
+    }
+    let semantic_hits = match semantic_message_search(&db, &runtime, &query).await {
+        Ok(hits) => hits,
+        Err(e) => {
+            tracing::debug!("semantic search skipped: {e}");
+            Vec::new()
+        }
+    };
+    Ok(crate::db::conversations::merge_semantic_results(
+        lexical,
+        semantic_hits,
+    ))
+}
+
+/// Maximum semantic hits merged into a search result set.
+const SEMANTIC_SEARCH_LIMIT: usize = 20;
+
+/// Pure-lexical fallback snippet length for semantic hits (no <mark>
+/// highlighting — the match is semantic, not lexical).
+const SEMANTIC_SNIPPET_CHARS: usize = 140;
+
+async fn semantic_message_search(
+    db: &State<'_, DbWorker>,
+    runtime: &State<'_, EmbeddingRuntime>,
+    query: &str,
+) -> Result<Vec<SearchResult>, String> {
+    use crate::ai::embeddings::db_call;
+    use crate::service::vector::cosine_similarity;
+
+    let sender = db.sender();
+    let runtime = runtime.inner().clone();
+
+    let query_vector = tokio::time::timeout(
+        std::time::Duration::from_secs(crate::ai::embeddings::EMBED_TIMEOUT_SECS),
+        runtime.embed_query(&sender, query),
+    )
+    .await
+    .map_err(|_| "query embedding timed out".to_string())??;
+
+    let loaded = runtime.resolve(&sender).await?;
+    let vectors = db_call(&sender, |reply| DbCommand::LoadEmbeddingsByPrefix {
+        prefix: "messages:".to_string(),
+        model_key: loaded.model_key.clone(),
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    // Rank all indexed messages by cosine, keep the top hits.
+    let mut scored: Vec<(f64, String)> = vectors
+        .into_iter()
+        .map(|(_namespace, record)| {
+            (
+                cosine_similarity(&query_vector, &record.vector) as f64,
+                record.ref_id,
+            )
+        })
+        .collect();
+    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(SEMANTIC_SEARCH_LIMIT);
+
+    let ids: Vec<String> = scored.iter().map(|(_, id)| id.clone()).collect();
+    let messages = db_call(&sender, |reply| DbCommand::LoadMessagesWithConversation {
+        ids,
+        reply,
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut hits = Vec::new();
+    for (similarity, message_id) in &scored {
+        let Some((message, title, character_id)) = messages
+            .iter()
+            .find(|(m, _, _)| &m.id == message_id)
+            .cloned()
+        else {
+            continue; // Message deleted since embedding — skip.
+        };
+        if message.content.trim().is_empty() {
+            continue;
+        }
+        let snippet: String = message
+            .content
+            .chars()
+            .take(SEMANTIC_SNIPPET_CHARS)
+            .collect();
+        hits.push(SearchResult {
+            conversation_id: message.conversation_id.clone(),
+            conversation_title: title,
+            character_id,
+            match_type: "semantic".to_string(),
+            message_snippet: Some(snippet),
+            message_id: Some(message.id.clone()),
+            branch_id: message.branch_id.clone(),
+            rank: *similarity,
+        });
+    }
+    Ok(hits)
 }
 
 #[tauri::command]

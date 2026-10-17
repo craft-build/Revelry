@@ -129,8 +129,9 @@ src-tauri/src/
 │   ├── presets.rs          # Generation preset CRUD
 │   ├── avatars.rs          # Upload/delete avatar images
 │   ├── card_io.rs          # Import/export character cards (PNG, JSON)
-│   ├── keywords.rs         # Lorebook keyword testing
+│   ├── keywords.rs         # Lorebook keyword + semantic activation testing
 │   ├── regex.rs             # Regex script CRUD + test/validate
+│   ├── embeddings.rs       # Embedding config/status/test/rebuild commands
 │   └── app_settings.rs     # Key-value app settings (theme, code theme)
 ├── domain/                 # Domain types — pure data, no I/O
 │   ├── character.rs        # CharacterCardV2 (+ V1/V2 spec deserialization)
@@ -139,26 +140,31 @@ src-tauri/src/
 │   ├── persona.rs          # Persona
 │   ├── generation.rs       # GenerationPreset
 │   ├── lorebook.rs         # Lorebook, LorebookEntry, LorebookActivationDetail
+│   ├── embedding.rs        # EmbeddingConfig, EmbeddingStatus, EmbeddingTestResult
 │   └── regex_script.rs     # RegexScript
 ├── ai/                     # AI service layer — LLM interaction
 │   ├── mod.rs              # AiService facade + re-exports
-│   ├── chat.rs             # stream_chat
+│   ├── chat.rs             # stream_chat (+ PostStreamHook for post-stream maintenance)
 │   ├── generate.rs         # stream_generate_character
 │   ├── providers.rs        # rig-core client construction per ProviderType
 │   ├── model_list.rs       # Remote model listing / detection
+│   ├── embeddings.rs       # EmbeddingRuntime — remote/local embedders, index maintenance
+│   ├── summary.rs          # Rolling story-summary generation (memory layer)
 │   ├── types.rs            # StreamChunk, GenerateCharacterChunk, GenerationParams
 │   └── util.rs             # Shared helpers
 ├── service/                # Business logic services
-│   ├── prompt.rs           # PromptEngine — assembles system prompts with persona/lorebook
+│   ├── prompt.rs           # PromptEngine — assembles system prompts with persona/lorebook/memory
 │   ├── template.rs         # Persona template compression (tiered)
 │   ├── token_count.rs      # TokenCountService — tiktoken-rs + context window resolution
 │   ├── regex.rs            # apply_regex_scripts — post-processing
-│   ├── lorebook.rs         # Lorebook keyword matching
+│   ├── lorebook.rs         # Lorebook keyword + semantic activation
+│   ├── vector.rs           # Cosine similarity, content hashing, vector encode/decode
 │   ├── lorebook_io.rs      # Lorebook import/export
 │   └── card_io.rs          # Character card import/export logic
 ├── db/                     # Database layer (async actor pattern)
 │   ├── mod.rs              # DbWorker — tokio mpsc actor; DbCommand enum
 │   ├── migrations.rs       # SQLite schema migrations
+│   ├── embeddings.rs       # Derived vector index queries (semantic activation/recall/search)
 │   └── <domain>.rs         # Per-domain queries (characters, conversations, lorebook, …)
 └── secrets/
     └── mod.rs              # KeyringStore — OS keychain for API keys
@@ -450,6 +456,9 @@ Self-hosted woff2 in `static/fonts/`, declared with `@font-face` at the top of `
 | `generation_error`            | `string`                         | Error from last character generation attempt        |
 | `sidebar_open`                | `boolean`                        | Sidebar visibility                                  |
 | `character_search_query`      | `string`                         | Search filter for character library                 |
+| `embedding_config`            | `EmbeddingConfig`                | Embedding source selection (none/remote/local)      |
+| `embedding_status`            | `EmbeddingStatus \| null`        | Indexed counts + stale rows for the current model   |
+| `search_semantic`             | `boolean`                        | Semantic toggle for sidebar message search          |
 
 #### Derived getters
 
@@ -556,6 +565,10 @@ All frontend types are in `src/lib/types/index.ts`. All backend domain types are
 
 - Markdown rendering (marked + DOMPurify) with Shiki code highlighting and selectable code theme
 - Light / dark / system theme
+- Embeddings (opt-in): remote provider sources (incl. OpenAI-compatible endpoints) or local fastembed models, with Settings management, connection test, and background index rebuilds
+- Semantic / hybrid lorebook activation with per-entry thresholds and semantic test preview
+- Story memory: rolling conversation summaries (works without embeddings) + semantic recall of out-of-window messages
+- Hybrid conversation search (FTS5 + optional semantic toggle in the sidebar)
 
 ### 🚧 Stubbed (placeholder / not yet functional)
 

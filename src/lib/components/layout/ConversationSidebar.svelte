@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plus, Search, MessageSquareDashed, Trash2, Pencil } from '@lucide/svelte';
+	import { Plus, Search, MessageSquareDashed, Trash2, Pencil, Sparkles } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { app } from '$lib/stores/app.svelte';
 	import type { SearchResult } from '$lib/types';
@@ -56,7 +56,8 @@
 		})(),
 	);
 
-	// Debounced backend search (message FTS5 + conversation title matches).
+	// Debounced backend search (message FTS5 + conversation title matches,
+	// plus semantic hits when the toggle is on and embeddings are configured).
 	$effect(() => {
 		const q = search.trim();
 		if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
@@ -72,6 +73,16 @@
 			if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
 		};
 	});
+
+	function toggleSemanticSearch() {
+		app.toggleSearchSemantic();
+		// Re-run immediately rather than waiting for the debounce.
+		const q = search.trim();
+		if (q && searchDebounceTimer) {
+			clearTimeout(searchDebounceTimer);
+			app.searchMessagesAction(q);
+		}
+	}
 
 	// Bucket the (already recency-sorted) list into Today / This week / Earlier
 	let grouped = $derived(
@@ -149,6 +160,22 @@
 			class="pointer-events-none absolute left-5 top-1/2 size-3.5 -translate-y-1/2 text-(--color-subtle)"
 		/>
 		<Input bind:value={search} placeholder="Search conversations" class="h-8 pl-8 text-xs" />
+		{#if app.embeddings_enabled}
+			<button
+				type="button"
+				onclick={toggleSemanticSearch}
+				aria-pressed={app.search_semantic}
+				title={app.search_semantic
+					? 'Semantic search on — matching by meaning as well as text'
+					: 'Search by meaning (semantic) in addition to text'}
+				class="absolute right-5 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-(--radius-sm) transition-colors {app
+					.search_semantic
+					? 'bg-(--color-accent)/15 text-(--color-accent-vivid)'
+					: 'text-(--color-subtle) hover:bg-(--color-surface-hover) hover:text-(--color-foreground)'}"
+			>
+				<Sparkles class="size-3.5" />
+			</button>
+		{/if}
 	</div>
 
 	<!-- Conversation list -->
@@ -205,6 +232,14 @@
 									{#each results.slice(0, 1) as r}
 										{#if r.message_snippet}
 											<p class="mt-0.5 line-clamp-2 text-[11px] leading-tight text-(--color-muted)">
+												{#if r.match_type === 'semantic'}
+													<span
+														class="mr-1 inline-flex items-center rounded-(--radius-sm) bg-(--color-accent)/15 px-1 py-px align-baseline text-[9px] font-medium text-(--color-accent-vivid)"
+														title="Matched by meaning ({(r.rank * 100).toFixed(0)}% similar)"
+													>
+														semantic
+													</span>
+												{/if}
 												{@html r.message_snippet}
 											</p>
 										{/if}

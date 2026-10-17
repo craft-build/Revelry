@@ -227,12 +227,13 @@ export interface MessageBranch {
   created_at: string;
 }
 
-/** A search result from FTS5 message search or conversation title search. */
+/** A search result from FTS5 message search, conversation title search, or
+ *  semantic (embedding) message search. */
 export interface SearchResult {
   conversation_id: string;
   conversation_title: string;
   character_id: string;
-  match_type: "title" | "message";
+  match_type: "title" | "message" | "semantic";
   message_snippet?: string;
   message_id?: string;
   branch_id?: string;
